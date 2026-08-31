@@ -355,11 +355,8 @@
       flex-direction: row;
       min-height: 600px;
       overflow: hidden;
-      background: linear-gradient(
-        to bottom,
-        var(--primary-color),
-        var(--primary-color-lighter)
-      );
+      max-width: 1200px;
+        margin: 0 auto;
     }
     .lewa-strona {
       width: 40%;
@@ -392,7 +389,7 @@
     }
     .prawa-strona-tlo img {
       width: auto;
-      height: 100%;
+      height: 60%;
       padding: 20px;
     }
 
