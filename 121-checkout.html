@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>121 Checkout | Stacja Dart</title>
+    <meta
+      name="description"
+      content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta."
+    />
+    <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <meta property="og:title" content="Stacja Dart" />
+    <meta
+      property="og:description"
+      content="Gry dartowe online, treningi, statystyki i społeczność graczy."
+    />
+    <meta property="og:image" content="./loga/logo.png" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./global.css" />
+    <link rel="stylesheet" href="./121-checkout-style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-left-section">
+        <a href="./index.html" class="header-logo-link">
+          <img src="./loga/logo.png" alt="Stacja Dart" />
+          <h1>STACJA DARTA</h1>
+        </a>
+      </div>
+
+      <div class="header-right-section">
+        <div class="wersja-komputer">
+          <a href="./gry.html">GRY</a>
+          <a href="./turnieje.html">TURNIEJE</a>
+          <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
+          <a href="./o-nas.html">O NAS</a>
+          <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+        </div>
+
+        <button
+          type="button"
+          id="mobilny-menu-btn"
+          class="mobilny-menu-btn"
+          aria-label="Otwórz menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+          <div class="mobilny-menu-content">
+            <button
+              type="button"
+              id="mobilny-menu-zamknij"
+              class="mobilny-menu-zamknij"
+            >
+              ✖
+            </button>
+            <ul class="mobilny-menu-links">
+              <li><a href="./gry.html">GRY</a></li>
+              <li><a href="./turnieje.html">TURNIEJE</a></li>
+              <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+              <li><a href="./o-nas.html">O NAS</a></li>
+              <li>
+                <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="menu">
+        <h1 id="tytul-strony">121 CHECKOUT</h1>
+      </div>
+
+      <form id="formularz-ustawien" onsubmit="event.preventDefault()">
+        <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+        <div class="sekcja-formularza">
+          <h3 class="sekcja-tytul">Uczestnicy</h3>
+          <label>
+            <h4>Ilość graczy:</h4>
+            <select id="ilosc-graczy" class="wspolny-input">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+
+          <div id="kontener-nazw-graczy"></div>
+        </div>
+
+        <div class="sekcja-formularza">
+          <h3 class="sekcja-tytul">Parametry gry</h3>
+          <div class="grid-2-kolumny">
+            <label>
+              <h4>max. liczba lotek</h4>
+              <input
+                type="number"
+                id="limit-lotek-wartosc"
+                class="wspolny-input"
+                min="3"
+                value="9"
+                step="3"
+              />
+            </label>
+            <label>
+              <h4>Liczba rund</h4>
+              <select id="liczba-rund" class="wspolny-input">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="infinity">Infinity</option>
+                <option value="Custom">Custom</option>
+              </select>
+              <div id="custom-rundy">
+                <label>
+                  <h4>Ilość rund</h4>
+                  <input
+                    type="number"
+                    id="custom-rundy-wartosc"
+                    class="wspolny-input"
+                    min="1"
+                    value="15"
+                  />
+                </label>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="przycisk-zacznij-grac">
+          <button type="button" id="zacznij-grac">Graj</button>
+        </div>
+      </form>
+
+      <div id="ekran-gry">
+        <div class="status-baru">
+          <button type="button" id="powrot-gra">✖</button>
+          <span id="wyswietl-kolejke">Lotki: 3</span>
+          <span id="cel-meczu">Do 3 wygranych</span>
+        </div>
+
+        <div class="kontener-graczy" id="kontener-graczy-w-grze"></div>
+
+        <div class="opcje-liczenia">
+          <div class="metoda-wprowadzania">
+            <button
+              type="button"
+              class="btn-metoda aktywna-metoda"
+              data-metoda="klawiatura"
+            >
+              Wpisz wynik (Suma)
+            </button>
+            <button type="button" class="btn-metoda" data-metoda="tarcza">
+              Klikaj lotki (Panel)
+            </button>
+          </div>
+
+          <div class="strefa-manualna">
+            <input type="number" id="wpisz-wynik" placeholder="0" min="0" />
+            <button type="button" class="btn-cyfra">1</button>
+            <button type="button" class="btn-cyfra">2</button>
+            <button type="button" class="btn-cyfra">3</button>
+            <button type="button" class="btn-cyfra">4</button>
+            <button type="button" class="btn-cyfra">5</button>
+            <button type="button" class="btn-cyfra">6</button>
+            <button type="button" class="btn-cyfra">7</button>
+            <button type="button" class="btn-cyfra">8</button>
+            <button type="button" class="btn-cyfra">9</button>
+            <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">
+              Cofnij rzut
+            </button>
+            <button type="button" class="btn-cyfra btn-zero">0</button>
+            <button type="button" id="cofnij-cyfre">⌫</button>
+            <button type="button" id="zatwierdz-rzut">Zatwierdź</button>
+          </div>
+
+          <div class="strefa-klikania">
+            <div class="zakladki-typow">
+              <button
+                type="button"
+                class="tab-btn aktywne-tab"
+                data-target="single"
+              >
+                Single
+              </button>
+              <button type="button" class="tab-btn" data-target="double">
+                Double
+              </button>
+              <button type="button" class="tab-btn" data-target="triple">
+                Triple
+              </button>
+            </div>
+
+            <div class="podglad-kolejki">
+              <div class="rzuty-lotek">
+                <span class="lotka-klik" id="lotka-1">-</span>
+                <span class="lotka-klik" id="lotka-2">-</span>
+                <span class="lotka-klik" id="lotka-3">-</span>
+              </div>
+              <div class="suma-kolejki">
+                Suma: <span id="suma-klik-wartosc">0</span>
+              </div>
+              <button type="button" id="cofnij-klik-lotke">⌫</button>
+            </div>
+
+            <div class="kontener-klawiszy single">
+              <button type="button" data-value="20">20</button
+              ><button type="button" data-value="19">19</button
+              ><button type="button" data-value="18">18</button
+              ><button type="button" data-value="17">17</button
+              ><button type="button" data-value="16">16</button
+              ><button type="button" data-value="15">15</button
+              ><button type="button" data-value="14">14</button
+              ><button type="button" data-value="13">13</button
+              ><button type="button" data-value="12">12</button
+              ><button type="button" data-value="11">11</button
+              ><button type="button" data-value="10">10</button
+              ><button type="button" data-value="9">9</button
+              ><button type="button" data-value="8">8</button
+              ><button type="button" data-value="7">7</button
+              ><button type="button" data-value="6">6</button
+              ><button type="button" data-value="5">5</button
+              ><button type="button" data-value="4">4</button
+              ><button type="button" data-value="3">3</button
+              ><button type="button" data-value="2">2</button
+              ><button type="button" data-value="1">1</button>
+              <button type="button" data-value="0">0</button>
+              <button type="button" data-value="25" class="bullseye-btn">
+                BULL (25)
+              </button>
+            </div>
+
+            <div class="kontener-klawiszy double">
+              <button type="button" data-value="40">D20</button
+              ><button type="button" data-value="38">D19</button
+              ><button type="button" data-value="36">D18</button
+              ><button type="button" data-value="34">D17</button
+              ><button type="button" data-value="32">D16</button
+              ><button type="button" data-value="30">D15</button
+              ><button type="button" data-value="28">D14</button
+              ><button type="button" data-value="26">D13</button
+              ><button type="button" data-value="24">D12</button
+              ><button type="button" data-value="22">D11</button
+              ><button type="button" data-value="20">D10</button
+              ><button type="button" data-value="18">D9</button
+              ><button type="button" data-value="16">D8</button
+              ><button type="button" data-value="14">D7</button
+              ><button type="button" data-value="12">D6</button
+              ><button type="button" data-value="10">D5</button
+              ><button type="button" data-value="8">D4</button
+              ><button type="button" data-value="6">D3</button
+              ><button type="button" data-value="4">D2</button
+              ><button type="button" data-value="2">D1</button
+              ><button type="button" data-value="50" class="bullseye-btn">
+                D-BULL (50)
+              </button>
+            </div>
+
+            <div class="kontener-klawiszy triple">
+              <button type="button" data-value="60">T20</button
+              ><button type="button" data-value="57">T19</button
+              ><button type="button" data-value="54">T18</button
+              ><button type="button" data-value="51">T17</button
+              ><button type="button" data-value="48">T16</button
+              ><button type="button" data-value="45">T15</button
+              ><button type="button" data-value="42">T14</button
+              ><button type="button" data-value="39">T13</button
+              ><button type="button" data-value="36">T12</button
+              ><button type="button" data-value="33">T11</button
+              ><button type="button" data-value="30">T10</button
+              ><button type="button" data-value="27">T9</button
+              ><button type="button" data-value="24">T8</button
+              ><button type="button" data-value="21">T7</button
+              ><button type="button" data-value="18">T6</button
+              ><button type="button" data-value="15">T5</button
+              ><button type="button" data-value="12">T4</button
+              ><button type="button" data-value="9">T3</button
+              ><button type="button" data-value="6">T2</button
+              ><button type="button" data-value="3">T1</button>
+            </div>
+            <div class="kontener-przycisków">
+              <button
+                type="button"
+                class="btn-cofnij"
+                id="btn-cofnij-rzut-panel"
+              >
+                Cofnij rzut
+              </button>
+              <button type="button" id="zatwierdz-klik-kolejke">
+                Zatwierdź
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ekran-wygranej">
+        <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+        <h1 id="wygrany">Wygrywa Gracz!</h1>
+        <div class="statystyki">
+          <table
+            class="tabela-statystyki"
+            id="tabela-statystyki-dynamiczna"
+          ></table>
+        </div>
+        <div id="przyciski-statystyki">
+          <button type="button" id="zacznij-kolejna">
+            ROZPOCZNIJ NOWĄ GRĘ
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // --- ELEMENTY FORMULARZA I GRY ---
+      const iloscGraczySelect = document.getElementById("ilosc-graczy");
+      const kontenerNazwGraczy = document.getElementById(
+        "kontener-nazw-graczy",
+      );
+      const limitLotekWartoscInput = document.getElementById(
+        "limit-lotek-wartosc",
+      );
+      const liczbaRundSelect = document.getElementById("liczba-rund");
+      const customRundyOption = document.getElementById("custom-rundy");
+      const customRundyWartoscInput = document.getElementById(
+        "custom-rundy-wartosc",
+      );
+      const przyciskStart = document.getElementById("zacznij-grac");
+
+      const formularzUstawien = document.getElementById("formularz-ustawien");
+      const tytulStrony = document.getElementById("tytul-strony");
+      const powrotDoGier = document.getElementById("powrot-do-gier");
+
+      const ekranGry = document.getElementById("ekran-gry");
+      const celMeczuTekst = document.getElementById("cel-meczu");
+      const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
+      const kontenerGraczyWGrze = document.getElementById(
+        "kontener-graczy-w-grze",
+      );
+
+      // --- METODY WPROWADZANIA I ZAKŁADKI TARCZY ---
+      const btnMetody = document.querySelectorAll(".btn-metoda");
+      const strefaManualna = document.querySelector(".strefa-manualna");
+      const strefaKlikania = document.querySelector(".strefa-klikania");
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      const konteneryKlawiszy = document.querySelectorAll(".kontener-klawiszy");
+
+      // --- KLAWIATURA MANUALNA ---
+      const wpiszWynikInput = document.getElementById("wpisz-wynik");
+      const przyciskiCyfr = document.querySelectorAll(".btn-cyfra");
+      const przyciskCofnijCyfre = document.getElementById("cofnij-cyfre");
+      const przyciskZatwierdz = document.getElementById("zatwierdz-rzut");
+      const powrotGra = document.getElementById("powrot-gra");
+
+      // --- STREFA KLIKANIA LOTKI ---
+      const lotkiKlik = [
+        document.getElementById("lotka-1"),
+        document.getElementById("lotka-2"),
+        document.getElementById("lotka-3"),
+      ];
+      const sumaKlikWartosc = document.getElementById("suma-klik-wartosc");
+      const btnCofnijKlikLotke = document.getElementById("cofnij-klik-lotke");
+      const btnZatwierdzKlikKolejke = document.getElementById(
+        "zatwierdz-klik-kolejke",
+      );
+      let aktualnaKolejkaLotek = [];
+
+      // --- EKRAN KOŃCOWY ---
+      const ekranWygranej = document.querySelector(".ekran-wygranej");
+      const wygranyTekst = document.getElementById("wygrany");
+      const tabelaStatystykiDynamiczna = document.getElementById(
+        "tabela-statystyki-dynamiczna",
+      );
+      const przyciskKolejnaGra = document.getElementById("zacznij-kolejna");
+
+      // --- ZMIENNE GRY ---
+      let gracze = [];
+      let liczbaGraczy = 2;
+      let limitLotek = 9;
+      let doceloweRundy = 10;
+      let obecnaRunda = 1;
+      let aktualnyGraczIndex = 0;
+
+      let obecnyCel = 121;
+      let wspolnePunkty = obecnyCel;
+      let wspolnePunktyPrzedKolejka = obecnyCel;
+      let wspolneOddaneLotki = 0;
+      let wygraneRundyDruzyny = 0;
+      let historiaStanuGry = [];
+
+      function sprawdzRozmiar() {
+        if (window.innerWidth < 1500) {
+          wpiszWynikInput.disabled = true;
+        } else {
+          wpiszWynikInput.disabled = false;
+        }
+      }
+      sprawdzRozmiar();
+      window.addEventListener("resize", sprawdzRozmiar);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const przyciskiCofnij = document.querySelectorAll(
+          "#btn-cofnij-rzut, #btn-cofnij-rzut-panel",
+        );
+        przyciskiCofnij.forEach((przycisk) => {
+          przycisk.addEventListener("click", cofnijRzut);
+        });
+      });
+
+      function zapiszStanGry() {
+        historiaStanuGry.push({
+          gracze: JSON.parse(JSON.stringify(gracze)),
+          aktualnyGraczIndex: aktualnyGraczIndex,
+          wspolnePunkty: wspolnePunkty,
+          wspolnePunktyPrzedKolejka: wspolnePunktyPrzedKolejka,
+          wspolneOddaneLotki: wspolneOddaneLotki,
+          wygraneRundyDruzyny: wygraneRundyDruzyny,
+          obecnaRunda: obecnaRunda,
+          obecnyCel: obecnyCel,
+        });
+      }
+
+      function cofnijRzut() {
+        if (historiaStanuGry.length === 0) {
+          alert("Brak rzutów do cofnięcia!");
+          return;
+        }
+
+        const poprzedniStan = historiaStanuGry.pop();
+        gracze = poprzedniStan.gracze;
+        aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
+        wspolnePunkty = poprzedniStan.wspolnePunkty;
+        wspolnePunktyPrzedKolejka = poprzedniStan.wspolnePunktyPrzedKolejka;
+        wspolneOddaneLotki = poprzedniStan.wspolneOddaneLotki;
+        wygraneRundyDruzyny = poprzedniStan.wygraneRundyDruzyny;
+        obecnaRunda = poprzedniStan.obecnaRunda;
+        obecnyCel = poprzedniStan.obecnyCel;
+
+        aktualizujStatusMeczu();
+        aktualizujUI();
+
+        aktualnaKolejkaLotek = [];
+        aktualizujPodgladKlikow();
+        wpiszWynikInput.value = "";
+        wpiszWynikInput.focus();
+      }
+
+      btnMetody.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btnMetody.forEach((b) => b.classList.remove("aktywna-metoda"));
+          btn.classList.add("aktywna-metoda");
+
+          if (btn.dataset.metoda === "klawiatura") {
+            strefaManualna.style.display = "grid";
+            strefaKlikania.style.display = "none";
+          } else {
+            strefaManualna.style.display = "none";
+            strefaKlikania.style.display = "flex";
+          }
+        });
+      });
+
+      tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tabBtns.forEach((b) => b.classList.remove("aktywne-tab"));
+          btn.classList.add("aktywne-tab");
+
+          const target = btn.dataset.target;
+          konteneryKlawiszy.forEach((kontener) => {
+            if (kontener.classList.contains(target)) {
+              kontener.style.display = "grid";
+            } else {
+              kontener.style.display = "none";
+            }
+          });
+        });
+      });
+
+      konteneryKlawiszy.forEach((kontener) => {
+        kontener.querySelectorAll("button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (aktualnaKolejkaLotek.length < 3) {
+              const val = parseInt(btn.dataset.value);
+              const label = btn.textContent;
+              aktualnaKolejkaLotek.push({ wartosc: val, tekst: label });
+              aktualizujPodgladKlikow();
+            }
+          });
+        });
+      });
+
+      function aktualizujPodgladKlikow() {
+        let suma = 0;
+        for (let i = 0; i < 3; i++) {
+          if (aktualnaKolejkaLotek[i]) {
+            lotkiKlik[i].textContent = aktualnaKolejkaLotek[i].tekst;
+            suma += aktualnaKolejkaLotek[i].wartosc;
+          } else {
+            lotkiKlik[i].textContent = "-";
+          }
+        }
+        sumaKlikWartosc.textContent = suma;
+      }
+
+      btnCofnijKlikLotke.addEventListener("click", () => {
+        if (aktualnaKolejkaLotek.length > 0) {
+          aktualnaKolejkaLotek.pop();
+          aktualizujPodgladKlikow();
+        }
+      });
+
+      btnZatwierdzKlikKolejke.addEventListener("click", () => {
+        if (aktualnaKolejkaLotek.length === 0) return;
+        let sumaRzutu = aktualnaKolejkaLotek.reduce(
+          (acc, curr) => acc + curr.wartosc,
+          0,
+        );
+        przetwarzajWynik(sumaRzutu);
+        aktualnaKolejkaLotek = [];
+        aktualizujPodgladKlikow();
+      });
+
+      function generujPolaGraczy() {
+        const ilosc = parseInt(iloscGraczySelect.value);
+        kontenerNazwGraczy.innerHTML = "";
+        for (let i = 1; i <= ilosc; i++) {
+          kontenerNazwGraczy.innerHTML += `
+                        <label>
+                            <h4>Gracz ${i}:</h4>
+                            <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}">
+                        </label>
+                    `;
+        }
+      }
+
+      iloscGraczySelect.addEventListener("change", generujPolaGraczy);
+      generujPolaGraczy();
+
+      liczbaRundSelect.addEventListener("change", () => {
+        if (liczbaRundSelect.value === "Custom") {
+          customRundyOption.style.display = "block";
+        } else {
+          customRundyOption.style.display = "none";
+        }
+      });
+
+      przyciskStart.addEventListener("click", () => {
+        liczbaGraczy = parseInt(iloscGraczySelect.value);
+        const inputyNazw = document.querySelectorAll(".input-nazwa-gracza");
+
+        limitLotek = parseInt(limitLotekWartoscInput.value) || 9;
+
+        let wybraneRundy = liczbaRundSelect.value;
+        if (wybraneRundy === "Custom") {
+          doceloweRundy = parseInt(customRundyWartoscInput.value) || 15;
+        } else if (wybraneRundy === "infinity") {
+          doceloweRundy = Infinity;
+        } else {
+          doceloweRundy = parseInt(wybraneRundy);
+        }
+
+        gracze = [];
+        obecnyCel = 121;
+        wspolnePunkty = obecnyCel;
+        wspolnePunktyPrzedKolejka = obecnyCel;
+        wspolneOddaneLotki = 0;
+        wygraneRundyDruzyny = 0;
+        obecnaRunda = 1;
+        aktualnyGraczIndex = 0;
+        aktualnaKolejkaLotek = [];
+
+        for (let i = 0; i < liczbaGraczy; i++) {
+          let nazwa = inputyNazw[i].value.trim();
+          if (nazwa === "") nazwa = `Gracz ${i + 1}`;
+
+          gracze.push({
+            id: i,
+            nazwa: nazwa,
+            sumaPunktow: 0,
+            iloscRzutowSuma: 0,
+            iloscCheckoutow: 0,
+          });
+        }
+
+        kontenerGraczyWGrze.innerHTML = `
+                    <div class="karta-gracza aktywne-tury karta-druzyny">
+                        <div class="lista-nickow">
+                            ${gracze
+                              .map(
+                                (g, i) => `
+                                <div id="etykieta-gracza-${i}" class="etykieta-gracza">
+                                    ${g.nazwa}
+                                </div>
+                            `,
+                              )
+                              .join("")}
+                        </div>
+                        <div class="wynik-główny" id="punkty-druzyny">${wspolnePunkty}</div>
+                    </div>
+                `;
+
+        aktualizujStatusMeczu();
+        aktualizujPodgladKlikow();
+
+        formularzUstawien.style.display = "none";
+        tytulStrony.style.display = "none";
+        powrotDoGier.style.display = "none";
+        ekranGry.style.display = "block";
+        ekranWygranej.style.display = "none";
+
+        aktualizujUI();
+      });
+
+      przyciskiCyfr.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (wpiszWynikInput.value.length < 3) {
+            wpiszWynikInput.value += btn.textContent;
+          }
+        });
+      });
+
+      przyciskCofnijCyfre.addEventListener("click", () => {
+        wpiszWynikInput.value = wpiszWynikInput.value.slice(0, -1);
+      });
+
+      powrotGra.addEventListener("click", () => {
+        ekranGry.style.display = "none";
+        formularzUstawien.style.display = "flex";
+        tytulStrony.style.display = "block";
+        powrotDoGier.style.display = "block";
+      });
+
+      przyciskZatwierdz.addEventListener("click", () => {
+        let rzuconePunkty = parseInt(
+          wpiszWynikInput.value === "" ? 0 : wpiszWynikInput.value,
+        );
+
+        if (isNaN(rzuconePunkty) || rzuconePunkty < 0 || rzuconePunkty > 180) {
+          alert("Wpisz poprawny wynik z zakresu 0-180.");
+          wpiszWynikInput.value = "";
+          return;
+        }
+
+        przetwarzajWynik(rzuconePunkty);
+        wpiszWynikInput.value = "";
+      });
+
+      function przetwarzajWynik(rzuconePunkty) {
+        zapiszStanGry();
+        let gracz = gracze[aktualnyGraczIndex];
+        let punktyZostaly = wspolnePunkty - rzuconePunkty;
+
+        if (punktyZostaly < 0 || punktyZostaly === 1) {
+          wspolnePunkty = wspolnePunktyPrzedKolejka;
+          wspolneOddaneLotki += 3;
+          aktualizujStatystyki(gracz, 0);
+          alert("Fura! Punkty przywrócone.");
+          zmienGracza(true);
+        } else if (punktyZostaly === 0) {
+          wspolnePunkty = 0;
+          wygraneRundyDruzyny++;
+          aktualizujStatystyki(gracz, rzuconePunkty);
+          alert(
+            `Drużyna zamyka ${obecnyCel}! (Rzut kończący: ${gracz.nazwa}) - Wygrana runda ${obecnaRunda}! Następny cel idzie w górę.`,
+          );
+          obecnyCel++;
+          gracz.iloscCheckoutow++;
+          zakonczRunde();
+        } else {
+          wspolnePunkty = punktyZostaly;
+          wspolneOddaneLotki += 3;
+          aktualizujStatystyki(gracz, rzuconePunkty);
+          zmienGracza(false);
+        }
+      }
+
+      function zmienGracza(fura = false) {
+        if (wspolneOddaneLotki >= limitLotek) {
+          alert(
+            `Drużyna nie zamknęła ${obecnyCel} w ${limitLotek} lotkach. Koniec rundy ${obecnaRunda}. Następny cel idzie w dół.`,
+          );
+          obecnyCel--;
+          zakonczRunde();
+          return;
+        }
+
+        aktualnyGraczIndex++;
+        if (aktualnyGraczIndex >= liczbaGraczy) {
+          aktualnyGraczIndex = 0;
+        }
+
+        wspolnePunktyPrzedKolejka = wspolnePunkty;
+        aktualizujUI();
+      }
+
+      function zakonczRunde() {
+        if (doceloweRundy !== Infinity && obecnaRunda >= doceloweRundy) {
+          zakonczGre();
+          return;
+        }
+
+        obecnaRunda++;
+        wspolnePunkty = obecnyCel;
+        wspolnePunktyPrzedKolejka = obecnyCel;
+        wspolneOddaneLotki = 0;
+
+        aktualnyGraczIndex = (obecnaRunda - 1) % liczbaGraczy;
+
+        aktualizujStatusMeczu();
+        aktualizujUI();
+      }
+
+      function aktualizujStatystyki(gracz, zdobytePunkty) {
+        gracz.sumaPunktow += zdobytePunkty;
+        gracz.iloscRzutowSuma += 3;
+      }
+
+      function aktualizujStatusMeczu() {
+        const celTekst =
+          doceloweRundy === Infinity
+            ? "Grasz do woli"
+            : `Runda ${obecnaRunda} z ${doceloweRundy}`;
+        celMeczuTekst.textContent = celTekst;
+      }
+
+      function aktualizujUI() {
+        wyswietlKolejke.textContent = `Lotki: ${wspolneOddaneLotki}/${limitLotek}`;
+        document.getElementById("punkty-druzyny").textContent = wspolnePunkty;
+
+        gracze.forEach((g, index) => {
+          const etykieta = document.getElementById(`etykieta-gracza-${index}`);
+          if (etykieta) {
+            etykieta.classList.toggle("aktywny", index === aktualnyGraczIndex);
+          }
+        });
+
+        wpiszWynikInput.focus();
+      }
+
+      function zakonczGre() {
+        ekranGry.style.display = "none";
+        ekranWygranej.style.display = "flex";
+
+        wygranyTekst.innerText = `Koniec Gry! \n Końcowy cel: ${obecnyCel}.`;
+
+        tabelaStatystykiDynamiczna.innerHTML = `
+                    <tr>
+                        <th>Gracz</th>
+                        <th>Średnia 3-lotkowa</th>
+                        <th>Ilość checkoutów</th>
+                    </tr>
+                `;
+
+        let posortowaniGracze = [...gracze].sort((a, b) => {
+          let sredniaA =
+            a.iloscRzutowSuma > 0 ? a.sumaPunktow / (a.iloscRzutowSuma / 3) : 0;
+          let sredniaB =
+            b.iloscRzutowSuma > 0 ? b.sumaPunktow / (b.iloscRzutowSuma / 3) : 0;
+          return sredniaB - sredniaA;
+        });
+
+        posortowaniGracze.forEach((g) => {
+          let srednia =
+            g.iloscRzutowSuma > 0
+              ? (g.sumaPunktow / (g.iloscRzutowSuma / 3)).toFixed(2)
+              : "0.00";
+          tabelaStatystykiDynamiczna.innerHTML += `
+                        <tr>
+                            <td>${g.nazwa}</td>
+                            <td>${srednia}</td>
+                            <td>${g.iloscCheckoutow}</td>
+                        </tr>
+                    `;
+        });
+      }
+
+      przyciskKolejnaGra.addEventListener("click", () => {
+        ekranWygranej.style.display = "none";
+        formularzUstawien.style.display = "flex";
+        tytulStrony.style.display = "block";
+        powrotDoGier.style.display = "block";
+      });
+
+      wpiszWynikInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          przyciskZatwierdz.click();
+        }
+      });
+    </script>
+    <script src="./menu.js" defer></script>
+  </body>
+</html>

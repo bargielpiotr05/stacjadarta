@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doubles | Stacja Dart</title>
+    <meta
+      name="description"
+      content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta."
+    />
+    <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <meta property="og:title" content="Stacja Dart" />
+    <meta
+      property="og:description"
+      content="Gry dartowe online, treningi, statystyki i społeczność graczy."
+    />
+    <meta property="og:image" content="./loga/logo.png" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./global.css" />
+    <link rel="stylesheet" href="./doubles-style.css" />
+
+    <!-- Dodane automatyczne poprawki UI - wzorowane na klasyczna.html -->
+  </head>
+  <body>
+    <header>
+      <div class="header-left-section">
+        <a href="./index.html" class="header-logo-link">
+          <img src="./loga/logo.png" alt="Stacja Dart" />
+          <h1>STACJA DARTA</h1>
+        </a>
+      </div>
+
+      <div class="header-right-section">
+        <div class="wersja-komputer">
+          <a href="./gry.html">GRY</a>
+          <a href="./turnieje.html">TURNIEJE</a>
+          <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
+          <a href="./o-nas.html">O NAS</a>
+          <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+        </div>
+
+        <!-- Hamburger Menu -->
+        <button
+          type="button"
+          id="mobilny-menu-btn"
+          class="mobilny-menu-btn"
+          aria-label="Otwórz menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <!-- Overlay Menu -->
+        <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+          <div class="mobilny-menu-content">
+            <button
+              type="button"
+              id="mobilny-menu-zamknij"
+              class="mobilny-menu-zamknij"
+            >
+              ✖
+            </button>
+            <ul class="mobilny-menu-links">
+              <li><a href="./gry.html">GRY</a></li>
+              <li><a href="./turnieje.html">TURNIEJE</a></li>
+              <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+              <li><a href="./o-nas.html">O NAS</a></li>
+              <li>
+                <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="menu">
+        <h1 id="tytul-strony">DOUBLES</h1>
+      </div>
+      <div class="formularz-ustawien" id="sekcja-ustawien">
+        <form id="form-konfiguracja" onsubmit="event.preventDefault()">
+          <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+          <div class="sekcja-formularza">
+            <h3 class="sekcja-tytul">UCZESTNICY</h3>
+            <div class="wiersz-odstep">
+              <label>
+                <h4>ILOŚĆ GRACZY:</h4>
+                <select id="ilosc-graczy" class="wspolny-input">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </label>
+            </div>
+            <div id="kontener-nazw-graczy"></div>
+          </div>
+          <div class="sekcja-formularza">
+            <h3 class="sekcja-tytul">PARAMETRY GRY</h3>
+            <div class="grid-2-col">
+              <h4>Opcje Gry:</h4>
+              <div class="kontener-gier">
+                <label class="checkbox-label">
+                  <h4>% na doublach</h4>
+                  <input
+                    type="checkbox"
+                    name="procent-doubles"
+                    id="procent-doubles"
+                    checked
+                  />
+                </label>
+                <label class="checkbox-label">
+                  <h4>Do trafionego</h4>
+                  <input
+                    type="checkbox"
+                    name="do-trafionego"
+                    id="do-trafionego"
+                  />
+                </label>
+              </div>
+            </div>
+            <div class="grid-2-col">
+              <h4>Tryb Gry:</h4>
+              <div class="kontener-trybow">
+                <label class="checkbox-label">
+                  <h4>Low to high</h4>
+                  <input
+                    type="checkbox"
+                    name="low-to-high"
+                    id="low-to-high"
+                    checked
+                  />
+                </label>
+                <label class="checkbox-label">
+                  <h4>High to low</h4>
+                  <input type="checkbox" name="high-to-low" id="high-to-low" />
+                </label>
+                <label class="checkbox-label">
+                  <h4>Random</h4>
+                  <input type="checkbox" name="random" id="random" />
+                </label>
+              </div>
+            </div>
+
+            <div class="sekcja-custom">
+              <div class="opcja-z-checkboxem">
+                <label class="label-checkbox">
+                  <input type="checkbox" id="wlacz-custom" />
+                  <h4>CUSTOM</h4>
+                </label>
+                <div class="sekcja-custom-srodek">
+                  <label>
+                    <h4>OD</h4>
+                    <input
+                      type="number"
+                      name="od"
+                      id="od"
+                      class="wspolny-input"
+                      min="1"
+                      max="20"
+                      placeholder="np. 1"
+                      disabled
+                    />
+                  </label>
+                  <label>
+                    <h4>DO</h4>
+                    <input
+                      type="number"
+                      name="do"
+                      id="do"
+                      class="wspolny-input"
+                      min="1"
+                      max="20"
+                      placeholder="np. 10"
+                      disabled
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="przycisk-zacznij-grac">
+            <button type="button" id="zacznij-grac">ZACZNIJ GRAĆ</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="ekran-gry" style="display: none">
+        <div class="status-baru">
+          <button type="button" id="powrot-gra">✖</button>
+          <span id="wyswietl-kolejke">Gracz: 1</span>
+          <span id="cel-meczu">Doubles</span>
+        </div>
+
+        <div id="kontener-kart-graczy"></div>
+
+        <div class="strefa-sterowania">
+          <div class="aktualny-cel-tytul">Aktualny Cel:</div>
+          <div id="cel-sektora">D1</div>
+
+          <div id="kontener-rzutov-tury">
+            <div class="slot-rzutu" id="slot-rzut-1">-</div>
+            <div class="slot-rzutu" id="slot-rzut-2">-</div>
+            <div class="slot-rzutu" id="slot-rzut-3">-</div>
+          </div>
+
+          <div class="strefa-sterowania-przyciski">
+            <div class="strefa-sterowania-gora">
+              <button type="button" id="btn-trafiono-double" class="btn-action">
+                Trafiono Double
+              </button>
+              <button type="button" id="btn-pudlo" class="btn-action">
+                Miss
+              </button>
+            </div>
+            <button type="button" id="btn-cofnij" class="btn-action">
+              Cofnij rzut
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ekran wygranej -->
+      <div class="ekran-wygranej" id="ekran-wynikowy" style="display: none">
+        <a id="powrot-do-gier-wygrana" href="./gry.html"><strong>✖</strong></a>
+        <h1 id="zwyciezca-mecz">Wygrywa Gracz!</h1>
+
+        <!-- Kontener zakładek -->
+        <div class="zakladki-kontener">
+          <button
+            type="button"
+            class="zakladka-btn aktywna"
+            id="btn-zakladka-ogolne"
+          >
+            Ogólne
+          </button>
+          <button type="button" class="zakladka-btn" id="btn-zakladka-liczby">
+            Liczby (%)
+          </button>
+        </div>
+
+        <!-- ZAKŁADKA 1: OGÓLNE -->
+        <div id="zakladka-ogolne" class="zakladka-tresc aktywna">
+          <div class="statystyki">
+            <table class="tabela-statystyki" id="tabela-koncowa-wynikow">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ZAKŁADKA 2: LICZBY -->
+        <div id="zakladka-liczby" class="zakladka-tresc">
+          <div class="tabela-scroll">
+            <table class="tabela-statystyki" id="tabela-statystyki-liczby">
+              <thead>
+                <tr id="naglowek-tabeli-liczby"></tr>
+              </thead>
+              <tbody id="tabela-liczby-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="przyciski-statystyki">
+          <button type="button" id="btn-restart" class="btn-action">
+            ZAGRAJ PONOWNIE
+          </button>
+        </div>
+      </div>
+    </main>
+    <script>
+      const inputIloscGraczy = document.getElementById("ilosc-graczy");
+      const kontenerNazwGraczy = document.getElementById(
+        "kontener-nazw-graczy",
+      );
+      const chkLowToHigh = document.getElementById("low-to-high");
+      const chkHighToLow = document.getElementById("high-to-low");
+      const chkRandom = document.getElementById("random");
+      const inputOd = document.getElementById("od");
+      const inputDo = document.getElementById("do");
+      const procentDoubles = document.getElementById("procent-doubles");
+      const doTrafionego = document.getElementById("do-trafionego");
+      const btnZacznijGrac = document.getElementById("zacznij-grac");
+
+      const sekcjaUstawien = document.getElementById("sekcja-ustawien");
+      const tytulStrony = document.getElementById("tytul-strony");
+      const ekranGry = document.getElementById("ekran-gry");
+      const kontenerKartGraczy = document.getElementById(
+        "kontener-kart-graczy",
+      );
+      const ekranWynikowy = document.getElementById("ekran-wynikowy");
+      const wlaczCustom = document.getElementById("wlacz-custom");
+
+      const txtCelSektora = document.getElementById("cel-sektora");
+      const btnTrafionoDouble = document.getElementById("btn-trafiono-double");
+      const btnPudlo = document.getElementById("btn-pudlo");
+      const btnCofnij = document.getElementById("btn-cofnij");
+
+      const txtZwyciezcaMecz = document.getElementById("zwyciezca-mecz");
+      const tabelaKoncowa = document.getElementById("tabela-koncowa-wynikow");
+      const btnRestart = document.getElementById("btn-restart");
+      const btnPowrotDoGier = document.getElementById("powrot-do-gier");
+      const btnPowrotDoFormularza = document.getElementById("powrot-gra");
+      const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
+
+      const btnZakladkaOgolne = document.getElementById("btn-zakladka-ogolne");
+      const btnZakladkaLiczby = document.getElementById("btn-zakladka-liczby");
+      const zakladkaOgolne = document.getElementById("zakladka-ogolne");
+      const zakladkaLiczby = document.getElementById("zakladka-liczby");
+      const naglowekTabeliLiczby = document.getElementById(
+        "naglowek-tabeli-liczby",
+      );
+      const tabelaLiczbyBody = document.getElementById("tabela-liczby-body");
+
+      // Obsługa zakładek
+      btnZakladkaOgolne.addEventListener("click", () => {
+        btnZakladkaOgolne.classList.add("aktywna");
+        btnZakladkaLiczby.classList.remove("aktywna");
+        zakladkaOgolne.classList.add("aktywna");
+        zakladkaLiczby.classList.remove("aktywna");
+      });
+
+      btnZakladkaLiczby.addEventListener("click", () => {
+        btnZakladkaLiczby.classList.add("aktywna");
+        btnZakladkaOgolne.classList.remove("aktywna");
+        zakladkaLiczby.classList.add("aktywna");
+        zakladkaOgolne.classList.remove("aktywna");
+      });
+
+      let listaGraczy = [];
+      let indeksAktualnegoGracza = 0;
+      let sekwencjaCeli = [];
+      let numerRzutuWTurze = 1;
+      let wynikiAktualnejTury = [null, null, null];
+      let historiaRuchow = [];
+      let trybDoTrafionego = false;
+
+      wlaczCustom.addEventListener("change", () => {
+        inputOd.disabled = !wlaczCustom.checked;
+        inputDo.disabled = !wlaczCustom.checked;
+        if (wlaczCustom.checked) {
+          inputOd.focus();
+          chkLowToHigh.checked = false;
+          chkHighToLow.checked = false;
+          chkRandom.checked = false;
+        }
+      });
+
+      btnPowrotDoFormularza.addEventListener("click", () => {
+        if (
+          confirm(
+            "Czy na pewno chcesz przerwać bieżącą grę i wrócić do ustawień?",
+          )
+        ) {
+          sekcjaUstawien.style.display = "block";
+          btnPowrotDoGier.style.display = "block";
+          ekranGry.style.display = "none";
+        }
+      });
+
+      chkLowToHigh.addEventListener("change", () => {
+        if (chkLowToHigh.checked) {
+          chkHighToLow.checked = false;
+          chkRandom.checked = false;
+          wlaczCustom.checked = false;
+          inputOd.disabled = true;
+          inputDo.disabled = true;
+          inputOd.value = "";
+          inputDo.value = "";
+        }
+      });
+
+      chkHighToLow.addEventListener("change", () => {
+        if (chkHighToLow.checked) {
+          chkLowToHigh.checked = false;
+          chkRandom.checked = false;
+          wlaczCustom.checked = false;
+          inputOd.disabled = true;
+          inputDo.disabled = true;
+          inputOd.value = "";
+          inputDo.value = "";
+        }
+      });
+
+      chkRandom.addEventListener("change", () => {
+        if (chkRandom.checked) {
+          chkLowToHigh.checked = false;
+          chkHighToLow.checked = false;
+          wlaczCustom.checked = false;
+          inputOd.disabled = true;
+          inputDo.disabled = true;
+          inputOd.value = "";
+          inputDo.value = "";
+        }
+      });
+
+      procentDoubles.addEventListener("change", () => {
+        if (procentDoubles.checked) {
+          doTrafionego.checked = false;
+        }
+      });
+      doTrafionego.addEventListener("change", () => {
+        if (doTrafionego.checked) {
+          procentDoubles.checked = false;
+        }
+      });
+
+      const wyczyscCheckboxyDlaCustom = () => {
+        if (inputOd.value !== "" || inputDo.value !== "") {
+          wlaczCustom.checked = true;
+          inputOd.disabled = false;
+          inputDo.disabled = false;
+          chkLowToHigh.checked = false;
+          chkHighToLow.checked = false;
+          chkRandom.checked = false;
+        }
+      };
+      inputOd.addEventListener("input", wyczyscCheckboxyDlaCustom);
+      inputDo.addEventListener("input", wyczyscCheckboxyDlaCustom);
+
+      function generujPolaGraczy() {
+        const ilosc = parseInt(inputIloscGraczy.value);
+        kontenerNazwGraczy.innerHTML = "";
+        for (let i = 1; i <= ilosc; i++) {
+          kontenerNazwGraczy.innerHTML += `
+                    <label>
+                        <h4>Gracz ${i}:</h4>
+                        <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" />
+                    </label>
+                `;
+        }
+        kontenerNazwGraczy.style.gridTemplateColumns =
+          ilosc === 1 ? "1fr" : "1fr 1fr";
+      }
+      inputIloscGraczy.addEventListener("change", generujPolaGraczy);
+      generujPolaGraczy();
+
+      btnZacznijGrac.addEventListener("click", () => {
+        tytulStrony.style.display = "none";
+        if (!procentDoubles.checked && !doTrafionego.checked) {
+          procentDoubles.checked = true;
+        }
+        trybDoTrafionego = doTrafionego.checked;
+
+        sekwencjaCeli = [];
+        if (wlaczCustom.checked) {
+          let odVal = parseInt(inputOd.value);
+          let doVal = parseInt(inputDo.value);
+
+          if (
+            isNaN(odVal) ||
+            isNaN(doVal) ||
+            odVal < 1 ||
+            odVal > 20 ||
+            doVal < 1 ||
+            doVal > 20
+          ) {
+            alert("Proszę podać prawidłowy zakres CUSTOM (Od 1 do 20).");
+            return;
+          }
+
+          if (odVal <= doVal) {
+            for (let i = odVal; i <= doVal; i++) sekwencjaCeli.push(i);
+          } else {
+            for (let i = odVal; i >= doVal; i--) sekwencjaCeli.push(i);
+          }
+        } else if (chkHighToLow.checked) {
+          for (let i = 20; i >= 1; i--) sekwencjaCeli.push(i);
+        } else if (chkRandom.checked) {
+          let tempArr = [];
+          for (let i = 1; i <= 20; i++) tempArr.push(i);
+          sekwencjaCeli = tempArr.sort(() => Math.random() - 0.5);
+        } else {
+          for (let i = 1; i <= 20; i++) sekwencjaCeli.push(i);
+        }
+
+        listaGraczy = [];
+        document.querySelectorAll(".input-nazwa-gracza").forEach((inp, idx) => {
+          let nazwa = inp.value.trim();
+          if (nazwa === "") nazwa = `Gracz ${idx + 1}`;
+
+          listaGraczy.push({
+            id: idx,
+            nazwa: nazwa,
+            punkty: 0,
+            iloscTrafien: 0,
+            calkowitaIloscRzutow: 0,
+            indeksCelu: 0,
+            zakonczyl: false,
+            rzutyNaLiczbe: {},
+          });
+        });
+
+        indeksAktualnegoGracza = 0;
+        numerRzutuWTurze = 1;
+        wynikiAktualnejTury = [null, null, null];
+        historiaRuchow = [];
+
+        budujKartyGraczy();
+
+        sekcjaUstawien.style.display = "none";
+        ekranGry.style.display = "block";
+        btnPowrotDoGier.style.display = "none";
+        aktualizujWidokGry();
+      });
+
+      function budujKartyGraczy() {
+        kontenerKartGraczy.innerHTML = "";
+        listaGraczy.forEach((g) => {
+          const karta = document.createElement("div");
+          karta.className = "karta-rozgrywki";
+          karta.id = `karta-gracz-${g.id}`;
+          karta.innerHTML = `
+                    <h2>${g.nazwa}</h2>
+                    <div class="aktualny-cel-tytul">Aktualny Cel:</div>
+                    <div id="karta-cel-gracz-${g.id}" style="font-size: 28px; font-weight: bold; color: var(--secondary-color); margin: 5px 0;">D1</div>
+                    
+                `;
+          kontenerKartGraczy.appendChild(karta);
+        });
+      }
+
+      function aktualizujWidokGry() {
+        const gracz = listaGraczy[indeksAktualnegoGracza];
+        const aktualnyCelNum = sekwencjaCeli[gracz.indeksCelu];
+
+        txtCelSektora.textContent = gracz.zakonczyl
+          ? "KONIEC"
+          : `D${aktualnyCelNum}`;
+        wyswietlKolejke.textContent = `Lotki: ${numerRzutuWTurze}/3`;
+
+        for (let i = 1; i <= 3; i++) {
+          const slot = document.getElementById(`slot-rzut-${i}`);
+          slot.className = "slot-rzutu";
+          let wynik = wynikiAktualnejTury[i - 1];
+          if (wynik === "trafiony") {
+            slot.classList.add("trafiony");
+            slot.textContent = `✓`;
+          } else if (wynik === "pudlo") {
+            slot.classList.add("pudlo");
+            slot.textContent = `✗`;
+          } else {
+            if (i === numerRzutuWTurze) {
+              slot.classList.add("aktywny");
+            }
+            slot.textContent = ` -`;
+          }
+        }
+
+        listaGraczy.forEach((g) => {
+          const karta = document.getElementById(`karta-gracz-${g.id}`);
+          const celElement = document.getElementById(`karta-cel-gracz-${g.id}`);
+          const wynikElement = document.getElementById(`wynik-gracz-${g.id}`);
+
+          if (g.id === indeksAktualnegoGracza) {
+            karta.classList.add("aktywne-tury");
+          } else {
+            karta.classList.remove("aktywne-tury");
+          }
+
+          if (g.zakonczyl) {
+            celElement.textContent = "KONIEC";
+          } else {
+            celElement.textContent = `D${sekwencjaCeli[g.indeksCelu]}`;
+          }
+        });
+
+        btnCofnij.disabled = historiaRuchow.length === 0;
+        btnCofnij.style.opacity = historiaRuchow.length === 0 ? "0.4" : "1";
+        btnCofnij.style.cursor =
+          historiaRuchow.length === 0 ? "not-allowed" : "pointer";
+      }
+
+      function zarejestrujRzut(trafienie) {
+        const gracz = listaGraczy[indeksAktualnegoGracza];
+
+        historiaRuchow.push({
+          listaGraczy: JSON.parse(JSON.stringify(listaGraczy)),
+          indeksAktualnegoGracza: indeksAktualnegoGracza,
+          numerRzutuWTurze: numerRzutuWTurze,
+          wynikiAktualnejTury: [...wynikiAktualnejTury],
+        });
+
+        gracz.calkowitaIloscRzutow++;
+        let celWartosc = sekwencjaCeli[gracz.indeksCelu];
+
+        if (!gracz.rzutyNaLiczbe[celWartosc]) {
+          gracz.rzutyNaLiczbe[celWartosc] = { rzuty: 0, trafienia: 0 };
+        }
+        gracz.rzutyNaLiczbe[celWartosc].rzuty++;
+        if (trafienie) {
+          gracz.rzutyNaLiczbe[celWartosc].trafienia++;
+        }
+
+        if (trafienie) {
+          gracz.punkty += celWartosc * 2;
+          gracz.iloscTrafien++;
+          wynikiAktualnejTury[numerRzutuWTurze - 1] = "trafiony";
+
+          if (trybDoTrafionego) {
+            gracz.indeksCelu++;
+            if (gracz.indeksCelu >= sekwencjaCeli.length) {
+              gracz.zakonczyl = true;
+              zakonczGre(gracz);
+              return;
+            }
+          }
+        } else {
+          wynikiAktualnejTury[numerRzutuWTurze - 1] = "pudlo";
+        }
+
+        numerRzutuWTurze++;
+
+        if (numerRzutuWTurze > 3) {
+          if (!trybDoTrafionego) {
+            gracz.indeksCelu++;
+            if (gracz.indeksCelu >= sekwencjaCeli.length) {
+              gracz.zakonczyl = true;
+            }
+          }
+
+          numerRzutuWTurze = 1;
+          wynikiAktualnejTury = [null, null, null];
+
+          if (listaGraczy.every((g) => g.zakonczyl)) {
+            let zwyciezca = listaGraczy.reduce(
+              (max, g) => (g.punkty > max.punkty ? g : max),
+              listaGraczy[0],
+            );
+            zakonczGre(zwyciezca);
+            return;
+          }
+
+          let sprawdzenia = 0;
+          do {
+            indeksAktualnegoGracza =
+              (indeksAktualnegoGracza + 1) % listaGraczy.length;
+            sprawdzenia++;
+          } while (
+            listaGraczy[indeksAktualnegoGracza].zakonczyl &&
+            sprawdzenia < listaGraczy.length
+          );
+        }
+
+        aktualizujWidokGry();
+      }
+
+      btnTrafionoDouble.addEventListener("click", () => {
+        zarejestrujRzut(true);
+      });
+
+      btnPudlo.addEventListener("click", () => {
+        zarejestrujRzut(false);
+      });
+
+      btnCofnij.addEventListener("click", () => {
+        if (historiaRuchow.length === 0) return;
+        const poprzedniStan = historiaRuchow.pop();
+        listaGraczy = poprzedniStan.listaGraczy;
+        indeksAktualnegoGracza = poprzedniStan.indeksAktualnegoGracza;
+        numerRzutuWTurze = poprzedniStan.numerRzutuWTurze;
+        wynikiAktualnejTury = poprzedniStan.wynikiAktualnejTury;
+        aktualizujWidokGry();
+      });
+
+      function zakonczGre(zwyciezca) {
+        ekranGry.style.display = "none";
+        ekranWynikowy.style.display = "flex";
+
+        // Dodanie obsługi drugiego zamykającego "X" wewnątrz ekranu wygranej - tak jak w Klasyczna
+        const btnPowrotDoGierWygrana = document.getElementById(
+          "powrot-do-gier-wygrana",
+        );
+        if (btnPowrotDoGierWygrana) {
+          btnPowrotDoGierWygrana.style.display = "block";
+        }
+
+        txtZwyciezcaMecz.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
+
+        let htmlHead = `<tr><th>Statystyka</th>`;
+        listaGraczy.forEach((g) => {
+          htmlHead += `<th>${g.nazwa}</th>`;
+        });
+        htmlHead += `</tr>`;
+        tabelaKoncowa.querySelector("thead").innerHTML = htmlHead;
+
+        let htmlBody = `
+                
+                <tr>
+                    <td><strong>Trafione double</strong></td>
+                    ${listaGraczy.map((g) => `<td>${g.iloscTrafien}</td>`).join("")}
+                </tr>
+                <tr>
+                    <td><strong>Całkowita ilość rzutów</strong></td>
+                    ${listaGraczy.map((g) => `<td>${g.calkowitaIloscRzutow}</td>`).join("")}
+                <tr>
+                    <td><strong>Skuteczność</strong></td>
+                    ${listaGraczy
+                      .map((g) => {
+                        let proc =
+                          g.calkowitaIloscRzutow > 0
+                            ? (
+                                (g.iloscTrafien / g.calkowitaIloscRzutow) *
+                                100
+                              ).toFixed(1)
+                            : 0;
+                        return `<td>${proc}%</td>`;
+                      })
+                      .join("")}
+                </tr>
+            `;
+        tabelaKoncowa.querySelector("tbody").innerHTML = htmlBody;
+
+        naglowekTabeliLiczby.innerHTML = `<th>CEL</th>`;
+        listaGraczy.forEach((g) => {
+          naglowekTabeliLiczby.innerHTML += `<th>${g.nazwa}</th>`;
+        });
+
+        tabelaLiczbyBody.innerHTML = "";
+        sekwencjaCeli.forEach((cel) => {
+          let wierszHTML = `<tr><td><strong>D${cel}</strong></td>`;
+
+          listaGraczy.forEach((g) => {
+            let stat = g.rzutyNaLiczbe[cel];
+            if (stat && stat.rzuty > 0) {
+              let procent = ((stat.trafienia / stat.rzuty) * 100).toFixed(1);
+              wierszHTML += `<td><span style="color:var(--secondary-color)">${procent}%</span> <br><small>(${stat.trafienia}/${stat.rzuty})</small></td>`;
+            } else {
+              wierszHTML += `<td style="color:#666;">-</td>`;
+            }
+          });
+
+          wierszHTML += `</tr>`;
+          tabelaLiczbyBody.innerHTML += wierszHTML;
+        });
+
+        btnZakladkaOgolne.click();
+      }
+
+      btnRestart.addEventListener("click", () => {
+        ekranWynikowy.style.display = "none";
+        sekcjaUstawien.style.display = "block";
+        btnPowrotDoGier.style.display = "block";
+        generujPolaGraczy();
+      });
+    </script>
+    <script src="./menu.js" defer></script>
+  </body>
+</html>

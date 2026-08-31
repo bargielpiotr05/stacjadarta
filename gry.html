@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Gry | Stacja Darta</title>
+        <meta name="description" content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <meta property="og:title" content="Stacja Dart" />
+        <meta property="og:description" content="Gry dartowe online, treningi, statystyki i społeczność graczy." />
+        <meta property="og:image" content="./loga/logo.png" />
+        <meta property="og:type" content="website" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./gry-style.css">
+    </head>
+    <body>
+        <header>
+            <div class="header-left-section">
+                <a href="./index.html" style="display: flex; align-items: center; text-decoration: none; color: white">
+                    <img src="./loga/logo.png" alt="Stacja Dart" style="height: 100px" />
+                    <h1 style="margin-left: 20px; border-bottom: 2px solid var(--secondary-color)">STACJA DARTA</h1>
+                </a>
+            </div>
+
+            <div class="header-right-section">
+                <div class="wersja-komputer">
+                    <a href="./gry.html">GRY</a>
+                    <a href="./turnieje.html">TURNIEJE</a>
+                    <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
+                    <a href="./o-nas.html">O NAS</a>
+                    <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+                </div>
+
+                <!-- Hamburger Menu -->
+                <button type="button" id="mobilny-menu-btn" class="mobilny-menu-btn" aria-label="Otwórz menu"><span></span><span></span><span></span></button>
+
+                <!-- Overlay Menu -->
+                <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+                    <div class="mobilny-menu-content">
+                        <button type="button" id="mobilny-menu-zamknij" class="mobilny-menu-zamknij">✖</button>
+                        <ul class="mobilny-menu-links">
+                            <li><a href="./gry.html" >GRY</a></li>
+                            <li><a href="./turnieje.html">TURNIEJE</a></li>
+                            <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+                            <li><a href="./o-nas.html">O NAS</a></li>
+                            <li><a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Reszta widoku gier -->
+            <div class="wybierz-gre">
+                <h1>Wybierz grę:</h1>
+                <ul>
+                    <li id="menu-klasyczna" class="active"><button>KLASYCZNA</button></li>
+                    <li id="menu-shanghai"><button>SHANGHAI</button></li>
+                    <li id="menu-around"><button>AROUND THE WORLD</button></li>
+                    <li id="menu-high"><button>121 CHECKOUT</button></li>
+                    <li id="menu-doubles"><button>DOUBLES</button></li>
+                </ul>
+            </div>
+
+            <div class="right-games" id="kontener-gier">
+                <div id="game-klasyczna" class="game active">
+                    <h1>KLASYCZNA</h1>
+                    <img src="./gry/klasyczna.webp" alt="klasyczna" />
+                    <p>
+                        Klasyczna gra w darta 501 polega na jak najszybszym zredukowaniu początkowej puli punktów dokładnie do zera.<br /><br />
+                        Zawodnicy rzucają naprzemiennie seriami po trzy lotki, a zdobyte wartości są na bieżąco odejmowane od ich aktualnego stanu konta. <br /><br />Aby wygrać, gracz musi zakończyć leg precyzyjnym rzutem w pole podwójne (double) lub w sam środek tarczy (bullseye).
+                    </p>
+                    <div class="bloki">
+                        <div class="ilosc-graczy">
+                            <img src="./gra-info/ilosc-graczy.png" alt="ilość graczy" />
+                            <p><strong>1-4</strong><br />GRACZY</p>
+                        </div>
+                        <div class="lotki-na-runde">
+                            <img src="./gra-info/lotki-na-runde.png" alt="lotki na runde" />
+                            <p><strong>3 LOTKI</strong><br />NA RUNDĘ</p>
+                        </div>
+                        <div class="ilosc-punktow">
+                            <img src="./gra-info/ilosc-punktow.png" alt="ilość punktów" />
+                            <p><strong>501</strong><br />PUNKTÓW</p>
+                        </div>
+                    </div>
+                    <a href="./klasyczna.html" class="btn-play">Zagraj</a>
+                </div>
+
+                <div id="game-shanghai" class="game">
+                    <h1>SHANGHAI</h1>
+                    <img src="./gry/shanghai.webp" alt="shanghai" />
+                    <p>
+                        W tym trybie zawodnicy w każdej rundzie rzucają wyłącznie w numer odpowiadający numerowi danej kolejki i sumują zdobyte punkty.<br /><br />
+                        Gra może jednak zakończyć się natychmiast, jeśli ktoś w jednym podejściu trafi singiel, debel i trip aktualnej wartości.<br /><br />
+                        To spektakularne zagranie nosi nazwę „Szanghaj” i gwarantuje automatyczne zwycięstwo w całym meczu, niezależnie od wcześniejszego wyniku.
+                    </p>
+                    <div class="bloki">
+                        <div class="ilosc-graczy">
+                            <img src="./gra-info/ilosc-graczy.png" alt="ilość graczy" />
+                            <p><strong>1-4</strong><br />GRACZY</p>
+                        </div>
+                        <div class="lotki-na-runde">
+                            <img src="./gra-info/lotki-na-runde.png" alt="lotki na runde" />
+                            <p><strong>3 LOTKI</strong><br />NA RUNDĘ</p>
+                        </div>
+                        <div class="ilosc-punktow">
+                            <img src="./gra-info/ilosc-punktow.png" alt="ilość punktów" />
+                            <p><strong>20</strong><br />RUND</p>
+                        </div>
+                    </div>
+                    <a href="./shanghai.html" class="btn-play">Zagraj</a>
+                </div>
+
+                <div id="game-high" class="game">
+                    <h1>121 CHECKOUT</h1>
+                    <img src="./gry/high-numbers.webp" alt="high-numbers" />
+                    <p>
+                        To najprostszy wariant darta, w którym gracze startują z zerem na koncie i rywalizują przez określoną liczbę rund.<br /><br />
+                        Każdy rzuca trzema lotkami w dowolne miejsca na tarczy, celując w te sektory, które przynoszą najwyższe wartości.<br /><br />
+                        Kto po zakończeniu ostatniej kolejki zgromadzi największą sumaryczną liczbę punktów, ten wygrywa całą rozgrywkę.
+                    </p>
+                    <div class="bloki">
+                        <div class="ilosc-graczy">
+                            <img src="./gra-info/ilosc-graczy.png" alt="ilość graczy" />
+                            <p><strong>1-4</strong><br />GRACZY</p>
+                        </div>
+                        <div class="lotki-na-runde">
+                            <img src="./gra-info/lotki-na-runde.png" alt="lotki na runde" />
+                            <p><strong>3 LOTKI</strong><br />NA RUNDĘ</p>
+                        </div>
+                        <div class="ilosc-punktow">
+                            <img src="./gra-info/ilosc-punktow.png" alt="ilość punktów" />
+                            <p><strong>121</strong><br />PUNKTÓW</p>
+                        </div>
+                    </div>
+                    <a href="./121-checkout.html" class="btn-play">Zagraj</a>
+                </div>
+
+                <div id="game-around" class="game">
+                    <h1>AROUND THE WORLD</h1>
+                    <img src="./gry/around-the-world.webp" alt="around the world" />
+                    <p>
+                        Ta popularna odmiana polega na sekwencyjnym trafianiu we wszystkie sektory tarczy od numeru 1 do 20.<br /><br />
+                        Dopóki gracz nie zaliczy aktualnej liczby, nie może przejść do kolejnego, co świetnie trenuje powtarzalność rzutów.<br /><br />
+                        Całą rywalizację wygrywa ta osoba, która jako pierwsza przejdzie przez cały zegar i zakończy grę celnym trafieniem w środek tarczy.
+                    </p>
+                    <div class="bloki">
+                        <div class="ilosc-graczy">
+                            <img src="./gra-info/ilosc-graczy.png" alt="ilość graczy" />
+                            <p><strong>1-4</strong><br />GRACZY</p>
+                        </div>
+                        <div class="lotki-na-runde">
+                            <img src="./gra-info/lotki-na-runde.png" alt="lotki na runde" />
+                            <p><strong>3 LOTKI</strong><br />NA RUNDĘ</p>
+                        </div>
+                        <div class="ilosc-punktow">
+                            <img src="./gra-info/ilosc-punktow.png" alt="ilość punktów" />
+                            <p><strong>KAŻDY</strong><br />SEKTOR</p>
+                        </div>
+                    </div>
+                    <a href="./around-the-world.html" class="btn-play">Zagraj</a>
+                </div>
+
+                <div id="game-doubles" class="game">
+                    <h1>DOUBLES</h1>
+                    <img src="./gry/doubles.webp" alt="doubles" />
+                    <p>
+                        Ten format skupia się na zewnętrznym pierścieniu tarczy i służy jako doskonały trening kluczowych zamknięć meczowych. <br /><br />W wersji jednoosobowej polega na trafianiu wyłącznie pól podwójnych od 1 do 20 w kolejności chronologicznej.<br /><br />
+                        Nazwa ta odnosi się również do klasycznej gry drużynowej, gdzie dwuosobowe zespoły rzucają naprzemiennie i dzielą jeden wspólny licznik punktów.
+                    </p>
+                    <div class="bloki">
+                        <div class="ilosc-graczy">
+                            <img src="./gra-info/ilosc-graczy.png" alt="ilość graczy" />
+                            <p><strong>1-4</strong><br />GRACZY</p>
+                        </div>
+                        <div class="lotki-na-runde">
+                            <img src="./gra-info/lotki-na-runde.png" alt="lotki na runde" />
+                            <p><strong>3 LOTKI</strong><br />NA RUNDĘ</p>
+                        </div>
+                        <div class="ilosc-punktow">
+                            <img src="./gra-info/ilosc-punktow.png" alt="ilość punktów" />
+                            <p><strong>OD D1</strong><br />DO D20</p>
+                        </div>
+                    </div>
+                    <a href="./doubles.html" class="btn-play">Zagraj</a>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            const menuItems = {
+                "menu-klasyczna": document.getElementById("game-klasyczna"),
+                "menu-shanghai": document.getElementById("game-shanghai"),
+                "menu-around": document.getElementById("game-around"),
+                "menu-high": document.getElementById("game-high"),
+                "menu-doubles": document.getElementById("game-doubles"),
+            };
+
+            const kontenerGier = document.getElementById("kontener-gier");
+
+            Object.keys(menuItems).forEach((menuId) => {
+                const buttonElement = document.getElementById(menuId);
+
+                buttonElement.addEventListener("click", () => {
+                    // Usuń klasę active ze wszystkich elementów
+                    Object.keys(menuItems).forEach((id) => {
+                        document.getElementById(id).classList.remove("active");
+                        menuItems[id].classList.remove("active");
+                    });
+
+                    // Dodaj klasę active do wybranego elementu
+                    buttonElement.classList.add("active");
+                    menuItems[menuId].classList.add("active");
+
+                    // Automatyczne scrollowanie dla urządzeń mobilnych
+                    if (window.innerWidth <= 1050) {
+                        // Dodajemy mały offset (np. -20px), żeby nie ucinało tekstu u góry
+                        const yOffset = -20; 
+                        const elementPosition = kontenerGier.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.scrollY + yOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: "smooth"
+                        });
+                    }
+                });
+            });
+        </script>
+        <script src="./menu.js" defer></script>
+    </body>
+</html>

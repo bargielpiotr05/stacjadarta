@@ -1,0 +1,820 @@
+html {
+  scroll-behavior: smooth;
+}
+
+/* --- HEADER --- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0px 20px;
+  position: relative;
+  z-index: 10;
+}
+header a {
+  color: white;
+  text-decoration: none;
+}
+.header-left-section {
+  display: flex;
+  align-items: center;
+}
+.header-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+}
+.header-left-section h1 {
+  text-align: center;
+  margin-left: 20px;
+  border-bottom: 2px solid var(--secondary-color);
+}
+.header-left-section img {
+  height: 100px;
+}
+.header-right-section a {
+  color: white;
+  text-decoration: none;
+  margin-left: 10px;
+  font-size: 18px;
+  padding: 5px 10px;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+  font-weight: bolder;
+}
+.header-right-section a:first-child {
+  text-decoration: underline;
+}
+.join-us {
+  border: 2px solid var(--secondary-color);
+  border-radius: 50px;
+  font-weight: bold;
+  background-color: var(--secondary-color);
+  padding: 10px 30px;
+  color: white !important;
+}
+.join-us:hover {
+  background-color: var(--secondary-color-hover);
+  color: var(--primary-color) !important;
+  text-decoration: none !important;
+}
+.header-right-section a:hover {
+  text-decoration: underline;
+  padding: 5px 10px;
+  border-radius: 50px;
+}
+
+/* --- MOBILNE MENU --- */
+.mobilny-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 32px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1100;
+}
+.mobilny-menu-btn span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: var(--secondary-color);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+.mobilny-menu-overlay {
+  visibility: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(9, 7, 35, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 2500;
+  opacity: 0;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+.mobilny-menu-overlay.otwarte {
+  visibility: visible;
+  opacity: 1;
+}
+.mobilny-menu-content {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 60%;
+  max-width: 350px;
+  height: 100vh;
+  background-color: var(--primary-color);
+  border-left: 2px solid var(--primary-color-border);
+  border-radius: 20px 0 0 20px;
+  padding: 80px 0 0 0;
+  box-sizing: border-box;
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow-y: auto;
+}
+.mobilny-menu-overlay.otwarte .mobilny-menu-content {
+  right: 0;
+}
+.mobilny-menu-zamknij {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  background: var(--light-grey);
+  border: 1px solid var(--primary-color-border);
+  color: white;
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+.mobilny-menu-zamknij:hover {
+  background-color: var(--color-red-btn-hover);
+  border-color: var(--color-red-btn-border-hover);
+  color: var(--color-red-text-hover);
+}
+.mobilny-menu-links {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mobilny-menu-links li a {
+  display: block;
+  color: white;
+  text-decoration: none !important;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: var(--primary-color-lighter);
+  border-bottom: 3px solid var(--primary-color);
+  transition: all 0.3s;
+  margin: 0;
+  border-radius: 0;
+}
+.mobilny-menu-links li a:hover {
+  background-color: rgba(64, 218, 64, 0.15);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+.mobilny-menu-links li a.join-us {
+  margin-top: 10px;
+  background-color: var(--secondary-color);
+  color: var(--primary-color) !important;
+  border: none;
+  width: 80%;
+}
+.mobilny-menu-links li:has(a.join-us) {
+  background-color: var(--primary-color);
+  color: var(--primary-color) !important;
+  border: none;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+/* --- MAIN --- */
+main {
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 120px);
+  padding: 40px 20px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 0;
+}
+
+main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("./tla/background5.jpg") no-repeat center center;
+  background-size: cover; 
+  filter: opacity(0.4) blur(4px) brightness(0.3); 
+  border-radius: 20px; 
+  z-index: -1;
+  pointer-events: none;
+}
+.menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto 30px auto;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+/* Przycisk powrotu do gier na wzór Klasycznej */
+#powrot-do-gier {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  margin: 0;
+  z-index: 10;
+  text-decoration: none;
+  font-size: 18px;
+  color: white;
+  background-color: var(--light-grey);
+  border: 1px solid var(--primary-color-border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  transition:
+    background-color 0.3s,
+    border-color 0.3s;
+  white-space: nowrap;
+}
+.zakladka-btn-karta {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+#formularz-ustawien,
+.ekran-wygranej,
+#sekcja-ustawien {
+  position: relative !important;
+}
+#powrot-do-gier:hover {
+  background-color: var(--light-grey);
+  border-color: var(--primary-color-border-hover);
+}
+
+#tytul-strony {
+  display: inline-block;
+  margin: 0;
+  font-size: 40px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-align: center;
+  border-bottom: 3px solid var(--secondary-color);
+  padding-bottom: 10px;
+}
+
+/* --- FORMULARZ --- */
+.formularz-ustawien {
+  width: 100%;
+  max-width: 750px;
+  margin: 0 auto;
+}
+form {
+  background-color: var(--primary-form-color);
+  backdrop-filter: blur(12px);
+  padding: 50px;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--primary-color-border);
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.sekcja-formularza {
+  background: var(--primary-form-inside-color);
+  border: 1px solid var(--primary-form-inside-border-color);
+  border-radius: 14px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sekcja-tytul {
+  color: var(--secondary-color);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--primary-form-inside-border-color);
+}
+.wiersz-odstep {
+  margin-bottom: 15px;
+}
+.grid-2-col {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+.kontener-trybow,
+.kontener-gier {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+form h4 {
+  margin: 0;
+  font-size: 12px;
+  color: #b4b4d8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.wspolny-input {
+  background-color: var(--primary-color-lighter);
+  border: 2px solid var(--primary-color-border);
+  color: white;
+  padding: 12px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+  text-align: center;
+}
+.wspolny-input:focus {
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 10px rgba(64, 218, 64, 0.2);
+}
+.wspolny-input option {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.sekcja-custom-srodek {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+.opcja-z-checkboxem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: var(--primary-form-inside-color);
+  border: 1px solid var(--primary-form-inside-border-color);
+  padding: 15px;
+  border-radius: 8px;
+}
+.opcja-z-checkboxem input[type="number"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.label-checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #b4b4d8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.label-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--secondary-color);
+  cursor: pointer;
+}
+.checkbox-label {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border-bottom: 2px solid var(--primary-color-border);
+  cursor: pointer;
+  user-select: none;
+  transition: 0.3s ease;
+  background-color: var(--primary-color-lighter);
+}
+.checkbox-label h4 {
+  font-size: 14px;
+}
+.checkbox-label input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--secondary-color);
+}
+.checkbox-label:hover {
+  transform: scale(1.01);
+}
+
+.sekcja-custom {
+  margin-top: 10px;
+  border: 2px solid #332d70;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+#kontener-nazw-graczy {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding-bottom: 20px;
+}
+
+.przycisk-zacznij-grac {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+#zacznij-grac,
+.btn-action {
+  background-color: var(--secondary-color);
+  border: none;
+  color: var(--primary-color);
+  padding: 14px 20px;
+  font-size: 18px;
+  font-weight: bolder;
+  text-transform: uppercase;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 10px;
+  max-width: 300px;
+  transition:
+    background-color 0.3s,
+    transform 0.2s,
+    box-shadow 0.3s;
+  width: 100%;
+}
+#zacznij-grac:hover,
+.btn-action:hover {
+  background-color: var(--secondary-color-hover);
+}
+#zacznij-grac:active {
+  transform: scale(0.98);
+}
+
+/* --- EKRAN GRY --- */
+#ekran-gry {
+  width: 100%;
+  max-width: 1200px;
+  text-align: center;
+}
+.status-baru {
+  font-size: 20px;
+  font-weight: bold;
+  color: #cccccc;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--primary-color-lighter);
+  border: 2px solid var(--primary-color-border);
+  border-radius: 15px;
+  padding: 10px 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+#wyswietl-kolejke {
+  margin-left: 40px;
+}
+#powrot-gra {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid #332d70;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 10px;
+  padding: 6px 14px;
+}
+#powrot-gra:hover {
+  background-color: rgba(255, 77, 77, 0.2);
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+}
+
+#kontener-kart-graczy {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+  width: 100%;
+}
+.karta-rozgrywki {
+  background-color: var(--primary-color);
+  border: 2px solid #332d70;
+  border-radius: 15px;
+  padding: 25px;
+  box-sizing: border-box;
+  flex: 1 1 calc(33.333% - 20px);
+  min-width: 250px;
+  max-width: 360px;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+.karta-rozgrywki.aktywne-tury {
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 25px rgba(64, 218, 64, 0.25);
+  opacity: 1;
+  transform: scale(1.02);
+}
+.karta-rozgrywki h2 {
+  font-size: 26px;
+  margin: 0 0 5px 0;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.karta-rozgrywki .wynik-gracza {
+  font-size: 18px;
+  color: #ccc;
+}
+
+/* STREFA STEROWANIA */
+.strefa-sterowania {
+  background-color: var(--primary-color);
+  border: 2px solid #332d70;
+  border-radius: 15px;
+  padding: 25px;
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+.aktualny-cel-tytul {
+  color: #888;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+#cel-sektora {
+  font-size: 64px;
+  font-weight: bold;
+  color: var(--secondary-color);
+  margin: 5px 0;
+  text-shadow: 0 0 15px rgba(64, 218, 64, 0.4);
+}
+#kontener-rzutov-tury {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+.slot-rzutu {
+  background-color: var(--primary-color-lighter);
+  border: 1px solid var(--primary-form-inside-border-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #b4b4d8;
+  min-width: 70px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.slot-rzutu.aktywny {
+  border-color: var(--secondary-color);
+  color: white;
+  background-color: rgba(64, 218, 64, 0.15);
+}
+.slot-rzutu.trafiony {
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+  background-color: rgba(64, 218, 64, 0.25);
+}
+.slot-rzutu.pudlo {
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+  background-color: rgba(255, 77, 77, 0.15);
+}
+
+.strefa-sterowania-przyciski {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+.strefa-sterowania-gora {
+  display: flex;
+  gap: 10px;
+}
+#btn-trafiono-double {
+  flex: 2;
+  margin: 0;
+  font-size: 18px;
+  padding: 14px;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+#btn-pudlo {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  padding: 14px;
+  background-color: var(--color-red-btn-hover);
+  color: white;
+  border: 1px solid var(--color-red-btn-border-hover);
+}
+#btn-cofnij {
+  max-width: none;
+  margin: 0;
+  font-size: 16px;
+  padding: 10px;
+  background-color: rgba(255, 77, 77, 0.1);
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+}
+
+/* --- EKRAN WYGRANEJ --- */
+.ekran-wygranej {
+  background-color: var(--primary-color);
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+#zwyciezca-mecz {
+  color: var(--secondary-color);
+  font-size: 36px;
+  margin-top: 0;
+}
+.statystyki {
+  margin: 25px 0;
+  overflow-x: auto;
+  width: 100%;
+}
+.tabela-statystyki {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  color: white;
+}
+.tabela-statystyki th {
+  background-color: var(--primary-color-lighter);
+  color: var(--secondary-color);
+  padding: 12px 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: 1px solid #332d70;
+  text-align: center;
+}
+.tabela-statystyki th:first-child {
+  text-align: left;
+}
+.tabela-statystyki td {
+  padding: 12px 8px;
+  border: 1px solid #332d70;
+  text-align: center;
+}
+.tabela-statystyki td:first-child {
+  text-align: left;
+}
+.tabela-statystyki tr:nth-child(even) {
+  background-color: var(--primary-color-more-lighter);
+}
+#przyciski-statystyki {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+/* --- ZAKŁADKI STATYSTYK --- */
+.zakladki-kontener {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+  margin-top: 10px;
+}
+.zakladka-btn {
+  background-color: var(--primary-color-lighter);
+  color: white;
+  border: 2px solid #332d70;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+.zakladka-btn:hover {
+  border-color: var(--secondary-color);
+}
+.zakladka-btn.aktywna {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  border-color: var(--secondary-color);
+}
+.zakladka-tresc {
+  display: none;
+  width: 100%;
+}
+.zakladka-tresc.aktywna {
+  display: block;
+}
+.tabela-scroll {
+  max-height: 45vh;
+  overflow-y: auto;
+  border: 1px solid #332d70;
+  border-radius: 10px;
+  margin-bottom: 25px;
+}
+.tabela-scroll table {
+  margin: 0;
+  border: none;
+}
+
+/* MEDIA QUERIES */
+@media (max-width: 1050px) {
+  .header-left-section h1 {
+    display: none;
+  }
+  .header-right-section .wersja-komputer {
+    display: none;
+  }
+  .mobilny-menu-btn {
+    display: flex;
+  }
+  main {
+    padding: 0;
+    margin: 0;
+  }
+  .menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
+    margin-top: 20px;
+  }
+  #powrot-do-gier {
+    position: relative;
+    left: -180px;
+    max-width: 14px;
+  }
+  #tytul-strony {
+    margin: 0;
+  }
+  .formularz-ustawien {
+    width: 100%;
+  }
+  form {
+    padding: 20px;
+  }
+  .kontener-trybow {
+    flex-direction: column;
+  }
+  .kontener-gier {
+    flex-direction: column;
+  }
+  #wyswietl-kolejke {
+    margin-left: 50px;
+  }
+  .ekran-wygranej {
+    padding: 10px;
+  }
+  .zakladka-btn-karta {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

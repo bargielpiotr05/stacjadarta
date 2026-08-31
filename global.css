@@ -1,0 +1,37 @@
+:root {
+    --primary-color: #090723;
+    --primary-color-lighter: #16124f;
+    --primary-color-more-lighter: #130c78;
+    --primary-color-border: #332d70;
+    --primary-color-border-hover: #4a3f9e;
+    
+    /* Ujednolicone tła formularzy (Glassmorphism) */
+    --primary-form-color: rgba(10, 8, 38, 0.88);
+    --primary-form-inside-color: rgba(18, 14, 55, 0.5);
+    --primary-form-inside-border-color: rgba(51, 45, 112, 0.5);
+    
+    /* Przyciski czerwone (Cofnij, Usuń) */
+    --color-red-btn: rgba(255, 77, 77, 0.1);
+    --color-red-btn-hover: rgba(255, 77, 77, 0.2);
+    --color-red-btn-border: #ff4d4d;
+    --color-red-btn-border-hover: #ff4d4d;
+    --color-red-text: #ff4d4d;
+    --color-red-text-hover: #ff4d4d;
+    
+    /* Przyciski zielone (Akcja, Sukces) */
+    --secondary-color: rgb(64, 218, 64);
+    --secondary-color-hover: rgb(105, 255, 105);
+    
+    --light-grey: rgba(255, 255, 255, 0.05);
+}
+
+body {
+    font-family: "Inter", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--primary-color);
+    color: white;
+}
+*{
+    touch-action: manipulation;
+}

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Społeczność | Stacja Dart</title>
+        <meta name="description" content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <meta property="og:title" content="Stacja Dart" />
+        <meta property="og:description" content="Gry dartowe online, treningi, statystyki i społeczność graczy." />
+        <meta property="og:image" content="./loga/logo.png" />
+        <meta property="og:type" content="website" />
+    </head>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        :root {
+            --primary-color: #090723;
+            --primary-color-lighter: #16124f;
+            --primary-color-more-lighter: #130c78;
+            --primary-color-border: #332d70;
+            --primary-color-border-hover: #4a3f9e;
+            --primary-form-color: rgba(9, 7, 35, 0.92);
+            --primary-form-inside-color: rgba(22, 18, 79, 0.4);
+            --primary-form-inside-border-color: rgba(51, 45, 112, 0.5);
+            --color-red-btn-hover: rgba(255, 77, 77, 0.2);
+            --color-red-btn-border-hover: #ff4d4d;
+            --color-red-text-hover: #ff4d4d;
+            --color-red-btn: rgba(255, 77, 77, 0.1);
+            --color-red-btn-border: #ff4d4d;
+            --color-red-text: #ff4d4d;
+            --secondary-color: rgb(64, 218, 64);
+            --secondary-color-hover: rgb(105, 255, 105);
+            --light-grey: rgba(255, 255, 255, 0.05);
+        }
+        body {
+            font-family: "Inter", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-color);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0px 20px;
+        }
+        header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-left-section {
+            display: flex;
+            align-items: center;
+        }
+        .header-left-section h1 {
+            text-align: center;
+            margin-left: 20px;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        .header-left-section img {
+            height: 100px;
+        }
+
+        .header-right-section a {
+            color: white;
+            text-decoration: none;
+            margin-left: 10px;
+            font-size: 18px;
+            padding: 5px 10px;
+            transition:
+                background-color 0.3s,
+                color 0.3s;
+            font-weight: bolder;
+        }
+        .join-us {
+            border: 2px solid var(--secondary-color);
+            border-radius: 50px;
+            font-weight: bold;
+            background-color: var(--secondary-color);
+            padding: 10px 30px;
+            color: white !important;
+        }
+        .join-us:hover {
+            background-color: var(--secondary-color-hover);
+            color: var(--primary-color) !important;
+            text-decoration: none !important;
+        }
+
+        .header-right-section a:hover {
+            text-decoration: underline;
+            padding: 5px 10px;
+            border-radius: 50px;
+        }
+
+        /* --- NOWE MOBILNE MENU (WYSUWANE Z BOKU) --- */
+        .mobilny-menu-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 32px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 1100;
+        }
+
+        .mobilny-menu-btn span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background-color: var(--secondary-color);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .mobilny-menu-overlay {
+            visibility: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(9, 7, 35, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 2500;
+            opacity: 0;
+            transition:
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+        }
+
+        .mobilny-menu-overlay.otwarte {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .mobilny-menu-content {
+            position: fixed;
+            top: 0;
+            right: -100%; /* Startuje schowane poza ekranem */
+            width: 60%;
+            max-width: 350px;
+            height: 100vh;
+            background-color: var(--primary-color);
+            border-left: 2px solid var(--primary-color-border);
+            border-radius: 20px 0 0 20px;
+            padding: 80px 0 0 0;
+            box-sizing: border-box;
+            box-shadow: -15px 0 40px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow-y: auto;
+        }
+
+        .mobilny-menu-overlay.otwarte .mobilny-menu-content {
+            right: 0; /* Wysuwa się płynnie do zera */
+        }
+
+        .mobilny-menu-zamknij {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: var(--light-grey);
+            border: 1px solid var(--primary-color-border);
+            color: white;
+            font-size: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .mobilny-menu-zamknij:hover {
+            background-color: var(--color-red-btn-hover);
+            border-color: var(--color-red-btn-border-hover);
+            color: var(--color-red-text-hover);
+        }
+
+        .mobilny-menu-links {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mobilny-menu-links li a {
+            display: block;
+            color: white;
+            text-decoration: none !important;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: var(--primary-color-lighter);
+            border-bottom: 3px solid var(--primary-color);
+            transition: all 0.3s;
+            margin: 0;
+        }
+
+        .mobilny-menu-links li a:hover {
+            background-color: rgba(64, 218, 64, 0.15);
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .mobilny-menu-links li a.join-us {
+            margin-top: 10px;
+            background-color: var(--secondary-color);
+            color: var(--primary-color) !important;
+            border: none;
+
+            width: 80%;
+        }
+        .mobilny-menu-links li:has(a.join-us) {
+            background-color: var(--primary-color);
+            color: var(--primary-color) !important;
+            border: none;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+        }
+
+        .mobilny-menu-links li a.join-us:hover {
+            background-color: var(--secondary-color-hover);
+            color: var(--primary-color) !important;
+        }
+
+        /* --- SEKCJA MAIN --- */
+        main {
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 120px);
+            padding: 40px 20px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        main::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("./tla/background3.jpg") no-repeat center center;
+            background-size: cover;
+            filter: opacity(0.4) blur(4px);
+            transform: scale(1.05);
+            z-index: 1;
+        }
+
+        main > * {
+            position: relative;
+            z-index: 2;
+        }
+        @media (max-width: 1050px) {
+            .header-left-section h1 {
+                display: none;
+            }
+            .header-right-section .wersja-komputer {
+                display: none;
+            }
+            .mobilny-menu-btn {
+                display: flex;
+            }
+        }
+    </style>
+    <body>
+        <header>
+            <a href="./index.html">
+                <div class="header-left-section">
+                    <img src="./loga/logo.png" alt="Stacja Dart" />
+                    <h1>STACJA DARTA</h1>
+                </div>
+            </a>
+            <div class="header-right-section">
+                <!-- Wersja komputerowa (widoczna na dużych ekranach) -->
+                <div class="wersja-komputer">
+                    <a href="./gry.html">GRY</a>
+                    <a href="./turnieje.html">TURNIEJE</a>
+                    <a href="./spolecznosc.html" style="text-decoration: underline">SPOŁECZNOŚĆ</a>
+                    <a href="./o-nas.html">O NAS</a>
+                    <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+                </div>
+
+                <!-- Przycisk Hamburga dla wersji mobilnej -->
+                <button type="button" id="mobilny-menu-btn" class="mobilny-menu-btn" aria-label="Otwórz menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <!-- Overlay menu mobilnego (wysuwane z prawej strony) -->
+                <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+                    <div class="mobilny-menu-content">
+                        <button type="button" id="mobilny-menu-zamknij" class="mobilny-menu-zamknij">✖</button>
+                        <ul class="mobilny-menu-links">
+                            <li><a href="./gry.html">GRY</a></li>
+                            <li><a href="./turnieje.html">TURNIEJE</a></li>
+                            <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+                            <li><a href="./o-nas.html">O NAS</a></li>
+                            <li><a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <h1>Wkrótce zostanie opublikowane</h1>
+        </main>
+    </body>
+</html>
+<script>
+    // --- SKRYPT OBSŁUGI MENU MOBILNEGO ---
+    const mobilnyMenuBtn = document.getElementById("mobilny-menu-btn");
+    const mobilnyMenuOverlay = document.getElementById("mobilny-menu-overlay");
+    const mobilnyMenuZamknij = document.getElementById("mobilny-menu-zamknij");
+
+    if (mobilnyMenuBtn && mobilnyMenuOverlay && mobilnyMenuZamknij) {
+        mobilnyMenuBtn.addEventListener("click", () => {
+            mobilnyMenuOverlay.classList.add("otwarte");
+            document.body.style.overflow = "hidden";
+        });
+
+        mobilnyMenuZamknij.addEventListener("click", () => {
+            mobilnyMenuOverlay.classList.remove("otwarte");
+            document.body.style.overflow = "";
+        });
+
+        // Zamknij menu po kliknięciu w dowolny link nawigacji
+        mobilnyMenuOverlay.querySelectorAll("a").forEach((link) => {
+            link.addEventListener("click", () => {
+                mobilnyMenuOverlay.classList.remove("otwarte");
+                document.body.style.overflow = "";
+            });
+        });
+
+        // Zamykanie po kliknięciu w szare, rozmyte tło (overlay)
+        mobilnyMenuOverlay.addEventListener("click", (e) => {
+            if (e.target === mobilnyMenuOverlay) {
+                mobilnyMenuOverlay.classList.remove("otwarte");
+                document.body.style.overflow = "";
+            }
+        });
+    }
+</script>

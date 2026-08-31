@@ -1,0 +1,2036 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klasyczna Gra 501 | Stacja Dart</title>
+    <meta
+      name="description"
+      content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta."
+    />
+    <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <meta property="og:title" content="Stacja Dart" />
+    <meta
+      property="og:description"
+      content="Gry dartowe online, treningi, statystyki i społeczność graczy."
+    />
+    <meta property="og:image" content="./loga/logo.png" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./global.css" />
+    <link rel="stylesheet" href="./klasyczna-style.css" />
+
+    <!-- Dodane automatyczne poprawki UI -->
+  </head>
+  <body>
+    <header>
+      <div class="header-left-section">
+        <a href="./index.html">
+          <img src="./loga/logo.png" alt="Stacja Dart" style="height: 100px" />
+          <h1>STACJA DARTA</h1>
+        </a>
+      </div>
+
+      <div class="header-right-section">
+        <div class="wersja-komputer">
+          <a href="./gry.html">GRY</a>
+          <a href="./turnieje.html">TURNIEJE</a>
+          <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
+          <a href="./o-nas.html">O NAS</a>
+          <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+        </div>
+
+        <!-- Hamburger Menu -->
+        <button
+          type="button"
+          id="mobilny-menu-btn"
+          class="mobilny-menu-btn"
+          aria-label="Otwórz menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+
+        <!-- Overlay Menu -->
+        <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+          <div class="mobilny-menu-content">
+            <button
+              type="button"
+              id="mobilny-menu-zamknij"
+              class="mobilny-menu-zamknij"
+            >
+              ✖
+            </button>
+            <ul class="mobilny-menu-links">
+              <li><a href="./gry.html">GRY</a></li>
+              <li><a href="./turnieje.html">TURNIEJE</a></li>
+              <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+              <li><a href="./o-nas.html">O NAS</a></li>
+              <li>
+                <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="menu">
+        <h1 id="tytul-strony">Klasyczna Gra</h1>
+      </div>
+
+      <form id="formularz-ustawien" onsubmit="event.preventDefault()">
+        <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+        <!-- SEKCJA 1: GRACZE -->
+        <div class="sekcja-formularza">
+          <h3 class="sekcja-tytul">Uczestnicy</h3>
+          <div>
+            <label>
+              <h4>Ilość graczy:</h4>
+              <select id="ilosc-graczy" class="wspolny-input">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <label>
+              <div class="label-checkbox" style="margin-top: 8px; height: 100%; display: flex; align-items: center;">
+                <input type="checkbox" id="wlacz-dartbota" />
+                <h4>DartBot</h4>
+              </div>
+            </label>
+          </div>
+
+          <div id="kontener-nazw-graczy" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- SEKCJA 2: PARAMETRY GRY -->
+        <div class="sekcja-formularza">
+          <h3 class="sekcja-tytul">Parametry gry</h3>
+          <div class="grid-2-kolumny">
+            <label>
+              <h4>Ilość punktów:</h4>
+              <input
+                type="number"
+                id="punkty"
+                class="wspolny-input"
+                placeholder="501"
+                min="0"
+                value="501"
+              />
+            </label>
+            <label>
+              <h4>Do ilu?</h4>
+              <input
+                type="number"
+                id="liczba_rund"
+                class="wspolny-input"
+                min="1"
+                value="3"
+              />
+            </label>
+          </div>
+
+          <div class="opcja-z-checkboxem">
+            <label class="label-checkbox">
+              <input type="checkbox" id="wlacz-limit-lotek" />
+              <span>Maksymalna liczba lotek w legu</span>
+            </label>
+            <input
+              type="number"
+              id="limit-lotek-wartosc"
+              class="wspolny-input"
+              min="3"
+              value="30"
+              step="3"
+              disabled
+            />
+          </div>
+        </div>
+
+        <!-- SEKCJA 3: ZASADY -->
+        <div class="sekcja-formularza">
+          <h3 class="sekcja-tytul">Zasady Wejścia / Wyjścia</h3>
+          <div class="grid-2-kolumny">
+            <label>
+              <h4>Zasady Wejścia</h4>
+              <select id="select-wejscia" class="wspolny-input">
+                <option value="si">Single IN</option>
+                <option value="di">Double IN</option>
+                <option value="ti">Triple IN</option>
+              </select>
+            </label>
+            <label>
+              <h4>Zasady Wyjścia</h4>
+              <select id="select-wyjscia" class="wspolny-input">
+                <option value="so">Single OUT</option>
+                <option value="do" selected>Double OUT</option>
+                <option value="to">Triple OUT</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="przycisk-zacznij-grac">
+          <button type="button" id="zacznij-grac">Graj</button>
+        </div>
+      </form>
+
+      <div id="ekran-gry" style="display: none">
+        <div class="status-baru">
+          <button type="button" id="powrot-gra">✖</button>
+          <span id="wyswietl-kolejke">Lotki: 3</span>
+          <span id="cel-meczu">Do 3 wygranych</span>
+        </div>
+
+        <!-- BLOK KART GRACZY -->
+        <div class="kontener-graczy" id="kontener-graczy-w-grze"></div>
+
+        <!-- PANEL LICZENIA WYNIKU -->
+        <div class="opcje-liczenia">
+          <div class="metoda-wprowadzania">
+            <button
+              type="button"
+              class="btn-metoda aktywna-metoda"
+              data-metoda="klawiatura"
+            >
+              Wpisz wynik (Suma)
+            </button>
+            <button type="button" class="btn-metoda" data-metoda="tarcza">
+              Klikaj lotki (Panel)
+            </button>
+          </div>
+
+          <div class="strefa-manualna">
+            <input type="number" id="wpisz-wynik" placeholder="0" min="0" />
+            <button type="button" class="btn-cyfra">1</button>
+            <button type="button" class="btn-cyfra">2</button>
+            <button type="button" class="btn-cyfra">3</button>
+            <button type="button" class="btn-cyfra">4</button>
+            <button type="button" class="btn-cyfra">5</button>
+            <button type="button" class="btn-cyfra">6</button>
+            <button type="button" class="btn-cyfra">7</button>
+            <button type="button" class="btn-cyfra">8</button>
+            <button type="button" class="btn-cyfra">9</button>
+            <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">
+              Cofnij rzut
+            </button>
+            <button type="button" class="btn-cyfra btn-zero">0</button>
+            <button type="button" id="cofnij-cyfre">⌫</button>
+            <button type="button" id="zatwierdz-rzut">Zatwierdź</button>
+          </div>
+
+          <div class="strefa-klikania">
+            <div class="zakladki-typow">
+              <button
+                type="button"
+                class="tab-btn aktywne-tab"
+                data-target="single"
+              >
+                Single
+              </button>
+              <button type="button" class="tab-btn" data-target="double">
+                Double
+              </button>
+              <button type="button" class="tab-btn" data-target="triple">
+                Triple
+              </button>
+            </div>
+
+            <div class="podglad-kolejki">
+              <div class="rzuty-lotek">
+                <span class="lotka-klik" id="lotka-1">-</span>
+                <span class="lotka-klik" id="lotka-2">-</span>
+                <span class="lotka-klik" id="lotka-3">-</span>
+              </div>
+              <div class="suma-kolejki">
+                Suma: <span id="suma-klik-wartosc">0</span>
+              </div>
+              <button type="button" id="cofnij-klik-lotke">⌫</button>
+            </div>
+
+            <div class="kontener-klawiszy single">
+              <button type="button" data-value="20">20</button
+              ><button type="button" data-value="19">19</button
+              ><button type="button" data-value="18">18</button
+              ><button type="button" data-value="17">17</button
+              ><button type="button" data-value="16">16</button
+              ><button type="button" data-value="15">15</button
+              ><button type="button" data-value="14">14</button
+              ><button type="button" data-value="13">13</button
+              ><button type="button" data-value="12">12</button
+              ><button type="button" data-value="11">11</button
+              ><button type="button" data-value="10">10</button
+              ><button type="button" data-value="9">9</button
+              ><button type="button" data-value="8">8</button
+              ><button type="button" data-value="7">7</button
+              ><button type="button" data-value="6">6</button
+              ><button type="button" data-value="5">5</button
+              ><button type="button" data-value="4">4</button
+              ><button type="button" data-value="3">3</button
+              ><button type="button" data-value="2">2</button
+              ><button type="button" data-value="1">1</button>
+              <button type="button" data-value="0">0</button>
+              <button type="button" data-value="25" class="bullseye-btn">
+                BULL (25)
+              </button>
+            </div>
+
+            <div class="kontener-klawiszy double">
+              <button type="button" data-value="40">D20</button
+              ><button type="button" data-value="38">D19</button
+              ><button type="button" data-value="36">D18</button
+              ><button type="button" data-value="34">D17</button
+              ><button type="button" data-value="32">D16</button
+              ><button type="button" data-value="30">D15</button
+              ><button type="button" data-value="28">D14</button
+              ><button type="button" data-value="26">D13</button
+              ><button type="button" data-value="24">D12</button
+              ><button type="button" data-value="22">D11</button
+              ><button type="button" data-value="20">D10</button
+              ><button type="button" data-value="18">D9</button
+              ><button type="button" data-value="16">D8</button
+              ><button type="button" data-value="14">D7</button
+              ><button type="button" data-value="12">D6</button
+              ><button type="button" data-value="10">D5</button
+              ><button type="button" data-value="8">D4</button
+              ><button type="button" data-value="6">D3</button
+              ><button type="button" data-value="4">D2</button
+              ><button type="button" data-value="2">D1</button
+              ><button type="button" data-value="50" class="bullseye-btn">
+                D-BULL (50)
+              </button>
+            </div>
+
+            <div class="kontener-klawiszy triple">
+              <button type="button" data-value="60">T20</button
+              ><button type="button" data-value="57">T19</button
+              ><button type="button" data-value="54">T18</button
+              ><button type="button" data-value="51">T17</button
+              ><button type="button" data-value="48">T16</button
+              ><button type="button" data-value="45">T15</button
+              ><button type="button" data-value="42">T14</button
+              ><button type="button" data-value="39">T13</button
+              ><button type="button" data-value="36">T12</button
+              ><button type="button" data-value="33">T11</button
+              ><button type="button" data-value="30">T10</button
+              ><button type="button" data-value="27">T9</button
+              ><button type="button" data-value="24">T8</button
+              ><button type="button" data-value="21">T7</button
+              ><button type="button" data-value="18">T6</button
+              ><button type="button" data-value="15">T5</button
+              ><button type="button" data-value="12">T4</button
+              ><button type="button" data-value="9">T3</button
+              ><button type="button" data-value="6">T2</button
+              ><button type="button" data-value="3">T1</button>
+            </div>
+            <div class="kontener-przycisków">
+              <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">
+                Cofnij rzut
+              </button>
+              <button type="button" id="zatwierdz-klik-kolejke">
+                Zatwierdź
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ekran-wygranej">
+        <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+        <h1 id="wygrany">Wygrywa Gracz!</h1>
+        <div class="statystyki">
+          <table
+            class="tabela-statystyki"
+            id="tabela-statystyki-dynamiczna"
+          ></table>
+        </div>
+        <div id="przyciski-statystyki">
+          <button type="button" id="zobacz-przebieg">
+            ZOBACZ PRZEBIEG MECZU
+          </button>
+          <button type="button" id="zacznij-kolejna">
+            ROZPOCZNIJ NOWĄ GRE
+          </button>
+        </div>
+      </div>
+
+      <div id="modal-przebiegu" class="modal-przebiegu">
+        <div class="zawartosc-modal">
+          <h2>Przebieg meczu z podziałem na Legi</h2>
+          <div id="kontener-zakladek" class="kontener-zakladek"></div>
+          <div id="kontener-tabele-legow"></div>
+          <div style="text-align: center; margin-top: 25px">
+            <button type="button" id="zamknij-przebieg">Zamknij</button>
+          </div>
+        </div>
+      </div>
+      <div id="wylosowana-osoba"></div>
+      <div id="popup-weryfikacji" class="custom-popup-overlay">
+        <div class="custom-popup-box">
+          <h3 id="popup-tytul">Weryfikacja Rzutu</h3>
+          <p id="popup-wiadomosc">Czy rzut spełnił wymagane kryteria?</p>
+          <div class="custom-popup-buttons">
+            <button
+              type="button"
+              id="popup-btn-tak"
+              class="popup-btn popup-btn-yes"
+            >
+              Tak
+            </button>
+            <button
+              type="button"
+              id="popup-btn-nie"
+              class="popup-btn popup-btn-no"
+            >
+              Nie
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="popup-blizej-srodka" class="custom-popup-overlay">
+        <div class="custom-popup-box">
+          <h3>Limit lotek osiągnięty!</h3>
+          <p>Nikt nie zdołał zamknąć lega. Kto rzucił bliżej środka?</p>
+          <div id="popup-srodek-buttons" class="custom-popup-buttons"></div>
+        </div>
+      </div>
+      <!-- POPUP DLA DOUBLE % -->
+      <div id="popup-doubles" class="custom-popup-overlay">
+        <div class="custom-popup-box">
+          <h3 id="popup-doubles-tytul">Doubles</h3>
+          <p id="popup-doubles-opis">Ile lotek zostało rzuconych na doubla?</p>
+          <div id="popup-doubles-buttons" class="custom-popup-buttons"></div>
+        </div>
+      </div>
+      <div id="popup-kto-pierwszy" class="custom-popup-overlay">
+        <div class="custom-popup-box">
+          <h3>Kto zaczyna pierwszy?</h3>
+          <p>Wybierz gracza, który rozpocznie mecz, lub zdaj się na los.</p>
+          <div
+            id="popup-kto-zaczyna-buttons"
+            class="custom-popup-buttons"
+          ></div>
+        </div>
+      </div>
+
+      <!-- POPUP KONFIGURACJI BOTA Z SUWAKIEM -->
+      <div id="popup-konfiguracji-bota" class="custom-popup-overlay">
+        <div class="custom-popup-box" style="max-width: 450px;">
+            <h3>Ustawienia DartBota</h3>
+            <h1>🤖</h1>
+            <div style="margin: 25px 0; text-align: left;">
+                <label style="display:flex; justify-content:space-between; color: white; margin-bottom:15px; font-size: 18px;">
+                    <strong>Średnia Bota:</strong> <span id="bot-slider-val" style="color: var(--secondary-color); font-weight: bold; font-size: 22px;">50</span>
+                </label>
+                <input type="range" id="bot-slider-input" min="20" max="100" value="50" style="width:100%; cursor: pointer; accent-color: var(--secondary-color);">
+                
+                <div style="margin-top: 25px; font-size: 15px; color: #ccc; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Najczęstsze rzuty:</span> <strong id="bot-stat-range">35 - 70 pkt</strong></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Szansa na lepszy rzut:</span> <strong id="bot-stat-good" style="color:#4ade80;">17%</strong></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Szansa na gorszy rzut:</span> <strong id="bot-stat-bad" style="color:#f87171;">12%</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Skuteczność na doublach:</span> <strong id="bot-stat-checkout" style="color:#38bdf8;">30%</strong></div>
+                </div>
+            </div>
+            <div class="custom-popup-buttons" style="flex-direction: column;">
+                <button type="button" class="popup-btn popup-btn-yes" onclick="zapiszKonfiguracjeBota()" style="width:100%; margin-bottom: 10px;">Zapisz</button>
+                <button type="button" class="popup-btn popup-btn-no" onclick="anulujBota()" style="width:100%;">Anuluj</button>
+            </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const checkouts = {
+        170: "T20 T20 BULL",
+        167: "T20 T19 BULL",
+        164: "T20 T18 BULL",
+        161: "T20 T17 BULL",
+        160: "T20 T20 D20",
+        158: "T20 T20 D19",
+        157: "T20 T19 D20",
+        156: "T20 T20 D18",
+        155: "T20 T19 D19",
+        154: "T20 T18 D20",
+        153: "T20 T19 D18",
+        152: "T20 T20 D16",
+        151: "T20 T17 D20",
+        150: "BULL BULL BULL",
+        149: "T20 T19 D16",
+        148: "T20 T16 D20",
+        147: "T20 T17 D18",
+        146: "T20 T18 D16",
+        145: "T20 T15 D20",
+        144: "T20 T20 D12",
+        143: "T20 T17 D16",
+        142: "T20 T14 D20",
+        141: "T20 T19 D12",
+        140: "T20 T16 D16",
+        139: "T19 T14 D20",
+        138: "T20 T18 D12",
+        137: "T19 T16 D16",
+        136: "T20 T20 D8",
+        135: "T20 T17 D12",
+        134: "T20 T14 D16",
+        133: "T20 T19 D8",
+        132: "T20 T16 D12",
+        131: "T20 T13 D16",
+        130: "T20 T20 D5",
+        129: "T19 T16 D12",
+        128: "T18 T14 D16",
+        127: "T20 T17 D8",
+        126: "T19 T19 D6",
+        125: "25 T20 D20",
+        124: "T20 T16 D8",
+        123: "T19 T16 D9",
+        122: "T18 T20 D4",
+        121: "T17 T10 D20",
+        120: "T20 20 D20",
+        119: "T19 T10 D16",
+        118: "T20 18 D20",
+        117: "T20 17 D20",
+        116: "T20 16 D20",
+        115: "T20 15 D20",
+        114: "T20 14 D20",
+        113: "T20 13 D20",
+        112: "T20 12 D20",
+        111: "T20 19 D16",
+        110: "T20 18 D16",
+        109: "T19 20 D16",
+        108: "T20 16 D16",
+        107: "T19 18 D16",
+        106: "T20 14 D16",
+        105: "T19 16 D16",
+        104: "T18 18 D16",
+        103: "T20 3 D20",
+        102: "T20 10 D16",
+        101: "T20 1 D20",
+        100: "T20 D20",
+        99: "T19 10 D16",
+        98: "T20 D19",
+        97: "T19 D20",
+        96: "T20 D18",
+        95: "T19 D19",
+        94: "T18 D20",
+        93: "T19 D18",
+        92: "T20 D16",
+        91: "T17 D20",
+        90: "T20 D15",
+        89: "T19 D16",
+        88: "T16 D20",
+        87: "T17 D18",
+        86: "T18 D16",
+        85: "T15 D20",
+        84: "T20 D12",
+        83: "T17 D16",
+        82: "T14 D20",
+        81: "T19 D12",
+        80: "T20 D10",
+        79: "T19 D11",
+        78: "T18 D12",
+        77: "T19 D10",
+        76: "T20 D8",
+        75: "T17 D12",
+        74: "T14 D16",
+        73: "T19 D8",
+        72: "T16 D12",
+        71: "T13 D16",
+        70: "T10 D20",
+        69: "T15 D12",
+        68: "T20 D4",
+        67: "T17 D8",
+        66: "T10 D18",
+        65: "T19 D4",
+        64: "T16 D8",
+        63: "T13 D12",
+        62: "T10 D16",
+        61: "T15 D8",
+        60: "20 D20",
+        59: "19 D20",
+        58: "18 D20",
+        57: "17 D20",
+        56: "16 D20",
+        55: "15 D20",
+        54: "14 D20",
+        53: "13 D20",
+        52: "20 D16",
+        51: "19 D16",
+        50: "18 D16",
+        49: "17 D16",
+        48: "16 D16",
+        47: "15 D16",
+        46: "14 D16",
+        45: "13 D16",
+        44: "12 D16",
+        43: "11 D16",
+        42: "10 D16",
+        41: "9 D16",
+        40: "D20",
+        39: "7 D16",
+        38: "D19",
+        37: "5 D16",
+        36: "D18",
+        35: "3 D16",
+        34: "D17",
+        33: "1 D16",
+        32: "D16",
+        31: "7 D12",
+        30: "D15",
+        29: "5 D12",
+        28: "D14",
+        27: "3 D12",
+        26: "D13",
+        25: "1 D12",
+        24: "D12",
+        23: "7 D8",
+        22: "D11",
+        21: "5 D8",
+        20: "D10",
+        19: "3 D8",
+        18: "D9",
+        17: "1 D8",
+        16: "D8",
+        15: "7 D4",
+        14: "D7",
+        13: "5 D4",
+        12: "D6",
+        11: "3 D4",
+        10: "D5",
+        9: "1 D4",
+        8: "D4",
+        7: "3 D2",
+        6: "D3",
+        5: "1 D2",
+        4: "D2",
+        3: "1 D1",
+        2: "D1",
+      };
+
+      function getCheckout(points) {
+        return checkouts[points] || "";
+      }
+      const niemozliweZamkniecia = [169, 168, 166, 165, 163, 162, 159];
+
+      const iloscGraczySelect = document.getElementById("ilosc-graczy");
+      const kontenerNazwGraczy = document.getElementById(
+        "kontener-nazw-graczy",
+      );
+
+      const wlaczLimitLotekCheckbox =
+        document.getElementById("wlacz-limit-lotek");
+      const limitLotekWartoscInput = document.getElementById(
+        "limit-lotek-wartosc",
+      );
+      const wlaczDartbotaCheckbox = document.getElementById("wlacz-dartbota");
+
+      wlaczLimitLotekCheckbox.addEventListener("change", () => {
+        limitLotekWartoscInput.disabled = !wlaczLimitLotekCheckbox.checked;
+        if (wlaczLimitLotekCheckbox.checked) {
+          limitLotekWartoscInput.focus();
+        }
+      });
+
+      function generujPolaGraczy() {
+        const iloscLudzi = parseInt(iloscGraczySelect.value);
+        const czyZaznaczonyBot = wlaczDartbotaCheckbox
+          ? wlaczDartbotaCheckbox.checked
+          : false;
+
+        let aktualnaSredniaBota = document.getElementById("srednia-bota")
+          ? document.getElementById("srednia-bota").value
+          : "50";
+
+        kontenerNazwGraczy.innerHTML = "";
+
+        for (let i = 1; i <= iloscLudzi; i++) {
+          kontenerNazwGraczy.innerHTML += `
+                    <label>
+                        <h4>Gracz ${i}:</h4>
+                        <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}">
+                    </label>
+                `;
+        }
+
+        if (czyZaznaczonyBot) {
+          let botIndex = iloscLudzi + 1;
+          let btnText =
+            aktualnaSredniaBota === "50"
+              ? "DartBot"
+              : `DartBot (Śr: ${aktualnaSredniaBota})`;
+
+          kontenerNazwGraczy.innerHTML += `
+                    <label>
+                        <h4>Gracz ${botIndex}:</h4>
+                        <button type="button" id="btn-dartbot" class="wspolny-input" onclick="otworzPopupBota()">
+                            ${btnText}
+                        </button>
+                        <input type="hidden" id="srednia-bota" value="${aktualnaSredniaBota}">
+                    </label>
+                `;
+        }
+      }
+      iloscGraczySelect.addEventListener("change", generujPolaGraczy);
+      if (wlaczDartbotaCheckbox) {
+        wlaczDartbotaCheckbox.addEventListener("change", generujPolaGraczy);
+      }
+      generujPolaGraczy();
+
+      function otworzPopupBota() {
+        const obecnaSrednia =
+          document.getElementById("srednia-bota").value || 50;
+        document.getElementById("bot-slider-input").value = obecnaSrednia;
+        aktualizujStatystykiBotaUI(obecnaSrednia);
+        document.getElementById("popup-konfiguracji-bota").style.display =
+          "flex";
+      }
+
+      document
+        .getElementById("bot-slider-input")
+        .addEventListener("input", (e) => {
+          aktualizujStatystykiBotaUI(e.target.value);
+        });
+
+      function aktualizujStatystykiBotaUI(avg) {
+        avg = parseInt(avg);
+        document.getElementById("bot-slider-val").textContent = avg;
+
+        let minS = Math.max(10, avg - 5);
+        let maxS = Math.min(180, avg + 5);
+        let chk = Math.max(5, Math.round((avg / 100) * 60));
+        let good = Math.max(5, Math.round((avg / 100) * 35));
+        let bad = Math.max(2, Math.round(((100 - avg) / 100) * 25));
+
+        document.getElementById("bot-stat-range").textContent =
+          `${minS} - ${maxS} pkt`;
+        document.getElementById("bot-stat-good").textContent = `${good}%`;
+        document.getElementById("bot-stat-bad").textContent = `${bad}%`;
+        document.getElementById("bot-stat-checkout").textContent = `${chk}%`;
+      }
+
+      function zapiszKonfiguracjeBota() {
+        const avg = document.getElementById("bot-slider-input").value;
+        document.getElementById("srednia-bota").value = avg;
+        document.getElementById("btn-dartbot").textContent =
+          `DartBot (Śr: ${avg})`;
+        document.getElementById("popup-konfiguracji-bota").style.display =
+          "none";
+      }
+
+      function anulujBota() {
+        document.getElementById("popup-konfiguracji-bota").style.display =
+          "none";
+      }
+
+      const tytulStrony = document.getElementById("tytul-strony");
+      const formularzUstawien = document.getElementById("formularz-ustawien");
+      const przyciskStart = document.getElementById("zacznij-grac");
+      const ekranGry = document.getElementById("ekran-gry");
+      const ekranWygranej = document.querySelector(".ekran-wygranej");
+      const wygranyTekst = document.getElementById("wygrany");
+      const przyciskKolejnaGra = document.getElementById("zacznij-kolejna");
+      const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
+      const celMeczuTekst = document.getElementById("cel-meczu");
+      const wpiszWynikInput = document.getElementById("wpisz-wynik");
+      const przyciskZatwierdz = document.getElementById("zatwierdz-rzut");
+      const powrotDoGier = document.getElementById("powrot-do-gier");
+
+      const kontenerGraczyWGrze = document.getElementById(
+        "kontener-graczy-w-grze",
+      );
+      const tabelaStatystykiDynamiczna = document.getElementById(
+        "tabela-statystyki-dynamiczna",
+      );
+
+      const modalPrzebiegu = document.getElementById("modal-przebiegu");
+      const przyciskZobaczPrzebieg = document.getElementById("zobacz-przebieg");
+      const przyciskZamknijPrzebieg =
+        document.getElementById("zamknij-przebieg");
+      const kontenerZakladek = document.getElementById("kontener-zakladek");
+      const kontenerTabeleLegow = document.getElementById(
+        "kontener-tabele-legow",
+      );
+
+      const selectWejscia = document.getElementById("select-wejscia");
+      const selectWyjscia = document.getElementById("select-wyjscia");
+
+      let punktyStartowe = 501;
+      let doceloweLegi = 3;
+      let aktualnaKolejka = 1;
+
+      let gracze = [];
+      let liczbaGraczy = 2;
+      let aktualnyGraczIndex = 0;
+      let graczZaczynajacyLegIndex = 0;
+
+      let trybWejscia = "si";
+      let trybWyjscia = "do";
+
+      let limitLotekAktywny = false;
+      let maksymalnyLimitLotek = 30;
+
+      let historiaMeczuLegi = [];
+      let historiaAktualnegoLegu = [];
+      let historiaStanuGry = [];
+
+      let alertTimeout;
+
+      function pokazCustomowyAlert(wiadomosc) {
+        const alertDiv = document.getElementById("wylosowana-osoba");
+
+        alertDiv.innerHTML = `
+          <span>${wiadomosc}</span>
+          <button id="zamknij-alert" style="margin-left: 20px; background: none; border: none; font-weight: bold; font-size: 18px; cursor: pointer; color: inherit;">✖</button>
+        `;
+
+        alertDiv.style.display = "flex";
+        alertDiv.style.alignItems = "center";
+        alertDiv.style.justifyContent = "space-between";
+
+        document
+          .getElementById("zamknij-alert")
+          .addEventListener("click", () => {
+            alertDiv.style.display = "none";
+            clearTimeout(alertTimeout);
+          });
+
+        clearTimeout(alertTimeout);
+
+        alertTimeout = setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 3000);
+      }
+
+      function sprawdzRozmiar() {
+        if (window.innerWidth < 1500) {
+          wpiszWynikInput.disabled = true;
+        } else {
+          wpiszWynikInput.disabled = false;
+        }
+      }
+      sprawdzRozmiar();
+      window.addEventListener("resize", sprawdzRozmiar);
+
+      function aktualizujHistorieRzutowUI(graczId, graczIndex) {
+        let rzutyGracza = historiaAktualnegoLegu.filter(
+          (h) => h.graczId === graczId,
+        );
+        const tbody = document.getElementById(
+          `tabela-historia-body-g${graczIndex}`,
+        );
+        if (!tbody) return;
+
+        if (rzutyGracza.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>`;
+          return;
+        }
+
+        let html = "";
+        rzutyGracza.forEach((h, idx) => {
+          let sumaLotek = (idx + 1) * 3;
+          html += `
+            <tr>
+              <td>${sumaLotek}</td>
+              <td><strong>${h.szczegoly}</strong></td>
+              <td>${h.punktyPo}</td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
+
+        const container = document.getElementById(`historia-g${graczIndex}`);
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+
+      function aktualizujCalaHistorieLeguUI() {
+        const elListaLegu = document.getElementById("lista-historii-legu");
+        if (!elListaLegu) return;
+
+        if (historiaAktualnegoLegu.length === 0) {
+          elListaLegu.innerHTML = "Brak rzutów w tym legu.";
+          return;
+        }
+
+        let html = "";
+        historiaAktualnegoLegu.forEach((h) => {
+          let graczObj = gracze.find((g) => g.id === h.graczId);
+          let nazwa = graczObj ? graczObj.nazwa : `Gracz ${h.graczId + 1}`;
+          html += `
+            <div class="wpis-historii-legu">
+              <span><strong>Kolejka ${h.kolejka}</strong> - ${nazwa}: <strong>${h.szczegoly}</strong></span>
+              <span>Wynik: <strong>${h.punktyPo}</strong> pkt</span>
+            </div>
+          `;
+        });
+
+        elListaLegu.innerHTML = html;
+        elListaLegu.scrollTop = elListaLegu.scrollHeight;
+      }
+
+      function zapiszStanGry() {
+        const migawka = {
+          gracze: JSON.parse(JSON.stringify(gracze)),
+          aktualnyGraczIndex: aktualnyGraczIndex,
+          aktualnaKolejka: aktualnaKolejka,
+          graczZaczynajacyLegIndex: graczZaczynajacyLegIndex,
+          historiaAktualnegoLegu: JSON.parse(
+            JSON.stringify(historiaAktualnegoLegu),
+          ),
+        };
+        historiaStanuGry.push(migawka);
+      }
+
+      const przyciskiMetod = document.querySelectorAll(".btn-metoda");
+      const strefaManualna = document.querySelector(".strefa-manualna");
+      const strefaKlikania = document.querySelector(".strefa-klikania");
+
+      przyciskiMetod.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          przyciskiMetod.forEach((b) => b.classList.remove("aktywna-metoda"));
+          btn.classList.add("aktywna-metoda");
+          const metoda = btn.getAttribute("data-metoda");
+          if (metoda === "klawiatura") {
+            strefaManualna.style.display = "grid";
+            strefaKlikania.style.display = "none";
+            wpiszWynikInput.focus();
+          } else {
+            strefaManualna.style.display = "none";
+            strefaKlikania.style.display = "flex";
+            resetujPodgladKlikow();
+          }
+        });
+      });
+
+      const przyciskiCyfr = document.querySelectorAll(".btn-cyfra");
+      const przyciskCofnijCyfre = document.getElementById("cofnij-cyfre");
+
+      przyciskiCyfr.forEach((przycisk) => {
+        przycisk.addEventListener("click", () => {
+          let val = wpiszWynikInput.value;
+          if (val === "0" || val === "") val = "";
+          if (val.length < 3) {
+            wpiszWynikInput.value = val + przycisk.textContent;
+          }
+          wpiszWynikInput.focus();
+        });
+      });
+
+      przyciskCofnijCyfre.addEventListener("click", () => {
+        wpiszWynikInput.value = wpiszWynikInput.value.slice(0, -1);
+        wpiszWynikInput.focus();
+      });
+
+      wpiszWynikInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+
+          const popupDoubles = document.getElementById("popup-doubles");
+          const popupWeryfikacji = document.getElementById("popup-weryfikacji");
+
+          if (
+            popupDoubles.style.display === "flex" ||
+            popupWeryfikacji.style.display === "flex"
+          ) {
+            return;
+          }
+
+          przyciskZatwierdz.click();
+        }
+      });
+
+      wpiszWynikInput.addEventListener("input", () => {
+        if (wpiszWynikInput.value.length > 3) {
+          wpiszWynikInput.value = wpiszWynikInput.value.slice(0, 3);
+        }
+      });
+
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      const konteneryKlawiszy = document.querySelectorAll(".kontener-klawiszy");
+      let kliknieteLotkiWQueue = [];
+
+      tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tabBtns.forEach((b) => b.classList.remove("aktywne-tab"));
+          btn.classList.add("aktywne-tab");
+          const target = btn.getAttribute("data-target");
+          konteneryKlawiszy.forEach((k) => (k.style.display = "none"));
+          document.querySelector(`.kontener-klawiszy.${target}`).style.display =
+            "grid";
+        });
+      });
+
+      konteneryKlawiszy.forEach((kontener) => {
+        kontener.querySelectorAll("button").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            if (kliknieteLotkiWQueue.length >= 3) return;
+            const wartosc = parseInt(btn.getAttribute("data-value"));
+            let tekstRzutu = btn.textContent;
+            kliknieteLotkiWQueue.push({ punkty: wartosc, opis: tekstRzutu });
+            aktualizujPodgladKlikow();
+          });
+        });
+      });
+
+      document
+        .getElementById("cofnij-klik-lotke")
+        .addEventListener("click", () => {
+          kliknieteLotkiWQueue.pop();
+          aktualizujPodgladKlikow();
+        });
+
+      function aktualizujPodgladKlikow() {
+        for (let i = 1; i <= 3; i++) {
+          const span = document.getElementById(`lotka-${i}`);
+          if (kliknieteLotkiWQueue[i - 1] !== undefined) {
+            span.textContent = kliknieteLotkiWQueue[i - 1].opis;
+          } else {
+            span.textContent = "-";
+          }
+        }
+        const suma = kliknieteLotkiWQueue.reduce(
+          (acc, curr) => acc + curr.punkty,
+          0,
+        );
+        document.getElementById("suma-klik-wartosc").textContent = suma;
+      }
+
+      function resetujPodgladKlikow() {
+        kliknieteLotkiWQueue = [];
+        aktualizujPodgladKlikow();
+      }
+
+      document
+        .getElementById("zatwierdz-klik-kolejke")
+        .addEventListener("click", () => {
+          if (kliknieteLotkiWQueue.length === 0) return;
+          const sumaPunktow = kliknieteLotkiWQueue.reduce(
+            (acc, curr) => acc + curr.punkty,
+            0,
+          );
+          let szczegolyOpis = sumaPunktow.toString();
+          przetwarzajRzutMeczu(
+            sumaPunktow,
+            szczegolyOpis,
+            kliknieteLotkiWQueue.length,
+            kliknieteLotkiWQueue,
+          );
+          resetujPodgladKlikow();
+        });
+
+      // --- DYNAMICZNE FUNKCJE STATYSTYK ---
+      function obliczSredniaGracza(graczId) {
+        let wszystkieRzuty = [];
+
+        historiaMeczuLegi.forEach((leg) => {
+          wszystkieRzuty = wszystkieRzuty.concat(
+            leg.filter((r) => r.graczId === graczId),
+          );
+        });
+
+        wszystkieRzuty = wszystkieRzuty.concat(
+          historiaAktualnegoLegu.filter((r) => r.graczId === graczId),
+        );
+
+        let iloscKolejek = wszystkieRzuty.length; // Liczymy podejścia, a nie lotki
+        if (iloscKolejek === 0) return "0.00";
+
+        let sumaPunktow = wszystkieRzuty.reduce((sum, r) => sum + r.rzut, 0);
+
+        return (sumaPunktow / iloscKolejek).toFixed(2);
+      }
+
+      function obliczSrednia9Lotek(graczId) {
+        let sumaPunktow = 0;
+        let iloscKolejek = 0;
+
+        let wszystkieLegi = [...historiaMeczuLegi, historiaAktualnegoLegu];
+
+        wszystkieLegi.forEach((leg) => {
+          let rzutyGracza = leg.filter((r) => r.graczId === graczId);
+          let pierwszeRzuty = rzutyGracza.slice(0, 3); // 3 pierwsze kolejki gracza
+
+          pierwszeRzuty.forEach((r) => {
+            sumaPunktow += r.rzut;
+            iloscKolejek++;
+          });
+        });
+
+        if (iloscKolejek === 0) return "0.00";
+        return (sumaPunktow / iloscKolejek).toFixed(2);
+      }
+
+      function pobierzOstatniLeg(graczId) {
+        if (historiaMeczuLegi.length === 0) return "-";
+
+        let ostatnioWygrany = "-";
+
+        historiaMeczuLegi.forEach((leg) => {
+          let rzutyGracza = leg.filter((r) => r.graczId === graczId);
+          if (rzutyGracza.length > 0) {
+            let ostatniRzut = rzutyGracza[rzutyGracza.length - 1];
+
+            if (ostatniRzut && ostatniRzut.punktyPo === 0) {
+              let lotkiLacznie = rzutyGracza.reduce(
+                (sum, r) => sum + (r.zuzyteLotki || 3),
+                0,
+              );
+              ostatnioWygrany = lotkiLacznie + " lotek";
+            }
+          }
+        });
+
+        return ostatnioWygrany;
+      }
+
+      function aktualizujKartyUI() {
+        gracze.forEach((gracz, index) => {
+          const karta = document.getElementById(`karta-g${index}`);
+          if (index === aktualnyGraczIndex) {
+            karta.classList.add("aktywne-tury");
+          } else {
+            karta.classList.remove("aktywne-tury");
+          }
+          document.getElementById(`punkty-g${index}`).textContent =
+            gracz.punkty;
+
+          let checkoutText =
+            gracz.punkty <= 170 && gracz.punkty > 1
+              ? getCheckout(gracz.punkty)
+              : "";
+          document.getElementById(`checkout-g${index}`).textContent =
+            checkoutText;
+
+          document.getElementById(`wygrane-g${index}`).textContent =
+            `Wygrane rundy: ${gracz.wygraneLegi}`;
+
+          document.getElementById(`srednia-tabela-g${index}`).textContent =
+            obliczSredniaGracza(gracz.id);
+          document.getElementById(`dziewiec-lotek-g${index}`).textContent =
+            obliczSrednia9Lotek(gracz.id);
+          document.getElementById(`ostatni-leg-g${index}`).textContent =
+            pobierzOstatniLeg(gracz.id);
+        });
+      }
+
+      przyciskStart.addEventListener("click", () => {
+        let iloscLudzi = parseInt(iloscGraczySelect.value);
+        let czyBotWlaczony = document.getElementById("wlacz-dartbota")
+          ? document.getElementById("wlacz-dartbota").checked
+          : false;
+
+        liczbaGraczy = iloscLudzi + (czyBotWlaczony ? 1 : 0);
+
+        punktyStartowe = parseInt(document.getElementById("punkty").value);
+        doceloweLegi =
+          parseInt(document.getElementById("liczba_rund").value) || 3;
+        trybWejscia = selectWejscia.value;
+        trybWyjscia = selectWyjscia.value;
+
+        limitLotekAktywny = wlaczLimitLotekCheckbox.checked;
+        maksymalnyLimitLotek = parseInt(limitLotekWartoscInput.value) || 30;
+
+        gracze = [];
+        kontenerGraczyWGrze.innerHTML = "";
+
+        for (let i = 0; i < liczbaGraczy; i++) {
+          let czyTenToBot = czyBotWlaczony && i === liczbaGraczy - 1;
+          let nazwa = "";
+          let poziomBota = 50;
+
+          if (czyTenToBot) {
+            poziomBota = document.getElementById("srednia-bota").value;
+            nazwa = `DartBot`;
+          } else {
+            let inputElement = document.getElementById(`nazwa-gracza${i + 1}`);
+            nazwa = inputElement ? inputElement.value.trim() : "";
+            if (nazwa === "") nazwa = `Gracz ${i + 1}`;
+          }
+
+          gracze.push({
+            id: i,
+            nazwa: nazwa + (czyTenToBot ? "" : ""),
+            punkty: punktyStartowe,
+            wygraneLegi: 0,
+            rzuty: [],
+            najlepszyLeg: null,
+            lotkiNaDoubla: 0,
+            trafioneDouble: 0,
+            czyBot: czyTenToBot,
+            poziomBota: poziomBota,
+          });
+
+          kontenerGraczyWGrze.innerHTML += `
+                    <div class="karta-gracza" id="karta-g${i}">
+                        <h2>${nazwa}</h2>
+                        <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
+                        <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
+                        <div class="checkout-sugerowany" id="checkout-g${i}"></div>
+                        
+                        <!-- ZAKŁADKI KARTY -->
+                        <div class="karta-zakladki">
+                            <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+                            <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+                        </div>
+
+                        <!-- PANEL STATYSTYK -->
+                        <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+                          <table class="aktualne-statystyki-tabela">
+                            <tr>
+                                <th>Średnia</th>
+                                <td id="srednia-tabela-g${i}">0.00</td>
+                            </tr>
+                            <tr>
+                              <th>Pierwsze 9-lotek</th>
+                              <td id="dziewiec-lotek-g${i}">0.00</td>
+                            </tr>
+                            <tr class="ostatni-wiersz">
+                              <th>Ostatni Leg</th>
+                              <td id="ostatni-leg-g${i}">-</td>
+                            </tr>
+                          </table>
+                        </div>
+
+                        <!-- PANEL HISTORII -->
+                        <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+                            <table class="tabela-historii-karty">
+                                <thead>
+                                    <tr>
+                                        <th>Lotki</th>
+                                        <th>Rzucone</th>
+                                        <th>Zostało</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-historia-body-g${i}">
+                                    <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+        }
+
+        celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
+        historiaMeczuLegi = [];
+
+        const popupKtoPierwszy = document.getElementById("popup-kto-pierwszy");
+        const buttonsContainer = document.getElementById(
+          "popup-kto-zaczyna-buttons",
+        );
+        buttonsContainer.innerHTML = "";
+
+        gracze.forEach((gracz, index) => {
+          const btn = document.createElement("button");
+          btn.className = "popup-btn popup-btn-yes";
+          btn.textContent = gracz.nazwa;
+          btn.onclick = () => {
+            popupKtoPierwszy.style.display = "none";
+            rozpocznijWlasciwaGre(index);
+          };
+          buttonsContainer.appendChild(btn);
+        });
+
+        if (liczbaGraczy > 1) {
+          const btnLosowo = document.createElement("button");
+          btnLosowo.className = "popup-btn popup-btn-no";
+          btnLosowo.textContent = "Random";
+          btnLosowo.onclick = () => {
+            const wylosowanyIndex = Math.floor(Math.random() * liczbaGraczy);
+            popupKtoPierwszy.style.display = "none";
+            pokazCustomowyAlert(`Zaczyna ${gracze[wylosowanyIndex].nazwa}.`);
+            rozpocznijWlasciwaGre(wylosowanyIndex);
+          };
+          buttonsContainer.appendChild(btnLosowo);
+        }
+
+        popupKtoPierwszy.style.display = "flex";
+      });
+
+      function rozpocznijWlasciwaGre(zaczynajacyIndex) {
+        graczZaczynajacyLegIndex = zaczynajacyIndex;
+        resetujLeg();
+
+        formularzUstawien.style.display = "none";
+        tytulStrony.style.display = "none";
+        powrotDoGier.style.display = "none";
+        ekranGry.style.display = "block";
+      }
+
+      function resetujLeg() {
+        aktualnaKolejka = 1;
+        aktualnyGraczIndex = graczZaczynajacyLegIndex;
+        historiaStanuGry = [];
+
+        gracze.forEach((gracz, i) => {
+          gracz.punkty = punktyStartowe;
+          const tbody = document.getElementById(`tabela-historia-body-g${i}`);
+          if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>`;
+          }
+        });
+
+        wyswietlKolejke.textContent = `Lotki: 0 ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+        historiaAktualnegoLegu = [];
+
+        aktualizujKartyUI();
+        aktualizujCalaHistorieLeguUI();
+        sprawdzTureBota();
+      }
+
+      przyciskZatwierdz.addEventListener("click", () => {
+        if (
+          document.getElementById("popup-weryfikacji").style.display ===
+            "flex" ||
+          document.getElementById("popup-doubles").style.display === "flex"
+        )
+          return;
+
+        const punkty = parseInt(wpiszWynikInput.value) || 0;
+        if (punkty > 180) {
+          pokazCustomowyAlert(
+            "Maksymalny wynik w jednej kolejce to 180 punktów!",
+          );
+          wpiszWynikInput.value = "";
+          wpiszWynikInput.focus();
+          return;
+        }
+
+        let aktywnyGracz = gracze[aktualnyGraczIndex];
+
+        if (
+          aktywnyGracz.punkty === punktyStartowe &&
+          punkty > 0 &&
+          (trybWejscia === "di" || trybWejscia === "ti")
+        ) {
+          let nazwaTypu =
+            trybWejscia === "di" ? "Double (Podwójne)" : "Triple (Potrójne)";
+          otworzWeryfikacjePopup(
+            "Potwierdzenie Wejścia",
+            `Czy rzut rozpoczynający grę o wartości ${punkty} zawierał prawidłowe trafienie w sektor ${nazwaTypu}?`,
+            (zaakceptowano) => {
+              if (zaakceptowano) {
+                przetwarzajRzutMeczu(punkty, punkty.toString(), 3, null);
+              } else {
+                wykonajProcesRzutu(punkty, punkty.toString(), 3, true, null);
+              }
+            },
+          );
+        } else {
+          przetwarzajRzutMeczu(punkty, punkty.toString(), 3, null);
+        }
+
+        wpiszWynikInput.value = "";
+        wpiszWynikInput.focus();
+      });
+
+      function otworzWeryfikacjePopup(tytul, wiadomosc, callback) {
+        let aktywnyGracz = gracze[aktualnyGraczIndex];
+
+        if (
+          aktywnyGracz.punkty === 180 ||
+          niemozliweZamkniecia.includes(aktywnyGracz.punkty)
+        ) {
+          return;
+        }
+
+        const popupWeryfikacji = document.getElementById("popup-weryfikacji");
+        const popupTytul = document.getElementById("popup-tytul");
+        const popupWiadomosc = document.getElementById("popup-wiadomosc");
+
+        if (popupTytul) popupTytul.textContent = tytul;
+        if (popupWiadomosc) popupWiadomosc.textContent = wiadomosc;
+
+        if (popupWeryfikacji) {
+          popupWeryfikacji.style.display = "flex";
+        }
+
+        const btnTak = document.getElementById("popup-btn-tak");
+        const btnNie = document.getElementById("popup-btn-nie");
+
+        if (btnTak && btnNie) {
+          const nowyTak = btnTak.cloneNode(true);
+          const nowyNie = btnNie.cloneNode(true);
+
+          btnTak.parentNode.replaceChild(nowyTak, btnTak);
+          btnNie.parentNode.replaceChild(nowyNie, btnNie);
+
+          nowyTak.addEventListener("click", () => {
+            popupWeryfikacji.style.display = "none";
+            callback(true);
+          });
+          nowyNie.addEventListener("click", () => {
+            popupWeryfikacji.style.display = "none";
+            callback(false);
+          });
+        }
+      }
+
+      function przetwarzajRzutMeczu(
+        punktyWpisane,
+        opisDoHistorii,
+        zuzyteLotki = 3,
+        lotkiZPanelu = null,
+      ) {
+        let aktywnyGracz = gracze[aktualnyGraczIndex];
+        let czyFura = false;
+
+        if (aktywnyGracz.punkty === punktyStartowe && lotkiZPanelu !== null) {
+          if (punktyWpisane === 0) {
+            czyFura = true;
+          } else {
+            let pierwszaLotka = lotkiZPanelu.find((l) => l.punkty > 0);
+            if (!pierwszaLotka) {
+              czyFura = true;
+            } else {
+              if (
+                trybWejscia === "di" &&
+                !pierwszaLotka.opis.startsWith("D") &&
+                pierwszaLotka.punkty !== 50
+              ) {
+                czyFura = true;
+              } else if (
+                trybWejscia === "ti" &&
+                !pierwszaLotka.opis.startsWith("T")
+              ) {
+                czyFura = true;
+              }
+            }
+          }
+        }
+
+        let pozostalePunkty = aktywnyGracz.punkty - punktyWpisane;
+
+        if (!czyFura) {
+          if (pozostalePunkty < 0) {
+            czyFura = true;
+          } else if (
+            pozostalePunkty === 1 &&
+            (trybWyjscia === "do" || trybWyjscia === "to")
+          ) {
+            czyFura = true;
+          } else if (pozostalePunkty === 2 && trybWyjscia === "to") {
+            czyFura = true;
+          } else if (pozostalePunkty === 0) {
+            if (trybWyjscia === "do" || trybWyjscia === "to") {
+              if (
+                aktywnyGracz.punkty > 170 ||
+                niemozliweZamkniecia.includes(aktywnyGracz.punkty)
+              ) {
+                czyFura = true;
+              }
+            }
+
+            if (
+              lotkiZPanelu !== null &&
+              (trybWyjscia === "do" || trybWyjscia === "to")
+            ) {
+              let ostatniaLotka = lotkiZPanelu[lotkiZPanelu.length - 1];
+              if (trybWyjscia === "do") {
+                let czyOstatniaDouble =
+                  ostatniaLotka &&
+                  (ostatniaLotka.opis.startsWith("D") ||
+                    ostatniaLotka.punkty === 50);
+                if (!czyOstatniaDouble) czyFura = true;
+              } else if (trybWyjscia === "to") {
+                let czyOstatniaTriple =
+                  ostatniaLotka && ostatniaLotka.opis.startsWith("T");
+                if (!czyOstatniaTriple) czyFura = true;
+              }
+            }
+          }
+        }
+
+        wykonajProcesRzutu(
+          punktyWpisane,
+          opisDoHistorii,
+          zuzyteLotki,
+          czyFura,
+          lotkiZPanelu,
+        );
+      }
+
+      function zakonczLeg(zwyciezcaId, uzyteLotki) {
+        let zwyciezca = gracze.find((g) => g.id === zwyciezcaId);
+        zwyciezca.wygraneLegi++;
+
+        if (
+          zwyciezca.najlepszyLeg === null ||
+          uzyteLotki < zwyciezca.najlepszyLeg
+        ) {
+          zwyciezca.najlepszyLeg = uzyteLotki;
+        }
+
+        historiaMeczuLegi.push([...historiaAktualnegoLegu]);
+
+        if (zwyciezca.wygraneLegi === doceloweLegi) {
+          aktualizujKartyUI();
+          zakonczMecz(zwyciezca);
+        } else {
+          graczZaczynajacyLegIndex =
+            (graczZaczynajacyLegIndex + 1) % liczbaGraczy;
+          resetujLeg();
+        }
+      }
+
+      function pokazPopupBlizejSrodka() {
+        const popupBlizejSrodka = document.getElementById(
+          "popup-blizej-srodka",
+        );
+        const buttonsContainer = document.getElementById(
+          "popup-srodek-buttons",
+        );
+        buttonsContainer.innerHTML = "";
+
+        gracze.forEach((gracz) => {
+          const btn = document.createElement("button");
+          btn.className = "popup-btn popup-btn-yes";
+          btn.textContent = gracz.nazwa;
+          btn.onclick = () => {
+            popupBlizejSrodka.style.display = "none";
+            pokazCustomowyAlert(
+              `${gracz.nazwa} wygrywa rundę rzutem bliżej środka!`,
+            );
+            zakonczLeg(gracz.id, maksymalnyLimitLotek);
+          };
+          buttonsContainer.appendChild(btn);
+        });
+
+        popupBlizejSrodka.style.display = "flex";
+      }
+
+      function pokazPopupDoubles(
+        czyZakonczyl,
+        punktyPrzedRzutem,
+        rzuconePunkty,
+        maxMozliwychLoteKNaDabla,
+        callback,
+      ) {
+        const popup = document.getElementById("popup-doubles");
+        const btnContainer = document.getElementById("popup-doubles-buttons");
+        const tytul = document.getElementById("popup-doubles-tytul");
+        const opis = document.getElementById("popup-doubles-opis");
+
+        btnContainer.innerHTML = "";
+
+        if (czyZakonczyl) {
+          tytul.textContent = "Koniec Lega!";
+          opis.textContent = "W której lotce trafiłeś kończącego doubla?";
+
+          let minLotka = 1;
+          if (punktyPrzedRzutem > 110) {
+            minLotka = 3;
+          } else if (punktyPrzedRzutem > 50) {
+            minLotka = 2;
+          }
+
+          for (let i = minLotka; i <= 3; i++) {
+            let btn = document.createElement("button");
+            btn.className = "popup-btn popup-btn-yes";
+            btn.textContent = `${i}. lotka`;
+            btn.onclick = () => {
+              pokazPytanieOProbyZamkniecia(i, punktyPrzedRzutem, callback);
+            };
+            btnContainer.appendChild(btn);
+          }
+        } else {
+          tytul.textContent = "Szansa na podwójne";
+          opis.textContent = "Ile lotek w tej kolejce rzuciłeś na doubla (D)?";
+
+          let maxLotekNaDabla = Math.min(3, maxMozliwychLoteKNaDabla);
+
+          for (let i = maxLotekNaDabla; i >= 0; i--) {
+            let btn = document.createElement("button");
+            btn.className = "popup-btn popup-btn-no";
+            btn.style.backgroundColor =
+              i === 0 ? "#475569" : "var(--secondary-color)";
+            btn.style.color = i === 0 ? "white" : "var(--primary-color)";
+            btn.textContent = i.toString();
+            btn.onclick = () => {
+              popup.style.display = "none";
+              callback(3, i);
+            };
+            btnContainer.appendChild(btn);
+          }
+        }
+        popup.style.display = "flex";
+      }
+
+      function pokazPytanieOProbyZamkniecia(
+        lotkaKonczaca,
+        punktyPrzedRzutem,
+        callback,
+      ) {
+        const popup = document.getElementById("popup-doubles");
+        const btnContainer = document.getElementById("popup-doubles-buttons");
+        const tytul = document.getElementById("popup-doubles-tytul");
+        const opis = document.getElementById("popup-doubles-opis");
+
+        btnContainer.innerHTML = "";
+        tytul.textContent = "Statystyki Doubli";
+        opis.textContent = `Ile łącznie lotek w tej turze rzuciłeś na doubla (wliczając ${lotkaKonczaca}. trafną)?`;
+
+        let maxDarts = lotkaKonczaca;
+        if (punktyPrzedRzutem > 110 && maxDarts > 1) maxDarts = 1;
+        else if (punktyPrzedRzutem > 50 && maxDarts > 2) maxDarts = 2;
+
+        for (let i = 1; i <= maxDarts; i++) {
+          let btn = document.createElement("button");
+          btn.className = "popup-btn popup-btn-yes";
+          btn.textContent = `${i}`;
+          btn.onclick = () => {
+            popup.style.display = "none";
+            callback(lotkaKonczaca, i);
+          };
+          btnContainer.appendChild(btn);
+        }
+      }
+
+      function cofnijRzut() {
+        if (historiaStanuGry.length === 0) {
+          pokazCustomowyAlert("Brak rzutów do cofnięcia!");
+          return;
+        }
+
+        const poprzedniStan = historiaStanuGry.pop();
+
+        gracze = poprzedniStan.gracze;
+        aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
+        aktualnaKolejka = poprzedniStan.aktualnaKolejka;
+        graczZaczynajacyLegIndex = poprzedniStan.graczZaczynajacyLegIndex;
+        historiaAktualnegoLegu = poprzedniStan.historiaAktualnegoLegu;
+
+        wyswietlKolejke.textContent = `Lotki: ${aktualnaKolejka * 3} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+
+        aktualizujKartyUI();
+
+        gracze.forEach((gracz, i) => {
+          aktualizujHistorieRzutowUI(gracz.id, i);
+        });
+
+        aktualizujCalaHistorieLeguUI();
+
+        wpiszWynikInput.value = "";
+        resetujPodgladKlikow();
+        sprawdzTureBota();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const przyciskiCofnij = document.querySelectorAll(
+          "#btn-cofnij-rzut, .btn-cofnij-rzut",
+        );
+
+        przyciskiCofnij.forEach((przycisk) => {
+          przycisk.addEventListener("click", cofnijRzut);
+        });
+      });
+
+      function wykonajProcesRzutu(
+        punktyWpisane,
+        opisDoHistorii,
+        zuzyteLotki,
+        czyFura,
+        lotkiZPanelu = null,
+      ) {
+        zapiszStanGry();
+
+        let aktywnyGracz = gracze[aktualnyGraczIndex];
+        let punktyPrzedRzutem = aktywnyGracz.punkty;
+
+        let pozostalePunkty = czyFura
+          ? aktywnyGracz.punkty
+          : aktywnyGracz.punkty - punktyWpisane;
+
+        if (!czyFura) {
+          aktywnyGracz.punkty = pozostalePunkty;
+          aktywnyGracz.rzuty.push(punktyWpisane);
+        } else {
+          aktywnyGracz.rzuty.push(0);
+        }
+
+        historiaAktualnegoLegu.push({
+          kolejka: aktualnaKolejka,
+          graczId: aktywnyGracz.id,
+          punktyPrzed: punktyPrzedRzutem,
+          rzut: czyFura ? 0 : punktyWpisane,
+          szczegoly: czyFura ? "0" : opisDoHistorii,
+          punktyPo: pozostalePunkty,
+          zuzyteLotki: 3,
+        });
+
+        aktualizujHistorieRzutowUI(aktywnyGracz.id, aktualnyGraczIndex);
+        aktualizujCalaHistorieLeguUI();
+
+        // 1. Zakończenie Lega
+        if (pozostalePunkty === 0 && !czyFura) {
+          if (aktywnyGracz.czyBot) {
+            aktywnyGracz.lotkiNaDoubla += window.botLotkiNaDoubla || 1;
+            aktywnyGracz.trafioneDouble += 1;
+
+            let ostatniWpis =
+              historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+            ostatniWpis.zuzyteLotki = window.botOstatniaLotka || 3;
+
+            let rzutyWLegu = historiaAktualnegoLegu.filter(
+              (h) => h.graczId === aktywnyGracz.id,
+            );
+            let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
+            let lotkiZwyciezcy = lotkiWPoprzednich + ostatniWpis.zuzyteLotki;
+
+            pokazCustomowyAlert(
+              `${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`,
+            );
+            zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
+            return;
+          }
+
+          pokazPopupDoubles(
+            true,
+            punktyPrzedRzutem,
+            punktyWpisane,
+            3,
+            (lotkaKonczaca, lotkiNaDoubla) => {
+              aktywnyGracz.lotkiNaDoubla += lotkiNaDoubla;
+              aktywnyGracz.trafioneDouble += 1;
+              let ostatniWpis =
+                historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+              ostatniWpis.zuzyteLotki = lotkaKonczaca;
+              let rzutyWLegu = historiaAktualnegoLegu.filter(
+                (h) => h.graczId === aktywnyGracz.id,
+              );
+              let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
+              let lotkiZwyciezcy = lotkiWPoprzednich + lotkaKonczaca;
+              pokazCustomowyAlert(
+                `${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`,
+              );
+              zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
+            },
+          );
+          return;
+        }
+
+        // 2. Szansa na zakończenie
+        if (trybWyjscia === "do" && (pozostalePunkty > 0 || czyFura)) {
+          if (lotkiZPanelu !== null) {
+            let rzuconeNaDabla = lotkiZPanelu.filter(
+              (l) => l.opis.startsWith("D") || l.punkty === 50,
+            ).length;
+            if (rzuconeNaDabla > 0) {
+              aktywnyGracz.lotkiNaDoubla += rzuconeNaDabla;
+            }
+            finalizujTure();
+            return;
+          } else {
+            let czyMialSzanse = false;
+            let maxDarts = 0;
+
+            const mialFinisz =
+              punktyPrzedRzutem <= 170 &&
+              !niemozliweZamkniecia.includes(punktyPrzedRzutem);
+
+            if (mialFinisz) {
+              let bylJuzNaDoublu =
+                (punktyPrzedRzutem <= 40 && punktyPrzedRzutem % 2 === 0) ||
+                punktyPrzedRzutem === 50;
+
+              if (bylJuzNaDoublu) {
+                czyMialSzanse = true;
+                maxDarts = 3;
+              } else if (czyFura || punktyWpisane === 0) {
+                czyMialSzanse = true;
+                maxDarts = punktyPrzedRzutem <= 110 ? 2 : 1;
+              } else if (punktyPrzedRzutem <= 110) {
+                let minSetup1Lotka = punktyPrzedRzutem - 50;
+                if (punktyWpisane >= minSetup1Lotka) {
+                  czyMialSzanse = true;
+                  maxDarts = 2;
+                }
+              } else if (punktyPrzedRzutem <= 170) {
+                let minSetup2Lotki = punktyPrzedRzutem - 50;
+                if (punktyWpisane >= minSetup2Lotki) {
+                  czyMialSzanse = true;
+                  maxDarts = 1;
+                }
+              }
+            }
+
+            if (czyMialSzanse) {
+              if (aktywnyGracz.czyBot) {
+                aktywnyGracz.lotkiNaDoubla += window.botLotkiNaDoubla || 1;
+                finalizujTure();
+                return;
+              }
+              pokazPopupDoubles(
+                false,
+                punktyPrzedRzutem,
+                punktyWpisane,
+                maxDarts,
+                (lotkaKonczaca, lotkiNaDoubla) => {
+                  aktywnyGracz.lotkiNaDoubla += lotkiNaDoubla;
+                  finalizujTure();
+                },
+              );
+              return;
+            }
+          }
+        }
+
+        finalizujTure();
+      }
+
+      function finalizujTure() {
+        aktualnyGraczIndex = (aktualnyGraczIndex + 1) % liczbaGraczy;
+
+        if (aktualnyGraczIndex === graczZaczynajacyLegIndex) {
+          aktualnaKolejka++;
+          wyswietlKolejke.textContent = `Lotki: ${aktualnaKolejka * 3} ${limitLotekAktywny ? "/ " + maksymalnyLimitLotek : ""}`;
+
+          if (
+            limitLotekAktywny &&
+            (aktualnaKolejka - 1) * 3 >= maksymalnyLimitLotek
+          ) {
+            aktualizujKartyUI();
+            pokazPopupBlizejSrodka();
+            return;
+          }
+        }
+
+        aktualizujKartyUI();
+        sprawdzTureBota();
+      }
+
+      function zakonczMecz(zwyciezca) {
+        ekranGry.style.display = "none";
+        ekranWygranej.style.display = "flex";
+        powrotDoGier.style.display = "block";
+
+        if (liczbaGraczy === 1) {
+          wygranyTekst.textContent = `Koniec treningu!`;
+        } else {
+          wygranyTekst.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
+        }
+
+        let theadHtml = `
+                            <thead>
+                                <tr>
+                                    <th style="width:20%">Statystyki</th>
+                        `;
+        gracze.forEach((g) => {
+          theadHtml += `<th>${g.nazwa}</th>`;
+        });
+        theadHtml += `</tr></thead>`;
+
+        let tbodyHtml = `<tbody>`;
+
+        const dodajWiersz = (tytul, wartoscFn) => {
+          let tr = `<tr><td><strong>${tytul}</strong></td>`;
+          gracze.forEach((g) => {
+            tr += `<td>${wartoscFn(g)}</td>`;
+          });
+          tr += `</tr>`;
+          return tr;
+        };
+
+        tbodyHtml += dodajWiersz("Wygrane legi", (g) => g.wygraneLegi);
+        tbodyHtml += dodajWiersz("Średnia", (g) => obliczSredniaGracza(g.id));
+        tbodyHtml += dodajWiersz("Pierwsze 9-lotek", (g) =>
+          obliczSrednia9Lotek(g.id),
+        );
+
+        tbodyHtml += dodajWiersz("Najlepszy leg", (g) =>
+          g.najlepszyLeg === null ? "-" : g.najlepszyLeg,
+        );
+        tbodyHtml += dodajWiersz("Najlepszy rzut", (g) =>
+          g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
+        );
+
+        const policzStatystyke = (g, min, max, dokladnie) => {
+          return g.rzuty.filter((r) => {
+            if (dokladnie !== undefined) return r === dokladnie;
+            if (max !== undefined) return r >= min && r < max;
+            return r >= min;
+          }).length;
+        };
+
+        tbodyHtml += dodajWiersz("Double", (g) => {
+          if (g.lotkiNaDoubla === 0) return "0/0 (0%)";
+          return (
+            g.trafioneDouble +
+            "/" +
+            g.lotkiNaDoubla +
+            " (" +
+            ((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1) +
+            "%" +
+            ")"
+          );
+        });
+        tbodyHtml += dodajWiersz("Ilość rzutów 26", (g) =>
+          policzStatystyke(g, 0, 0, 26),
+        );
+        tbodyHtml += dodajWiersz("Ilość rzutów 80+", (g) =>
+          policzStatystyke(g, 80, 100),
+        );
+        tbodyHtml += dodajWiersz("Ilość rzutów 100+", (g) =>
+          policzStatystyke(g, 100, 170),
+        );
+        tbodyHtml += dodajWiersz("Ilość rzutów 170+", (g) =>
+          policzStatystyke(g, 170, 180),
+        );
+        tbodyHtml += dodajWiersz("Ilość rzutów 180", (g) =>
+          policzStatystyke(g, 0, 0, 180),
+        );
+
+        tbodyHtml += `</tbody>`;
+        tabelaStatystykiDynamiczna.innerHTML = theadHtml + tbodyHtml;
+      }
+
+      przyciskZobaczPrzebieg.addEventListener("click", () => {
+        kontenerZakladek.innerHTML = "";
+        kontenerTabeleLegow.innerHTML = "";
+
+        historiaMeczuLegi.forEach((legData, index) => {
+          const btnTab = document.createElement("button");
+          btnTab.className = `przycisk-zakladki ${index === 0 ? "aktywna" : ""}`;
+          btnTab.textContent = `Leg ${index + 1}`;
+          btnTab.setAttribute("data-leg", index);
+          btnTab.addEventListener("click", () => {
+            document
+              .querySelectorAll(".przycisk-zakladki")
+              .forEach((b) => b.classList.remove("aktywna"));
+            document
+              .querySelectorAll(".zawartosc-zakladki")
+              .forEach((z) => z.classList.remove("aktywna"));
+            btnTab.classList.add("aktywna");
+            document
+              .getElementById(`zawartosc-leg-${index}`)
+              .classList.add("aktywna");
+          });
+          kontenerZakladek.appendChild(btnTab);
+
+          const divTabContent = document.createElement("div");
+          divTabContent.className = `zawartosc-zakladki ${index === 0 ? "aktywna" : ""}`;
+          divTabContent.id = `zawartosc-leg-${index}`;
+
+          let szerokoscKolumny = Math.floor(90 / liczbaGraczy);
+
+          let srednieWLegu = {};
+
+          gracze.forEach((g) => {
+            let rzutyGraczaWLegu = legData.filter((r) => r.graczId === g.id);
+            let sumaPkt = rzutyGraczaWLegu.reduce((sum, r) => sum + r.rzut, 0);
+            let iloscKolejek = rzutyGraczaWLegu.length; // Liczymy ilość tur
+
+            srednieWLegu[g.id] =
+              iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
+          });
+
+          let htmlTabeli = `
+                                <table class="tabela-przebiegu">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%;">Kolejka</th>
+                            `;
+          gracze.forEach((g) => {
+            htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
+                                        ${g.nazwa}<br>
+                                        <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
+                                    </th>`;
+          });
+
+          htmlTabeli += `</tr></thead><tbody>`;
+
+          let rundyMap = {};
+          legData.forEach((rekord) => {
+            if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
+            rundyMap[rekord.kolejka][rekord.graczId] = rekord;
+          });
+
+          Object.keys(rundyMap).forEach((kol) => {
+            htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
+            gracze.forEach((g) => {
+              let rzutG = rundyMap[kol][g.id];
+              let cel = rzutG
+                ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>`
+                : "-";
+              htmlTabeli += `<td>${cel}</td>`;
+            });
+            htmlTabeli += `</tr>`;
+          });
+
+          htmlTabeli += `</tbody></table>`;
+          divTabContent.innerHTML = htmlTabeli;
+          kontenerTabeleLegow.appendChild(divTabContent);
+        });
+
+        modalPrzebiegu.style.display = "flex";
+      });
+
+      przyciskZamknijPrzebieg.addEventListener("click", () => {
+        modalPrzebiegu.style.display = "none";
+      });
+
+      document.getElementById("powrot-gra").addEventListener("click", () => {
+        let czyPrzerwac = confirm(
+          "Czy na pewno chcesz przerwać bieżącą grę i wrócić do ustawień?",
+        );
+        if (czyPrzerwac) {
+          ekranGry.style.display = "none";
+          formularzUstawien.style.display = "flex";
+          tytulStrony.style.display = "block";
+          wpiszWynikInput.value = "";
+          powrotDoGier.style.display = "block";
+          resetujPodgladKlikow();
+        }
+      });
+
+      przyciskKolejnaGra.addEventListener("click", () => {
+        ekranWygranej.style.display = "none";
+        formularzUstawien.style.display = "flex";
+        tytulStrony.style.display = "block";
+        wpiszWynikInput.value = "";
+        resetujPodgladKlikow();
+      });
+
+      // --- LOGIKA PRZEŁĄCZANIA ZAKŁADEK NA KARCIE GRACZA ---
+      window.przelaczZakladkeKarty = function (btn, pokazId, ukryjId) {
+        const karta = btn.closest(".karta-gracza");
+        const buttons = karta.querySelectorAll(".zakladka-btn-karta");
+        buttons.forEach((b) => {
+          b.classList.remove("aktywne-btn");
+        });
+
+        btn.classList.add("aktywne-btn");
+
+        document.getElementById(pokazId).style.display = "block";
+        document.getElementById(ukryjId).style.display = "none";
+      };
+
+      function sprawdzTureBota() {
+        let aktywnyGracz = gracze[aktualnyGraczIndex];
+        if (aktywnyGracz.czyBot) {
+          // Blokujemy ręczne wpisywanie
+          wpiszWynikInput.disabled = true;
+          document.querySelector(".strefa-klikania").style.pointerEvents =
+            "none";
+
+          // Wywołujemy funkcję z osobnego pliku dartbot.js
+          if (typeof wykonajTureBota === "function") {
+            wykonajTureBota(aktywnyGracz);
+          }
+        } else {
+          // Zdejmujemy blokady dla ludzkiego gracza
+          document.querySelector(".strefa-klikania").style.pointerEvents =
+            "auto";
+          sprawdzRozmiar();
+          wpiszWynikInput.focus();
+        }
+      }
+    </script>
+    <script src="./menu.js" defer></script>
+    <script src="./dartbot.js" defer></script>
+  </body>
+</html>
