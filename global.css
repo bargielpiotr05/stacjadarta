@@ -72,6 +72,10 @@ header a {
     margin-left: 20px;
     border-bottom: 2px solid var(--secondary-color);
 }
+.header-left-section a{
+    display:flex;
+    flex-direction:row;
+}
 .header-left-section img {
     height: 100px;
 }
