@@ -86,9 +86,6 @@ header a {
         color 0.3s;
     font-weight: bolder;
 }
-.header-right-section a:first-child {
-    text-decoration: underline;
-}
 .join-us {
     border: 2px solid var(--secondary-color);
     border-radius: 50px;
