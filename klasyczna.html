@@ -1647,61 +1647,50 @@
           anulujTureBota();
         }
 
-        const czyGraczWykonalRzut = historiaAktualnegoLegu.some((rzut) => {
-          const gracz = gracze.find((zawodnik) => zawodnik.id === rzut.graczId);
-          return gracz && !gracz.czyBot;
-        });
-
-        if (!czyGraczWykonalRzut) {
-          pokazCustomowyAlert("Nie można cofnąć przed rzutem gracza.");
-          sprawdzTureBota();
-          return;
-        }
-
-        if (historiaStanuGry.length === 0) {
+        if (!historiaStanuGry || historiaStanuGry.length === 0) {
           pokazCustomowyAlert("Brak rzutów do cofnięcia!");
           return;
         }
 
-        const indeksMigawkiGracza = historiaStanuGry.findLastIndex(
-          (migawka) => {
-            const gracz = gracze.find(
-              (zawodnik) => zawodnik.id === migawka.aktualnyGraczId,
-            );
-            return gracz && !gracz.czyBot;
-          },
-        );
+        const czyGraZBotem = gracze.some((g) => g.czyBot);
+        let stanDoPrzywrocenia = null;
 
-        if (indeksMigawkiGracza === -1) {
-          pokazCustomowyAlert("Nie znaleziono rzutu gracza do cofnięcia.");
-          sprawdzTureBota();
+        if (czyGraZBotem) {
+          // TRYB Z DARTBOTEM:
+          // Jeśli bot zdążył już odpowiedzieć na nasz rzut, cofamy rzut bota ORAZ gracza
+          const ostatniaMigawka = historiaStanuGry[historiaStanuGry.length - 1];
+          const ostatniGracz = gracze.find(
+            (g) => g.id === ostatniaMigawka.aktualnyGraczId,
+          );
+
+          if (
+            ostatniGracz &&
+            ostatniGracz.czyBot &&
+            historiaStanuGry.length >= 2
+          ) {
+            historiaStanuGry.pop(); // Usuń rzut bota
+            stanDoPrzywrocenia = historiaStanuGry.pop(); // Cofnij do rzutu gracza
+          } else {
+            // Bot jeszcze nie rzucił (np. w trakcie rzutu gracza)
+            stanDoPrzywrocenia = historiaStanuGry.pop();
+          }
+        } else {
+          // TRYB NORMALNY (Solo / 2-4 graczy):
+          // Zawsze cofamy dokładnie 1 ostatni rzut tego gracza, który właśnie rzucił
+          stanDoPrzywrocenia = historiaStanuGry.pop();
+        }
+
+        if (!stanDoPrzywrocenia) {
+          pokazCustomowyAlert("Brak rzutów do cofnięcia!");
           return;
         }
 
-        const poprzedniStan = historiaStanuGry[indeksMigawkiGracza];
-        historiaStanuGry = historiaStanuGry.slice(0, indeksMigawkiGracza);
-
-        gracze = poprzedniStan.gracze;
-        aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
-        aktualnaKolejka = poprzedniStan.aktualnaKolejka;
-        graczZaczynajacyLegIndex = poprzedniStan.graczZaczynajacyLegIndex;
-        historiaAktualnegoLegu = poprzedniStan.historiaAktualnegoLegu;
-
-        // Cofnięcie rzutu bota oddaje turę najbliższemu graczowi.
-        if (gracze[aktualnyGraczIndex]?.czyBot) {
-          const indeksGracza = gracze.findIndex((gracz, indeks) => {
-            if (!gracz.czyBot) {
-              const dystans =
-                (indeks - aktualnyGraczIndex + liczbaGraczy) % liczbaGraczy;
-              return dystans > 0;
-            }
-            return false;
-          });
-
-          if (indeksGracza !== -1) {
-            aktualnyGraczIndex = indeksGracza;
-          }
-        }
+        // Przywrócenie stanu gry
+        gracze = stanDoPrzywrocenia.gracze;
+        aktualnyGraczIndex = stanDoPrzywrocenia.aktualnyGraczIndex;
+        aktualnaKolejka = stanDoPrzywrocenia.aktualnaKolejka;
+        graczZaczynajacyLegIndex = stanDoPrzywrocenia.graczZaczynajacyLegIndex;
+        historiaAktualnegoLegu = stanDoPrzywrocenia.historiaAktualnegoLegu;
 
         const wykorzystaneLotki = historiaAktualnegoLegu.reduce(
           (suma, rzut) => suma + (rzut.zuzyteLotki || 3),
@@ -1710,16 +1699,16 @@
         wyswietlKolejke.textContent = `Lotki: ${wykorzystaneLotki} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
 
         aktualizujKartyUI();
-
-        gracze.forEach((gracz, i) => {
-          aktualizujHistorieRzutowUI(gracz.id, i);
-        });
-
+        gracze.forEach((gracz, i) => aktualizujHistorieRzutowUI(gracz.id, i));
         aktualizujCalaHistorieLeguUI();
 
         wpiszWynikInput.value = "";
         resetujPodgladKlikow();
         sprawdzTureBota();
+
+        if (typeof zapiszStanMeczuDoStorage === "function") {
+          zapiszStanMeczuDoStorage();
+        }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -2171,6 +2160,198 @@
           wpiszWynikInput.focus();
         }
       }
+      // ==========================================
+      // PANCERNY AUTOZAPIS MECZU (F5)
+      // ==========================================
+
+      function zapiszStanMeczuDoStorage() {
+        if (ekranGry.style.display !== "block") return;
+
+        const daneMeczu = {
+          punktyStartowe,
+          doceloweLegi,
+          aktualnaKolejka,
+          gracze,
+          liczbaGraczy,
+          aktualnyGraczIndex,
+          graczZaczynajacyLegIndex,
+          trybWejscia,
+          trybWyjscia,
+          limitLotekAktywny,
+          maksymalnyLimitLotek,
+          historiaMeczuLegi,
+          historiaAktualnegoLegu,
+        };
+
+        localStorage.setItem("sd_trwajacy_mecz", JSON.stringify(daneMeczu));
+      }
+
+      function usunStanMeczuZStorage() {
+        localStorage.removeItem("sd_trwajacy_mecz");
+      }
+
+      // ==========================================
+      // PANCERNY AUTOZAPIS MECZU + PEŁNE COFANIE (F5)
+      // ==========================================
+
+      function zapiszStanMeczuDoStorage() {
+        if (ekranGry.style.display !== "block") return;
+
+        const daneMeczu = {
+          punktyStartowe,
+          doceloweLegi,
+          aktualnaKolejka,
+          gracze,
+          liczbaGraczy,
+          aktualnyGraczIndex,
+          graczZaczynajacyLegIndex,
+          trybWejscia,
+          trybWyjscia,
+          limitLotekAktywny,
+          maksymalnyLimitLotek,
+          historiaMeczuLegi,
+          historiaAktualnegoLegu,
+          historiaStanuGry, // Zapisujemy pełną historię cofnięć
+        };
+
+        localStorage.setItem("sd_trwajacy_mecz", JSON.stringify(daneMeczu));
+      }
+
+      function usunStanMeczuZStorage() {
+        localStorage.removeItem("sd_trwajacy_mecz");
+      }
+
+      function przywrocMeczZStorage() {
+        const suroweDane = localStorage.getItem("sd_trwajacy_mecz");
+        if (!suroweDane) return;
+
+        try {
+          const stan = JSON.parse(suroweDane);
+
+          punktyStartowe = stan.punktyStartowe;
+          doceloweLegi = stan.doceloweLegi;
+          aktualnaKolejka = stan.aktualnaKolejka;
+          gracze = stan.gracze;
+          liczbaGraczy = stan.liczbaGraczy;
+          aktualnyGraczIndex = stan.aktualnyGraczIndex;
+          graczZaczynajacyLegIndex = stan.graczZaczynajacyLegIndex;
+          trybWejscia = stan.trybWejscia;
+          trybWyjscia = stan.trybWyjscia;
+          limitLotekAktywny = stan.limitLotekAktywny;
+          maksymalnyLimitLotek = stan.maksymalnyLimitLotek;
+          historiaMeczuLegi = stan.historiaMeczuLegi || [];
+          historiaAktualnegoLegu = stan.historiaAktualnegoLegu || [];
+          historiaStanuGry = stan.historiaStanuGry || []; // Przywracamy historię cofnięć
+
+          // Przełącz widok
+          formularzUstawien.style.display = "none";
+          tytulStrony.style.display = "none";
+          powrotDoGier.style.display = "none";
+          ekranGry.style.display = "block";
+
+          celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
+          const zuzyte = historiaAktualnegoLegu.reduce(
+            (acc, r) => acc + (r.zuzyteLotki || 3),
+            0,
+          );
+          wyswietlKolejke.textContent = `Lotki: ${zuzyte} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+
+          // Odtworzenie kart graczy
+          kontenerGraczyWGrze.innerHTML = "";
+          gracze.forEach((gracz, i) => {
+            kontenerGraczyWGrze.innerHTML += `
+        <div class="karta-gracza" id="karta-g${i}">
+            <h2>${gracz.nazwa}</h2>
+            <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: ${gracz.wygraneLegi}</div>
+            <div class="wynik-główny" id="punkty-g${i}">${gracz.punkty}</div>
+            <div class="checkout-sugerowany" id="checkout-g${i}"></div>
+
+            <div class="karta-zakladki">
+                <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+                <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+            </div>
+
+            <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+              <table class="aktualne-statystyki-tabela">
+                <tr><th>Średnia</th><td id="srednia-tabela-g${i}">0.00</td></tr>
+                <tr><th>Pierwsze 9-lotek</th><td id="dziewiec-lotek-g${i}">0.00</td></tr>
+                <tr class="ostatni-wiersz"><th>Ostatni Leg</th><td id="ostatni-leg-g${i}">-</td></tr>
+              </table>
+            </div>
+
+            <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+                <table class="tabela-historii-karty">
+                    <thead><tr><th>Lotki</th><th>Rzucone</th><th>Zostało</th></tr></thead>
+                    <tbody id="tabela-historia-body-g${i}">
+                        <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      `;
+          });
+
+          aktualizujKartyUI();
+          gracze.forEach((g, i) => aktualizujHistorieRzutowUI(g.id, i));
+          aktualizujCalaHistorieLeguUI();
+          sprawdzTureBota();
+        } catch (err) {
+          console.error("Błąd odtwarzania:", err);
+          usunStanMeczuZStorage();
+        }
+      }
+
+      // Bezpośrednie podpięcie przycisków cofania (bez zawodnego DOMContentLoaded)
+      function podepnijPrzyciskiCofania() {
+        const przyciski = document.querySelectorAll(
+          "#btn-cofnij-rzut, .btn-cofnij, .btn-cofnij-rzut",
+        );
+        przyciski.forEach((btn) => {
+          // Nadpisujemy onclick i zatrzymujemy propagację, by event nie odpalał się dwukrotnie
+          btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            cofnijRzut();
+          };
+        });
+      }
+      podepnijPrzyciskiCofania();
+
+      // Aktualizacja zapisu przy akcjach meczowych
+      const orgFinalizujTure = finalizujTure;
+      finalizujTure = function () {
+        orgFinalizujTure();
+        zapiszStanMeczuDoStorage();
+      };
+
+      const orgRozpocznijWlasciwaGre = rozpocznijWlasciwaGre;
+      rozpocznijWlasciwaGre = function (idx) {
+        orgRozpocznijWlasciwaGre(idx);
+        zapiszStanMeczuDoStorage();
+      };
+
+      const orgResetujLeg = resetujLeg;
+      resetujLeg = function () {
+        orgResetujLeg();
+        zapiszStanMeczuDoStorage();
+      };
+
+      const orgZakonczMecz = zakonczMecz;
+      zakonczMecz = function (zwyciezca) {
+        usunStanMeczuZStorage();
+        orgZakonczMecz(zwyciezca);
+      };
+
+      document.getElementById("powrot-gra").addEventListener("click", () => {
+        setTimeout(() => {
+          if (ekranGry.style.display !== "block") {
+            usunStanMeczuZStorage();
+          }
+        }, 100);
+      });
+
+      // Start przywracania po załadowaniu
+      przywrocMeczZStorage();
     </script>
     <script src="./menu.js" defer></script>
     <script src="./dartbot.js" defer></script>
