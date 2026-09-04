@@ -69,11 +69,31 @@ function obliczRzutBota(aktualnePunkty, poziomIntStr) {
     return { punkty: wylosowanePunkty, czyFura: false, lotkaKonczaca: 3, lotkiNaDoubla: 0 };
 }
 
+let botTimer = null;
+let botTurnToken = 0;
+
+function anulujTureBota() {
+    botTurnToken++;
+
+    if (botTimer !== null) {
+        clearTimeout(botTimer);
+        botTimer = null;
+    }
+}
+
 function wykonajTureBota(botGracz) {
     const input = document.getElementById("wpisz-wynik");
     if(input) input.placeholder = "DartBot rzuca...";
 
-    setTimeout(() => {
+    anulujTureBota();
+    const tokenTury = botTurnToken;
+    const botId = botGracz.id;
+
+    botTimer = setTimeout(() => {
+        botTimer = null;
+
+        if (tokenTury !== botTurnToken || botGracz.id !== botId) return;
+
         let wynikBota = obliczRzutBota(botGracz.punkty, botGracz.poziomBota);
         window.botOstatniaLotka = wynikBota.lotkaKonczaca;
         window.botLotkiNaDoubla = wynikBota.lotkiNaDoubla;
@@ -86,5 +106,5 @@ function wykonajTureBota(botGracz) {
         );
 
         if(input) { input.placeholder = "0"; input.value = ""; }
-    }, 1500); 
+    }, 1500);
 }

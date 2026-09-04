@@ -1591,6 +1591,10 @@
       }
 
       function cofnijRzut() {
+        if (typeof anulujTureBota === "function") {
+          anulujTureBota();
+        }
+
         if (historiaStanuGry.length === 0) {
           pokazCustomowyAlert("Brak rzutów do cofnięcia!");
           return;
@@ -2010,6 +2014,10 @@
       };
 
       function sprawdzTureBota() {
+        if (typeof anulujTureBota === "function") {
+          anulujTureBota();
+        }
+
         let aktywnyGracz = gracze[aktualnyGraczIndex];
         if (aktywnyGracz.czyBot) {
           // Blokujemy ręczne wpisywanie
