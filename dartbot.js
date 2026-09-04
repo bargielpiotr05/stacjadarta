@@ -85,10 +85,11 @@ function anulujTureBota() {
 }
 
 function wykonajTureBota(botGracz) {
+    anulujTureBota();
+
     const input = document.getElementById("wpisz-wynik");
     if(input) input.placeholder = "DartBot rzuca...";
 
-    anulujTureBota();
     const tokenTury = botTurnToken;
     const botId = botGracz.id;
 

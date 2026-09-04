@@ -1608,6 +1608,21 @@
         graczZaczynajacyLegIndex = poprzedniStan.graczZaczynajacyLegIndex;
         historiaAktualnegoLegu = poprzedniStan.historiaAktualnegoLegu;
 
+        // Cofnięcie rzutu bota oddaje turę najbliższemu graczowi.
+        if (gracze[aktualnyGraczIndex]?.czyBot) {
+          const indeksGracza = gracze.findIndex((gracz, indeks) => {
+            if (!gracz.czyBot) {
+              const dystans = (indeks - aktualnyGraczIndex + liczbaGraczy) % liczbaGraczy;
+              return dystans > 0;
+            }
+            return false;
+          });
+
+          if (indeksGracza !== -1) {
+            aktualnyGraczIndex = indeksGracza;
+          }
+        }
+
         wyswietlKolejke.textContent = `Lotki: ${aktualnaKolejka * 3} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
 
         aktualizujKartyUI();
