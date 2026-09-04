@@ -670,20 +670,27 @@
         const czyZaznaczonyBot = wlaczDartbotaCheckbox
           ? wlaczDartbotaCheckbox.checked
           : false;
-
         let aktualnaSredniaBota = document.getElementById("srednia-bota")
           ? document.getElementById("srednia-bota").value
           : "50";
 
+        // Pobieramy zapamiętane imiona z localStorage:
+        const pamiecGraczy = JSON.parse(
+          localStorage.getItem("sd_ostatni_gracze") || "[]",
+        );
+
         kontenerNazwGraczy.innerHTML = "";
 
         for (let i = 1; i <= iloscLudzi; i++) {
+          // Jeśli gracz był wcześniej zapisany, wstawiamy jego imię:
+          const domyslnaNazwa = pamiecGraczy[i - 1] || "";
+
           kontenerNazwGraczy.innerHTML += `
-                    <label>
-                        <h4>Gracz ${i}:</h4>
-                        <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}">
-                    </label>
-                `;
+          <label>
+            <h4>Gracz ${i}:</h4>
+            <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" value="${domyslnaNazwa}">
+          </label>
+        `;
         }
 
         if (czyZaznaczonyBot) {
@@ -694,14 +701,14 @@
               : `DartBot (Śr: ${aktualnaSredniaBota})`;
 
           kontenerNazwGraczy.innerHTML += `
-                    <label>
-                        <h4>Gracz ${botIndex}:</h4>
-                        <button type="button" id="btn-dartbot" class="wspolny-input" onclick="otworzPopupBota()">
-                            ${btnText}
-                        </button>
-                        <input type="hidden" id="srednia-bota" value="${aktualnaSredniaBota}">
-                    </label>
-                `;
+                        <label>
+                            <h4>Gracz ${botIndex}:</h4>
+                            <button type="button" id="btn-dartbot" class="wspolny-input" onclick="otworzPopupBota()">
+                                ${btnText}
+                            </button>
+                            <input type="hidden" id="srednia-bota" value="${aktualnaSredniaBota}">
+                        </label>
+                    `;
         }
       }
       iloscGraczySelect.addEventListener("change", generujPolaGraczy);
@@ -813,9 +820,9 @@
         const alertDiv = document.getElementById("wylosowana-osoba");
 
         alertDiv.innerHTML = `
-          <span>${wiadomosc}</span>
-          <button id="zamknij-alert" style="margin-left: 20px; background: none; border: none; font-weight: bold; font-size: 18px; cursor: pointer; color: inherit;">✖</button>
-        `;
+              <span>${wiadomosc}</span>
+              <button id="zamknij-alert" style="margin-left: 20px; background: none; border: none; font-weight: bold; font-size: 18px; cursor: pointer; color: inherit;">✖</button>
+            `;
 
         alertDiv.style.display = "flex";
         alertDiv.style.alignItems = "center";
@@ -863,12 +870,12 @@
         rzutyGracza.forEach((h, idx) => {
           let sumaLotek = (idx + 1) * 3;
           html += `
-            <tr>
-              <td>${sumaLotek}</td>
-              <td><strong>${h.szczegoly}</strong></td>
-              <td>${h.punktyPo}</td>
-            </tr>
-          `;
+                <tr>
+                  <td>${sumaLotek}</td>
+                  <td><strong>${h.szczegoly}</strong></td>
+                  <td>${h.punktyPo}</td>
+                </tr>
+              `;
         });
 
         tbody.innerHTML = html;
@@ -893,11 +900,11 @@
           let graczObj = gracze.find((g) => g.id === h.graczId);
           let nazwa = graczObj ? graczObj.nazwa : `Gracz ${h.graczId + 1}`;
           html += `
-            <div class="wpis-historii-legu">
-              <span><strong>Kolejka ${h.kolejka}</strong> - ${nazwa}: <strong>${h.szczegoly}</strong></span>
-              <span>Wynik: <strong>${h.punktyPo}</strong> pkt</span>
-            </div>
-          `;
+                <div class="wpis-historii-legu">
+                  <span><strong>Kolejka ${h.kolejka}</strong> - ${nazwa}: <strong>${h.szczegoly}</strong></span>
+                  <span>Wynik: <strong>${h.punktyPo}</strong> pkt</span>
+                </div>
+              `;
         });
 
         elListaLegu.innerHTML = html;
@@ -1156,6 +1163,19 @@
           ? document.getElementById("wlacz-dartbota").checked
           : false;
 
+        // Zapisujemy imiona graczy do localStorage (przed rozpoczęciem meczu)
+        const wpisaneImiona = [];
+        for (let i = 1; i <= iloscLudzi; i++) {
+          const inp = document.getElementById(`nazwa-gracza${i}`);
+          if (inp && inp.value.trim() !== "") {
+            wpisaneImiona.push(inp.value.trim());
+          }
+        }
+        localStorage.setItem(
+          "sd_ostatni_gracze",
+          JSON.stringify(wpisaneImiona),
+        );
+
         liczbaGraczy = iloscLudzi + (czyBotWlaczony ? 1 : 0);
 
         punktyStartowe = parseInt(document.getElementById("punkty").value);
@@ -1198,53 +1218,53 @@
           });
 
           kontenerGraczyWGrze.innerHTML += `
-                    <div class="karta-gracza" id="karta-g${i}">
-                        <h2>${nazwa}</h2>
-                        <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
-                        <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
-                        <div class="checkout-sugerowany" id="checkout-g${i}"></div>
-                        
-                        <!-- ZAKŁADKI KARTY -->
-                        <div class="karta-zakladki">
-                            <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
-                            <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
-                        </div>
+                        <div class="karta-gracza" id="karta-g${i}">
+                            <h2>${nazwa}</h2>
+                            <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
+                            <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
+                            <div class="checkout-sugerowany" id="checkout-g${i}"></div>
 
-                        <!-- PANEL STATYSTYK -->
-                        <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
-                          <table class="aktualne-statystyki-tabela">
-                            <tr>
-                                <th>Średnia</th>
-                                <td id="srednia-tabela-g${i}">0.00</td>
-                            </tr>
-                            <tr>
-                              <th>Pierwsze 9-lotek</th>
-                              <td id="dziewiec-lotek-g${i}">0.00</td>
-                            </tr>
-                            <tr class="ostatni-wiersz">
-                              <th>Ostatni Leg</th>
-                              <td id="ostatni-leg-g${i}">-</td>
-                            </tr>
-                          </table>
-                        </div>
+                            <!-- ZAKŁADKI KARTY -->
+                            <div class="karta-zakladki">
+                                <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+                                <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+                            </div>
 
-                        <!-- PANEL HISTORII -->
-                        <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
-                            <table class="tabela-historii-karty">
-                                <thead>
-                                    <tr>
-                                        <th>Lotki</th>
-                                        <th>Rzucone</th>
-                                        <th>Zostało</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-historia-body-g${i}">
-                                    <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
-                                </tbody>
-                            </table>
+                            <!-- PANEL STATYSTYK -->
+                            <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+                              <table class="aktualne-statystyki-tabela">
+                                <tr>
+                                    <th>Średnia</th>
+                                    <td id="srednia-tabela-g${i}">0.00</td>
+                                </tr>
+                                <tr>
+                                  <th>Pierwsze 9-lotek</th>
+                                  <td id="dziewiec-lotek-g${i}">0.00</td>
+                                </tr>
+                                <tr class="ostatni-wiersz">
+                                  <th>Ostatni Leg</th>
+                                  <td id="ostatni-leg-g${i}">-</td>
+                                </tr>
+                              </table>
+                            </div>
+
+                            <!-- PANEL HISTORII -->
+                            <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+                                <table class="tabela-historii-karty">
+                                    <thead>
+                                        <tr>
+                                            <th>Lotki</th>
+                                            <th>Rzucone</th>
+                                            <th>Zostało</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-historia-body-g${i}">
+                                        <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
         }
 
         celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
@@ -1885,8 +1905,43 @@
         aktualizujKartyUI();
         sprawdzTureBota();
       }
+      function zapiszMeczDoHistorii(zwyciezca) {
+        const podsumowanieMeczu = {
+          id: Date.now(),
+          data: new Date().toLocaleDateString("pl-PL", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          punktyStartowe: punktyStartowe,
+          doceloweLegi: doceloweLegi,
+          zwyciezca: zwyciezca ? zwyciezca.nazwa : "Trening",
+          gracze: gracze.map((g) => ({
+            nazwa: g.nazwa,
+            wygraneLegi: g.wygraneLegi,
+            srednia: obliczSredniaGracza(g.id),
+            srednia9: obliczSrednia9Lotek(g.id),
+            najlepszyRzut: g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
+            najlepszyLeg: g.najlepszyLeg || "-",
+            skutecznoscDouble:
+              g.lotkiNaDoubla > 0
+                ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%`
+                : "0%",
+          })),
+        };
 
+        // Pobieramy obecną listę, dopisujemy nowy mecz na początek i zapisujemy
+        const historia = JSON.parse(
+          localStorage.getItem("sd_historia_meczow") || "[]",
+        );
+        historia.unshift(podsumowanieMeczu);
+
+        // Ograniczamy pamięć do ostatnich 30 meczów
+        if (historia.length > 30) historia.pop();
+
+        localStorage.setItem("sd_historia_meczow", JSON.stringify(historia));
+      }
       function zakonczMecz(zwyciezca) {
+        zapiszMeczDoHistorii(zwyciezca);
         ekranGry.style.display = "none";
         ekranWygranej.style.display = "flex";
         powrotDoGier.style.display = "block";
@@ -1898,10 +1953,10 @@
         }
 
         let theadHtml = `
-                            <thead>
-                                <tr>
-                                    <th style="width:20%">Statystyki</th>
-                        `;
+                                <thead>
+                                    <tr>
+                                        <th style="width:20%">Statystyki</th>
+                            `;
         gracze.forEach((g) => {
           theadHtml += `<th>${g.nazwa}</th>`;
         });
@@ -2012,16 +2067,16 @@
           });
 
           let htmlTabeli = `
-                                <table class="tabela-przebiegu">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 10%;">Kolejka</th>
-                            `;
+                                    <table class="tabela-przebiegu">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 10%;">Kolejka</th>
+                                `;
           gracze.forEach((g) => {
             htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
-                                        ${g.nazwa}<br>
-                                        <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
-                                    </th>`;
+                                            ${g.nazwa}<br>
+                                            <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
+                                        </th>`;
           });
 
           htmlTabeli += `</tr></thead><tbody>`;
