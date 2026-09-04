@@ -59,13 +59,13 @@
             background-image: url("./tla/tlo_gra_klasyczna.png");
         }
         #menu-shanghai::before {
-            background-image: url("./tla/shanghai.png");
+            background-image: url("./tla/tlo_shanghai.png");
         }
         #menu-around::before {
             background-image: url("./tla/tlo_gra_around-the-world.png");
         }
         #menu-high::before {
-            background-image: url("./tla/tlo_gra_high-numbers.png");
+            background-image: url("./tla/tlo_gra_121-checkout.png");
         }
         #menu-doubles::before {
             background-image: url("./tla/tlo_gra_doubles.png");
