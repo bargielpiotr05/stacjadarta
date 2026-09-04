@@ -284,86 +284,12 @@
         }
     </style>
     <body>
-        <header>
-            <a href="./index.html">
-                <div class="header-left-section">
-                    <img src="./loga/logo.png" alt="Stacja Dart" />
-                    <h1>STACJA DARTA</h1>
-                </div>
-            </a>
-            <div class="header-right-section">
-                <!-- Wersja komputerowa (widoczna na dużych ekranach) -->
-                <div class="wersja-komputer">
-                    <a href="./gry.html">GRY</a>
-                    <a href="./turnieje.html">TURNIEJE</a>
-                    <a href="./spolecznosc.html" style="text-decoration: underline">SPOŁECZNOŚĆ</a>
-                    <a href="./o-nas.html">O NAS</a>
-                    <a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a>
-                </div>
-
-                <!-- Przycisk Hamburga dla wersji mobilnej -->
-                <button type="button" id="mobilny-menu-btn" class="mobilny-menu-btn" aria-label="Otwórz menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-
-                <!-- Overlay menu mobilnego (wysuwane z prawej strony) -->
-                <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
-                    <div class="mobilny-menu-content">
-                        <button type="button" id="mobilny-menu-zamknij" class="mobilny-menu-zamknij">✖</button>
-                        <ul class="mobilny-menu-links">
-                            <li><a href="./gry.html">GRY</a></li>
-                            <li><a href="./turnieje.html">TURNIEJE</a></li>
-                            <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
-                            <li><a href="./o-nas.html">O NAS</a></li>
-                            <li><a href="./dolacz-do-nas.html" class="join-us">DOŁĄCZ DO NAS</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <header id="wspolny-header"></header>
         <main>
             <h1>Wkrótce zostanie opublikowane</h1>
         </main>
-                <footer class="site-footer">
-            <div class="footer-container">
-                <!-- Kolumna 1: O platformie -->
-                <div class="footer-col footer-about">
-                    <div class="footer-logo">
-                        <img src="./loga/logo.png" alt="Stacja Dart" />
-                        <span>STACJA DARTA</span>
-                    </div>
-                    <p>Profesjonalna platforma dartowa online – liczniki, statystyki, gra z DartBotem i społeczność graczy.</p>
-                </div>
-
-                <!-- Kolumna 2: Nawigacja -->
-                <div class="footer-col">
-                    <h4>Nawigacja</h4>
-                    <ul class="footer-links">
-                        <li><a href="./gry.html">Gry</a></li>
-                        <li><a href="./turnieje.html">Turnieje</a></li>
-                        <li><a href="./spolecznosc.html">Społeczność</a></li>
-                        <li><a href="./o-nas.html">O nas</a></li>
-                        <li><a href="./dolacz-do-nas.html">Dołącz do nas</a></li>
-                    </ul>
-                </div>
-
-                <!-- Kolumna 3: Kontakt i Status -->
-                <div class="footer-col">
-                    <h4>Kontakt</h4>
-                    <div class="footer-contact-item">
-                        <span class="contact-label">Napisz do nas:</span>
-                        <a href="mailto:kontakt@stacjadarta.pl">kontakt@stacjadarta.pl</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dolny pasek praw autorskich -->
-            <div class="footer-bottom">
-                <p>&copy; 2026 Stacja Dart. Wszelkie prawa zastrzeżone.</p>
-            </div>
-        </footer>
+                <footer id="wspolny-footer"></footer>
+        <script src="./menu.js" defer></script>
     </body>
 </html>
 <script>
