@@ -1595,6 +1595,17 @@
           anulujTureBota();
         }
 
+        const czyGraczWykonalRzut = historiaAktualnegoLegu.some((rzut) => {
+          const gracz = gracze.find((zawodnik) => zawodnik.id === rzut.graczId);
+          return gracz && !gracz.czyBot;
+        });
+
+        if (!czyGraczWykonalRzut) {
+          pokazCustomowyAlert("Nie można cofnąć przed rzutem gracza.");
+          sprawdzTureBota();
+          return;
+        }
+
         if (historiaStanuGry.length === 0) {
           pokazCustomowyAlert("Brak rzutów do cofnięcia!");
           return;
@@ -1623,7 +1634,11 @@
           }
         }
 
-        wyswietlKolejke.textContent = `Lotki: ${aktualnaKolejka * 3} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+        const wykorzystaneLotki = historiaAktualnegoLegu.reduce(
+          (suma, rzut) => suma + (rzut.zuzyteLotki || 3),
+          0,
+        );
+        wyswietlKolejke.textContent = `Lotki: ${wykorzystaneLotki} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
 
         aktualizujKartyUI();
 
