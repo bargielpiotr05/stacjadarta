@@ -23,6 +23,7 @@
     <meta property="og:type" content="website" />
     <link rel="stylesheet" href="./global.css" />
     <link rel="stylesheet" href="./shanghai-style.css" />
+    <link rel="stylesheet" href="./formularz.css" />
   </head>
   <body>
     <header id="wspolny-header"></header>
@@ -31,9 +32,9 @@
         <h1 id="tytul-strony">SHANGHAI</h1>
       </div>
       <div class="formularz-ustawien" id="sekcja-ustawien">
-        <form id="form-konfiguracja" onsubmit="event.preventDefault()">
+        <form id="form-konfiguracja" class="formularz-wspolny" onsubmit="event.preventDefault()">
           <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
-          <div class="form-sekcja">
+          <div class="sekcja-formularza">
             <div class="sekcja-tytul">UCZESTNICY</div>
             <div style="margin-bottom: 15px">
               <label>
@@ -48,7 +49,7 @@
             </div>
             <div id="kontener-nazw-graczy"></div>
           </div>
-          <div class="form-sekcja">
+          <div class="sekcja-formularza">
             <div class="sekcja-tytul">PARAMETRY GRY</div>
             <div class="grid-2-col">
               <div class="kontener-trybow">

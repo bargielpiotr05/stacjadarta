@@ -1,0 +1,135 @@
+/* Wspolny wyglad formularzy konfiguracji gier */
+.formularz-ustawien {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+form.formularz-wspolny {
+  background-color: var(--primary-form-color);
+  backdrop-filter: blur(10px);
+  padding: 50px;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--primary-color-border);
+  width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  position: relative;
+  align-items: stretch;
+}
+
+.formularz-wspolny .sekcja-formularza,
+.formularz-wspolny .form-sekcja {
+  background-color: var(--primary-form-inside-color);
+  border: 1px solid var(--primary-form-inside-border-color);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.formularz-wspolny .sekcja-tytul {
+  color: var(--secondary-color);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--primary-form-inside-border-color);
+}
+
+.formularz-wspolny .grid-2-kolumny,
+.formularz-wspolny .grid-2-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  width: 100%;
+}
+
+.formularz-wspolny label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.formularz-wspolny h4 {
+  margin: 0;
+  color: #b4b4d8;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.formularz-wspolny .wspolny-input,
+.formularz-wspolny select,
+.formularz-wspolny input[type="text"],
+.formularz-wspolny input[type="number"] {
+  background-color: var(--primary-color-lighter);
+  border: 2px solid var(--primary-color-border);
+  color: white;
+  padding: 12px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.formularz-wspolny .wspolny-input:focus,
+.formularz-wspolny select:focus,
+.formularz-wspolny input:focus {
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 10px rgba(64, 218, 64, 0.2);
+}
+
+.formularz-wspolny .przycisk-zacznij-grac {
+  display: flex;
+  justify-content: center;
+}
+
+.formularz-wspolny #zacznij-grac,
+.formularz-wspolny #rozpocznij-gre {
+  background-color: var(--secondary-color);
+  border: none;
+  color: var(--primary-color);
+  padding: 15px 25px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 50px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 300px;
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+
+.formularz-wspolny #zacznij-grac:hover,
+.formularz-wspolny #rozpocznij-gre:hover {
+  background-color: var(--secondary-color-hover);
+  box-shadow: 0 5px 20px rgba(64, 218, 64, 0.4);
+}
+
+@media (max-width: 700px) {
+  form.formularz-wspolny {
+    padding: 25px 18px;
+  }
+
+  .formularz-wspolny .grid-2-kolumny,
+  .formularz-wspolny .grid-2-col {
+    grid-template-columns: 1fr;
+  }
+}
