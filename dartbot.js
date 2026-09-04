@@ -79,6 +79,9 @@ function anulujTureBota() {
         clearTimeout(botTimer);
         botTimer = null;
     }
+
+    const input = document.getElementById("wpisz-wynik");
+    if (input) input.placeholder = "0";
 }
 
 function wykonajTureBota(botGracz) {
