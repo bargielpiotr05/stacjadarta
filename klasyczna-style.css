@@ -943,6 +943,7 @@ form h4 {
   border-radius: 8px;
   cursor: pointer;
   text-transform: uppercase;
+  width: 100%;
   transition:
     background-color 0.2s,
     transform 0.1s;
@@ -950,6 +951,7 @@ form h4 {
 .popup-btn-yes {
   background-color: var(--secondary-color);
   color: var(--primary-color);
+  margin-bottom: 10px;
 }
 .popup-btn-yes:hover {
   background-color: var(--secondary-color-hover);
@@ -1065,7 +1067,55 @@ form h4 {
   text-transform: none;
   transition: 0.3s;
 }
-
+#popup-konfiguracji-bota .custom-popup-box {
+  max-width: 450px;
+}
+.bot-slider-container {
+  margin: 25px 0;
+  text-align: left;
+}
+.bot-slider-container label {
+  display: flex;
+  justify-content: space-between;
+  color: white;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+#bot-slider-val {
+  color: var(--secondary-color);
+  font-weight: bold;
+  font-size: 22px;
+}
+.bot-slider-container input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--secondary-color);
+}
+.bot-statistics {
+  margin-top: 25px;
+  font-size: 15px;
+  color: #ccc;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+}
+.bot-statistics div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.bot-statistics div:last-child {
+  margin-bottom: 0;
+}
+#bot-stat-good {
+  color: #4ade80;
+}
+#bot-stat-bad {
+  color: #f87171;
+}
+#bot-stat-checkout {
+  color: #38bdf8;
+}
 @media (max-width: 1050px) {
   main {
     padding: 0;
@@ -1091,7 +1141,7 @@ form h4 {
     box-sizing: border-box;
     margin-bottom: 7px;
   }
-.karta-gracza {
+  .karta-gracza {
     min-width: 0;
     flex: 1 1 calc(50% - 10px);
     max-width: calc(50% - 10px);
@@ -1165,7 +1215,7 @@ form h4 {
   .ekran-wygranej {
     padding: 10px;
   }
-  #formularz-ustawien{
-    padding-top:60px !important;
+  #formularz-ustawien {
+    padding-top: 60px !important;
   }
 }

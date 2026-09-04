@@ -30,7 +30,7 @@
     <header>
       <div class="header-left-section">
         <a href="./index.html">
-          <img src="./loga/logo.png" alt="Stacja Dart" style="height: 100px" />
+          <img src="./loga/logo.png" alt="Stacja Dart" />
           <h1>STACJA DARTA</h1>
         </a>
       </div>
@@ -99,14 +99,14 @@
               </select>
             </label>
             <label>
-              <div class="label-checkbox" style="margin-top: 8px; height: 100%; display: flex; align-items: center;">
+              <div class="label-checkbox">
                 <input type="checkbox" id="wlacz-dartbota" />
                 <h4>DartBot</h4>
               </div>
             </label>
           </div>
 
-          <div id="kontener-nazw-graczy" style="margin-top: 10px;"></div>
+          <div id="kontener-nazw-graczy"></div>
         </div>
 
         <!-- SEKCJA 2: PARAMETRY GRY -->
@@ -420,26 +420,57 @@
 
       <!-- POPUP KONFIGURACJI BOTA Z SUWAKIEM -->
       <div id="popup-konfiguracji-bota" class="custom-popup-overlay">
-        <div class="custom-popup-box" style="max-width: 450px;">
-            <h3>Ustawienia DartBota</h3>
-            <h1>🤖</h1>
-            <div style="margin: 25px 0; text-align: left;">
-                <label style="display:flex; justify-content:space-between; color: white; margin-bottom:15px; font-size: 18px;">
-                    <strong>Średnia Bota:</strong> <span id="bot-slider-val" style="color: var(--secondary-color); font-weight: bold; font-size: 22px;">50</span>
-                </label>
-                <input type="range" id="bot-slider-input" min="20" max="100" value="50" style="width:100%; cursor: pointer; accent-color: var(--secondary-color);">
-                
-                <div style="margin-top: 25px; font-size: 15px; color: #ccc; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Najczęstsze rzuty:</span> <strong id="bot-stat-range">35 - 70 pkt</strong></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Szansa na lepszy rzut:</span> <strong id="bot-stat-good" style="color:#4ade80;">17%</strong></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Szansa na gorszy rzut:</span> <strong id="bot-stat-bad" style="color:#f87171;">12%</strong></div>
-                    <div style="display:flex; justify-content:space-between;"><span>Skuteczność na doublach:</span> <strong id="bot-stat-checkout" style="color:#38bdf8;">30%</strong></div>
-                </div>
+        <div class="custom-popup-box">
+          <h3>Ustawienia DartBota</h3>
+          <h1>🤖</h1>
+          <div class="bot-slider-container">
+            <label>
+              <strong>Średnia Bota:</strong> <span id="bot-slider-val">50</span>
+            </label>
+            <input
+              type="range"
+              id="bot-slider-input"
+              min="20"
+              max="100"
+              value="50"
+              step="5"
+            />
+
+            <div class="bot-statistics">
+              <div>
+                <span>Najczęstsze rzuty:</span>
+                <strong id="bot-stat-range">35 - 70 pkt</strong>
+              </div>
+              <div>
+                <span>Szansa na lepszy rzut:</span>
+                <strong id="bot-stat-good">17%</strong>
+              </div>
+              <div>
+                <span>Szansa na gorszy rzut:</span>
+                <strong id="bot-stat-bad">12%</strong>
+              </div>
+              <div>
+                <span>Skuteczność na doublach:</span>
+                <strong id="bot-stat-checkout">30%</strong>
+              </div>
             </div>
-            <div class="custom-popup-buttons" style="flex-direction: column;">
-                <button type="button" class="popup-btn popup-btn-yes" onclick="zapiszKonfiguracjeBota()" style="width:100%; margin-bottom: 10px;">Zapisz</button>
-                <button type="button" class="popup-btn popup-btn-no" onclick="anulujBota()" style="width:100%;">Anuluj</button>
-            </div>
+          </div>
+          <div class="custom-popup-buttons" style="flex-direction: column">
+            <button
+              type="button"
+              class="popup-btn popup-btn-yes"
+              onclick="zapiszKonfiguracjeBota()"
+            >
+              Zapisz
+            </button>
+            <button
+              type="button"
+              class="popup-btn popup-btn-no"
+              onclick="anulujBota()"
+            >
+              Anuluj
+            </button>
+          </div>
         </div>
       </div>
     </main>
@@ -1640,7 +1671,8 @@
         if (gracze[aktualnyGraczIndex]?.czyBot) {
           const indeksGracza = gracze.findIndex((gracz, indeks) => {
             if (!gracz.czyBot) {
-              const dystans = (indeks - aktualnyGraczIndex + liczbaGraczy) % liczbaGraczy;
+              const dystans =
+                (indeks - aktualnyGraczIndex + liczbaGraczy) % liczbaGraczy;
               return dystans > 0;
             }
             return false;
