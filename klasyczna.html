@@ -876,6 +876,7 @@
       function zapiszStanGry() {
         const migawka = {
           gracze: JSON.parse(JSON.stringify(gracze)),
+          aktualnyGraczId: gracze[aktualnyGraczIndex]?.id,
           aktualnyGraczIndex: aktualnyGraczIndex,
           aktualnaKolejka: aktualnaKolejka,
           graczZaczynajacyLegIndex: graczZaczynajacyLegIndex,
@@ -1611,7 +1612,23 @@
           return;
         }
 
-        const poprzedniStan = historiaStanuGry.pop();
+        const indeksMigawkiGracza = historiaStanuGry.findLastIndex(
+          (migawka) => {
+            const gracz = gracze.find(
+              (zawodnik) => zawodnik.id === migawka.aktualnyGraczId,
+            );
+            return gracz && !gracz.czyBot;
+          },
+        );
+
+        if (indeksMigawkiGracza === -1) {
+          pokazCustomowyAlert("Nie znaleziono rzutu gracza do cofnięcia.");
+          sprawdzTureBota();
+          return;
+        }
+
+        const poprzedniStan = historiaStanuGry[indeksMigawkiGracza];
+        historiaStanuGry = historiaStanuGry.slice(0, indeksMigawkiGracza);
 
         gracze = poprzedniStan.gracze;
         aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
