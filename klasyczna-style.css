@@ -471,6 +471,7 @@ form h4 {
   margin: 0;
 }
 #wpisz-wynik {
+  appearance: textfield;
   -moz-appearance: textfield;
 }
 
@@ -678,6 +679,41 @@ form h4 {
   flex-direction: row;
   gap: 10px;
   width: 100%;
+}
+/* PRZEŁĄCZNIK WIDOKÓW STATYSTYK */
+.statystyki-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 15px 0;
+}
+
+.statystyki-tabs {
+  display: inline-flex;
+  background-color: var(--primary-color-lighter);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--primary-color-border);
+  gap: 5px;
+}
+
+.tab-stat-btn {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.tab-stat-btn.aktywna-stat-tab {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
 }
 .ekran-wygranej {
   background-color: var(--primary-color);
