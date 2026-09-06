@@ -1885,7 +1885,7 @@
         zapiszMeczDoHistorii(zwyciezca);
         ekranGry.style.display = "none";
         ekranWygranej.style.display = "flex";
-        powrotDoGier.style.display = "block";
+        powrotDoGier.style.display = "inline-flex";
 
         if (liczbaGraczy === 1) {
           wygranyTekst.textContent = `Koniec treningu!`;
@@ -2061,7 +2061,7 @@
           formularzUstawien.style.display = "flex";
           tytulStrony.style.display = "block";
           wpiszWynikInput.value = "";
-          powrotDoGier.style.display = "block";
+          powrotDoGier.style.display = "inline-flex";
           resetujPodgladKlikow();
         }
       });

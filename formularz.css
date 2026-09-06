@@ -22,6 +22,36 @@ form.formularz-wspolny {
   align-items: stretch;
 }
 
+#powrot-do-gier,
+#powrot-do-gier-wygrana,
+#powrot-do-gier-ekran-wygranej {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  text-decoration: none;
+  font-size: 18px;
+  line-height: 1;
+  color: white;
+  background-color: var(--light-grey);
+  border: 1px solid var(--primary-color-border);
+  border-radius: 12px;
+  transition: background-color 0.3s, border-color 0.3s, transform 0.2s;
+}
+
+#powrot-do-gier:hover,
+#powrot-do-gier-wygrana:hover,
+#powrot-do-gier-ekran-wygranej:hover {
+  background-color: var(--light-grey);
+  border-color: var(--primary-color-border-hover);
+  transform: scale(1.03);
+}
+
 .formularz-wspolny .sekcja-formularza,
 .formularz-wspolny .form-sekcja {
   background-color: var(--primary-form-inside-color);
@@ -125,7 +155,7 @@ form.formularz-wspolny {
 
 @media (max-width: 700px) {
   form.formularz-wspolny {
-    padding: 25px 18px;
+    padding: 55px 9px;
   }
 
   .formularz-wspolny .grid-2-kolumny,

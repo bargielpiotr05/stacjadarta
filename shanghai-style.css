@@ -484,45 +484,6 @@ input[type="text"]:focus {
   padding: 0 40px;
   box-sizing: border-box;
 }
-#powrot-do-gier {
-  position: absolute;
-  text-decoration: none;
-  font-size: 18px;
-  color: white;
-  background-color: var(--light-grey);
-  border: 1px solid var(--primary-color-border);
-  border-radius: 12px;
-  padding: 8px 14px;
-  transition:
-    background-color 0.3s,
-    border-color 0.3s;
-  white-space: nowrap;
-  top: 8px;
-  left: 8px;
-  position: absolute !important;
-  margin: 0 !important;
-  z-index: 10 !important;
-}
-#powrot-do-gier-ekran-wygranej {
-  display: flex;
-  position: absolute;
-  text-decoration: none;
-  font-size: 18px;
-  color: white;
-  background-color: var(--light-grey);
-  border: 1px solid var(--primary-color-border);
-  border-radius: 12px;
-  padding: 8px 14px;
-  transition:
-    background-color 0.3s,
-    border-color 0.3s;
-  white-space: nowrap;
-}
-
-#powrot-do-gier:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: #4a3f9e;
-}
 #tytul-strony {
   display: inline-block;
   margin: 0;
@@ -539,10 +500,6 @@ input[type="text"]:focus {
   main {
     padding: 0;
     margin: 0 5px;
-  }
-  #powrot-do-gier {
-    justify-content: center;
-    align-items: center;
   }
   #tytul-strony {
     margin: 100px 0 0 0;
@@ -573,8 +530,5 @@ input[type="text"]:focus {
   }
   .karta-rozgrywki .kropka-rzutu{
     min-width: 30px;
-  }
-  #powrot-do-gier-ekran-wygranej{
-    left: 0px;
   }
 }

@@ -40,30 +40,6 @@ main > * {
     box-sizing: border-box;
 }
 
-/* Przycisk powrotu do gier na wzór klasykl */
-#powrot-do-gier {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    margin: 0;
-    z-index: 10;
-    text-decoration: none;
-    font-size: 18px;
-    color: white;
-    background-color: var(--light-grey);
-    border: 1px solid var(--primary-color-border);
-    border-radius: 12px;
-    padding: 8px 14px;
-    transition:
-        background-color 0.3s,
-        border-color 0.3s;
-    white-space: nowrap;
-}
-#powrot-do-gier:hover {
-    background-color: var(--light-grey);
-    border-color: var(--primary-color-border-hover);
-}
-
 #tytul-strony {
     display: inline-block;
     margin: 0;
@@ -523,10 +499,6 @@ form h4 {
     main {
         padding: 0;
         margin: 0;
-    #powrot-do-gier {
-        position: relative;
-        max-width: 14px;
-        left: -190px;
     }
     #tytul-strony {
         margin: 0;

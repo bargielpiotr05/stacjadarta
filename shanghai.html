@@ -280,7 +280,7 @@
         );
         if (czyPrzerwac) {
           sekcjaUstawien.style.display = "block";
-          btnPowrotDoGier.style.display = "block";
+          btnPowrotDoGier.style.display = "inline-flex";
           tytulStrony.style.display = "block";
           ekranGry.style.display = "none";
         }
@@ -534,7 +534,7 @@
       function zakonczGre(zwyciezca, czyPrzezShanghai) {
         ekranGry.style.display = "none";
         ekranWynikowy.style.display = "block";
-        btnPowrotDoGier.style.display = "block";
+        btnPowrotDoGier.style.display = "inline-flex";
 
         txtZwyciezcaMecz.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
         if (czyPrzezShanghai) {

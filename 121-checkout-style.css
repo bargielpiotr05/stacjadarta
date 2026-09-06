@@ -40,30 +40,6 @@ main > * {
     box-sizing: border-box;
 }
 
-/* Dopisane z czyszczenia bloku style z pliku klasyczna.html */
-#powrot-do-gier {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    margin: 0;
-    z-index: 10;
-    text-decoration: none;
-    font-size: 18px;
-    color: white;
-    background-color: var(--light-grey);
-    border: 1px solid var(--primary-color-border);
-    border-radius: 12px;
-    padding: 8px 14px;
-    transition:
-        background-color 0.3s,
-        border-color 0.3s;
-    white-space: nowrap;
-}
-
-#powrot-do-gier:hover {
-    background-color: var(--light-grey);
-    border-color: var(--primary-color-border-hover);
-}
 #tytul-strony {
     display: inline-block;
     margin: 0;
@@ -285,6 +261,68 @@ form h4 {
     font-size: 64px;
     font-weight: bold;
     margin-bottom: 15px;
+}
+#kontener-wyniku{
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+#plus-1,
+#minus-1 {
+    font-size: 24px;
+    font-weight: 800;
+    min-width: 34px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    line-height: 1;
+    display: block;
+}
+#plus-1 {
+    color: green;
+    text-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
+}
+#minus-1 {
+    color: red;
+    text-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+}
+#plus-1.aktywny-plus,
+#minus-1.aktywny-minus {
+    opacity: 1;
+    visibility: visible;
+}
+.wynik-rundy {
+    min-width: 40px;
+    text-align: center;
+}
+.animacja-plus {
+    animation: pojawPlus 0.4s ease;
+}
+.animacja-minus {
+    animation: pojawMinus 0.4s ease;
+}
+@keyframes pojawPlus {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+@keyframes pojawMinus {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 .opcje-liczenia {
     display: flex;
@@ -647,11 +685,6 @@ form h4 {
     main {
         padding: 0;
         margin: 0;
-    }
-    #powrot-do-gier {
-        position: relative;
-        left: -180px;
-        max-width: 14px;
     }
     #tytul-strony {
         margin: 0;

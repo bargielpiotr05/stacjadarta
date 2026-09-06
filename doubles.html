@@ -310,7 +310,7 @@
           )
         ) {
           sekcjaUstawien.style.display = "block";
-          btnPowrotDoGier.style.display = "block";
+          btnPowrotDoGier.style.display = "inline-flex";
           ekranGry.style.display = "none";
         }
       });
@@ -629,7 +629,7 @@
           "powrot-do-gier-wygrana",
         );
         if (btnPowrotDoGierWygrana) {
-          btnPowrotDoGierWygrana.style.display = "block";
+          btnPowrotDoGierWygrana.style.display = "inline-flex";
         }
 
         txtZwyciezcaMecz.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
@@ -697,7 +697,7 @@
       btnRestart.addEventListener("click", () => {
         ekranWynikowy.style.display = "none";
         sekcjaUstawien.style.display = "block";
-        btnPowrotDoGier.style.display = "block";
+        btnPowrotDoGier.style.display = "inline-flex";
         generujPolaGraczy();
       });
     </script>

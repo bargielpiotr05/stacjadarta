@@ -348,6 +348,15 @@
       let wspolneOddaneLotki = 0;
       let wygraneRundyDruzyny = 0;
       let historiaStanuGry = [];
+      let obecnyStreak = 0;
+      let ostatniTypRundy = null;
+
+      function pobierzElementWskaznikaRundy() {
+        return {
+          plus: document.getElementById("plus-1"),
+          minus: document.getElementById("minus-1"),
+        };
+      }
 
       function sprawdzRozmiar() {
         if (window.innerWidth < 1500) {
@@ -529,6 +538,8 @@
         obecnaRunda = 1;
         aktualnyGraczIndex = 0;
         aktualnaKolejkaLotek = [];
+        obecnyStreak = 0;
+        ostatniTypRundy = null;
 
         for (let i = 0; i < liczbaGraczy; i++) {
           let nazwa = inputyNazw[i].value.trim();
@@ -540,6 +551,8 @@
             sumaPunktow: 0,
             iloscRzutowSuma: 0,
             iloscCheckoutow: 0,
+            obecnyStreakZwyciestw: 0,
+            najlepszyStreakZwyciestw: 0,
           });
         }
 
@@ -556,16 +569,21 @@
                               )
                               .join("")}
                         </div>
-                        <div class="wynik-główny" id="punkty-druzyny">${wspolnePunkty}</div>
-                    </div>
+                        <div id="kontener-wyniku">
+                          <div id="plus-1" class="wynik-rundy">+1</div>
+                          <div class="wynik-główny" id="punkty-druzyny">${wspolnePunkty}</div>
+                          <div id="minus-1" class="wynik-rundy">-1</div>
+                        </div>
+                      </div>
                 `;
 
         aktualizujStatusMeczu();
         aktualizujPodgladKlikow();
+        resetujWskaznikRundy();
 
         formularzUstawien.style.display = "none";
         tytulStrony.style.display = "none";
-        powrotDoGier.style.display = "none";
+        powrotDoGier.style.display = "inline-flex";
         ekranGry.style.display = "block";
         ekranWygranej.style.display = "none";
 
@@ -588,7 +606,7 @@
         ekranGry.style.display = "none";
         formularzUstawien.style.display = "flex";
         tytulStrony.style.display = "block";
-        powrotDoGier.style.display = "block";
+        powrotDoGier.style.display = "inline-flex";
       });
 
       przyciskZatwierdz.addEventListener("click", () => {
@@ -606,6 +624,46 @@
         wpiszWynikInput.value = "";
       });
 
+      function pokazWynikRundy(typ) {
+        const { plus: elementPlus, minus: elementMinus } = pobierzElementWskaznikaRundy();
+        if (!elementPlus || !elementMinus) return;
+
+        if (typ === ostatniTypRundy) {
+          obecnyStreak++;
+        } else {
+          obecnyStreak = 1;
+          ostatniTypRundy = typ;
+        }
+
+        const aktywnyTyp = typ === "plus" ? "plus" : "minus";
+        const aktywnyElement = aktywnyTyp === "plus" ? elementPlus : elementMinus;
+        const nieaktywnyElement = aktywnyTyp === "plus" ? elementMinus : elementPlus;
+
+        elementPlus.classList.remove("aktywny-plus", "animacja-plus");
+        elementMinus.classList.remove("aktywny-minus", "animacja-minus");
+
+        aktywnyElement.textContent = aktywnyTyp === "plus" ? `+${obecnyStreak}` : `-${obecnyStreak}`;
+        aktywnyElement.classList.add(
+          aktywnyTyp === "plus" ? "aktywny-plus" : "aktywny-minus",
+          aktywnyTyp === "plus" ? "animacja-plus" : "animacja-minus",
+        );
+
+        nieaktywnyElement.textContent = "";
+        nieaktywnyElement.classList.remove("aktywny-plus", "aktywny-minus");
+      }
+
+      function resetujWskaznikRundy() {
+        const { plus: elementPlus, minus: elementMinus } = pobierzElementWskaznikaRundy();
+        if (!elementPlus || !elementMinus) return;
+
+        elementPlus.classList.remove("aktywny-plus", "animacja-plus");
+        elementMinus.classList.remove("aktywny-minus", "animacja-minus");
+        elementPlus.textContent = "";
+        elementMinus.textContent = "";
+        obecnyStreak = 0;
+        ostatniTypRundy = null;
+      }
+
       function przetwarzajWynik(rzuconePunkty) {
         zapiszStanGry();
         let gracz = gracze[aktualnyGraczIndex];
@@ -615,17 +673,21 @@
           wspolnePunkty = wspolnePunktyPrzedKolejka;
           wspolneOddaneLotki += 3;
           aktualizujStatystyki(gracz, 0);
+          gracz.obecnyStreakZwyciestw = 0;
           alert("Fura! Punkty przywrócone.");
           zmienGracza(true);
         } else if (punktyZostaly === 0) {
           wspolnePunkty = 0;
           wygraneRundyDruzyny++;
           aktualizujStatystyki(gracz, rzuconePunkty);
-          alert(
-            `Drużyna zamyka ${obecnyCel}! (Rzut kończący: ${gracz.nazwa}) - Wygrana runda ${obecnaRunda}! Następny cel idzie w górę.`,
-          );
+          pokazWynikRundy("plus");
           obecnyCel++;
           gracz.iloscCheckoutow++;
+          gracz.obecnyStreakZwyciestw += 1;
+          gracz.najlepszyStreakZwyciestw = Math.max(
+            gracz.najlepszyStreakZwyciestw,
+            gracz.obecnyStreakZwyciestw,
+          );
           zakonczRunde();
         } else {
           wspolnePunkty = punktyZostaly;
@@ -636,10 +698,11 @@
       }
 
       function zmienGracza(fura = false) {
+        const gracz = gracze[aktualnyGraczIndex];
+
         if (wspolneOddaneLotki >= limitLotek) {
-          alert(
-            `Drużyna nie zamknęła ${obecnyCel} w ${limitLotek} lotkach. Koniec rundy ${obecnaRunda}. Następny cel idzie w dół.`,
-          );
+          gracz.obecnyStreakZwyciestw = 0;
+          pokazWynikRundy("minus");
           obecnyCel--;
           zakonczRunde();
           return;
@@ -664,6 +727,11 @@
         wspolnePunkty = obecnyCel;
         wspolnePunktyPrzedKolejka = obecnyCel;
         wspolneOddaneLotki = 0;
+
+        if (obecnyStreak > 0 && ostatniTypRundy) {
+          const aktywnyElement = ostatniTypRundy === "plus" ? document.getElementById("plus-1") : document.getElementById("minus-1");
+          aktywnyElement.textContent = ostatniTypRundy === "plus" ? `+${obecnyStreak}` : `-${obecnyStreak}`;
+        }
 
         aktualnyGraczIndex = (obecnaRunda - 1) % liczbaGraczy;
 
@@ -707,28 +775,20 @@
         tabelaStatystykiDynamiczna.innerHTML = `
                     <tr>
                         <th>Gracz</th>
-                        <th>Średnia 3-lotkowa</th>
+                        <th>Najlepszy streak</th>
                         <th>Ilość checkoutów</th>
                     </tr>
                 `;
 
-        let posortowaniGracze = [...gracze].sort((a, b) => {
-          let sredniaA =
-            a.iloscRzutowSuma > 0 ? a.sumaPunktow / (a.iloscRzutowSuma / 3) : 0;
-          let sredniaB =
-            b.iloscRzutowSuma > 0 ? b.sumaPunktow / (b.iloscRzutowSuma / 3) : 0;
-          return sredniaB - sredniaA;
-        });
+        let posortowaniGracze = [...gracze].sort(
+          (a, b) => b.najlepszyStreakZwyciestw - a.najlepszyStreakZwyciestw,
+        );
 
         posortowaniGracze.forEach((g) => {
-          let srednia =
-            g.iloscRzutowSuma > 0
-              ? (g.sumaPunktow / (g.iloscRzutowSuma / 3)).toFixed(2)
-              : "0.00";
           tabelaStatystykiDynamiczna.innerHTML += `
                         <tr>
                             <td>${g.nazwa}</td>
-                            <td>${srednia}</td>
+                            <td>${g.najlepszyStreakZwyciestw}</td>
                             <td>${g.iloscCheckoutow}</td>
                         </tr>
                     `;
@@ -739,7 +799,7 @@
         ekranWygranej.style.display = "none";
         formularzUstawien.style.display = "flex";
         tytulStrony.style.display = "block";
-        powrotDoGier.style.display = "block";
+        powrotDoGier.style.display = "inline-flex";
       });
 
       wpiszWynikInput.addEventListener("keypress", function (event) {
