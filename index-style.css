@@ -394,7 +394,7 @@
     }
 
     /* --- MEDIA QUERY DLA MOBILNEGO MENU --- */
-    @media (max-width: 1050px) {
+    @media (max-width: 1150px) {
       .header-left-section h1 {
         display: none;
       }

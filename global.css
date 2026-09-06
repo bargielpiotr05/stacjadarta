@@ -5,12 +5,12 @@
     --primary-color-border: #332d70;
     --primary-color-border-hover: #4a3f9e;
     
-    /* Ujednolicone tła formularzy (Glassmorphism) */
+    /* Ujednolicone tła formularzy */
     --primary-form-color: rgba(10, 8, 38, 0.88);
     --primary-form-inside-color: rgba(18, 14, 55, 0.5);
     --primary-form-inside-border-color: rgba(51, 45, 112, 0.5);
     
-    /* Przyciski czerwone (Cofnij, Usuń) */
+    /* Przyciski czer`one (Cofnij, Usuń) */
     --color-red-btn: rgba(255, 77, 77, 0.1);
     --color-red-btn-hover: rgba(255, 77, 77, 0.2);
     --color-red-btn-border: #ff4d4d;
@@ -41,7 +41,6 @@ html {
 /* =========================================
    STYLIZACJA HEADER
    ========================================= */
-/* --- HEADER --- */
 header {
     display: flex;
     justify-content: space-between;
@@ -231,7 +230,7 @@ header a {
     display: flex;
     justify-content: center;
 }
-    @media (max-width: 1050px) {
+    @media (max-width: 1150px) {
       .header-left-section h1 {
         display: none;
       }
@@ -250,6 +249,9 @@ header a {
 /* =========================================
    STYLIZACJA STOPKI (FOOTER)
    ========================================= */
+.wspolny-footer{
+  background-color: var(--primary-color);
+}
 .site-footer {
   background-color: var(--primary-color);
   border-top: 2px solid var(--primary-color-border);
@@ -382,7 +384,7 @@ header a {
 }
 
 /* Dostosowanie mobilne */
-@media (max-width: 850px) {
+@media (max-width: 1150px) {
   .site-footer {
     padding: 40px 20px 20px 20px;
   }
