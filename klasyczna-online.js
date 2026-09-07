@@ -10,6 +10,7 @@ let odbieranieRzutuZSieci = false;
 
 const parametryURL = new URLSearchParams(window.location.search);
 const onlineKodPokoju = parametryURL.get("pokoj");
+const onlineTryb = parametryURL.get("tryb");
 
 function uruchomModulOnline() {
   if (!onlineKodPokoju) return;
@@ -64,7 +65,7 @@ window.sprawdzTureOnline = function () {
 };
 
 // ============================================================
-// 2. POCZEKALNIA STOŁU I WERYFIKACJA TOŻSAMOŚCI
+// 2. POCZEKALNIA STOŁU I WERYFIKACJA TOŻSAMOŚCI TOKENEM
 // ============================================================
 async function inicjalizujPoczekalnieOnline(kod) {
   const formOffline = document.getElementById("formularz-ustawien");
@@ -89,18 +90,23 @@ async function inicjalizujPoczekalnieOnline(kod) {
     return;
   }
 
-  // Weryfikacja kryptograficzna tożsamości gracza (ochrona przed wpisaniem ?rola=host z palca)
-  const zapisanyToken = sessionStorage.getItem(`sd_token_${kod}`);
-
-  if (pokoj.host_token && pokoj.host_token === zapisanyToken) {
-    mojIndeksOnline = 0;
-    czyWidz = false;
-  } else if (pokoj.gosc_token && pokoj.gosc_token === zapisanyToken) {
-    mojIndeksOnline = 1;
-    czyWidz = false;
-  } else {
-    mojIndeksOnline = -1;
+  // Bezpieczna weryfikacja tożsamości po stronie klienta (odporna na edycję URL ?rola=host)
+  if (onlineTryb === "widz") {
     czyWidz = true;
+    mojIndeksOnline = -1;
+  } else {
+    const zapisanyToken = sessionStorage.getItem(`sd_token_${kod}`);
+    if (pokoj.host_token && pokoj.host_token === zapisanyToken) {
+      mojIndeksOnline = 0;
+      czyWidz = false;
+    } else if (pokoj.gosc_token && pokoj.gosc_token === zapisanyToken) {
+      mojIndeksOnline = 1;
+      czyWidz = false;
+    } else {
+      // Jeśli brak tokenu w sesji, traktujemy jako widza (zapobiega oszustwom z adresu URL)
+      mojIndeksOnline = -1;
+      czyWidz = true;
+    }
   }
 
   if (pokoj.status === "in_progress") {
@@ -182,7 +188,6 @@ function startMeczuOnline(pokoj) {
   window.trybWyjscia = pokoj.zasady_wyjscia || "do";
   window.liczbaGraczy = 2;
 
-  // Bezpieczny fallback: jeśli w bazie jest "Gracz" lub pusto, użyj "Gospodarz" / "Gość"
   const hostNazwa = (!pokoj.host_nazwa || pokoj.host_nazwa === "Gracz") ? "Gospodarz" : pokoj.host_nazwa;
   const goscNazwa = (!pokoj.gosc_nazwa || pokoj.gosc_nazwa === "Gracz") ? "Gość" : pokoj.gosc_nazwa;
 
@@ -275,6 +280,7 @@ function startMeczuOnline(pokoj) {
     }, 400);
   }
 }
+
 // ============================================================
 // 4. TRANSMISJA STANU GRY NA ŻYWO (BROADCAST SNAPSHOT)
 // ============================================================
@@ -288,7 +294,6 @@ function zainicjalizujKanalMeczu(kod) {
       zastosujStanGry(payload);
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
-      // Host lub aktywny gracz odsyła pełen stan
       if (mojIndeksOnline === 0 || mojIndeksOnline === 1) {
         wyslijAktualnyStanGry();
       }
