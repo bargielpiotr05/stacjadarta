@@ -294,8 +294,10 @@ function zainicjalizujKanalMeczu(kod) {
       zastosujStanGry(payload);
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
-      // Każdy z graczy (Host lub Gość) może odpowiedzieć na prośbę widza o stan
-      wyslijAktualnyStanGry();
+      // Jeśli jesteśmy graczem (Host lub Gość), natychmiast odsyłamy nasz stan widzowi
+      if (!czyWidz) {
+        wyslijAktualnyStanGry();
+      }
     })
     .on("broadcast", { event: "mecz-przerwany" }, () => {
       alert("Mecz został przerwany przez jednego z graczy.");
@@ -305,7 +307,7 @@ function zainicjalizujKanalMeczu(kod) {
     })
     .subscribe();
 
-  // Jeśli jesteśmy widzem, ponawiaj prośbę o stan co 1.5 sekundy, dopóki tarcza się nie zaktualizuje
+  // Jeśli widz dołączył do trwającej gry, wysyłaj prośbę o stan co 1 sekundę, dopóki tablica się nie uzupełni
   if (czyWidz) {
     const interwalWidza = setInterval(() => {
       if (!window.gracze || window.gracze[0].punkty === window.punktyStartowe) {
@@ -317,81 +319,9 @@ function zainicjalizujKanalMeczu(kod) {
       } else {
         clearInterval(interwalWidza);
       }
-    }, 1500);
+    }, 1000);
   }
 }
-
-function wyslijAktualnyStanGry() {
-  if (!czyTrybOnline || !kanalMeczuRealtime || !window.gracze) return;
-
-  const stan = {
-    aktualnyGraczIndex: window.aktualnyGraczIndex,
-    aktualnaKolejka: window.aktualnaKolejka,
-    gracze: window.gracze.map((g) => ({
-      id: g.id,
-      punkty: g.punkty,
-      wygraneLegi: g.wygraneLegi,
-      rzuty: g.rzuty || [],
-      srednia: typeof window.obliczSredniaGracza === "function" ? window.obliczSredniaGracza(g.id) : "0.00",
-      srednia9: typeof window.obliczSrednia9Lotek === "function" ? window.obliczSrednia9Lotek(g.id) : "0.00"
-    }))
-  };
-
-  kanalMeczuRealtime.send({
-    type: "broadcast",
-    event: "aktualizacja-stanu",
-    payload: stan
-  });
-
-  zapiszStanOnlineDoStorage();
-}
-
-function zastosujStanGry(dane) {
-  if (!dane || !dane.gracze) return;
-
-  odbieranieRzutuZSieci = true;
-
-  dane.gracze.forEach((zdalnyGracz, idx) => {
-    if (window.gracze && window.gracze[idx]) {
-      window.gracze[idx].punkty = zdalnyGracz.punkty;
-      window.gracze[idx].wygraneLegi = zdalnyGracz.wygraneLegi;
-      window.gracze[idx].rzuty = zdalnyGracz.rzuty || [];
-
-      const elPunkty = document.getElementById(`punkty-g${idx}`);
-      if (elPunkty) elPunkty.textContent = zdalnyGracz.punkty;
-
-      const elWygrane = document.getElementById(`wygrane-g${idx}`);
-      if (elWygrane) elWygrane.textContent = `Wygrane rundy: ${zdalnyGracz.wygraneLegi}`;
-
-      const elSrednia = document.getElementById(`srednia-tabela-g${idx}`);
-      if (elSrednia) elSrednia.textContent = zdalnyGracz.srednia;
-
-      const elSrednia9 = document.getElementById(`dziewiec-lotek-g${idx}`);
-      if (elSrednia9) elSrednia9.textContent = zdalnyGracz.srednia9;
-
-      const elCheckout = document.getElementById(`checkout-g${idx}`);
-      if (elCheckout && typeof window.getCheckout === "function") {
-        elCheckout.textContent = zdalnyGracz.punkty <= 170 && zdalnyGracz.punkty > 1 ? window.getCheckout(zdalnyGracz.punkty) : "";
-      }
-    }
-  });
-
-  window.aktualnyGraczIndex = dane.aktualnyGraczIndex;
-  window.aktualnaKolejka = dane.aktualnaKolejka;
-
-  document.querySelectorAll(".karta-gracza").forEach((karta, idx) => {
-    if (idx === window.aktualnyGraczIndex) {
-      karta.classList.add("aktywne-tury");
-    } else {
-      karta.classList.remove("aktywne-tury");
-    }
-  });
-
-  odbieranieRzutuZSieci = false;
-  window.sprawdzTureOnline();
-  zapiszStanOnlineDoStorage();
-}
-
 // ============================================================
 // 5. OBSŁUGA PAMIĘCI DLA MECZU SIECIOWEGO (F5)
 // ============================================================
