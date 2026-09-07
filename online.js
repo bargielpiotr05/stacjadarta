@@ -185,7 +185,7 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
       return;
     }
 
-    // Wygenerowanie tajnego tokenu dla gościa
+    // Wygenerowanie tajnego tokenu kryptograficznego dla gościa
     const goscToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, goscToken);
 
@@ -248,7 +248,7 @@ async function stworzStolZKonfiguracji() {
 
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
 
-    // Wygenerowanie tajnego tokenu dla hosta
+    // Wygenerowanie tajnego tokenu kryptograficznego dla hosta
     const hostToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, hostToken);
 
