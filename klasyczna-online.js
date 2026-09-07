@@ -98,29 +98,37 @@ async function inicjalizujPoczekalnieOnline(kod, rola) {
     return;
   }
 
-  // Wyświetlenie poczekalni
-  const poczekalnia = document.createElement("div");
+const poczekalnia = document.createElement("div");
   poczekalnia.id = "poczekalnia-online";
+  poczekalnia.style.width = "100%";
+  poczekalnia.style.display = "flex";
+  poczekalnia.style.justifyContent = "center";
+  poczekalnia.style.alignItems = "center";
+  poczekalnia.style.padding = "20px 0";
+
   poczekalnia.innerHTML = `
-    <div style="background:#111827; border:1px solid #22c55e; border-radius:16px; padding:32px; max-width:480px; margin:50px auto; text-align:center; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-      <h2 style="color:#22c55e; margin:0 0 10px 0;">Stół: ${kod}</h2>
-      <p style="color:#94a3b8; font-size:14px; margin:0 0 20px 0;">Gospodarz: <strong>${pokoj.host_nazwa}</strong> | Format: <strong>${pokoj.format_gry}</strong></p>
+    <div style="background: #111827; border: 1px solid #22c55e; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; margin: 20px auto; text-align: center; color: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+      <h2 style="color: #22c55e; margin: 0 0 10px 0; font-size: 24px;">Stół: ${kod}</h2>
+      <p style="color: #94a3b8; font-size: 14px; margin: 0 0 20px 0;">Gospodarz: <strong>${pokoj.host_nazwa}</strong> | Format: <strong>${pokoj.format_gry}</strong></p>
       
-      <div id="status-oczekiwania" style="margin:20px 0; padding:16px; background:rgba(34,197,94,0.08); border:1px dashed #22c55e; border-radius:12px;">
-        <span style="color:#22c55e; font-weight:600;">⏳ Oczekiwanie na dołączenie drugiego gracza...</span>
+      <div id="status-oczekiwania" style="margin: 20px 0; padding: 16px; background: rgba(34,197,94,0.08); border: 1px dashed #22c55e; border-radius: 12px;">
+        <span style="color: #22c55e; font-weight: 600;">⏳ Oczekiwanie na dołączenie drugiego gracza...</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
-        <button type="button" id="btn-kopiuj-kod" class="btn-primary" style="padding:12px; font-weight:bold; cursor:pointer;">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+        <button type="button" id="btn-kopiuj-kod" class="btn-primary" style="padding: 12px; font-weight: bold; cursor: pointer;">
           📋 Kopiuj Kod Stołu (${kod})
         </button>
-        <button type="button" id="btn-opusc-poczekalnie" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:13px; text-decoration:underline;">
+        <button type="button" id="btn-opusc-poczekalnie" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 13px; text-decoration: underline;">
           Opuść stół i usuń pokój
         </button>
       </div>
     </div>
   `;
-  document.body.prepend(poczekalnia);
+
+  // Wstawienie do wnętrza znacznika <main>
+  const kontenerMain = document.querySelector("main") || document.body;
+  kontenerMain.appendChild(poczekalnia);
 
   document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
     navigator.clipboard.writeText(kod);
