@@ -1,0 +1,548 @@
+main {
+    background-color: var(--primary-color-lighter);
+    padding: 20px 0;
+    min-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+}
+
+.online-main {
+    max-width: 1200px;
+    width: 94%;
+    margin: 10px auto 40px auto;
+    background-color: var(--primary-color);
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+    height: auto;
+}
+
+/* PRZEŁĄCZNIK ZAKŁADEK (PILL-SWITCH) */
+.lobby-tabs-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+.lobby-tabs {
+    display: inline-flex;
+    background-color: var(--primary-color-lighter);
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tab-btn.aktywna-zakladka {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+/* BELKI AKCJI I WYSZUKIWANIA */
+.lobby-action-bar,
+.turnieje-action-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background-color: var(--primary-color-lighter);
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 25px;
+}
+
+.gorna-filtracja {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.search-filter-box {
+    flex: 1;
+    min-width: 240px;
+}
+
+.search-filter-box input {
+    background-color: var(--primary-color);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 100%;
+    height: 42px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.search-filter-box input:focus {
+    border-color: var(--secondary-color);
+}
+
+.cta-buttons-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* FILTR STATUSU TURNIEJU */
+.select-turnieje {
+    background-color: var(--primary-color);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    height: 42px;
+    box-sizing: border-box;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.select-turnieje:focus {
+    border-color: var(--secondary-color);
+}
+
+.select-turnieje option {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* FILTROWANIE SZCZEGÓŁOWE MECZÓW */
+#filtracja-meczy {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    width: 100%;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-wrap: wrap;
+}
+
+.filtr-pole {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.filtr-pole span {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+}
+
+.filtr-pole input,
+.filtr-pole select {
+    background-color: var(--primary-color);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    height: 42px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.filtr-pole input:focus,
+.filtr-pole select:focus {
+    border-color: var(--secondary-color);
+}
+
+.filtr-pole select option {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.filtr-przycisk-wrap {
+    display: flex;
+    align-items: flex-end;
+}
+
+#btn-szukaj-filtry {
+    height: 42px;
+    padding: 0 24px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* PRZYCISKI */
+.btn-primary, .btn-secondary {
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    height: 42px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary:hover, .btn-secondary:hover {
+    transform: translateY(-2px);
+}
+
+.btn-full {
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* NAGŁÓWKI LIST */
+.lobby-list-header {
+    margin-bottom: 16px;
+}
+
+.lobby-list-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    color: #e2e8f0;
+    margin: 0;
+}
+
+.badge-count {
+    font-size: 12px;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--secondary-color);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* KONTENERY Z OGRANICZENIEM DO 3 RZĘDÓW I SCROLLEM */
+.grid-pokojow,
+.grid-turniejow {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    max-height: 800px;
+    overflow-y: auto;
+    padding-right: 8px;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary-color) var(--primary-color-lighter);
+}
+
+.grid-pokojow::-webkit-scrollbar,
+.grid-turniejow::-webkit-scrollbar {
+    width: 6px;
+}
+
+.grid-pokojow::-webkit-scrollbar-track,
+.grid-turniejow::-webkit-scrollbar-track {
+    background: var(--primary-color-lighter);
+    border-radius: 8px;
+}
+
+.grid-pokojow::-webkit-scrollbar-thumb,
+.grid-turniejow::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 8px;
+}
+
+/* KARTY STOŁÓW I TURNIEJÓW */
+.karta-stolu, .karta-turnieju {
+    background: var(--primary-color-lighter);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    transition: border-color 0.25s ease, transform 0.2s ease;
+}
+
+.karta-stolu:hover, .karta-turnieju:hover {
+    border-color: rgba(34, 197, 94, 0.4);
+    transform: translateY(-2px);
+}
+
+.karta-turnieju.w-trakcie {
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.karta-turnieju.w-trakcie:hover {
+    border-color: #ef4444;
+}
+
+.stol-top, .turniej-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+/* BADGE STATUSU */
+.status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.status-oczekuje, .status-open {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--secondary-color);
+}
+
+.status-live {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.status-upcoming {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.stol-id, .turniej-data {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.widzowie-badge {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* HOŚCI I PARAMETRY */
+.stol-host {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.host-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.host-avatar.rival {
+    color: #f59e0b;
+}
+
+.host-info strong {
+    display: block;
+    font-size: 14px;
+    color: #f1f5f9;
+}
+
+.host-info span {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.stol-parametry, .turniej-metryki {
+    background: var(--primary-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.stol-parametry span, .turniej-metryki div {
+    color: #94a3b8;
+}
+
+.stol-parametry strong, .turniej-metryki strong {
+    color: #fff;
+}
+
+.karta-turnieju h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #fff;
+}
+
+.turniej-opis {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+/* PRZYCISKI W KARTACH */
+.btn-graj-stol {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-ogladaj-stol {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background-color: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-ogladaj-stol:hover {
+    background-color: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+footer {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* RESPONSYWNOŚĆ MOBILNA */
+@media (max-width: 900px) {
+    .filtr-pole {
+        flex: 1 1 calc(50% - 10px);
+    }
+}
+
+@media (max-width: 768px) {
+    .online-main {
+        width: 100%;
+        margin: 0;
+        padding: 14px 12px 30px 12px;
+        border-radius: 0;
+    }
+
+    .lobby-tabs-wrapper {
+        margin-bottom: 18px;
+    }
+
+    .lobby-tabs {
+        width: 100%;
+        display: flex;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 10px 12px;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .lobby-action-bar,
+    .turnieje-action-bar {
+        padding: 14px;
+        border-radius: 12px;
+        gap: 14px;
+    }
+
+    .gorna-filtracja {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-filter-box {
+        min-width: 100%;
+    }
+
+    .cta-buttons-box {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .cta-buttons-box button,
+    .select-turnieje {
+        width: 100%;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    #filtracja-meczy {
+        gap: 10px;
+        padding-top: 14px;
+    }
+
+    .filtr-pole {
+        flex: 1 1 calc(50% - 6px);
+        min-width: calc(50% - 6px);
+    }
+
+    .filtr-przycisk-wrap,
+    #btn-szukaj-filtry {
+        width: 100%;
+    }
+
+    .grid-pokojow,
+    .grid-turniejow {
+        grid-template-columns: 1fr;
+        max-height: 660px;
+        padding-right: 4px;
+    }
+}
