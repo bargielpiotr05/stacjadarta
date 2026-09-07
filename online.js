@@ -12,12 +12,12 @@ let wszystkiePokoje = [];
 // Pobranie IP użytkownika z Twojej funkcji Cloudflare
 async function pobierzMojeIP() {
   try {
-    const res = await fetch("/api/get-ip");
+    const res = await fetch("https://api64.ipify.org?format=json");
     if (!res.ok) throw new Error("Błąd pobierania IP");
     const data = await res.json();
     mojeIP = data.ip;
   } catch (err) {
-    console.warn("Nie udało się ustalić IP przez Cloudflare:", err);
+    console.warn("Nie udało się ustalić IP:", err);
     mojeIP = "nieznane";
   }
 }
