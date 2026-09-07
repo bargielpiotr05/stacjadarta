@@ -350,11 +350,17 @@ function podepnijNasluchRzutowSilnika() {
 async function usunAktualnyPokoj() {
   if (!onlineKodPokoju) return;
   try {
-    await supabaseClient
+    const { error } = await supabaseClient
       .from("rooms")
       .delete()
       .eq("kod_pokoju", onlineKodPokoju);
+
+    if (error) {
+      console.error("Błąd Supabase przy usuwaniu stołu:", error);
+    } else {
+      console.log(`Stół ${onlineKodPokoju} został pomyślnie usunięty.`);
+    }
   } catch (err) {
-    console.warn("Błąd usuwania stołu:", err);
+    console.warn("Wyjątek podczas usuwania stołu:", err);
   }
 }
