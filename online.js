@@ -49,13 +49,13 @@ async function pobierzStoły() {
     .from("rooms")
     .select("*")
     .in("status", ["waiting", "in_progress"])
+    .eq("czy_prywatny", false)
     .order("utworzono", { ascending: false });
 
   if (error) {
     console.error("Błąd pobierania stołów:", error);
     return;
   }
-
   wszystkiePokoje = data || [];
   renderujStoly(wszystkiePokoje);
 }
@@ -241,3 +241,80 @@ document.addEventListener("DOMContentLoaded", async () => {
     dolaczDoPokoju(sformatowany, "gracz");
   });
 });
+const modal = document.getElementById("modal-stworz-stol");
+const btnOtworzModal = document.getElementById("btn-stworz-stol");
+const btnZamknijModal = document.getElementById("btn-zamknij-modal");
+const btnAnulujModal = document.getElementById("btn-anuluj-modal");
+const formNowyStol = document.getElementById("form-nowy-stol");
+
+btnOtworzModal?.addEventListener("click", () => {
+  modal.style.display = "flex";
+});
+
+const zamknijModal = () => { modal.style.display = "none"; };
+btnZamknijModal?.addEventListener("click", zamknijModal);
+btnAnulujModal?.addEventListener("click", zamknijModal);
+
+// Obsługa zatwierdzenia formularza
+formNowyStol?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await stworzStolZKonfiguracji();
+});
+
+async function stworzStolZKonfiguracji() {
+  const btnSubmit = document.getElementById("btn-potwierdz-stworzenie");
+  btnSubmit.disabled = true;
+  btnSubmit.textContent = "Tworzenie...";
+
+  try {
+    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
+
+    const ban = await sprawdzCzyZbanowany(mojeIP);
+    if (ban) {
+      alert(`Twój IP jest zablokowany: ${ban.powod}`);
+      return;
+    }
+
+    const nick = document.getElementById("nowy-host-nick").value.trim() || "Host";
+    const punkty = parseInt(document.getElementById("nowy-format").value);
+    const dystans = parseInt(document.getElementById("nowy-dystans").value);
+    const wejscie = document.getElementById("nowe-wejscie").value;
+    const wyjscie = document.getElementById("nowe-wyjscie").value;
+    const czyPrywatny = document.getElementById("nowy-czy-prywatny").checked;
+    const formatTekst = `${punkty} ${wyjscie.toUpperCase()}`;
+
+    const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
+
+    const { data, error } = await supabaseClient
+      .from("rooms")
+      .insert([
+        {
+          kod_pokoju: kodPokoju,
+          host_ip: mojeIP,
+          host_nazwa: nick,
+          format_gry: formatTekst,
+          punkty_startowe: punkty,
+          docelowe_legi: dystans,
+          dystans: dystans,
+          zasady_wejscia: wejscie,
+          zasady_wyjscia: wyjscie,
+          czy_prywatny: czyPrywatny,
+          status: "waiting"
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Przejdź do gry z nickiem i rolą hosta
+    window.location.href = `./klasyczna.html?pokoj=${data.kod_pokoju}&rola=host&nick=${encodeURIComponent(nick)}`;
+
+  } catch (err) {
+    console.error("Błąd zapisu pokoju:", err);
+    alert("Nie udało się utworzyć stołu.");
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = "Utwórz stół";
+  }
+}
