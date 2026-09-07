@@ -72,7 +72,7 @@ function renderujStoly(lista) {
   if (lista.length === 0) {
     kontener.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;">
-        Brak aktywnych stołów. Kliknij <strong>+ Stwórz stół</strong>, aby rozpocząć grę!
+        Brak aktywnych stołów publicznych. Kliknij <strong>+ Stwórz stół</strong>, aby rozpocząć grę!
       </div>
     `;
     return;
@@ -91,8 +91,8 @@ function renderujStoly(lista) {
           <div class="stol-host">
             <div class="host-avatar rival">SD</div>
             <div class="host-info">
-              <strong>Mecz na żywo (#${pokoj.kod_pokoju})</strong>
-              <span>Stan: ${pokoj.wynik_host || 0} - ${pokoj.wynik_gosc || 0}</span>
+              <strong>${pokoj.host_nazwa || "Host"} vs ${pokoj.gosc_nazwa || "Gość"}</strong>
+              <span>Stan: ${pokoj.wynik_host || 0} - ${pokoj.wynik_gosc || 0} (#${pokoj.kod_pokoju})</span>
             </div>
           </div>
           <div class="stol-parametry">
@@ -115,7 +115,7 @@ function renderujStoly(lista) {
         <div class="stol-host">
           <div class="host-avatar">PB</div>
           <div class="host-info">
-            <strong>Stół gracza</strong>
+            <strong>${pokoj.host_nazwa || "Host"}</strong>
             <span>Dystans: Do ${pokoj.dystans} legów</span>
           </div>
         </div>
@@ -141,7 +141,6 @@ function wlaczRealtimeLobby() {
       "postgres_changes",
       { event: "*", schema: "public", table: "rooms" },
       () => {
-        // Przy każdej zmianie (nowy stół, start gry, usunięcie) odśwież listę
         pobierzStoły();
       }
     )
@@ -149,24 +148,76 @@ function wlaczRealtimeLobby() {
 }
 
 // ============================================================
-// 5. TWORZENIE ORAZ DOŁĄCZANIE DO POKOJU
+// 5. DOŁĄCZANIE DO POKOJU (GRACZ / WIDZ)
 // ============================================================
-async function stworzStolZabezpieczony() {
-  const btn = document.getElementById("btn-stworz-stol");
-  btn.disabled = true;
-  btn.textContent = "Weryfikacja...";
+window.dolaczDoPokoju = async function (kodPokoju, tryb) {
+  if (tryb === "widz") {
+    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}&tryb=widz`;
+    return;
+  }
+
+  const nick = prompt("Podaj swój nick do gry:", "Gość") || "Gość";
 
   try {
-    // 1. Ponowna weryfikacja IP i banlisty
-    if (!mojeIP) await pobierzMojeIP();
-
+    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
     const ban = await sprawdzCzyZbanowany(mojeIP);
     if (ban) {
-      alert(`Twój adres IP jest zablokowany. Powód: ${ban.powod || "Naruszenie zasad"}`);
+      alert(`Twój adres IP jest zablokowany: ${ban.powod || "Naruszenie zasad"}`);
       return;
     }
 
-    // 2. Limit otwartych stołów na dane IP
+    const { data: pokoj, error: fetchErr } = await supabaseClient
+      .from("rooms")
+      .select("*")
+      .eq("kod_pokoju", kodPokoju)
+      .single();
+
+    if (fetchErr || !pokoj) {
+      alert("Taki pokój nie istnieje lub został usunięty.");
+      return;
+    }
+
+    if (pokoj.status !== "waiting") {
+      alert("Mecz przy tym stole już trwa lub pokój jest zajęty!");
+      return;
+    }
+
+    const { error: updateErr } = await supabaseClient
+      .from("rooms")
+      .update({
+        gosc_nazwa: nick,
+        status: "in_progress"
+      })
+      .eq("kod_pokoju", kodPokoju);
+
+    if (updateErr) throw updateErr;
+
+    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}&rola=gosc&nick=${encodeURIComponent(nick)}`;
+
+  } catch (err) {
+    console.error("Błąd podczas dołączania do gry:", err);
+    alert("Wystąpił problem przy dołączaniu do stołu.");
+  }
+};
+
+// ============================================================
+// 6. TWORZENIE STOŁU Z MODALA
+// ============================================================
+async function stworzStolZKonfiguracji() {
+  const btnSubmit = document.getElementById("btn-potwierdz-stworzenie");
+  btnSubmit.disabled = true;
+  btnSubmit.textContent = "Weryfikacja...";
+
+  try {
+    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
+
+    const ban = await sprawdzCzyZbanowany(mojeIP);
+    if (ban) {
+      alert(`Twój adres IP jest zablokowany: ${ban.powod || "Naruszenie zasad"}`);
+      return;
+    }
+
+    // Limit max 2 otwartych stołów oczekujących na jedno IP
     if (mojeIP !== "nieznane") {
       const { count } = await supabaseClient
         .from("rooms")
@@ -175,112 +226,17 @@ async function stworzStolZabezpieczony() {
         .eq("status", "waiting");
 
       if (count && count >= 2) {
-        alert("Osiągnięto limit: masz już 2 otwarte stoły oczekujące w lobby.");
+        alert("Osiągnięto limit: posiadasz już 2 otwarte stoły oczekujące w lobby.");
         return;
       }
     }
 
-    // 3. Generowanie unikalnego kodu stołu
-    const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
-
-    const { data, error } = await supabaseClient
-      .from("rooms")
-      .insert([
-        {
-          kod_pokoju: kodPokoju,
-          host_ip: mojeIP,
-          format_gry: "501 DO",
-          dystans: 3,
-          status: "waiting",
-          punkty_startowe: 501,
-          docelowe_legi: 3,
-          zasady_wejscia: "si",
-          zasady_wyjscia: "do"
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Przekierowanie do tarczy meczowej jako Host
-    window.location.href = `./klasyczna.html?pokoj=${data.kod_pokoju}&rola=host`;
-
-  } catch (err) {
-    console.error("Błąd tworzenia stołu:", err);
-    alert("Wystąpił błąd podczas tworzenia stołu.");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "+ Stwórz stół";
-  }
-}
-
-window.dolaczDoPokoju = function (kodPokoju, tryb) {
-  if (tryb === "widz") {
-    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}&tryb=widz`;
-  } else {
-    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}&rola=gosc`;
-  }
-};
-
-// ============================================================
-// 6. START PO ZAŁADOWANIU DOM
-// ============================================================
-document.addEventListener("DOMContentLoaded", async () => {
-  await pobierzMojeIP();
-  await pobierzStoły();
-  wlaczRealtimeLobby();
-
-  document.getElementById("btn-stworz-stol")?.addEventListener("click", stworzStolZabezpieczony);
-
-  // Proste dołączanie przez kod
-  document.getElementById("btn-dolacz-kod")?.addEventListener("click", () => {
-    const kod = prompt("Podaj 4-cyfrowy numer lub pełny kod stołu (np. SD-4821):");
-    if (!kod) return;
-    const sformatowany = kod.toUpperCase().startsWith("SD-") ? kod.toUpperCase() : `SD-${kod}`;
-    dolaczDoPokoju(sformatowany, "gracz");
-  });
-});
-const modal = document.getElementById("modal-stworz-stol");
-const btnOtworzModal = document.getElementById("btn-stworz-stol");
-const btnZamknijModal = document.getElementById("btn-zamknij-modal");
-const btnAnulujModal = document.getElementById("btn-anuluj-modal");
-const formNowyStol = document.getElementById("form-nowy-stol");
-
-btnOtworzModal?.addEventListener("click", () => {
-  modal.style.display = "flex";
-});
-
-const zamknijModal = () => { modal.style.display = "none"; };
-btnZamknijModal?.addEventListener("click", zamknijModal);
-btnAnulujModal?.addEventListener("click", zamknijModal);
-
-// Obsługa zatwierdzenia formularza
-formNowyStol?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  await stworzStolZKonfiguracji();
-});
-
-async function stworzStolZKonfiguracji() {
-  const btnSubmit = document.getElementById("btn-potwierdz-stworzenie");
-  btnSubmit.disabled = true;
-  btnSubmit.textContent = "Tworzenie...";
-
-  try {
-    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
-
-    const ban = await sprawdzCzyZbanowany(mojeIP);
-    if (ban) {
-      alert(`Twój IP jest zablokowany: ${ban.powod}`);
-      return;
-    }
-
-    const nick = document.getElementById("nowy-host-nick").value.trim() || "Host";
-    const punkty = parseInt(document.getElementById("nowy-format").value);
-    const dystans = parseInt(document.getElementById("nowy-dystans").value);
-    const wejscie = document.getElementById("nowe-wejscie").value;
-    const wyjscie = document.getElementById("nowe-wyjscie").value;
-    const czyPrywatny = document.getElementById("nowy-czy-prywatny").checked;
+    const nick = document.getElementById("nowy-host-nick")?.value.trim() || "Host";
+    const punkty = parseInt(document.getElementById("nowy-format")?.value || 501);
+    const dystans = parseInt(document.getElementById("nowy-dystans")?.value || 3);
+    const wejscie = document.getElementById("nowe-wejscie")?.value || "si";
+    const wyjscie = document.getElementById("nowe-wyjscie")?.value || "do";
+    const czyPrywatny = document.getElementById("nowy-czy-prywatny")?.checked || false;
     const formatTekst = `${punkty} ${wyjscie.toUpperCase()}`;
 
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
@@ -307,7 +263,6 @@ async function stworzStolZKonfiguracji() {
 
     if (error) throw error;
 
-    // Przejdź do gry z nickiem i rolą hosta
     window.location.href = `./klasyczna.html?pokoj=${data.kod_pokoju}&rola=host&nick=${encodeURIComponent(nick)}`;
 
   } catch (err) {
@@ -318,3 +273,43 @@ async function stworzStolZKonfiguracji() {
     btnSubmit.textContent = "Utwórz stół";
   }
 }
+
+// ============================================================
+// 7. INICJALIZACJA DOM I OBSŁUGA ZDARZEŃ
+// ============================================================
+document.addEventListener("DOMContentLoaded", async () => {
+  await pobierzMojeIP();
+  await pobierzStoły();
+  wlaczRealtimeLobby();
+
+  const modal = document.getElementById("modal-stworz-stol");
+  const btnOtworzModal = document.getElementById("btn-stworz-stol");
+  const btnZamknijModal = document.getElementById("btn-zamknij-modal");
+  const btnAnulujModal = document.getElementById("btn-anuluj-modal");
+  const formNowyStol = document.getElementById("form-nowy-stol");
+
+  btnOtworzModal?.addEventListener("click", () => {
+    if (modal) modal.style.display = "flex";
+  });
+
+  const zamknijModal = () => {
+    if (modal) modal.style.display = "none";
+  };
+
+  btnZamknijModal?.addEventListener("click", zamknijModal);
+  btnAnulujModal?.addEventListener("click", zamknijModal);
+
+  formNowyStol?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await stworzStolZKonfiguracji();
+  });
+
+  document.getElementById("btn-dolacz-kod")?.addEventListener("click", () => {
+    const kod = prompt("Podaj 4-cyfrowy kod lub pełny symbol stołu (np. SD-4821):");
+    if (!kod) return;
+    const sformatowany = kod.toUpperCase().trim().startsWith("SD-")
+      ? kod.toUpperCase().trim()
+      : `SD-${kod.toUpperCase().trim()}`;
+    dolaczDoPokoju(sformatowany, "gracz");
+  });
+});
