@@ -1957,64 +1957,154 @@
                 uruchomTrybOnline(kodPokoju, rola, graczNick);
             }
 
-            function uruchomTrybOnline(kod, mojaRola, mojNick) {
-                // Wyłącz lub ukryj standardowy formularz konfiguracji graczy
-                const formularzOffline = document.querySelector(".konfiguracja-meczu") || document.querySelector("main form");
+async function uruchomTrybOnline(kod, mojaRola, mojNick) {
+  // Ukryj formularz konfiguracji lokalnej gry
+  const formularzOffline = document.getElementById("formularz-ustawien");
+  if (formularzOffline) formularzOffline.style.display = "none";
+  if (tytulStrony) tytulStrony.style.display = "none";
 
-                // Stwórz nakładkę poczekalni
-                const poczekalnia = document.createElement("div");
-                poczekalnia.id = "poczekalnia-online";
-                poczekalnia.innerHTML = `
-    <div style="background:#0f172a; border:1px solid #22c55e; border-radius:14px; padding:30px; max-width:500px; margin:40px auto; text-align:center; color:#fff;">
-      <h2 style="color:#22c55e; margin-top:0;">Stół Online: ${kod}</h2>
-      <p style="color:#94a3b8; font-size:14px;">Jesteś: <strong>${mojaRola === "host" ? "Host (Gospodarz)" : "Gość"}</strong></p>
+  // Pobierz aktualne parametry stołu z Supabase
+  const { data: pokoj, error } = await supabaseClient
+    .from("rooms")
+    .select("*")
+    .eq("kod_pokoju", kod)
+    .single();
+
+  if (error || !pokoj) {
+    alert("Nie znaleziono takiego pokoju.");
+    window.location.href = "./online.html";
+    return;
+  }
+
+  // Jeśli rywal już jest w środku (np. Gość właśnie wszedł), startujemy od razu
+  if (pokoj.status === "in_progress") {
+    startMeczuOnline(pokoj);
+    return;
+  }
+
+  // W przeciwnym razie stwórz poczekalnię
+  const poczekalnia = document.createElement("div");
+  poczekalnia.id = "poczekalnia-online";
+  poczekalnia.innerHTML = `
+    <div style="background:#111827; border:1px solid #22c55e; border-radius:16px; padding:32px; max-width:480px; margin:50px auto; text-align:center; color:#fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <h2 style="color:#22c55e; margin:0 0 10px 0;">Stół: ${kod}</h2>
+      <p style="color:#94a3b8; font-size:14px; margin:0 0 20px 0;">Host: <strong>${pokoj.host_nazwa}</strong> | Format: <strong>${pokoj.format_gry}</strong></p>
       
-      <div id="status-oczekiwania" style="margin:25px 0; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
-        <span class="animacja-pulse">⏳ Oczekiwanie na dołączenie drugiego gracza...</span>
+      <div id="status-oczekiwania" style="margin:20px 0; padding:16px; background:rgba(34,197,94,0.08); border:1px dashed #22c55e; border-radius:12px;">
+        <span style="color:#22c55e; font-weight:600;">⏳ Oczekiwanie na dołączenie rywala...</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
-        <button id="btn-kopiuj-link" style="padding:10px; background:#1e293b; border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; cursor:pointer;">
-          📋 Kopiuj link dla znajomego
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:24px;">
+        <button type="button" id="btn-kopiuj-kod" class="btn-primary" style="padding:12px; font-weight:bold; cursor:pointer;">
+          📋 Kopiuj Kod Stołu (${kod})
         </button>
+        <a href="./online.html" style="color:#94a3b8; text-decoration:none; font-size:13px; margin-top:8px;">Opuść stół i wróć do lobby</a>
       </div>
     </div>
   `;
 
-                document.body.prepend(poczekalnia);
-                if (formularzOffline) formularzOffline.style.display = "none";
+  document.body.prepend(poczekalnia);
 
-                // Kopiowanie bezpośredniego linku
-                document.getElementById("btn-kopiuj-link")?.addEventListener("click", () => {
-                    const link = `${window.location.origin}/klasyczna.html?pokoj=${kod}&rola=gosc`;
-                    navigator.clipboard.writeText(link);
-                    alert("Skopiowano link do stołu!");
-                });
+  document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
+    navigator.clipboard.writeText(kod);
+    alert(`Skopiowano kod pokoju: ${kod}`);
+  });
 
-                // 3. Nasłuchuj w Supabase Realtime, kiedy rywal wejdzie
-                nasluchujStartuMeczu(kod);
-            }
+  nasluchujStartuMeczu(kod);
+}
 
-            function nasluchujStartuMeczu(kod) {
-                supabaseClient
-                    .channel(`room-${kod}`)
-                    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` }, (payload) => {
-                        const pokoj = payload.new;
+function nasluchujStartuMeczu(kod) {
+  supabaseClient
+    .channel(`room-${kod}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
+      (payload) => {
+        const zaktualizowanyPokoj = payload.new;
+        if (zaktualizowanyPokoj.status === "in_progress") {
+          const statusBox = document.getElementById("status-oczekiwania");
+          if (statusBox) {
+            statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Rozpoczynanie...</span>`;
+          }
 
-                        // Gdy status zmieni się na 'in_progress', mecz startuje dla obu stron!
-                        if (pokoj.status === "in_progress") {
-                            document.getElementById("status-oczekiwania").innerHTML = `
-            <span style="color:#22c55e; font-weight:bold;">🎮 Rywal dołączył! Rozpoczynanie pojedynku...</span>
-          `;
+          setTimeout(() => {
+            document.getElementById("poczekalnia-online")?.remove();
+            startMeczuOnline(zaktualizowanyPokoj);
+          }, 1200);
+        }
+      }
+    )
+    .subscribe();
+}
 
-                            setTimeout(() => {
-                                document.getElementById("poczekalnia-online")?.remove();
-                                // Start meczu na tarczy (np. funkcja startMecz(pokoj.host_nazwa, pokoj.gosc_nazwa))
-                            }, 1500);
-                        }
-                    })
-                    .subscribe();
-            }
+function startMeczuOnline(pokoj) {
+  // Przekazanie parametrów ze stołu online do silnika tarczy
+  punktyStartowe = pokoj.punkty_startowe || 501;
+  doceloweLegi = pokoj.docelowe_legi || 3;
+  trybWejscia = pokoj.zasady_wejscia || "si";
+  trybWyjscia = pokoj.zasady_wyjscia || "do";
+  liczbaGraczy = 2;
+
+  gracze = [
+    {
+      id: 0,
+      nazwa: pokoj.host_nazwa || "Gospodarz",
+      punkty: punktyStartowe,
+      wygraneLegi: 0,
+      rzuty: [],
+      najlepszyLeg: null,
+      lotkiNaDoubla: 0,
+      trafioneDouble: 0,
+      czyBot: false
+    },
+    {
+      id: 1,
+      nazwa: pokoj.gosc_nazwa || "Gość",
+      punkty: punktyStartowe,
+      wygraneLegi: 0,
+      rzuty: [],
+      najlepszyLeg: null,
+      lotkiNaDoubla: 0,
+      trafioneDouble: 0,
+      czyBot: false
+    }
+  ];
+
+  // Renderowanie kart i start
+  kontenerGraczyWGrze.innerHTML = "";
+  gracze.forEach((g, i) => {
+    kontenerGraczyWGrze.innerHTML += `
+      <div class="karta-gracza" id="karta-g${i}">
+        <h2>${g.nazwa}</h2>
+        <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
+        <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
+        <div class="checkout-sugerowany" id="checkout-g${i}"></div>
+        <div class="karta-zakladki">
+          <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+          <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+        </div>
+        <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+          <table class="aktualne-statystyki-tabela">
+            <tr><th>Średnia</th><td id="srednia-tabela-g${i}">0.00</td></tr>
+            <tr><th>Pierwsze 9-lotek</th><td id="dziewiec-lotek-g${i}">0.00</td></tr>
+            <tr class="ostatni-wiersz"><th>Ostatni Leg</th><td id="ostatni-leg-g${i}">-</td></tr>
+          </table>
+        </div>
+        <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+          <table class="tabela-historii-karty">
+            <thead><tr><th>Lotki</th><th>Rzucone</th><th>Zostało</th></tr></thead>
+            <tbody id="tabela-historia-body-g${i}">
+              <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+
+  celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
+  rozpocznijWlasciwaGre(0);
+}
         </script>
         <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
