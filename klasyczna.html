@@ -15,14 +15,14 @@
         <link rel="stylesheet" href="./global.css" />
         <link rel="stylesheet" href="./klasyczna-style.css" />
         <link rel="stylesheet" href="./formularz.css" />
-                <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
+        <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        
+
         <script>
-          // Inicjalizacja klienta w klasyczna.html
-          const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
-          const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-          const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Inicjalizacja klienta w klasyczna.html
+            const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
+            const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         </script>
 
         <!-- Dodane automatyczne poprawki UI -->
@@ -1953,8 +1953,9 @@
                 }, 100);
             });
 
-            // Start przywracania po załadowaniu
-            przywrocMeczZStorage();
+            if (!new URLSearchParams(window.location.search).get("pokoj")) {
+                przywrocMeczZStorage();
+            }
         </script>
         <script src="./menu.js" defer></script>
         <script src="./dartbot.js" defer></script>
