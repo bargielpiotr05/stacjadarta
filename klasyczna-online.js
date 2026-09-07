@@ -294,9 +294,8 @@ function zainicjalizujKanalMeczu(kod) {
       zastosujStanGry(payload);
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
-      if (mojIndeksOnline === 0 || mojIndeksOnline === 1) {
-        wyslijAktualnyStanGry();
-      }
+      // Każdy z graczy (Host lub Gość) może odpowiedzieć na prośbę widza o stan
+      wyslijAktualnyStanGry();
     })
     .on("broadcast", { event: "mecz-przerwany" }, () => {
       alert("Mecz został przerwany przez jednego z graczy.");
@@ -305,6 +304,21 @@ function zainicjalizujKanalMeczu(kod) {
       window.location.href = "./online.html";
     })
     .subscribe();
+
+  // Jeśli jesteśmy widzem, ponawiaj prośbę o stan co 1.5 sekundy, dopóki tarcza się nie zaktualizuje
+  if (czyWidz) {
+    const interwalWidza = setInterval(() => {
+      if (!window.gracze || window.gracze[0].punkty === window.punktyStartowe) {
+        kanalMeczuRealtime?.send({
+          type: "broadcast",
+          event: "prosba-o-stan",
+          payload: {}
+        });
+      } else {
+        clearInterval(interwalWidza);
+      }
+    }, 1500);
+  }
 }
 
 function wyslijAktualnyStanGry() {
@@ -317,7 +331,7 @@ function wyslijAktualnyStanGry() {
       id: g.id,
       punkty: g.punkty,
       wygraneLegi: g.wygraneLegi,
-      rzuty: g.rzuty,
+      rzuty: g.rzuty || [],
       srednia: typeof window.obliczSredniaGracza === "function" ? window.obliczSredniaGracza(g.id) : "0.00",
       srednia9: typeof window.obliczSrednia9Lotek === "function" ? window.obliczSrednia9Lotek(g.id) : "0.00"
     }))
