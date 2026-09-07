@@ -3,20 +3,23 @@
 // ============================================================
 
 let czyTrybOnline = false;
-let mojIndeksOnline = 0; // 0 = Host, 1 = Gość
+let czyWidz = false;
+let mojIndeksOnline = -1; // 0 = Host, 1 = Gość, -1 = Widz
 let kanalMeczuRealtime = null;
 let odbieranieRzutuZSieci = false;
 
-// 1. Sprawdzenie czy w adresie URL jest parametr pokoju
 const parametryURL = new URLSearchParams(window.location.search);
 const onlineKodPokoju = parametryURL.get("pokoj");
-const onlineMojaRola = parametryURL.get("rola") || "host";
-const onlineMojNick = parametryURL.get("nick") || (onlineMojaRola === "host" ? "Host" : "Gość");
+const onlineMojaRola = parametryURL.get("rola");
+const onlineTryb = parametryURL.get("tryb");
 
-// Jeśli jesteśmy w trybie online, uruchamiamy moduł po załadowaniu drzewa DOM
 if (onlineKodPokoju) {
   czyTrybOnline = true;
-  mojIndeksOnline = onlineMojaRola === "host" ? 0 : 1;
+  czyWidz = (onlineTryb === "widz" || onlineMojaRola === "widz");
+
+  if (!czyWidz) {
+    mojIndeksOnline = (onlineMojaRola === "host") ? 0 : 1;
+  }
 
   document.addEventListener("DOMContentLoaded", () => {
     inicjalizujPoczekalnieOnline(onlineKodPokoju, onlineMojaRola);
@@ -24,18 +27,30 @@ if (onlineKodPokoju) {
   });
 }
 
-// Bezpieczna atrapa dla trybu offline (zapobiega błędom, gdy funkcja jest wywoływana lokalnie)
+// 1. ZARZĄDZANIE WIDOKIEM TURY I BLOKADAMI
 window.sprawdzTureOnline = function () {
   if (!czyTrybOnline) return;
 
-  const mojaKolej = (aktualnyGraczIndex === mojIndeksOnline);
-  const graczRzucajacy = gracze ? gracze[aktualnyGraczIndex] : null;
+  const belkaKolejki = document.getElementById("wyswietl-kolejke");
+  const graczRzucajacy = window.gracze ? window.gracze[window.aktualnyGraczIndex] : null;
 
+  // OBSŁUGA WIDZA: całkowite wyłączenie sterowania
+  if (czyWidz) {
+    const opcjeLiczenia = document.querySelector(".opcje-liczenia");
+    if (opcjeLiczenia) opcjeLiczenia.style.display = "none";
+
+    if (belkaKolejki) {
+      belkaKolejki.innerHTML = `<span style="color: #38bdf8; font-weight: bold;">👁 TRYB WIDZA | Rzuca: ${graczRzucajacy?.nazwa || "Gracz"}</span>`;
+    }
+    return;
+  }
+
+  // OBSŁUGA GRACZY:
+  const mojaKolej = (window.aktualnyGraczIndex === mojIndeksOnline);
   const inpWynik = document.getElementById("wpisz-wynik");
   const btnZatwierdz = document.getElementById("zatwierdz-rzut");
   const strefaKlik = document.querySelector(".strefa-klikania");
   const strefaManual = document.querySelector(".strefa-manualna");
-  const belkaKolejki = document.getElementById("wyswietl-kolejke");
 
   if (inpWynik) inpWynik.disabled = !mojaKolej;
   if (btnZatwierdz) btnZatwierdz.disabled = !mojaKolej;
@@ -48,7 +63,6 @@ window.sprawdzTureOnline = function () {
       : `<span style="color: #94a3b8;">⏳ Rzuca: <strong>${graczRzucajacy?.nazwa || "Rywal"}</strong></span>`;
   }
 };
-
 // ============================================================
 // 2. POCZEKALNIA STOŁU
 // ============================================================
@@ -179,9 +193,10 @@ function startMeczuOnline(pokoj) {
   if (kontener) {
     kontener.innerHTML = "";
     gracze.forEach((g, i) => {
+// Wewnątrz startMeczuOnline(pokoj) podczas generowania kart graczy:
       kontener.innerHTML += `
         <div class="karta-gracza" id="karta-g${i}">
-          <h2>${g.nazwa} ${i === mojIndeksOnline ? "(Ty)" : ""}</h2>
+          <h2>${g.nazwa} ${(!czyWidz && i === mojIndeksOnline) ? "(Ty)" : ""}</h2>
           <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
           <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
           <div class="checkout-sugerowany" id="checkout-g${i}"></div>
@@ -259,27 +274,25 @@ function odbierzRzutRywala(dane) {
 
 // Przechwytywanie silnika gry
 function podepnijNasluchRzutowSilnika() {
-  // 1. Nadpisanie wykonania rzutu (wysyłka w sieć)
-  const staryProces = wykonajProcesRzutu;
-  wykonajProcesRzutu = function (punkty, opis, zuzyte, fura, panel) {
-    if (czyTrybOnline && !odbieranieRzutuZSieci) {
+  const staryProces = window.wykonajProcesRzutu;
+  window.wykonajProcesRzutu = function (punkty, opis, zuzyte, fura, panel) {
+    // Widz nigdy nie wysyła rzutów
+    if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
       wyslijMojRzut(punkty, opis, zuzyte, fura);
     }
     staryProces(punkty, opis, zuzyte, fura, panel);
   };
 
-  // 2. Automatyczne blokowanie/odblokowywanie tarczy przy każdej zmianie tury
-  const staraAktualizacjaUI = aktualizujKartyUI;
-  aktualizujKartyUI = function () {
+  const staraAktualizacjaUI = window.aktualizujKartyUI;
+  window.aktualizujKartyUI = function () {
     staraAktualizacjaUI();
     window.sprawdzTureOnline();
   };
 
-  // 3. Wyłączenie popupu o liczbę rzuconych doubli na ekranie rywala (gdy nie jest nasza tura)
-  const staryPopupDoubles = pokazPopupDoubles;
-  pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
-    if (czyTrybOnline && aktualnyGraczIndex !== mojIndeksOnline) {
-      // Rywal nie odpowiada za doubla rzucającego – automatycznie pomijamy
+  const staryPopupDoubles = window.pokazPopupDoubles;
+  window.pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
+    // Widz oraz gracz czekający nie odpowiadają na popup doubli
+    if (czyTrybOnline && (czyWidz || window.aktualnyGraczIndex !== mojIndeksOnline)) {
       callback(czyZakonczyl ? 3 : 3, 0);
       return;
     }
