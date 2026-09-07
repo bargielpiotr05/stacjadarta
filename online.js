@@ -45,11 +45,14 @@ async function sprawdzCzyZbanowany(ip) {
 // 3. POBIERANIE I RENDEROWANIE STOŁÓW (LOBBY)
 // ============================================================
 async function pobierzStoły() {
+  const dwaGodzinyTemu = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
   const { data, error } = await supabaseClient
     .from("rooms")
     .select("*")
     .in("status", ["waiting", "in_progress"])
     .eq("czy_prywatny", false)
+    .gt("utworzono", dwaGodzinyTemu)
     .order("utworzono", { ascending: false });
 
   if (error) {
@@ -182,10 +185,15 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
       return;
     }
 
+    // Wygenerowanie tajnego tokenu dla gościa
+    const goscToken = "usr_" + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem(`sd_token_${kodPokoju}`, goscToken);
+
     const { error: updateErr } = await supabaseClient
       .from("rooms")
       .update({
         gosc_nazwa: nick,
+        gosc_token: goscToken,
         status: "in_progress"
       })
       .eq("kod_pokoju", kodPokoju);
@@ -217,7 +225,6 @@ async function stworzStolZKonfiguracji() {
       return;
     }
 
-    // Limit max 2 otwartych stołów oczekujących na jedno IP
     if (mojeIP !== "nieznane") {
       const { count } = await supabaseClient
         .from("rooms")
@@ -241,6 +248,10 @@ async function stworzStolZKonfiguracji() {
 
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
 
+    // Wygenerowanie tajnego tokenu dla hosta
+    const hostToken = "usr_" + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem(`sd_token_${kodPokoju}`, hostToken);
+
     const { data, error } = await supabaseClient
       .from("rooms")
       .insert([
@@ -248,6 +259,7 @@ async function stworzStolZKonfiguracji() {
           kod_pokoju: kodPokoju,
           host_ip: mojeIP,
           host_nazwa: nick,
+          host_token: hostToken,
           format_gry: formatTekst,
           punkty_startowe: punkty,
           docelowe_legi: dystans,
