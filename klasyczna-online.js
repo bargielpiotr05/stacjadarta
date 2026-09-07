@@ -182,10 +182,14 @@ function startMeczuOnline(pokoj) {
   window.trybWyjscia = pokoj.zasady_wyjscia || "do";
   window.liczbaGraczy = 2;
 
+  // Bezpieczny fallback: jeśli w bazie jest "Gracz" lub pusto, użyj "Gospodarz" / "Gość"
+  const hostNazwa = (!pokoj.host_nazwa || pokoj.host_nazwa === "Gracz") ? "Gospodarz" : pokoj.host_nazwa;
+  const goscNazwa = (!pokoj.gosc_nazwa || pokoj.gosc_nazwa === "Gracz") ? "Gość" : pokoj.gosc_nazwa;
+
   window.gracze = [
     {
       id: 0,
-      nazwa: pokoj.host_nazwa || "Gospodarz",
+      nazwa: hostNazwa,
       punkty: window.punktyStartowe,
       wygraneLegi: 0,
       rzuty: [],
@@ -196,7 +200,7 @@ function startMeczuOnline(pokoj) {
     },
     {
       id: 1,
-      nazwa: pokoj.gosc_nazwa || "Gość",
+      nazwa: goscNazwa,
       punkty: window.punktyStartowe,
       wygraneLegi: 0,
       rzuty: [],
@@ -251,7 +255,6 @@ function startMeczuOnline(pokoj) {
   document.getElementById("ekran-gry").style.display = "block";
   document.getElementById("cel-meczu").textContent = `Do ${window.doceloweLegi} wygranych`;
 
-  // Przywrócenie stanu online po F5 lub start od zera
   const czyPrzywrocono = przywrocStanOnlineZStorage();
   if (!czyPrzywrocono) {
     window.graczZaczynajacyLegIndex = 0;
@@ -262,7 +265,6 @@ function startMeczuOnline(pokoj) {
 
   window.sprawdzTureOnline();
 
-  // Nowy widz lub zresetowany gracz natychmiast pyta stół o bieżący wynik
   if (czyWidz || czyPrzywrocono) {
     setTimeout(() => {
       kanalMeczuRealtime?.send({
@@ -273,7 +275,6 @@ function startMeczuOnline(pokoj) {
     }, 400);
   }
 }
-
 // ============================================================
 // 4. TRANSMISJA STANU GRY NA ŻYWO (BROADCAST SNAPSHOT)
 // ============================================================
