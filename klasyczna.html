@@ -589,17 +589,17 @@
             const selectWejscia = document.getElementById("select-wejscia");
             const selectWyjscia = document.getElementById("select-wyjscia");
 
-            let punktyStartowe = 501;
-            let doceloweLegi = 3;
-            let aktualnaKolejka = 1;
+            var punktyStartowe = 501;
+            var doceloweLegi = 3;
+            var aktualnaKolejka = 1;
 
-            let gracze = [];
-            let liczbaGraczy = 2;
-            let aktualnyGraczIndex = 0;
-            let graczZaczynajacyLegIndex = 0;
+            var gracze = [];
+            var liczbaGraczy = 2;
+            var aktualnyGraczIndex = 0;
+            var graczZaczynajacyLegIndex = 0;
 
-            let trybWejscia = "si";
-            let trybWyjscia = "do";
+            var trybWejscia = "si";
+            var trybWyjscia = "do";
 
             let limitLotekAktywny = false;
             let maksymalnyLimitLotek = 30;
@@ -1773,7 +1773,7 @@
             // ==========================================
 
             function zapiszStanMeczuDoStorage() {
-                if (ekranGry.style.display !== "block") return;
+                if (ekranGry.style.display !== "block" || new URLSearchParams(window.location.search).get("pokoj")) return;
 
                 const daneMeczu = {
                     punktyStartowe,
