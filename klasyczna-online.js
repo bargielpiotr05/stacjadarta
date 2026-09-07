@@ -14,7 +14,10 @@ const onlineKodPokoju = parametryURL.get("pokoj");
 const onlineMojaRola = parametryURL.get("rola");
 const onlineTryb = parametryURL.get("tryb");
 
-if (onlineKodPokoju) {
+// Bezpieczny start niezależnie od momentu załadowania DOM
+function uruchomModulOnline() {
+  if (!onlineKodPokoju) return;
+
   czyTrybOnline = true;
   czyWidz = (onlineTryb === "widz" || onlineMojaRola === "widz");
 
@@ -22,10 +25,16 @@ if (onlineKodPokoju) {
     mojIndeksOnline = (onlineMojaRola === "host") ? 0 : 1;
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    inicjalizujPoczekalnieOnline(onlineKodPokoju, onlineMojaRola);
-    podepnijNasluchRzutowSilnika();
-  });
+  inicjalizujPoczekalnieOnline(onlineKodPokoju, onlineMojaRola);
+  podepnijNasluchRzutowSilnika();
+}
+
+if (onlineKodPokoju) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", uruchomModulOnline);
+  } else {
+    uruchomModulOnline();
+  }
 }
 
 // ============================================================
@@ -37,7 +46,6 @@ window.sprawdzTureOnline = function () {
   const belkaKolejki = document.getElementById("wyswietl-kolejke");
   const graczRzucajacy = window.gracze ? window.gracze[window.aktualnyGraczIndex] : null;
 
-  // OBSŁUGA WIDZA: ukrycie stref wprowadzania wyniku
   if (czyWidz) {
     const opcjeLiczenia = document.querySelector(".opcje-liczenia");
     if (opcjeLiczenia) opcjeLiczenia.style.display = "none";
@@ -48,7 +56,6 @@ window.sprawdzTureOnline = function () {
     return;
   }
 
-  // OBSŁUGA GRACZY: blokada interfejsu poza własną turą
   const mojaKolej = (window.aktualnyGraczIndex === mojIndeksOnline);
   const inpWynik = document.getElementById("wpisz-wynik");
   const btnZatwierdz = document.getElementById("zatwierdz-rzut");
@@ -68,46 +75,49 @@ window.sprawdzTureOnline = function () {
 };
 
 // ============================================================
-// 3. POCZEKALNIA STOŁU
+// 3. POCZEKALNIA STOŁU (WYŚRODKOWANA W <MAIN>)
 // ============================================================
 async function inicjalizujPoczekalnieOnline(kod, rola) {
   const formOffline = document.getElementById("formularz-ustawien");
   const tytul = document.getElementById("tytul-strony");
+  const menuBelka = document.querySelector(".menu");
   const btnPowrot = document.getElementById("powrot-do-gier");
 
   if (formOffline) formOffline.style.display = "none";
   if (tytul) tytul.style.display = "none";
+  if (menuBelka) menuBelka.style.display = "none";
   if (btnPowrot) btnPowrot.style.display = "none";
 
-  // Pobranie danych pokoju z Supabase
   const { data: pokoj, error } = await supabaseClient
     .from("rooms")
     .select("*")
     .eq("kod_pokoju", kod)
-    .single();
+    .maybeSingle();
 
   if (error || !pokoj) {
-    alert("Nie odnaleziono takiego stołu lub został on już zamknięty.");
+    alert("Ten stół nie istnieje lub został już usunięty. Przenoszę do lobby.");
     window.location.href = "./online.html";
     return;
   }
 
-  // Jeśli rywal już jest w środku (np. wchodzimy jako Gość lub Widz w trakcie)
   if (pokoj.status === "in_progress") {
     startMeczuOnline(pokoj);
     return;
   }
 
-const poczekalnia = document.createElement("div");
+  // Budowa poczekalni wyśrodkowanej w <main>
+  const poczekalnia = document.createElement("div");
   poczekalnia.id = "poczekalnia-online";
   poczekalnia.style.width = "100%";
   poczekalnia.style.display = "flex";
   poczekalnia.style.justifyContent = "center";
   poczekalnia.style.alignItems = "center";
-  poczekalnia.style.padding = "20px 0";
+  poczekalnia.style.minHeight = "60vh";
+  poczekalnia.style.position = "relative";
+  poczekalnia.style.zIndex = "10";
 
   poczekalnia.innerHTML = `
-    <div style="background: #111827; border: 1px solid #22c55e; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; margin: 20px auto; text-align: center; color: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+    <div style="background: rgba(17, 24, 39, 0.95); border: 1px solid #22c55e; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; margin: auto; text-align: center; color: #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
       <h2 style="color: #22c55e; margin: 0 0 10px 0; font-size: 24px;">Stół: ${kod}</h2>
       <p style="color: #94a3b8; font-size: 14px; margin: 0 0 20px 0;">Gospodarz: <strong>${pokoj.host_nazwa}</strong> | Format: <strong>${pokoj.format_gry}</strong></p>
       
@@ -126,24 +136,27 @@ const poczekalnia = document.createElement("div");
     </div>
   `;
 
-  // Wstawienie do wnętrza znacznika <main>
+  // Wstawienie jako pierwszy element <main> (idealnie pod paskiem nawigacji)
   const kontenerMain = document.querySelector("main") || document.body;
-  kontenerMain.appendChild(poczekalnia);
+  kontenerMain.prepend(poczekalnia);
 
   document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
     navigator.clipboard.writeText(kod);
     alert(`Skopiowano kod: ${kod}`);
   });
 
-  // Obsługa opuszczenia poczekalni (Host usuwa stół z bazy)
-  document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async () => {
+  document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const btn = e.currentTarget;
+    btn.textContent = "Usuwanie...";
+    btn.disabled = true;
+
     if (onlineMojaRola === "host") {
       await usunAktualnyPokoj();
     }
     window.location.href = "./online.html";
   });
 
-  // Nasłuchiwanie wejścia rywala
   supabaseClient
     .channel(`room-wait-${kod}`)
     .on(
@@ -154,7 +167,7 @@ const poczekalnia = document.createElement("div");
         if (zaktualizowanyPokoj.status === "in_progress") {
           const statusBox = document.getElementById("status-oczekiwania");
           if (statusBox) {
-            statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Rozpoczynanie...</span>`;
+            statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Startujemy...</span>`;
           }
           setTimeout(() => {
             document.getElementById("poczekalnia-online")?.remove();
@@ -170,7 +183,6 @@ const poczekalnia = document.createElement("div");
 // 4. START MECZU ONLINE
 // ============================================================
 function startMeczuOnline(pokoj) {
-  // Przekazanie parametrów do silnika gry
   window.punktyStartowe = pokoj.punkty_startowe || 501;
   window.doceloweLegi = pokoj.docelowe_legi || 3;
   window.trybWejscia = pokoj.zasady_wejscia || "si";
@@ -202,15 +214,12 @@ function startMeczuOnline(pokoj) {
     }
   ];
 
-  // Blokada cofania rzutów w trybie sieciowym
   document.querySelectorAll("#btn-cofnij-rzut, .btn-cofnij").forEach((el) => {
     el.style.display = "none";
   });
 
-  // Otwarcie kanału transmisji rzutów na żywo
   zainicjalizujKanalMeczu(pokoj.kod_pokoju);
 
-  // Renderowanie kart zawodników
   const kontener = document.getElementById("kontener-graczy-w-grze");
   if (kontener) {
     kontener.innerHTML = "";
@@ -245,12 +254,10 @@ function startMeczuOnline(pokoj) {
     });
   }
 
-  // Włączenie planszy gry
   document.getElementById("formularz-ustawien").style.display = "none";
   document.getElementById("ekran-gry").style.display = "block";
   document.getElementById("cel-meczu").textContent = `Do ${window.doceloweLegi} wygranych`;
 
-  // Start rozgrywki (zaczyna Host - indeks 0)
   window.graczZaczynajacyLegIndex = 0;
   if (typeof window.resetujLeg === "function") {
     window.resetujLeg();
@@ -259,7 +266,7 @@ function startMeczuOnline(pokoj) {
 }
 
 // ============================================================
-// 5. SYNCHRONIZACJA TRANSMISJI RZUTÓW (BROADCAST)
+// 5. SYNCHRONIZACJA TRANSMISJI RZUTÓW
 // ============================================================
 function zainicjalizujKanalMeczu(kod) {
   kanalMeczuRealtime = supabaseClient.channel(`game-${kod}`, {
@@ -269,6 +276,10 @@ function zainicjalizujKanalMeczu(kod) {
   kanalMeczuRealtime
     .on("broadcast", { event: "rzut-rywala" }, ({ payload }) => {
       odbierzRzutRywala(payload);
+    })
+    .on("broadcast", { event: "mecz-przerwany" }, () => {
+      alert("Przeciwnik opuścił stół. Mecz został zakończony.");
+      window.location.href = "./online.html";
     })
     .subscribe();
 }
@@ -295,15 +306,13 @@ function odbierzRzutRywala(dane) {
     window.wykonajProcesRzutu(dane.punkty, dane.opis, dane.zuzyteLotki, dane.czyFura, null);
   }
   odbieranieRzutuZSieci = false;
-
   window.sprawdzTureOnline();
 }
 
 // ============================================================
-// 6. INTEGRACJA Z SILNIKIEM I USUWANIE POKOI
+// 6. PRZECHWYTYWANIE SILNIKA I USUWANIE STOŁU
 // ============================================================
 function podepnijNasluchRzutowSilnika() {
-  // Przechwycenie wykonania rzutu
   const staryProces = window.wykonajProcesRzutu;
   window.wykonajProcesRzutu = function (punkty, opis, zuzyte, fura, panel) {
     if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
@@ -312,14 +321,12 @@ function podepnijNasluchRzutowSilnika() {
     staryProces(punkty, opis, zuzyte, fura, panel);
   };
 
-  // Przechwycenie aktualizacji interfejsu (zmiana tur)
   const staraAktualizacjaUI = window.aktualizujKartyUI;
   window.aktualizujKartyUI = function () {
     staraAktualizacjaUI();
     window.sprawdzTureOnline();
   };
 
-  // Pominięcie pytania o doubla u gracza oczekującego i widza
   const staryPopupDoubles = window.pokazPopupDoubles;
   window.pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
     if (czyTrybOnline && (czyWidz || window.aktualnyGraczIndex !== mojIndeksOnline)) {
@@ -329,24 +336,40 @@ function podepnijNasluchRzutowSilnika() {
     staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback);
   };
 
-  // Usuwanie pokoju po zakończeniu meczu (przez Hosta)
   const staryZakonczMecz = window.zakonczMecz;
-  window.zakonczMecz = function (zwyciezca) {
+  window.zakonczMecz = async function (zwyciezca) {
     staryZakonczMecz(zwyciezca);
     if (czyTrybOnline && mojIndeksOnline === 0) {
-      usunAktualnyPokoj();
+      await usunAktualnyPokoj();
     }
   };
 
-  // Usuwanie pokoju po przerwaniu gry przyciskiem ✖ (przez Hosta)
-  document.getElementById("powrot-gra")?.addEventListener("click", () => {
-    if (czyTrybOnline && mojIndeksOnline === 0) {
-      usunAktualnyPokoj();
+  document.getElementById("powrot-gra")?.addEventListener("click", async () => {
+    if (czyTrybOnline) {
+      if (kanalMeczuRealtime) {
+        kanalMeczuRealtime.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
+      }
+      if (mojIndeksOnline === 0) {
+        await usunAktualnyPokoj();
+      }
+      window.location.href = "./online.html";
+    }
+  });
+
+  window.addEventListener("pagehide", () => {
+    if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
+      fetch(`${SUPABASE_URL}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        keepalive: true
+      });
     }
   });
 }
 
-// Bezpieczne usuwanie pokoju z Supabase
 async function usunAktualnyPokoj() {
   if (!onlineKodPokoju) return;
   try {
@@ -356,11 +379,9 @@ async function usunAktualnyPokoj() {
       .eq("kod_pokoju", onlineKodPokoju);
 
     if (error) {
-      console.error("Błąd Supabase przy usuwaniu stołu:", error);
-    } else {
-      console.log(`Stół ${onlineKodPokoju} został pomyślnie usunięty.`);
+      console.error("Błąd usuwania stołu:", error);
     }
   } catch (err) {
-    console.warn("Wyjątek podczas usuwania stołu:", err);
+    console.warn("Wyjątek usuwania stołu:", err);
   }
 }
