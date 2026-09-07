@@ -9,13 +9,13 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 let mojeIP = null;
 let wszystkiePokoje = [];
 
-// Pobranie IP użytkownika z Twojej funkcji Cloudflare
 async function pobierzMojeIP() {
   try {
     const res = await fetch("https://api64.ipify.org?format=json");
     if (!res.ok) throw new Error("Błąd pobierania IP");
     const data = await res.json();
     mojeIP = data.ip;
+    console.log("Pobrane IP gracza:", mojeIP);
   } catch (err) {
     console.warn("Nie udało się ustalić IP:", err);
     mojeIP = "nieznane";
