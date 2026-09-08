@@ -6,7 +6,6 @@ let czyTrybOnline = false;
 let czyWidz = false;
 let mojIndeksOnline = -1; // 0 = Host, 1 = Gość, -1 = Widz
 let kanalMeczuRealtime = null;
-let kanalDBSync = null;
 let odbieranieRzutuZSieci = false;
 
 const parametryURL = new URLSearchParams(window.location.search);
@@ -20,7 +19,7 @@ function uruchomModulOnline() {
   if (!onlineKodPokoju || !dbClient) return;
   czyTrybOnline = true;
   inicjalizujPoczekalnieOnline(onlineKodPokoju);
-  podepnijNasluchAkcji();
+  podepnijAutomatycznaSynchronizacje();
 }
 
 if (onlineKodPokoju) {
@@ -37,9 +36,9 @@ if (onlineKodPokoju) {
 window.sprawdzTureOnline = function () {
   if (!czyTrybOnline) return;
 
-  const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
-  const listaGraczy = (typeof gracze !== "undefined") ? gracze : window.gracze;
-  const graczRzucajacy = listaGraczy ? listaGraczy[graczIndex] : null;
+  const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : (window.aktualnyGraczIndex || 0);
+  const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
+  const graczRzucajacy = listaGraczy[graczIndex];
 
   const belkaKolejki = document.getElementById("wyswietl-kolejke");
 
@@ -176,7 +175,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
           setTimeout(() => {
             document.getElementById("poczekalnia-online")?.remove();
             startMeczuOnline(zaktualizowanyPokoj);
-          }, 1000);
+          }, 800);
         }
       }
     )
@@ -270,15 +269,13 @@ function startMeczuOnline(pokoj) {
   document.getElementById("ekran-gry").style.display = "block";
   document.getElementById("cel-meczu").textContent = `Do ${window.doceloweLegi} wygranych`;
 
-  // Jeśli w bazie jest już stan meczu (np. rywal rzucił wcześniej lub odświeżono stronę) - wczytaj go natychmiast!
+  // Jeśli w bazie jest już stan gry (np. rywal rzucił wcześniej lub dołącza widz) - ładujemy go od razu!
   if (pokoj.stan_gry) {
     zastosujStanGry(pokoj.stan_gry);
   } else {
     window.graczZaczynajacyLegIndex = 0;
     if (typeof graczZaczynajacyLegIndex !== "undefined") graczZaczynajacyLegIndex = 0;
-    if (typeof resetujLeg === "function") {
-      resetujLeg();
-    }
+    if (typeof resetujLeg === "function") resetujLeg();
   }
 
   zainicjalizujKanalMeczu(pokoj.kod_pokoju);
@@ -286,15 +283,14 @@ function startMeczuOnline(pokoj) {
 }
 
 // ============================================================
-// 4. PODWÓJNA SYNCHRONIZACJA (BAZA POSTGRES + BROADCAST)
+// 4. KANAŁ TRANSMISJI I ODBIÓR Z BAZY
 // ============================================================
 function zainicjalizujKanalMeczu(kod) {
   if (kanalMeczuRealtime) dbClient.removeChannel(kanalMeczuRealtime);
-  if (kanalDBSync) dbClient.removeChannel(kanalDBSync);
 
-  // 1. Pewny nasłuch bazy Postgres (działa zawsze, nawet przy opóźnieniach)
-  kanalDBSync = dbClient
-    .channel(`db-game-${kod}`)
+  kanalMeczuRealtime = dbClient
+    .channel(`room-live-${kod}`)
+    // 1. Zmiana w bazie Postgres
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
@@ -304,14 +300,7 @@ function zainicjalizujKanalMeczu(kod) {
         }
       }
     )
-    .subscribe();
-
-  // 2. Kanał Broadcast dla natychmiastowych aktualizacji 0ms
-  kanalMeczuRealtime = dbClient.channel(`game-${kod}`, {
-    config: { broadcast: { self: false } }
-  });
-
-  kanalMeczuRealtime
+    // 2. Bezpośredni broadcast (0ms)
     .on("broadcast", { event: "aktualizacja-stanu" }, ({ payload }) => {
       zastosujStanGry(payload);
     })
@@ -322,13 +311,16 @@ function zainicjalizujKanalMeczu(kod) {
     .subscribe();
 }
 
-function wyslijAktualnyStanGry() {
-  const listaGraczy = (typeof gracze !== "undefined") ? gracze : window.gracze;
-  const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
-  const kolejka = (typeof aktualnaKolejka !== "undefined") ? aktualnaKolejka : window.aktualnaKolejka;
+// ============================================================
+// 5. WYSYŁANIE I APLIKOWANIE STANU
+// ============================================================
+async function wyslijAktualnyStanGry() {
+  const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
+  const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : (window.aktualnyGraczIndex || 0);
+  const kolejka = (typeof aktualnaKolejka !== "undefined") ? aktualnaKolejka : (window.aktualnaKolejka || 1);
   const historiaLegu = (typeof historiaAktualnegoLegu !== "undefined") ? historiaAktualnegoLegu : (window.historiaAktualnegoLegu || []);
 
-  if (!czyTrybOnline || !listaGraczy) return;
+  if (!czyTrybOnline || listaGraczy.length === 0) return;
 
   const stan = {
     aktualnyGraczIndex: graczIndex,
@@ -344,25 +336,26 @@ function wyslijAktualnyStanGry() {
     }))
   };
 
-  // Wysyłka Broadcast
+  // Broadcast dla zerowego opóźnienia
   kanalMeczuRealtime?.send({
     type: "broadcast",
     event: "aktualizacja-stanu",
     payload: stan
   });
 
-  // Równoległy trwały zapis do bazy Supabase
-  dbClient
-    .from("rooms")
-    .update({
-      stan_gry: stan,
-      wynik_host: listaGraczy[0]?.wygraneLegi || 0,
-      wynik_gosc: listaGraczy[1]?.wygraneLegi || 0
-    })
-    .eq("kod_pokoju", onlineKodPokoju)
-    .then(({ error }) => {
-      if (error) console.warn("Błąd zapisu stanu do bazy:", error);
-    });
+  // Zapis do bazy danych (wyzwala pewny postgres_changes u rywala i widza)
+  try {
+    await dbClient
+      .from("rooms")
+      .update({
+        stan_gry: stan,
+        wynik_host: listaGraczy[0]?.wygraneLegi || 0,
+        wynik_gosc: listaGraczy[1]?.wygraneLegi || 0
+      })
+      .eq("kod_pokoju", onlineKodPokoju);
+  } catch (err) {
+    console.warn("Błąd zapisu do bazy:", err);
+  }
 }
 
 function zastosujStanGry(dane) {
@@ -370,7 +363,7 @@ function zastosujStanGry(dane) {
 
   odbieranieRzutuZSieci = true;
 
-  const listaGraczy = (typeof gracze !== "undefined") ? gracze : window.gracze;
+  const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
   if (typeof historiaAktualnegoLegu !== "undefined") historiaAktualnegoLegu = dane.historiaAktualnegoLegu || [];
   window.historiaAktualnegoLegu = dane.historiaAktualnegoLegu || [];
 
@@ -426,41 +419,53 @@ function zastosujStanGry(dane) {
     }
   });
 
-  odbieranieRzutuZSieci = false;
+  setTimeout(() => {
+    odbieranieRzutuZSieci = false;
+  }, 100);
+
   window.sprawdzTureOnline();
 }
 
 // ============================================================
-// 5. OBSŁUGA SILNIKA GRY I PRZYCISKÓW
+// 6. OBSERWATOR PUNKTÓW (AUTOMATYCZNY NASŁUCH RZUTÓW)
 // ============================================================
-function podepnijNasluchAkcji() {
-  // Bezpośrednie nasłuchiwanie kliknięć zatwierdzających rzut – 100% gwarancji wysłania
-  const przyciskManual = document.getElementById("zatwierdz-rzut");
-  const przyciskKlik = document.getElementById("zatwierdz-klik-kolejke");
+function podepnijAutomatycznaSynchronizacje() {
+  // 1. Obserwator DOM: gdy punkty gracza zmienią się na ekranie, wyślij stan
+  const kontenerGraczy = document.getElementById("kontener-graczy-w-grze");
+  if (kontenerGraczy) {
+    let timeoutSync = null;
+    const observer = new MutationObserver(() => {
+      if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+        clearTimeout(timeoutSync);
+        timeoutSync = setTimeout(() => {
+          wyslijAktualnyStanGry();
+        }, 50);
+      }
+    });
 
-  const wyzwolSynchronizacje = () => {
+    observer.observe(kontenerGraczy, {
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+  }
+
+  // 2. Obsługa przycisków zatwierdzania rzutów
+  const btnManual = document.getElementById("zatwierdz-rzut");
+  const btnKlik = document.getElementById("zatwierdz-klik-kolejke");
+
+  const wyzwolPoRzucie = () => {
     setTimeout(() => {
       if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
         wyslijAktualnyStanGry();
       }
-    }, 60);
+    }, 100);
   };
 
-  przyciskManual?.addEventListener("click", wyzwolSynchronizacje);
-  przyciskKlik?.addEventListener("click", wyzwolSynchronizacje);
+  btnManual?.addEventListener("click", wyzwolPoRzucie);
+  btnKlik?.addEventListener("click", wyzwolPoRzucie);
 
-  // Zabezpieczenie na koniec meczu
-  const orgZakoncz = window.zakonczMecz;
-  window.zakonczMecz = async function (zwyciezca) {
-    if (typeof orgZakoncz === "function") orgZakoncz(zwyciezca);
-    window.sprawdzTureOnline();
-    if (czyTrybOnline) {
-      if (!czyWidz && !odbieranieRzutuZSieci) wyslijAktualnyStanGry();
-      if (mojIndeksOnline === 0) await usunAktualnyPokoj();
-    }
-  };
-
-  // Automatyczne zatwierdzanie popupu u rywala i widza
+  // 3. Automatyczne pomijanie okienka doubli u drugiego gracza i widza
   const staryPopupDoubles = window.pokazPopupDoubles;
   window.pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
     const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
@@ -473,6 +478,7 @@ function podepnijNasluchAkcji() {
     }
   };
 
+  // 4. Obsługa wyjścia z meczu
   document.getElementById("powrot-gra")?.addEventListener("click", async () => {
     if (czyTrybOnline) {
       kanalMeczuRealtime?.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
