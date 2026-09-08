@@ -6,6 +6,8 @@ let czyTrybOnline = false;
 let czyWidz = false;
 let mojIndeksOnline = -1; // 0 = Host, 1 = Gość, -1 = Widz
 let kanalMeczuRealtime = null;
+let kanalCzekaniaPoczekalni = null;
+let czyMeczJuzWystartowal = false;
 let odbieranieRzutuZSieci = false;
 
 const parametryURL = new URLSearchParams(window.location.search);
@@ -57,8 +59,17 @@ window.sprawdzTureOnline = function () {
 
   if (inpWynik) inpWynik.disabled = !mojaKolej;
   if (btnZatwierdz) btnZatwierdz.disabled = !mojaKolej;
-  if (strefaKlik) strefaKlik.style.pointerEvents = mojaKolej ? "auto" : "none";
-  if (strefaManual) strefaManual.style.pointerEvents = mojaKolej ? "auto" : "none";
+
+  if (strefaKlik) {
+    strefaKlik.style.pointerEvents = mojaKolej ? "auto" : "none";
+    strefaKlik.style.opacity = mojaKolej ? "1" : "0.45";
+    strefaKlik.style.transition = "opacity 0.25s ease";
+  }
+  if (strefaManual) {
+    strefaManual.style.pointerEvents = mojaKolej ? "auto" : "none";
+    strefaManual.style.opacity = mojaKolej ? "1" : "0.45";
+    strefaManual.style.transition = "opacity 0.25s ease";
+  }
 
   if (belkaKolejki) {
     belkaKolejki.innerHTML = mojaKolej
@@ -110,7 +121,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
     }
   }
 
-  if (pokoj.status === "in_progress") {
+  if (pokoj.status === "in_progress" || pokoj.status === "finished") {
     startMeczuOnline(pokoj);
     return;
   }
@@ -157,14 +168,19 @@ async function inicjalizujPoczekalnieOnline(kod) {
     window.location.href = "./online.html";
   });
 
-  supabaseClient
+  kanalCzekaniaPoczekalni = supabaseClient
     .channel(`room-wait-${kod}`)
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
       (payload) => {
         const zaktualizowanyPokoj = payload.new;
-        if (zaktualizowanyPokoj.status === "in_progress") {
+        if (zaktualizowanyPokoj.status === "in_progress" && !czyMeczJuzWystartowal) {
+          if (kanalCzekaniaPoczekalni) {
+            supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+            kanalCzekaniaPoczekalni = null;
+          }
+
           const statusBox = document.getElementById("status-oczekiwania");
           if (statusBox) {
             statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Startujemy...</span>`;
@@ -172,7 +188,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
           setTimeout(() => {
             document.getElementById("poczekalnia-online")?.remove();
             startMeczuOnline(zaktualizowanyPokoj);
-          }, 800);
+          }, 600);
         }
       }
     )
@@ -183,6 +199,15 @@ async function inicjalizujPoczekalnieOnline(kod) {
 // 3. START MECZU ONLINE
 // ============================================================
 function startMeczuOnline(pokoj) {
+  if (czyMeczJuzWystartowal) return;
+  czyMeczJuzWystartowal = true;
+
+  if (kanalCzekaniaPoczekalni) {
+    supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+    kanalCzekaniaPoczekalni = null;
+  }
+  document.getElementById("poczekalnia-online")?.remove();
+
   window.punktyStartowe = pokoj.punkty_startowe || 501;
   window.doceloweLegi = pokoj.docelowe_legi || 3;
   window.trybWejscia = pokoj.zasady_wejscia || "si";
@@ -274,6 +299,10 @@ function startMeczuOnline(pokoj) {
     if (typeof resetujLeg === "function") resetujLeg();
   }
 
+  if (pokoj.status === "finished" && pokoj.stan_gry?.zwyciezca) {
+    pokazEkranKoncaMeczu(pokoj.stan_gry.zwyciezca, pokoj.stan_gry.historiaMeczuLegi);
+  }
+
   zainicjalizujKanalMeczu(pokoj.kod_pokoju);
   window.sprawdzTureOnline();
 }
@@ -296,10 +325,20 @@ function zainicjalizujKanalMeczu(kod) {
         if (payload.new && payload.new.stan_gry) {
           zastosujStanGry(payload.new.stan_gry);
         }
+        if (payload.new && payload.new.status === "finished") {
+          setTimeout(() => {
+            pokazEkranKoncaMeczu(payload.new.stan_gry?.zwyciezca, payload.new.stan_gry?.historiaMeczuLegi);
+          }, 250);
+        }
       }
     )
     .on("broadcast", { event: "aktualizacja-stanu" }, ({ payload }) => {
       zastosujStanGry(payload);
+    })
+    .on("broadcast", { event: "koniec-meczu" }, ({ payload }) => {
+      setTimeout(() => {
+        pokazEkranKoncaMeczu(payload.zwyciezca, payload.historiaMeczuLegi);
+      }, 250);
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
       if (!czyWidz) {
@@ -321,26 +360,34 @@ function zainicjalizujKanalMeczu(kod) {
     });
 }
 
-function wyslijAktualnyStanGry() {
+function wyslijAktualnyStanGry(dodatkowePola = {}) {
   const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
   const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : (window.aktualnyGraczIndex || 0);
   const kolejka = (typeof aktualnaKolejka !== "undefined") ? aktualnaKolejka : (window.aktualnaKolejka || 1);
   const historiaLegu = (typeof historiaAktualnegoLegu !== "undefined") ? historiaAktualnegoLegu : (window.historiaAktualnegoLegu || []);
+  const historiaLegow = (typeof historiaMeczuLegi !== "undefined") ? historiaMeczuLegi : (window.historiaMeczuLegi || []);
+  const zaczynajacyIndex = (typeof graczZaczynajacyLegIndex !== "undefined") ? graczZaczynajacyLegIndex : (window.graczZaczynajacyLegIndex || 0);
 
   if (!czyTrybOnline || listaGraczy.length === 0) return;
 
   const stan = {
     aktualnyGraczIndex: graczIndex,
     aktualnaKolejka: kolejka,
+    graczZaczynajacyLegIndex: zaczynajacyIndex,
     historiaAktualnegoLegu: historiaLegu,
+    historiaMeczuLegi: historiaLegow,
     gracze: listaGraczy.map((g) => ({
       id: g.id,
       punkty: g.punkty,
       wygraneLegi: g.wygraneLegi,
       rzuty: g.rzuty || [],
+      najlepszyLeg: g.najlepszyLeg || null,
+      lotkiNaDoubla: g.lotkiNaDoubla || 0,
+      trafioneDouble: g.trafioneDouble || 0,
       srednia: typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(g.id) : "0.00",
       srednia9: typeof obliczSrednia9Lotek === "function" ? obliczSrednia9Lotek(g.id) : "0.00"
-    }))
+    })),
+    ...dodatkowePola
   };
 
   kanalMeczuRealtime?.send({
@@ -349,13 +396,19 @@ function wyslijAktualnyStanGry() {
     payload: stan
   });
 
+  const payloadBaza = {
+    stan_gry: stan,
+    wynik_host: listaGraczy[0]?.wygraneLegi || 0,
+    wynik_gosc: listaGraczy[1]?.wygraneLegi || 0
+  };
+
+  if (dodatkowePola.czyKoniec) {
+    payloadBaza.status = "finished";
+  }
+
   supabaseClient
     .from("rooms")
-    .update({
-      stan_gry: stan,
-      wynik_host: listaGraczy[0]?.wygraneLegi || 0,
-      wynik_gosc: listaGraczy[1]?.wygraneLegi || 0
-    })
+    .update(payloadBaza)
     .eq("kod_pokoju", onlineKodPokoju)
     .then();
 }
@@ -366,14 +419,28 @@ function zastosujStanGry(dane) {
   odbieranieRzutuZSieci = true;
 
   const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
+  
   if (typeof historiaAktualnegoLegu !== "undefined") historiaAktualnegoLegu = dane.historiaAktualnegoLegu || [];
   window.historiaAktualnegoLegu = dane.historiaAktualnegoLegu || [];
+
+  if (dane.historiaMeczuLegi) {
+    if (typeof historiaMeczuLegi !== "undefined") historiaMeczuLegi = dane.historiaMeczuLegi;
+    window.historiaMeczuLegi = dane.historiaMeczuLegi;
+  }
+
+  if (dane.graczZaczynajacyLegIndex !== undefined) {
+    window.graczZaczynajacyLegIndex = dane.graczZaczynajacyLegIndex;
+    if (typeof graczZaczynajacyLegIndex !== "undefined") graczZaczynajacyLegIndex = dane.graczZaczynajacyLegIndex;
+  }
 
   dane.gracze.forEach((zdalnyGracz, idx) => {
     if (listaGraczy && listaGraczy[idx]) {
       listaGraczy[idx].punkty = zdalnyGracz.punkty;
       listaGraczy[idx].wygraneLegi = zdalnyGracz.wygraneLegi;
       listaGraczy[idx].rzuty = zdalnyGracz.rzuty || [];
+      listaGraczy[idx].najlepszyLeg = zdalnyGracz.najlepszyLeg || null;
+      listaGraczy[idx].lotkiNaDoubla = zdalnyGracz.lotkiNaDoubla || 0;
+      listaGraczy[idx].trafioneDouble = zdalnyGracz.trafioneDouble || 0;
 
       const elPunkty = document.getElementById(`punkty-g${idx}`);
       if (elPunkty) elPunkty.textContent = zdalnyGracz.punkty;
@@ -386,6 +453,11 @@ function zastosujStanGry(dane) {
 
       const elSrednia9 = document.getElementById(`dziewiec-lotek-g${idx}`);
       if (elSrednia9) elSrednia9.textContent = zdalnyGracz.srednia9;
+
+      const elOstatniLeg = document.getElementById(`ostatni-leg-g${idx}`);
+      if (elOstatniLeg && typeof pobierzOstatniLeg === "function") {
+        elOstatniLeg.textContent = pobierzOstatniLeg(listaGraczy[idx].id);
+      }
 
       const elCheckout = document.getElementById(`checkout-g${idx}`);
       if (elCheckout && typeof getCheckout === "function") {
@@ -426,17 +498,39 @@ function zastosujStanGry(dane) {
   }, 50);
 
   window.sprawdzTureOnline();
+
+  if (dane.czyKoniec && dane.zwyciezca) {
+    setTimeout(() => {
+      pokazEkranKoncaMeczu(dane.zwyciezca, dane.historiaMeczuLegi);
+    }, 250);
+  }
+}
+
+function pokazEkranKoncaMeczu(zwyciezca, historiaLegow) {
+  if (historiaLegow) {
+    if (typeof historiaMeczuLegi !== "undefined") historiaMeczuLegi = historiaLegow;
+    window.historiaMeczuLegi = historiaLegow;
+  }
+
+  if (typeof zakonczMecz === "function") {
+    zakonczMecz(zwyciezca);
+  } else {
+    document.getElementById("ekran-gry").style.display = "none";
+    const ekranWyg = document.querySelector(".ekran-wygranej");
+    if (ekranWyg) ekranWyg.style.display = "flex";
+    const wygrTxt = document.getElementById("wygrany");
+    if (wygrTxt && zwyciezca) wygrTxt.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
+  }
 }
 
 // ============================================================
-// 5. OBSŁUGA SILNIKA GRY
+// 5. OBSŁUGA SILNIKA GRY I ZMIAN TURY
 // ============================================================
 function podepnijNasluchSilnika() {
   const orgProces = window.wykonajProcesRzutu || (typeof wykonajProcesRzutu === "function" ? wykonajProcesRzutu : null);
-
   window.wykonajProcesRzutu = function (punkty, opis, zuzyte, fura, panel) {
     if (orgProces) orgProces(punkty, opis, zuzyte, fura, panel);
-
+    window.sprawdzTureOnline();
     if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
       wyslijAktualnyStanGry();
     }
@@ -445,12 +539,54 @@ function podepnijNasluchSilnika() {
   const staryPopupDoubles = window.pokazPopupDoubles;
   window.pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
     const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
+    
     if (czyTrybOnline && (czyWidz || graczIndex !== mojIndeksOnline)) {
       callback(czyZakonczyl ? 3 : 3, 0);
       return;
     }
+
     if (typeof staryPopupDoubles === "function") {
-      staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback);
+      staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, (lotkaKonczaca, lotkiNaDoubla) => {
+        callback(lotkaKonczaca, lotkiNaDoubla);
+
+        if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+          setTimeout(() => {
+            window.sprawdzTureOnline();
+            wyslijAktualnyStanGry();
+          }, 50);
+        }
+      });
+    }
+  };
+
+  const orgResetuj = window.resetujLeg;
+  window.resetujLeg = function () {
+    if (typeof orgResetuj === "function") orgResetuj();
+    window.sprawdzTureOnline();
+    if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+      wyslijAktualnyStanGry();
+    }
+  };
+
+  const orgAktualizujUI = window.aktualizujKartyUI;
+  window.aktualizujKartyUI = function () {
+    if (typeof orgAktualizujUI === "function") orgAktualizujUI();
+    window.sprawdzTureOnline();
+  };
+
+  const orgZakoncz = window.zakonczMecz;
+  window.zakonczMecz = function (zwyciezca) {
+    if (typeof orgZakoncz === "function") orgZakoncz(zwyciezca);
+    window.sprawdzTureOnline();
+    if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+      const historiaLegow = (typeof historiaMeczuLegi !== "undefined") ? historiaMeczuLegi : (window.historiaMeczuLegi || []);
+      
+      kanalMeczuRealtime?.send({
+        type: "broadcast",
+        event: "koniec-meczu",
+        payload: { zwyciezca, historiaMeczuLegi: historiaLegow }
+      });
+      wyslijAktualnyStanGry({ czyKoniec: true, zwyciezca, historiaMeczuLegi: historiaLegow });
     }
   };
 
@@ -464,7 +600,7 @@ function podepnijNasluchSilnika() {
 
   window.addEventListener("pagehide", () => {
     if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
-      fetch(`${SUPABASE_URL}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}`, {
+      fetch(`${SUPABASE_URL}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
         method: "DELETE",
         headers: {
           apikey: SUPABASE_ANON_KEY,
