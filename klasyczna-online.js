@@ -16,7 +16,7 @@ function uruchomModulOnline() {
   if (!onlineKodPokoju) return;
   czyTrybOnline = true;
   inicjalizujPoczekalnieOnline(onlineKodPokoju);
-  podepnijNasluchRzutowSilnika();
+  podepnijNasluchSilnika();
 }
 
 if (onlineKodPokoju) {
@@ -28,7 +28,7 @@ if (onlineKodPokoju) {
 }
 
 // ============================================================
-// 1. STEROWANIE WIDOKIEM TURY I BLOKADAMI
+// 1. STEROWANIE BLOKADAMI I KOLEJKĄ
 // ============================================================
 window.sprawdzTureOnline = function () {
   if (!czyTrybOnline) return;
@@ -65,7 +65,7 @@ window.sprawdzTureOnline = function () {
 };
 
 // ============================================================
-// 2. POCZEKALNIA STOŁU I WERYFIKACJA TOŻSAMOŚCI TOKENEM
+// 2. POCZEKALNIA STOŁU I WERYFIKACJA TOŻSAMOŚCI
 // ============================================================
 async function inicjalizujPoczekalnieOnline(kod) {
   const formOffline = document.getElementById("formularz-ustawien");
@@ -90,7 +90,6 @@ async function inicjalizujPoczekalnieOnline(kod) {
     return;
   }
 
-  // Bezpieczna weryfikacja tożsamości po stronie klienta (odporna na edycję URL ?rola=host)
   if (onlineTryb === "widz") {
     czyWidz = true;
     mojIndeksOnline = -1;
@@ -103,7 +102,6 @@ async function inicjalizujPoczekalnieOnline(kod) {
       mojIndeksOnline = 1;
       czyWidz = false;
     } else {
-      // Jeśli brak tokenu w sesji, traktujemy jako widza (zapobiega oszustwom z adresu URL)
       mojIndeksOnline = -1;
       czyWidz = true;
     }
@@ -171,7 +169,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
           setTimeout(() => {
             document.getElementById("poczekalnia-online")?.remove();
             startMeczuOnline(zaktualizowanyPokoj);
-          }, 1200);
+          }, 1000);
         }
       }
     )
@@ -179,7 +177,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
 }
 
 // ============================================================
-// 3. START MECZU ONLINE I AUTOZAPIS (F5)
+// 3. START MECZU ONLINE
 // ============================================================
 function startMeczuOnline(pokoj) {
   window.punktyStartowe = pokoj.punkty_startowe || 501;
@@ -260,29 +258,16 @@ function startMeczuOnline(pokoj) {
   document.getElementById("ekran-gry").style.display = "block";
   document.getElementById("cel-meczu").textContent = `Do ${window.doceloweLegi} wygranych`;
 
-  const czyPrzywrocono = przywrocStanOnlineZStorage();
-  if (!czyPrzywrocono) {
-    window.graczZaczynajacyLegIndex = 0;
-    if (typeof window.resetujLeg === "function") {
-      window.resetujLeg();
-    }
+  window.graczZaczynajacyLegIndex = 0;
+  if (typeof resetujLeg === "function") {
+    resetujLeg();
   }
 
   window.sprawdzTureOnline();
-
-  if (czyWidz || czyPrzywrocono) {
-    setTimeout(() => {
-      kanalMeczuRealtime?.send({
-        type: "broadcast",
-        event: "prosba-o-stan",
-        payload: {}
-      });
-    }, 400);
-  }
 }
 
 // ============================================================
-// 4. TRANSMISJA STANU GRY NA ŻYWO (BROADCAST SNAPSHOT)
+// 4. REALTIME SNAPSHOT (SYNCHRONIZACJA STANU)
 // ============================================================
 function zainicjalizujKanalMeczu(kod) {
   kanalMeczuRealtime = supabaseClient.channel(`game-${kod}`, {
@@ -294,119 +279,161 @@ function zainicjalizujKanalMeczu(kod) {
       zastosujStanGry(payload);
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
-      // Jeśli jesteśmy graczem (Host lub Gość), natychmiast odsyłamy nasz stan widzowi
+      // Jeśli jesteśmy graczem, natychmiast odsyłamy nasz aktualny stan
       if (!czyWidz) {
         wyslijAktualnyStanGry();
       }
     })
     .on("broadcast", { event: "mecz-przerwany" }, () => {
       alert("Mecz został przerwany przez jednego z graczy.");
-      sessionStorage.removeItem(`sd_stan_${onlineKodPokoju}`);
-      sessionStorage.removeItem(`sd_token_${onlineKodPokoju}`);
       window.location.href = "./online.html";
     })
-    .subscribe();
-
-  // Jeśli widz dołączył do trwającej gry, wysyłaj prośbę o stan co 1 sekundę, dopóki tablica się nie uzupełni
-  if (czyWidz) {
-    const interwalWidza = setInterval(() => {
-      if (!window.gracze || window.gracze[0].punkty === window.punktyStartowe) {
-        kanalMeczuRealtime?.send({
+    .subscribe((status) => {
+      // Gdy socket się połączy (zarówno dla Gościa jak i Widza), natychmiast prosimy o punkty
+      if (status === "SUBSCRIBED") {
+        kanalMeczuRealtime.send({
           type: "broadcast",
           event: "prosba-o-stan",
           payload: {}
         });
-      } else {
-        clearInterval(interwalWidza);
       }
-    }, 1000);
-  }
+    });
 }
-// ============================================================
-// 5. OBSŁUGA PAMIĘCI DLA MECZU SIECIOWEGO (F5)
-// ============================================================
-function zapiszStanOnlineDoStorage() {
-  if (!czyTrybOnline || !window.gracze) return;
+
+function wyslijAktualnyStanGry() {
+  if (!czyTrybOnline || !kanalMeczuRealtime || !window.gracze) return;
+
   const stan = {
     aktualnyGraczIndex: window.aktualnyGraczIndex,
     aktualnaKolejka: window.aktualnaKolejka,
-    gracze: window.gracze,
-    historiaAktualnegoLegu: window.historiaAktualnegoLegu || []
+    historiaAktualnegoLegu: window.historiaAktualnegoLegu || [],
+    gracze: window.gracze.map((g) => ({
+      id: g.id,
+      punkty: g.punkty,
+      wygraneLegi: g.wygraneLegi,
+      rzuty: g.rzuty,
+      srednia: typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(g.id) : "0.00",
+      srednia9: typeof obliczSrednia9Lotek === "function" ? obliczSrednia9Lotek(g.id) : "0.00"
+    }))
   };
-  sessionStorage.setItem(`sd_stan_${onlineKodPokoju}`, JSON.stringify(stan));
+
+  kanalMeczuRealtime.send({
+    type: "broadcast",
+    event: "aktualizacja-stanu",
+    payload: stan
+  });
 }
 
-function przywrocStanOnlineZStorage() {
-  const surowe = sessionStorage.getItem(`sd_stan_${onlineKodPokoju}`);
-  if (!surowe) return false;
+function zastosujStanGry(dane) {
+  if (!dane || !dane.gracze) return;
 
-  try {
-    const stan = JSON.parse(surowe);
-    window.aktualnyGraczIndex = stan.aktualnyGraczIndex;
-    window.aktualnaKolejka = stan.aktualnaKolejka;
-    window.gracze = stan.gracze;
-    window.historiaAktualnegoLegu = stan.historiaAktualnegoLegu || [];
+  odbieranieRzutuZSieci = true;
+  window.historiaAktualnegoLegu = dane.historiaAktualnegoLegu || [];
 
-    if (typeof window.aktualizujKartyUI === "function") {
-      window.aktualizujKartyUI();
+  dane.gracze.forEach((zdalnyGracz, idx) => {
+    if (window.gracze && window.gracze[idx]) {
+      window.gracze[idx].punkty = zdalnyGracz.punkty;
+      window.gracze[idx].wygraneLegi = zdalnyGracz.wygraneLegi;
+      window.gracze[idx].rzuty = zdalnyGracz.rzuty || [];
+
+      const elPunkty = document.getElementById(`punkty-g${idx}`);
+      if (elPunkty) elPunkty.textContent = zdalnyGracz.punkty;
+
+      const elWygrane = document.getElementById(`wygrane-g${idx}`);
+      if (elWygrane) elWygrane.textContent = `Wygrane rundy: ${zdalnyGracz.wygraneLegi}`;
+
+      const elSrednia = document.getElementById(`srednia-tabela-g${idx}`);
+      if (elSrednia) elSrednia.textContent = zdalnyGracz.srednia;
+
+      const elSrednia9 = document.getElementById(`dziewiec-lotek-g${idx}`);
+      if (elSrednia9) elSrednia9.textContent = zdalnyGracz.srednia9;
+
+      const elCheckout = document.getElementById(`checkout-g${idx}`);
+      if (elCheckout && typeof getCheckout === "function") {
+        elCheckout.textContent = (zdalnyGracz.punkty <= 170 && zdalnyGracz.punkty > 1) ? getCheckout(zdalnyGracz.punkty) : "";
+      }
+
+      if (typeof aktualizujHistorieRzutowUI === "function") {
+        aktualizujHistorieRzutowUI(window.gracze[idx].id, idx);
+      }
     }
-    return true;
-  } catch (e) {
-    return false;
+  });
+
+  window.aktualnyGraczIndex = dane.aktualnyGraczIndex;
+  window.aktualnaKolejka = dane.aktualnaKolejka;
+
+  const elKolejka = document.getElementById("wyswietl-kolejke");
+  if (elKolejka && !czyWidz) {
+    elKolejka.textContent = `Lotki: ${(dane.aktualnaKolejka - 1) * 3}`;
   }
+
+  if (typeof aktualizujCalaHistorieLeguUI === "function") {
+    aktualizujCalaHistorieLeguUI();
+  }
+
+  document.querySelectorAll(".karta-gracza").forEach((karta, idx) => {
+    if (idx === window.aktualnyGraczIndex) {
+      karta.classList.add("aktywne-tury");
+    } else {
+      karta.classList.remove("aktywne-tury");
+    }
+  });
+
+  odbieranieRzutuZSieci = false;
+  window.sprawdzTureOnline();
 }
 
 // ============================================================
-// 6. PRZECHWYTYWANIE SILNIKA I USUWANIE STOŁU
+// 5. OBSŁUGA SILNIKA GRY
 // ============================================================
-function podepnijNasluchRzutowSilnika() {
-  const staryProces = window.wykonajProcesRzutu;
-  window.wykonajProcesRzutu = function (punkty, opis, zuzyte, fura, panel) {
-    staryProces(punkty, opis, zuzyte, fura, panel);
-
+function podepnijNasluchSilnika() {
+  // Przechwycenie zatwierdzenia tury
+  const orgFinalizuj = window.finalizujTure;
+  window.finalizujTure = function () {
+    if (typeof orgFinalizuj === "function") orgFinalizuj();
+    window.sprawdzTureOnline();
     if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
       wyslijAktualnyStanGry();
     }
   };
 
-  const staraAktualizacjaUI = window.aktualizujKartyUI;
-  window.aktualizujKartyUI = function () {
-    staraAktualizacjaUI();
+  // Przechwycenie restartu lega
+  const orgResetuj = window.resetujLeg;
+  window.resetujLeg = function () {
+    if (typeof orgResetuj === "function") orgResetuj();
     window.sprawdzTureOnline();
+    if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+      wyslijAktualnyStanGry();
+    }
   };
 
+  // Przechwycenie końca meczu
+  const orgZakoncz = window.zakonczMecz;
+  window.zakonczMecz = async function (zwyciezca) {
+    if (typeof orgZakoncz === "function") orgZakoncz(zwyciezca);
+    window.sprawdzTureOnline();
+    if (czyTrybOnline) {
+      if (!czyWidz && !odbieranieRzutuZSieci) wyslijAktualnyStanGry();
+      if (mojIndeksOnline === 0) await usunAktualnyPokoj();
+    }
+  };
+
+  // Automatyczne zatwierdzanie popupu u rywala i widza
   const staryPopupDoubles = window.pokazPopupDoubles;
   window.pokazPopupDoubles = function (czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback) {
     if (czyTrybOnline && (czyWidz || window.aktualnyGraczIndex !== mojIndeksOnline)) {
       callback(czyZakonczyl ? 3 : 3, 0);
       return;
     }
-    staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback);
-  };
-
-  const staryZakonczMecz = window.zakonczMecz;
-  window.zakonczMecz = async function (zwyciezca) {
-    staryZakonczMecz(zwyciezca);
-    if (czyTrybOnline) {
-      wyslijAktualnyStanGry();
-      sessionStorage.removeItem(`sd_stan_${onlineKodPokoju}`);
-      sessionStorage.removeItem(`sd_token_${onlineKodPokoju}`);
-      if (mojIndeksOnline === 0) {
-        await usunAktualnyPokoj();
-      }
+    if (typeof staryPopupDoubles === "function") {
+      staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, callback);
     }
   };
 
   document.getElementById("powrot-gra")?.addEventListener("click", async () => {
     if (czyTrybOnline) {
-      if (kanalMeczuRealtime) {
-        kanalMeczuRealtime.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
-      }
-      sessionStorage.removeItem(`sd_stan_${onlineKodPokoju}`);
-      sessionStorage.removeItem(`sd_token_${onlineKodPokoju}`);
-      if (mojIndeksOnline === 0) {
-        await usunAktualnyPokoj();
-      }
+      kanalMeczuRealtime?.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
+      if (mojIndeksOnline === 0) await usunAktualnyPokoj();
       window.location.href = "./online.html";
     }
   });
@@ -428,15 +455,11 @@ function podepnijNasluchRzutowSilnika() {
 async function usunAktualnyPokoj() {
   if (!onlineKodPokoju) return;
   try {
-    const { error } = await supabaseClient
+    await supabaseClient
       .from("rooms")
       .delete()
       .eq("kod_pokoju", onlineKodPokoju);
-
-    if (error) {
-      console.error("Błąd usuwania stołu:", error);
-    }
   } catch (err) {
-    console.warn("Wyjątek usuwania stołu:", err);
+    console.warn("Błąd usuwania stołu:", err);
   }
 }
