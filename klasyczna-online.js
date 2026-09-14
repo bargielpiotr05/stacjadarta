@@ -57,7 +57,20 @@ window.sprawdzTureOnline = function () {
   const strefaKlik = document.querySelector(".strefa-klikania");
   const strefaManual = document.querySelector(".strefa-manualna");
 
-  if (inpWynik) inpWynik.disabled = !mojaKolej;
+  if (inpWynik) {
+    // Blokada tury rywala
+    inpWynik.disabled = !mojaKolej;
+
+    // Blokada systemowej klawiatury na telefonach/tabletach:
+    if (window.innerWidth < 1050) {
+      inpWynik.setAttribute("inputmode", "none");
+      inpWynik.readOnly = true; // Zapobiega otwieraniu klawiatury na iOS/Androidzie
+    } else {
+      inpWynik.removeAttribute("inputmode");
+      inpWynik.readOnly = false;
+    }
+  }
+
   if (btnZatwierdz) btnZatwierdz.disabled = !mojaKolej;
 
   if (strefaKlik) {
