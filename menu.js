@@ -43,7 +43,6 @@ async function sprawdzStanLogowania() {
             const nick = userMeta.username || session.user.email.split("@")[0];
             const avatarUrl = userMeta.avatar_url;
 
-            // Jeśli użytkownik ma zapisany avatar_url, wstawiamy <img>, w przeciwnym razie domyślne 👤
             const avatarHtml = avatarUrl
                 ? `<img src="${avatarUrl}" alt="${nick}" class="header-avatar-img" />`
                 : `<span class="user-avatar-icon">👤</span>`;

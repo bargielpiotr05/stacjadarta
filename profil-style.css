@@ -1,289 +1,416 @@
-main{
-    background-color: var(--primary-color-lighter);
-    padding: 40px 20px;
+main {
+  background-color: var(--primary-color-lighter);
+  padding: 50px 20px;
+  min-height: calc(100vh - 140px);
 }
-h3{
-    font-size:24px;
-}
-.blok-gracza{
-    background-color: var(--primary-color);
-    display: flex;
-    flex-direction: column;
-    max-width: 800px;
-    margin: 0 auto;
-    border-radius: 12px;
-    padding: 20px;
-}
-#header-uzytkownika{
-    display: flex;
-    flex-direction: row;
-    border-bottom: 2px solid var(--secondary-color);
-    padding-bottom: 10px;
-}
-#header-uzytkownika h2{
-    max-width: 70%;
-    margin: 0 auto;
-    padding: 10px;
-    align-items: center;
-    display: flex;
-    justify-content:flex-end;
-    font-size: 30px;
 
+.blok-gracza {
+  background-color: var(--primary-color);
+  display: flex;
+  flex-direction: column;
+  max-width: 1050px;
+  margin: 0 auto;
+  border-radius: 16px;
+  padding: 35px 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
-#header-uzytkownika img{
-    max-width: 30%;
-    height: 150px;
-    border-radius: 50%;
-    margin: 10px;
+
+/* --- NAGŁÓWEK PROFILU --- */
+#header-uzytkownika {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 2px solid var(--secondary-color);
+  padding-bottom: 25px;
+  gap: 25px;
 }
-#btn-edycja-profilu{
-    background-color: var(--secondary-color);
-    max-height:40px;
-    width:auto;
-    margin: 0 0 0 auto;
-    border-radius: 12px;
-    padding: 10px 20px;
-    border: 2px solid var(--secondary-color);
-    font-weight: 700;
-    display: flex;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s;
-}
-#btn-edycja-profilu:hover{
-    background-color: var(--secondary-color-hover);
-    border-color: var(--secondary-color-hover);
-}
-#sekcja-statystyk{
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 20px;
-    background-color: var(--primary-color);
-    padding: 20px;
-    border-radius: 12px;
-}
-#sekcja-statystyk h3{
-    text-align: center;
-}
-.wspolny-div{
-    background-color: var(--primary-color-lighter);
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border: 1px solid var(--primary-color-border-hover);
-    border-radius: 8px;
-}
-.wspolny-div p{
-    margin: 0;
-    font-size: 16px;
-}
-.wspolny-div span{
-    font-weight: 700;
-    font-size: 18px;
-}
-.wspolny-div:hover{
-    background-color: var(--primary-color-lighter);
-}
-#bloki-statystyk{
-    display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-#sekcja-ostatnich-meczy{
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 20px;
-    background-color: var(--primary-color);
-    padding: 20px;
-    border-radius: 12px;
-}
-#sekcja-ostatnich-meczy h3{
-    text-align: center;
-}
-.mecz{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border: 1px solid var(--primary-color-border-hover);
-    border-radius: 8px;
-    background-color: var(--primary-color);
-}
-.mecz.wygrana {
-    border: 1px solid var(--secondary-color);
-}
-.mecz.porazka {
-    border: 1px solid var(--color-red-btn-border, #ef4444);
-}
-#lista-ostatnich-meczy{
-    display:flex;
-    flex-direction: column;
-    gap: 10px;
-}
-/* Kontener avatara z nakładką */
+
 .avatar-wrapper {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    min-width: 140px;
-    margin: 10px;
-    cursor: pointer;
-    border-radius: 50%;
-    overflow: hidden;
+  position: relative;
+  width: 130px;
+  height: 130px;
+  min-width: 130px;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--secondary-color);
+  box-shadow: 0 0 15px rgba(64, 218, 64, 0.3);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.avatar-wrapper:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 20px rgba(64, 218, 64, 0.5);
 }
 
 #zdjecie-uzytkownika {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: 50%;
-    margin: 0 !important;
-    max-width: 100% !important;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .avatar-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .avatar-wrapper:hover .avatar-overlay {
-    opacity: 1;
+  opacity: 1;
 }
 
 .user-info-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 20px;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#nazwa-uzytkownika {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  word-break: break-word;
+  letter-spacing: -0.5px;
 }
 
 .avatar-status {
-    font-size: 13px;
-    margin-top: 5px;
-    font-weight: 600;
-}
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 600;
 }
 
-.modal-zawartosc {
-    background: var(--primary-color);
-    border: 1px solid var(--primary-color-border-hover);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 440px;
-    padding: 24px;
-    box-sizing: border-box;
+#btn-edycja-profilu {
+  background-color: var(--secondary-color);
+  color: #0b091f;
+  margin-left: auto;
+  border-radius: 10px;
+  padding: 10px 22px;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+#btn-edycja-profilu:hover {
+  background-color: var(--secondary-color-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 218, 64, 0.35);
 }
 
-.btn-zamknij-modal {
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-size: 24px;
-    cursor: pointer;
+/* --- SEKCJA STATYSTYK --- */
+#sekcja-statystyk,
+#sekcja-ostatnich-meczy {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 35px;
 }
 
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+#sekcja-statystyk h3,
+#sekcja-ostatnich-meczy h3 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
 }
 
-.form-grupa {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+#bloki-statystyk {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
-.form-grupa span {
-    font-size: 13px;
-    color: #94a3b8;
+.wspolny-div {
+  background-color: var(--primary-color-lighter);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border: 1px solid var(--primary-color-border-hover);
+  border-radius: 10px;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.form-grupa input {
-    background: var(--primary-color-lighter);
-    border: 1px solid var(--primary-color-border-hover);
-    color: #fff;
-    padding: 10px 12px;
-    border-radius: 8px;
+.wspolny-div:hover {
+  transform: translateY(-2px);
+  border-color: var(--secondary-color);
 }
 
-.modal-akcje {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
+.wspolny-div h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #cbd5e1;
 }
-#btn-anuluj-edycje{
-    background-color: var(--color-red-btn);
-    border: 1px solid var(--color-red-btn-border);
-    color: var(--color-red-text);
-    padding: 10px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+
+.wspolny-div p {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
 }
-#btn-anuluj-edycje:hover{
-    background-color: var(--color-red-btn-hover);
-    border-color: var(--color-red-btn-border-hover);
-    color: var(--color-red-text-hover);
+
+/* --- LISTA OSTATNICH MECZÓW --- */
+#lista-ostatnich-meczy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-#btn-zapisz-edycje{
-    background-color: var(--secondary-color);
-    border: 1px solid var(--secondary-color);
-    color: var(--primary-color);
-    padding: 10px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+
+.mecz {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border: 1px solid var(--primary-color-border-hover);
+  border-radius: 10px;
+  background-color: var(--primary-color-lighter);
+  gap: 15px;
 }
-#btn-zapisz-edycje:hover{
-    background-color: var(--secondary-color-hover);
-    border-color: var(--secondary-color-hover);
-    color: var(--primary-color);
+
+.mecz p {
+  margin: 0;
+  font-size: 15px;
 }
+
+.mecz.wygrana {
+  border-color: var(--secondary-color);
+}
+
+.mecz.porazka {
+  border-color: var(--color-red-btn-border, #ef4444);
+}
+
 .btn-przebieg-profil {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    transition: opacity 0.2s ease, transform 0.1s ease;
+  background-color: var(--secondary-color);
+  color: #0b091f;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
 }
 
 .btn-przebieg-profil:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* --- DOLNE PRZYCISKI --- */
+#btn-container {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#btn-wyloguj,
+#btn-usun-konto {
+  background-color: var(--color-red-btn);
+  border: 1px solid var(--color-red-btn-border);
+  color: var(--color-red-text);
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+#btn-wyloguj:hover,
+#btn-usun-konto:hover {
+  background-color: var(--color-red-btn-hover);
+  border-color: var(--color-red-btn-border-hover);
+  color: var(--color-red-text-hover);
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-zawartosc {
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color-border-hover);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 440px;
+  padding: 26px;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.btn-zamknij-modal {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-grupa {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-grupa span {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.form-grupa input {
+  background: var(--primary-color-lighter);
+  border: 1px solid var(--primary-color-border-hover);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.modal-akcje {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-secondary {
+  background-color: var(--color-red-btn);
+  border: 1px solid var(--color-red-btn-border);
+  color: var(--color-red-text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-red-btn-hover);
+  color: var(--color-red-text-hover);
+}
+
+.btn-primary {
+  background-color: var(--secondary-color);
+  border: none;
+  color: #0b091f;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color-hover);
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  border: none;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+/* --- RESPONSYWNOŚĆ --- */
+@media (max-width: 1050px) {
+  #bloki-statystyk {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .blok-gracza {
+    padding: 24px 18px;
+  }
+
+  #header-uzytkownika {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  #btn-edycja-profilu {
+    margin: 10px auto 0 auto;
+    width: 100%;
+  }
+
+  #bloki-statystyk {
+    grid-template-columns: 1fr;
+  }
+
+  .mecz {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .btn-przebieg-profil {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  #btn-container {
+    flex-direction: column;
+  }
+
+  #btn-wyloguj,
+  #btn-usun-konto {
+    width: 100%;
+  }
 }
