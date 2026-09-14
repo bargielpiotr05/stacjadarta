@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Nowe hasło | Stacja Dart</title>
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./logowanie-style.css" />
+        <link rel="stylesheet" href="./nowe-haslo-style.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+        <main>
+            <div class="fomularz-ustawien">
+                <form id="formularz-nowe-haslo" class="formularz-wspolny">
+                    <h2 class="tytul-sekcji">Nowe hasło</h2>
+
+                    <label for="haslo"><h4>Wpisz nowe hasło:</h4></label>
+                    <input type="password" id="haslo" name="haslo" minlength="6" required autocomplete="new-password" />
+
+                    <label for="potwierdz-haslo"><h4>Powtórz nowe hasło:</h4></label>
+                    <input type="password" id="potwierdz-haslo" name="potwierdz-haslo" minlength="6" required autocomplete="new-password" />
+
+                    <div id="komunikat-statusu"></div>
+
+                    <button type="submit" id="btn-zmien-haslo">Zapisz hasło</button>
+                </form>
+            </div>
+        </main>
+        <footer id="wspolny-footer"></footer>
+
+        <script>
+            const client = window.supabaseKlient || window.supabase.createClient(
+                "https://mjebhhagwxtvhggyjwue.supabase.co",
+                "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+            );
+
+            const form = document.getElementById("formularz-nowe-haslo");
+            const btnSubmit = document.getElementById("btn-zmien-haslo");
+            const statusBox = document.getElementById("komunikat-statusu");
+
+            function pokazKomunikat(tekst, typ = "error") {
+                statusBox.textContent = tekst;
+                statusBox.style.display = "block";
+                if (typ === "error") {
+                    statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+                    statusBox.style.color = "#f87171";
+                    statusBox.style.border = "1px solid #ef4444";
+                } else {
+                    statusBox.style.background = "rgba(34, 197, 94, 0.15)";
+                    statusBox.style.color = "#4ade80";
+                    statusBox.style.border = "1px solid #22c55e";
+                }
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                statusBox.style.display = "none";
+
+                const haslo = document.getElementById("haslo").value;
+                const potwierdz = document.getElementById("potwierdz-haslo").value;
+
+                if (haslo !== potwierdz) {
+                    pokazKomunikat("Hasła nie są identyczne!", "error");
+                    return;
+                }
+
+                if (haslo.length < 6) {
+                    pokazKomunikat("Hasło musi mieć co najmniej 6 znaków!", "error");
+                    return;
+                }
+
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = "Zapisywanie...";
+
+                const { data, error } = await client.auth.updateUser({
+                    password: haslo
+                });
+
+                if (error) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = "Zapisz hasło";
+                    pokazKomunikat(error.message, "error");
+                } else {
+                    pokazKomunikat("Hasło zostało pomyślnie zmienione! Przekierowanie...", "success");
+                    btnSubmit.textContent = "Zmieniono!";
+                    setTimeout(() => {
+                        window.location.href = "./logowanie.html";
+                    }, 2000);
+                }
+            });
+        </script>
+    </body>
+</html>

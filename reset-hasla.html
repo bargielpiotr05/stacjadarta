@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Resetuj hasło | Stacja Dart</title>
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./reset-hasla-style.css" />
+        <link rel="apple-touch-icon" href="./loga/logo.png" />
+        <link rel="stylesheet" href="./logowanie-style.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+        <main>
+            <div class="fomularz-ustawien">
+                <form id="formularz-resetu" class="formularz-wspolny">
+                    <h2 class="tytul-sekcji">Reset hasła</h2>
+
+                    <p class="komunikat" style="margin-bottom: 10px;">
+                        Wpisz adres e-mail przypisany do konta. Wyślemy link umożliwiający ustawienie nowego hasła.
+                    </p>
+
+                    <label for="reset-email"><h4>Adres e-mail:</h4></label>
+                    <input type="email" id="reset-email" name="email" required autocomplete="email" />
+
+                    <div id="komunikat-statusu"></div>
+
+                    <button type="submit" id="btn-reset">Wyślij link</button>
+
+                    <p class="komunikat">
+                        Pamiętasz hasło? <a href="./logowanie.html">Wróć do logowania</a>
+                    </p>
+                </form>
+            </div>
+        </main>
+        <footer id="wspolny-footer"></footer>
+
+        <script>
+            const client = window.supabaseKlient || window.supabase.createClient(
+                "https://mjebhhagwxtvhggyjwue.supabase.co",
+                "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+            );
+
+            const form = document.getElementById("formularz-resetu");
+            const btnSubmit = document.getElementById("btn-reset");
+            const statusBox = document.getElementById("komunikat-statusu");
+
+            function pokazKomunikat(tekst, typ = "error") {
+                statusBox.textContent = tekst;
+                statusBox.style.display = "block";
+                if (typ === "error") {
+                    statusBox.style.background = "rgba(239, 68, 68, 0.15)";
+                    statusBox.style.color = "#f87171";
+                    statusBox.style.border = "1px solid #ef4444";
+                } else {
+                    statusBox.style.background = "rgba(34, 197, 94, 0.15)";
+                    statusBox.style.color = "#4ade80";
+                    statusBox.style.border = "1px solid #22c55e";
+                }
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                statusBox.style.display = "none";
+
+                const email = document.getElementById("reset-email").value.trim();
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = "Wysyłanie...";
+
+                const redirectUrl = window.location.origin.includes("127.0.0.1")
+                    ? "http://127.0.0.1:5500/stacjadarta-test-lobby/stacjadarta-test-lobby/nowe-haslo.html"
+                    : "https://stacjadarta.pl/nowe-haslo.html";
+
+                const { error } = await client.auth.resetPasswordForEmail(email, {
+                    redirectTo: redirectUrl
+                });
+
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = "Wyślij link";
+
+                if (error) {
+                    pokazKomunikat(error.message, "error");
+                } else {
+                    pokazKomunikat("Wysłano link resetujący! Sprawdź swoją skrzynkę pocztową.", "success");
+                    form.reset();
+                }
+            });
+        </script>
+    </body>
+</html>

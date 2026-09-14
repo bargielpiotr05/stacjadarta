@@ -17,6 +17,7 @@
         <link rel="stylesheet" href="./formularz.css" />
         <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
 
         <script>
             // Inicjalizacja klienta w klasyczna.html
@@ -593,7 +594,6 @@
             var doceloweLegi = 3;
             var aktualnaKolejka = 1;
 
-
             var gracze = [];
             var liczbaGraczy = 2;
             var aktualnyGraczIndex = 0;
@@ -1055,6 +1055,7 @@
             });
 
             function rozpocznijWlasciwaGre(zaczynajacyIndex) {
+                czyZapisanoStatystykiMeczu = false; // Reset przed nową rozgrywką
                 graczZaczynajacyLegIndex = zaczynajacyIndex;
                 resetujLeg();
 
@@ -1525,12 +1526,21 @@
                 aktualizujKartyUI();
                 sprawdzTureBota();
             }
-            function zapiszMeczDoHistorii(zwyciezca) {
+            // Flaga blokująca wielokrotny zapis w ramach jednego pojedynku
+            let czyZapisanoStatystykiMeczu = false;
+
+            async function zapiszMeczDoHistorii(zwyciezca) {
+                if (czyZapisanoStatystykiMeczu) return;
+                czyZapisanoStatystykiMeczu = true;
+
+                const historiaRundDoZapisu = typeof historiaMeczuLegi !== "undefined" ? historiaMeczuLegi : [];
+
                 const podsumowanieMeczu = {
                     id: Date.now(),
                     data: new Date().toLocaleDateString("pl-PL", {
-                        hour: "2-digit",
-                        minute: "2-digit",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
                     }),
                     punktyStartowe: punktyStartowe,
                     doceloweLegi: doceloweLegi,
@@ -1542,18 +1552,90 @@
                         srednia9: obliczSrednia9Lotek(g.id),
                         najlepszyRzut: g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
                         najlepszyLeg: g.najlepszyLeg || "-",
+                        liczba180: g.rzuty.filter((r) => r === 180).length,
                         skutecznoscDouble: g.lotkiNaDoubla > 0 ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%` : "0%",
                     })),
                 };
 
-                // Pobieramy obecną listę, dopisujemy nowy mecz na początek i zapisujemy
+                // 1. Zapis lokalny do pamięci urządzenia
                 const historia = JSON.parse(localStorage.getItem("sd_historia_meczow") || "[]");
                 historia.unshift(podsumowanieMeczu);
-
-                // Ograniczamy pamięć do ostatnich 30 meczów
                 if (historia.length > 30) historia.pop();
-
                 localStorage.setItem("sd_historia_meczow", JSON.stringify(historia));
+
+                // 2. Zapis w profilu Supabase
+                if (typeof supabaseClient !== "undefined") {
+                    try {
+                        const {
+                            data: { session },
+                        } = await supabaseClient.auth.getSession();
+                        if (!session?.user) return;
+                        if (typeof czyWidz !== "undefined" && czyWidz) return;
+
+                        const user = session.user;
+                        const meta = user.user_metadata || {};
+                        const mojNick = meta.username || user.email.split("@")[0];
+
+                        let mojGracz = null;
+                        let rywalGracz = null;
+
+                        if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0) {
+                            mojGracz = gracze[mojIndeksOnline];
+                            rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
+                        } else {
+                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === mojNick.trim().toLowerCase()) || gracze[0];
+                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id);
+                        }
+
+                        if (!mojGracz) return;
+
+                        const czyWygralem = zwyciezca && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa);
+                        const nowaMojaSrednia = parseFloat(obliczSredniaGracza(mojGracz.id)) || 0;
+                        const nowaSrednia9 = parseFloat(obliczSrednia9Lotek(mojGracz.id)) || 0;
+                        const moje180 = mojGracz.rzuty.filter((r) => r === 180).length;
+
+                        const dotychczasMecze = parseInt(meta.mecze_rozegrane) || 0;
+                        const dotychczasWygrane = parseInt(meta.zwyciestwa) || 0;
+                        const dotychczasPorazki = parseInt(meta.porazki) || 0;
+                        const dotychczasSrednia = parseFloat(meta.srednia_ogolna) || 0;
+                        const dotychczasSrednia9 = parseFloat(meta.srednia_9lotek) || 0;
+                        const dotychczas180 = parseInt(meta.max_180) || 0;
+
+                        const noweMecze = dotychczasMecze + 1;
+                        const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
+
+                        const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
+
+                        const wynikMeczu = rywalGracz ? `${mojGracz.wygraneLegi} - ${rywalGracz.wygraneLegi}` : `${mojGracz.wygraneLegi} legów`;
+
+                        const historiaZProfilu = Array.isArray(meta.ostatnie_mecze) ? meta.ostatnie_mecze : [];
+                        const nowyWpis = {
+                            id: Date.now(),
+                            przeciwnik: rywalGracz ? rywalGracz.nazwa : "Trening Solo",
+                            wynik: wynikMeczu,
+                            czyWygrana: czyWygralem,
+                            data: new Date().toLocaleDateString("pl-PL"),
+                            historiaMeczuLegi: historiaRundDoZapisu,
+                            graczeInfo: gracze.map((g) => ({ id: g.id, nazwa: g.nazwa })),
+                        };
+
+                        const zaktualizowanaHistoria = [nowyWpis, ...historiaZProfilu].slice(0, 5);
+
+                        await supabaseClient.auth.updateUser({
+                            data: {
+                                mecze_rozegrane: noweMecze,
+                                zwyciestwa: czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane,
+                                porazki: !czyWygralem && gracze.length > 1 ? dotychczasPorazki + 1 : dotychczasPorazki,
+                                srednia_ogolna: nowaSredniaOgolna,
+                                srednia_9lotek: nowaSrednia9Ogolna,
+                                max_180: dotychczas180 + moje180,
+                                ostatnie_mecze: zaktualizowanaHistoria,
+                            },
+                        });
+                    } catch (err) {
+                        console.error("Błąd zapisu statystyk gracza:", err);
+                    }
+                }
             }
             // Funkcja przełączania zakładek w ekranie wygranej
             window.przelaczStatystyki = function (typ) {
@@ -1966,7 +2048,7 @@
                 przywrocMeczZStorage();
             }
         </script>
-        <script src="./menu.js" defer></script>
+
         <script src="./dartbot.js" defer></script>
         <script src="./klasyczna-online.js" defer></script>
     </body>

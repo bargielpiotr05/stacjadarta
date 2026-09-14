@@ -1,0 +1,289 @@
+main{
+    background-color: var(--primary-color-lighter);
+    padding: 40px 20px;
+}
+h3{
+    font-size:24px;
+}
+.blok-gracza{
+    background-color: var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 12px;
+    padding: 20px;
+}
+#header-uzytkownika{
+    display: flex;
+    flex-direction: row;
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 10px;
+}
+#header-uzytkownika h2{
+    max-width: 70%;
+    margin: 0 auto;
+    padding: 10px;
+    align-items: center;
+    display: flex;
+    justify-content:flex-end;
+    font-size: 30px;
+
+}
+#header-uzytkownika img{
+    max-width: 30%;
+    height: 150px;
+    border-radius: 50%;
+    margin: 10px;
+}
+#btn-edycja-profilu{
+    background-color: var(--secondary-color);
+    max-height:40px;
+    width:auto;
+    margin: 0 0 0 auto;
+    border-radius: 12px;
+    padding: 10px 20px;
+    border: 2px solid var(--secondary-color);
+    font-weight: 700;
+    display: flex;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+#btn-edycja-profilu:hover{
+    background-color: var(--secondary-color-hover);
+    border-color: var(--secondary-color-hover);
+}
+#sekcja-statystyk{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+    background-color: var(--primary-color);
+    padding: 20px;
+    border-radius: 12px;
+}
+#sekcja-statystyk h3{
+    text-align: center;
+}
+.wspolny-div{
+    background-color: var(--primary-color-lighter);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border: 1px solid var(--primary-color-border-hover);
+    border-radius: 8px;
+}
+.wspolny-div p{
+    margin: 0;
+    font-size: 16px;
+}
+.wspolny-div span{
+    font-weight: 700;
+    font-size: 18px;
+}
+.wspolny-div:hover{
+    background-color: var(--primary-color-lighter);
+}
+#bloki-statystyk{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+#sekcja-ostatnich-meczy{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+    background-color: var(--primary-color);
+    padding: 20px;
+    border-radius: 12px;
+}
+#sekcja-ostatnich-meczy h3{
+    text-align: center;
+}
+.mecz{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border: 1px solid var(--primary-color-border-hover);
+    border-radius: 8px;
+    background-color: var(--primary-color);
+}
+.mecz.wygrana {
+    border: 1px solid var(--secondary-color);
+}
+.mecz.porazka {
+    border: 1px solid var(--color-red-btn-border, #ef4444);
+}
+#lista-ostatnich-meczy{
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+}
+/* Kontener avatara z nakładką */
+.avatar-wrapper {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    min-width: 140px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+#zdjecie-uzytkownika {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+    margin: 0 !important;
+    max-width: 100% !important;
+}
+
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.user-info-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 20px;
+    flex-grow: 1;
+}
+
+.avatar-status {
+    font-size: 13px;
+    margin-top: 5px;
+    font-weight: 600;
+}
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-zawartosc {
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color-border-hover);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 440px;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.btn-zamknij-modal {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-grupa {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-grupa span {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.form-grupa input {
+    background: var(--primary-color-lighter);
+    border: 1px solid var(--primary-color-border-hover);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+
+.modal-akcje {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+#btn-anuluj-edycje{
+    background-color: var(--color-red-btn);
+    border: 1px solid var(--color-red-btn-border);
+    color: var(--color-red-text);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#btn-anuluj-edycje:hover{
+    background-color: var(--color-red-btn-hover);
+    border-color: var(--color-red-btn-border-hover);
+    color: var(--color-red-text-hover);
+}
+#btn-zapisz-edycje{
+    background-color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+    color: var(--primary-color);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#btn-zapisz-edycje:hover{
+    background-color: var(--secondary-color-hover);
+    border-color: var(--secondary-color-hover);
+    color: var(--primary-color);
+}
+.btn-przebieg-profil {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.btn-przebieg-profil:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}

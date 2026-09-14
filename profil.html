@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Mój Profil | Stacja Dart</title>
+        <meta name="description" content="Profil gracza na platformie Stacja Dart." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./profil-style.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+        <link rel="stylesheet" href="./klasyczna-style.css" />
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+        <main>
+            <div class="blok-gracza">
+                <div id="header-uzytkownika">
+                    <div class="avatar-wrapper" id="avatar-container" title="Kliknij, aby zmienić zdjęcie">
+                        <img src="./loga/logo.png" alt="Zdjęcie użytkownika" id="zdjecie-uzytkownika" />
+                        <div class="avatar-overlay">
+                            <span>📷 Zmień</span>
+                        </div>
+                        <input type="file" id="input-avatar" accept="image/png, image/jpeg, image/webp" style="display: none" />
+                    </div>
+
+                    <div class="user-info-box">
+                        <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
+                        <span id="avatar-status" class="avatar-status"></span>
+                    </div>
+
+                    <button id="btn-edycja-profilu" type="button">Edytuj profil</button>
+                </div>
+
+                <div id="sekcja-statystyk">
+                    <h3>Statystyki</h3>
+                    <div id="bloki-statystyk">
+                        <div id="srednia-gracza" class="wspolny-div">
+                            <h4>Średnia:</h4>
+                            <p id="stat-srednia">0.00</p>
+                        </div>
+                        <div id="srednia-9-lotek" class="wspolny-div">
+                            <h4>Średnia 9-lotek:</h4>
+                            <p id="stat-9lotek">0.00</p>
+                        </div>
+                        <div id="rozegrane-mecze" class="wspolny-div">
+                            <h4>Rozegrane mecze:</h4>
+                            <p id="stat-mecze">0</p>
+                        </div>
+                        <div id="zwyciestwa" class="wspolny-div">
+                            <h4>Zwycięstwa:</h4>
+                            <p id="stat-wygrane">0</p>
+                        </div>
+                        <div id="porażki" class="wspolny-div">
+                            <h4>Porażki:</h4>
+                            <p id="stat-porazki">0</p>
+                        </div>
+                        <div id="liczba-180" class="wspolny-div">
+                            <h4>Liczba 180:</h4>
+                            <p id="stat-180">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sekcja-ostatnich-meczy">
+                    <h3>Ostatnie mecze</h3>
+                    <div id="lista-ostatnich-meczy">
+                        <div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL PRZEBIEGU MECZU -->
+            <div id="modal-przebiegu" class="modal-przebiegu" style="display: none;">
+                <div class="zawartosc-modal">
+                    <h2>Przebieg meczu z podziałem na Legi</h2>
+                    <div id="kontener-zakladek" class="kontener-zakladek"></div>
+                    <div id="kontener-tabele-legow"></div>
+                    <div style="text-align: center; margin-top: 25px">
+                        <button type="button" id="zamknij-przebieg">Zamknij</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL EDYCJI PROFILU -->
+            <div id="modal-edycja-profilu" class="modal-overlay" style="display: none">
+                <div class="modal-zawartosc">
+                    <div class="modal-header">
+                        <h3>Edytuj profil</h3>
+                        <button type="button" class="btn-zamknij-modal" id="btn-zamknij-edycje">&times;</button>
+                    </div>
+
+                    <form id="form-edycja-profilu" class="modal-form">
+                        <label class="form-grupa">
+                            <span>Nazwa użytkownika (Nick):</span>
+                            <input type="text" id="edycja-nick" required minlength="3" />
+                        </label>
+
+                        <label class="form-grupa">
+                            <span>Nowe hasło (pozostaw puste, jeśli bez zmian):</span>
+                            <input type="password" id="edycja-haslo" minlength="6" placeholder="Wpisz nowe hasło..." />
+                        </label>
+
+                        <div id="edycja-status" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; margin-top: 5px"></div>
+
+                        <div class="modal-akcje">
+                            <button type="button" class="btn-secondary" id="btn-anuluj-edycje">Anuluj</button>
+                            <button type="submit" class="btn-primary" id="btn-zapisz-edycje">Zapisz zmiany</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+        <footer id="wspolny-footer"></footer>
+
+        <script>
+            const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
+
+            let aktualnyUser = null;
+            let ostatnieMeczeCache = [];
+
+            async function zaladujProfil() {
+                if (!client) return;
+
+                const { data: { session } } = await client.auth.getSession();
+                if (!session || !session.user) {
+                    window.location.href = "./logowanie.html";
+                    return;
+                }
+
+                aktualnyUser = session.user;
+                const meta = aktualnyUser.user_metadata || {};
+
+                // 1. Podstawowe dane
+                const nick = meta.username || aktualnyUser.email.split("@")[0];
+                document.getElementById("nazwa-uzytkownika").textContent = nick;
+
+                if (meta.avatar_url) {
+                    document.getElementById("zdjecie-uzytkownika").src = meta.avatar_url;
+                }
+
+                // 2. Metryki liczbowe
+                document.getElementById("stat-srednia").textContent = meta.srednia_ogolna || "0.00";
+                document.getElementById("stat-9lotek").textContent = meta.srednia_9lotek || "0.00";
+                document.getElementById("stat-mecze").textContent = meta.mecze_rozegrane || 0;
+                document.getElementById("stat-wygrane").textContent = meta.zwyciestwa || 0;
+                document.getElementById("stat-porazki").textContent = meta.porazki || 0;
+                document.getElementById("stat-180").textContent = meta.max_180 || 0;
+
+                // 3. Renderowanie listy meczów
+                const listaMeczy = document.getElementById("lista-ostatnich-meczy");
+                ostatnieMeczeCache = meta.ostatnie_mecze || [];
+
+                if (ostatnieMeczeCache.length === 0) {
+                    listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
+                } else {
+                    listaMeczy.innerHTML = ostatnieMeczeCache.map((m, idx) => `
+                        <div class="mecz ${m.czyWygrana ? "wygrana" : "porazka"}">
+                            <p class="przeciwnik">Przeciwnik: <strong>${m.przeciwnik}</strong></p>
+                            <p class="wynik">Wynik: <strong>${m.wynik}</strong></p>
+                            <p class="data">Data: ${m.data}</p>
+                            <button type="button" class="btn-przebieg-profil" onclick="otworzPrzebiegMeczu(${idx})">Przebieg meczu</button>
+                        </div>
+                    `).join("");
+                }
+            }
+
+            // --- PRZEGLĄDANIE PRZEBIEGU MECZU ---
+            const modalPrzebiegu = document.getElementById("modal-przebiegu");
+            const btnZamknijPrzebieg = document.getElementById("zamknij-przebieg");
+            const kontenerZakladek = document.getElementById("kontener-zakladek");
+            const kontenerTabeleLegow = document.getElementById("kontener-tabele-legow");
+
+            window.otworzPrzebiegMeczu = function (index) {
+                const mecz = ostatnieMeczeCache[index];
+                if (!mecz || !mecz.historiaMeczuLegi || mecz.historiaMeczuLegi.length === 0) {
+                    alert("Brak szczegółowej historii rzutów dla tego meczu.");
+                    return;
+                }
+
+                kontenerZakladek.innerHTML = "";
+                kontenerTabeleLegow.innerHTML = "";
+
+                const legi = mecz.historiaMeczuLegi;
+                const gracze = mecz.graczeInfo || [{ id: 0, nazwa: "Ja" }, { id: 1, nazwa: mecz.przeciwnik }];
+
+                legi.forEach((legData, legIdx) => {
+                    const btnTab = document.createElement("button");
+                    btnTab.className = `przycisk-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
+                    btnTab.textContent = `Leg ${legIdx + 1}`;
+                    btnTab.addEventListener("click", () => {
+                        document.querySelectorAll(".przycisk-zakladki").forEach((b) => b.classList.remove("aktywna"));
+                        document.querySelectorAll(".zawartosc-zakladki").forEach((z) => z.classList.remove("aktywna"));
+                        btnTab.classList.add("aktywna");
+                        document.getElementById(`zawartosc-leg-${legIdx}`).classList.add("aktywna");
+                    });
+                    kontenerZakladek.appendChild(btnTab);
+
+                    const divTabContent = document.createElement("div");
+                    divTabContent.className = `zawartosc-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
+                    divTabContent.id = `zawartosc-leg-${legIdx}`;
+
+                    let szerokoscKolumny = Math.floor(90 / gracze.length);
+                    let srednieWLegu = {};
+
+                    gracze.forEach((g) => {
+                        let rzutyGracza = legData.filter((r) => r.graczId === g.id);
+                        let sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
+                        let iloscKolejek = rzutyGracza.length;
+                        srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
+                    });
+
+                    let htmlTabeli = `
+                        <table class="tabela-przebiegu">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">Kolejka</th>
+                    `;
+                    gracze.forEach((g) => {
+                        htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
+                            ${g.nazwa}<br>
+                            <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
+                        </th>`;
+                    });
+                    htmlTabeli += `</tr></thead><tbody>`;
+
+                    let rundyMap = {};
+                    legData.forEach((rekord) => {
+                        if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
+                        rundyMap[rekord.kolejka][rekord.graczId] = rekord;
+                    });
+
+                    Object.keys(rundyMap).forEach((kol) => {
+                        htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
+                        gracze.forEach((g) => {
+                            let rzutG = rundyMap[kol][g.id];
+                            let cel = rzutG ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>` : "-";
+                            htmlTabeli += `<td>${cel}</td>`;
+                        });
+                        htmlTabeli += `</tr>`;
+                    });
+
+                    htmlTabeli += `</tbody></table>`;
+                    divTabContent.innerHTML = htmlTabeli;
+                    kontenerTabeleLegow.appendChild(divTabContent);
+                });
+
+                modalPrzebiegu.style.display = "flex";
+            };
+
+            btnZamknijPrzebieg?.addEventListener("click", () => {
+                modalPrzebiegu.style.display = "none";
+            });
+
+            // --- OBSŁUGA AVATARA ---
+            const avatarContainer = document.getElementById("avatar-container");
+            const inputAvatar = document.getElementById("input-avatar");
+            const avatarStatus = document.getElementById("avatar-status");
+            const imgAvatar = document.getElementById("zdjecie-uzytkownika");
+
+            avatarContainer.addEventListener("click", () => inputAvatar.click());
+
+            inputAvatar.addEventListener("change", async (e) => {
+                const plik = e.target.files[0];
+                if (!plik || !aktualnyUser) return;
+
+                if (plik.size > 2 * 1024 * 1024) {
+                    avatarStatus.textContent = "Plik jest za duży (maks. 2 MB)!";
+                    avatarStatus.style.color = "#f87171";
+                    return;
+                }
+
+                avatarStatus.textContent = "Wgrywanie zdjęcia...";
+                avatarStatus.style.color = "#38bdf8";
+
+                try {
+                    const folderUsera = aktualnyUser.id;
+                    const { data: starePliki } = await client.storage.from("avatary").list(folderUsera);
+                    if (starePliki && starePliki.length > 0) {
+                        const sciezki = starePliki.map((p) => `${folderUsera}/${p.name}`);
+                        await client.storage.from("avatary").remove(sciezki);
+                    }
+
+                    const sciezkaNowegoPliku = `${folderUsera}/avatar`;
+                    const { error: uploadErr } = await client.storage.from("avatary").upload(sciezkaNowegoPliku, plik, {
+                        upsert: true,
+                        contentType: plik.type,
+                    });
+                    if (uploadErr) throw uploadErr;
+
+                    const { data: { publicUrl } } = client.storage.from("avatary").getPublicUrl(sciezkaNowegoPliku);
+                    const urlZOdswiezeniem = `${publicUrl}?t=${Date.now()}`;
+
+                    await client.auth.updateUser({ data: { avatar_url: urlZOdswiezeniem } });
+                    imgAvatar.src = urlZOdswiezeniem;
+                    avatarStatus.textContent = "Zdjęcie zaktualizowane!";
+                    avatarStatus.style.color = "#4ade80";
+                    setTimeout(() => (avatarStatus.textContent = ""), 3000);
+                } catch (err) {
+                    avatarStatus.textContent = "Nie udało się zapisać zdjęcia.";
+                    avatarStatus.style.color = "#f87171";
+                }
+            });
+
+            // --- OBSŁUGA EDYCJI PROFILU ---
+            const modalEdycja = document.getElementById("modal-edycja-profilu");
+            const btnOtworzEdycje = document.getElementById("btn-edycja-profilu");
+            const btnZamknijEdycje = document.getElementById("btn-zamknij-edycje");
+            const btnAnulujEdycje = document.getElementById("btn-anuluj-edycje");
+            const formEdycja = document.getElementById("form-edycja-profilu");
+            const inputEdycjaNick = document.getElementById("edycja-nick");
+            const inputEdycjaHaslo = document.getElementById("edycja-haslo");
+            const edycjaStatus = document.getElementById("edycja-status");
+            const btnZapiszEdycje = document.getElementById("btn-zapisz-edycje");
+
+            btnOtworzEdycje?.addEventListener("click", () => {
+                if (!aktualnyUser) return;
+                const meta = aktualnyUser.user_metadata || {};
+                inputEdycjaNick.value = meta.username || aktualnyUser.email.split("@")[0];
+                inputEdycjaHaslo.value = "";
+                edycjaStatus.style.display = "none";
+                modalEdycja.style.display = "flex";
+            });
+
+            const zamknijModalEdycji = () => (modalEdycja.style.display = "none");
+            btnZamknijEdycje?.addEventListener("click", zamknijModalEdycji);
+            btnAnulujEdycje?.addEventListener("click", zamknijModalEdycji);
+
+            formEdycja?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const nowyNick = inputEdycjaNick.value.trim();
+                const noweHaslo = inputEdycjaHaslo.value;
+
+                btnZapiszEdycje.disabled = true;
+                const aktualizacja = { data: { username: nowyNick } };
+                if (noweHaslo) aktualizacja.password = noweHaslo;
+
+                const { data, error } = await client.auth.updateUser(aktualizacja);
+                btnZapiszEdycje.disabled = false;
+
+                if (error) {
+                    edycjaStatus.textContent = error.message;
+                    edycjaStatus.style.display = "block";
+                    return;
+                }
+
+                document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
+                zamknijModalEdycji();
+            });
+
+            document.addEventListener("DOMContentLoaded", zaladujProfil);
+        </script>
+    </body>
+</html>

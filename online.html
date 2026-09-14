@@ -10,6 +10,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="./global.css" />
         <link rel="stylesheet" href="./online-style.css" />
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+                <script src="./online.js" defer></script>
     </head>
     <body>
         <header id="wspolny-header"></header>
@@ -148,12 +151,11 @@
 
                     <!-- Nagłówek listy i licznik -->
                     <div class="lobby-list-header">
-                        <h3>Otwarte Stoły <span class="badge-count">0 dostępne</span></h3>
+                        <h3>Otwarte Stoły <span class="badge-count">3 dostępne</span></h3>
                     </div>
 
                     <!-- Siatka otwartych stołów (z limitem 3 rzędów i scrollem) -->
-                    <div class="grid-pokojow">
-                    </div>
+                    <div class="grid-pokojow"></div>
                 </div>
 
                 <!-- SEKCJA 2: TURNIEJE ONLINE -->
@@ -235,9 +237,6 @@
 
         <footer id="wspolny-footer"></footer>
 
-        <!-- BIBLIOTEKA SUPABASE JS Z CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
         <script>
             // PRZEŁĄCZANIE ZAKŁADEK GŁÓWNYCH
             const meczeOnlineBtn = document.getElementById("mecze-online");
@@ -305,7 +304,5 @@
                 window.location.href = `./turnieje.html?turniej=${kodTurnieju}&tryb=drabinka`;
             }
         </script>
-        <script src="./online.js" defer></script>
-        <script src="./menu.js" defer></script>
     </body>
 </html>

@@ -1,0 +1,24 @@
+#komunikat-statusu {
+    display: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 5px
+}
+#btn-zmien-haslo{
+    background-color: var(--secondary-color);
+    max-width: 50%;
+    margin: 0 auto;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 16px;
+    text-transform: uppercase;
+    border: 2px solid var(--secondary-color);
+    font-weight: 700;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+#btn-zmien-haslo:hover{
+    background-color: var(--secondary-color-hover);
+    border-color: var(--secondary-color-hover);
+}

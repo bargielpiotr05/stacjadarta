@@ -1,50 +1,87 @@
 // ============================================================
 // 1. INICJALIZACJA I STAN LOKALNY
 // ============================================================
-const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+const supabaseClient = window.supabaseKlient || (window.supabase
+  ? window.supabase.createClient(
+      "https://mjebhhagwxtvhggyjwue.supabase.co",
+      "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+    )
+  : null);
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let mojeIP = null;
+let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
 let wszystkiePokoje = [];
+let zalogowanyNick = null;
 
+// Pobieranie IP z timeoutem (bezpieczne dla adblocków i incognito)
 async function pobierzMojeIP() {
   try {
-    const res = await fetch("https://api64.ipify.org?format=json");
-    if (!res.ok) throw new Error("Błąd pobierania IP");
-    const data = await res.json();
-    mojeIP = data.ip;
-    console.log("Pobrane IP gracza:", mojeIP);
+    const controller = new AbortController();
+    const tId = setTimeout(() => controller.abort(), 1500);
+    const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
+    clearTimeout(tId);
+    if (res.ok) {
+      const data = await res.json();
+      mojeIP = data.ip;
+    }
   } catch (err) {
-    console.warn("Nie udało się ustalić IP:", err);
-    mojeIP = "nieznane";
+    // Pozostaje domyślny gosc_...
+  }
+}
+
+// Sprawdzenie profilu zalogowanego użytkownika
+async function sprawdzProfilGracza() {
+  const poleNickHosta = document.getElementById("nowy-host-nick");
+  if (!supabaseClient) {
+    if (poleNickHosta) poleNickHosta.value = "Gość_" + Math.floor(100 + Math.random() * 900);
+    return;
+  }
+
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session?.user) {
+      zalogowanyNick = session.user.user_metadata?.username || session.user.email.split("@")[0];
+      if (poleNickHosta) {
+        poleNickHosta.value = zalogowanyNick;
+        poleNickHosta.readOnly = true;
+      }
+    } else {
+      zalogowanyNick = null;
+      if (poleNickHosta) {
+        poleNickHosta.value = "Gość_" + Math.floor(100 + Math.random() * 900);
+        poleNickHosta.readOnly = false;
+      }
+    }
+  } catch (err) {
+    console.warn("Tryb gościa:", err);
+    if (poleNickHosta) poleNickHosta.value = "Gość";
   }
 }
 
 // ============================================================
-// 2. BEZPIECZEŃSTWO (BANLISTA I LIMITY)
+// 2. BEZPIECZEŃSTWO (BANLISTA)
 // ============================================================
 async function sprawdzCzyZbanowany(ip) {
-  if (!ip || ip === "nieznane") return null;
+  if (!ip || ip.startsWith("gosc_") || !supabaseClient) return null;
 
-  const { data, error } = await supabaseClient
-    .from("banned_ips")
-    .select("ip, powod")
-    .eq("ip", ip)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabaseClient
+      .from("banned_ips")
+      .select("ip, powod")
+      .eq("ip", ip)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Błąd bazy przy sprawdzaniu banlisty:", error);
-    return null;
+    if (!error && data) return data;
+  } catch (err) {
+    console.warn("Błąd sprawdzania bana:", err);
   }
-  return data;
+  return null;
 }
 
 // ============================================================
 // 3. POBIERANIE I RENDEROWANIE STOŁÓW (LOBBY)
 // ============================================================
 async function pobierzStoły() {
+  if (!supabaseClient) return;
   const dwaGodzinyTemu = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabaseClient
@@ -75,7 +112,7 @@ function renderujStoly(lista) {
   if (lista.length === 0) {
     kontener.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #94a3b8;">
-        Brak aktywnych stołów publicznych. Kliknij <strong>+ Stwórz stół</strong>, aby rozpocząć grę!
+        Brak aktywnych stołów. Kliknij <strong>+ Stwórz stół</strong>, aby zagrać!
       </div>
     `;
     return;
@@ -135,9 +172,10 @@ function renderujStoly(lista) {
 }
 
 // ============================================================
-// 4. SYNCHRONIZACJA REALTIME (WEBSOCKET)
+// 4. REALTIME LOBBY
 // ============================================================
 function wlaczRealtimeLobby() {
+  if (!supabaseClient) return;
   supabaseClient
     .channel("public-rooms-lobby")
     .on(
@@ -151,7 +189,7 @@ function wlaczRealtimeLobby() {
 }
 
 // ============================================================
-// 5. DOŁĄCZANIE DO POKOJU (GRACZ / WIDZ)
+// 5. DOŁĄCZANIE DO POKOJU
 // ============================================================
 window.dolaczDoPokoju = async function (kodPokoju, tryb) {
   if (tryb === "widz") {
@@ -159,13 +197,13 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
     return;
   }
 
-  const nick = prompt("Podaj swój nick do gry:", "Gość") || "Gość";
+  const domyslny = zalogowanyNick || "Gość_" + Math.floor(100 + Math.random() * 900);
+  const nick = zalogowanyNick || prompt("Podaj swój nick do gry:", domyslny) || domyslny;
 
   try {
-    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
     const ban = await sprawdzCzyZbanowany(mojeIP);
     if (ban) {
-      alert(`Twój adres IP jest zablokowany: ${ban.powod || "Naruszenie zasad"}`);
+      alert(`Blokada: ${ban.powod || "Naruszenie zasad"}`);
       return;
     }
 
@@ -176,16 +214,15 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
       .single();
 
     if (fetchErr || !pokoj) {
-      alert("Taki pokój nie istnieje lub został usunięty.");
+      alert("Taki pokój nie istnieje lub został zamknięty.");
       return;
     }
 
     if (pokoj.status !== "waiting") {
-      alert("Mecz przy tym stole już trwa lub pokój jest zajęty!");
+      alert("Ten stół jest już zajęty!");
       return;
     }
 
-    // Wygenerowanie tajnego tokenu kryptograficznego dla gościa
     const goscToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, goscToken);
 
@@ -201,54 +238,38 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
     if (updateErr) throw updateErr;
 
     window.location.href = `./klasyczna.html?pokoj=${kodPokoju}&rola=gosc&nick=${encodeURIComponent(nick)}`;
-
   } catch (err) {
-    console.error("Błąd podczas dołączania do gry:", err);
+    console.error("Błąd dołączania:", err);
     alert("Wystąpił problem przy dołączaniu do stołu.");
   }
 };
 
 // ============================================================
-// 6. TWORZENIE STOŁU Z MODALA
+// 6. TWORZENIE STOŁU
 // ============================================================
 async function stworzStolZKonfiguracji() {
   const btnSubmit = document.getElementById("btn-potwierdz-stworzenie");
-  btnSubmit.disabled = true;
-  btnSubmit.textContent = "Weryfikacja...";
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Tworzenie...";
+  }
 
   try {
-    if (!mojeIP || mojeIP === "nieznane") await pobierzMojeIP();
-
     const ban = await sprawdzCzyZbanowany(mojeIP);
     if (ban) {
-      alert(`Twój adres IP jest zablokowany: ${ban.powod || "Naruszenie zasad"}`);
+      alert(`Blokada: ${ban.powod || "Naruszenie zasad"}`);
       return;
     }
 
-    if (mojeIP !== "nieznane") {
-      const { count } = await supabaseClient
-        .from("rooms")
-        .select("*", { count: "exact", head: true })
-        .eq("host_ip", mojeIP)
-        .eq("status", "waiting");
-
-      if (count && count >= 2) {
-        alert("Osiągnięto limit: posiadasz już 2 otwarte stoły oczekujące w lobby.");
-        return;
-      }
-    }
-
-    const nick = document.getElementById("nowy-host-nick")?.value.trim() || "Host";
+    const nick = document.getElementById("nowy-host-nick")?.value.trim() || (zalogowanyNick || "Gospodarz");
     const punkty = parseInt(document.getElementById("nowy-format")?.value || 501);
     const dystans = parseInt(document.getElementById("nowy-dystans")?.value || 3);
     const wejscie = document.getElementById("nowe-wejscie")?.value || "si";
     const wyjscie = document.getElementById("nowe-wyjscie")?.value || "do";
     const czyPrywatny = document.getElementById("nowy-czy-prywatny")?.checked || false;
     const formatTekst = `${punkty} ${wyjscie.toUpperCase()}`;
-
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
 
-    // Wygenerowanie tajnego tokenu kryptograficznego dla hosta
     const hostToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, hostToken);
 
@@ -276,24 +297,21 @@ async function stworzStolZKonfiguracji() {
     if (error) throw error;
 
     window.location.href = `./klasyczna.html?pokoj=${data.kod_pokoju}&rola=host&nick=${encodeURIComponent(nick)}`;
-
   } catch (err) {
-    console.error("Błąd zapisu pokoju:", err);
+    console.error("Błąd tworzenia stołu:", err);
     alert("Nie udało się utworzyć stołu.");
   } finally {
-    btnSubmit.disabled = false;
-    btnSubmit.textContent = "Utwórz stół";
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = "Utwórz stół";
+    }
   }
 }
 
 // ============================================================
-// 7. INICJALIZACJA DOM I OBSŁUGA ZDARZEŃ
+// 7. INICJALIZACJA DOM
 // ============================================================
-document.addEventListener("DOMContentLoaded", async () => {
-  await pobierzMojeIP();
-  await pobierzStoły();
-  wlaczRealtimeLobby();
-
+document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("modal-stworz-stol");
   const btnOtworzModal = document.getElementById("btn-stworz-stol");
   const btnZamknijModal = document.getElementById("btn-zamknij-modal");
@@ -317,11 +335,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("btn-dolacz-kod")?.addEventListener("click", () => {
-    const kod = prompt("Podaj 4-cyfrowy kod lub pełny symbol stołu (np. SD-4821):");
+    const kod = prompt("Podaj kod stołu (np. SD-4821):");
     if (!kod) return;
     const sformatowany = kod.toUpperCase().trim().startsWith("SD-")
       ? kod.toUpperCase().trim()
       : `SD-${kod.toUpperCase().trim()}`;
     dolaczDoPokoju(sformatowany, "gracz");
   });
+
+  inicjalizujDane();
 });
+
+async function inicjalizujDane() {
+  await sprawdzProfilGracza();
+  await pobierzMojeIP();
+  await pobierzStoły();
+  wlaczRealtimeLobby();
+}

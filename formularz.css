@@ -104,7 +104,9 @@ form.formularz-wspolny {
 .formularz-wspolny .wspolny-input,
 .formularz-wspolny select,
 .formularz-wspolny input[type="text"],
-.formularz-wspolny input[type="number"] {
+.formularz-wspolny input[type="number"],
+.formularz-wspolny input[type="email"],
+.formularz-wspolny input[type="password"] {
   background-color: var(--primary-color-lighter);
   border: 2px solid var(--primary-color-border);
   color: white;
@@ -151,6 +153,13 @@ form.formularz-wspolny {
 .formularz-wspolny #rozpocznij-gre:hover {
   background-color: var(--secondary-color-hover);
   box-shadow: 0 5px 20px rgba(64, 218, 64, 0.4);
+}
+
+.komunikat {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
 }
 
 @media (max-width: 700px) {

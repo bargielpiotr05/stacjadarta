@@ -1,3 +1,11 @@
+const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+
+let supabaseKlient = null;
+if (window.supabase) {
+    supabaseKlient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
 async function wczytajFragment(sciezka, selektor, element) {
     const odpowiedz = await fetch(sciezka);
     if (!odpowiedz.ok) throw new Error(`Nie udało się wczytać ${sciezka}`);
@@ -21,8 +29,56 @@ async function wczytajWspolneElementy() {
     }
 
     uruchomMenuMobilne();
+    await sprawdzStanLogowania();
 }
 
+async function sprawdzStanLogowania() {
+    if (!supabaseKlient) return;
+
+    try {
+        const { data: { session } } = await supabaseKlient.auth.getSession();
+
+        if (session && session.user) {
+            const userMeta = session.user.user_metadata || {};
+            const nick = userMeta.username || session.user.email.split("@")[0];
+            const avatarUrl = userMeta.avatar_url;
+
+            // Jeśli użytkownik ma zapisany avatar_url, wstawiamy <img>, w przeciwnym razie domyślne 👤
+            const avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" alt="${nick}" class="header-avatar-img" />`
+                : `<span class="user-avatar-icon">👤</span>`;
+
+            // Wersja komputerowa
+            const joinUsDesktop = document.querySelector(".wersja-komputer .join-us");
+            if (joinUsDesktop) {
+                joinUsDesktop.outerHTML = `
+                    <div class="user-profile-badge">
+                        <a href="./profil.html" class="user-profile-link" title="Twój profil">
+                            <span class="user-avatar-wrap">${avatarHtml}</span>
+                            <span class="user-name">${nick}</span>
+                        </a>
+                    </div>
+                `;
+            }
+
+            // Wersja mobilna
+            const joinUsMobile = document.querySelector(".mobilny-menu-links .join-us");
+            if (joinUsMobile) {
+                const liContainer = joinUsMobile.closest("li") || joinUsMobile;
+                liContainer.innerHTML = `
+                    <div class="user-profile-badge-mobile">
+                        <a href="./profil.html" class="user-profile-link">
+                            <span class="user-avatar-wrap">${avatarHtml}</span>
+                            <span class="user-name">${nick}</span>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+    } catch (err) {
+        console.error("Błąd podczas weryfikacji sesji:", err);
+    }
+}
 function uruchomMenuMobilne() {
     const mobilnyMenuBtn = document.getElementById("mobilny-menu-btn");
     const mobilnyMenuOverlay = document.getElementById("mobilny-menu-overlay");
