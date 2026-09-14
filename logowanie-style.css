@@ -79,6 +79,6 @@
 
         @media (max-width: 1050px) {
                 form.formularz-wspolny{
-                        padding:50px;
+                        padding:60px !important;
                 }
         }
