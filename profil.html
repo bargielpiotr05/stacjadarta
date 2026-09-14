@@ -149,14 +149,7 @@
     <footer id="wspolny-footer"></footer>
 
     <script>
-      const client =
-        window.supabaseKlient ||
-        (window.supabase
-          ? window.supabase.createClient(
-              "https://mjebhhagwxtvhggyjwue.supabase.co",
-              "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
-            )
-          : null);
+      const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
 
       let aktualnyUser = null;
       let aktualnyProfil = null;
@@ -178,11 +171,7 @@
         aktualnyUser = session.user;
 
         // 1. Pobranie rekordu z tabeli public.profiles
-        const { data: profil, error: profilErr } = await client
-          .from("profiles")
-          .select("*")
-          .eq("id", aktualnyUser.id)
-          .maybeSingle();
+        const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", aktualnyUser.id).maybeSingle();
 
         if (profilErr) {
           console.error("Błąd pobierania profilu:", profilErr);
@@ -192,7 +181,15 @@
 
         const emailUsera = aktualnyUser.email || "";
         const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
-        const nazwaGracza = profil?.nazwa_gracza || aktualnyUser.user_metadata?.username || domyslnyNick;
+
+        // 1. Priorytet ma Twój prawdziwy nick z konta (user_metadata)
+        const metaNick = aktualnyUser.user_metadata?.username;
+        const nazwaGracza = metaNick || profil?.nazwa_gracza || domyslnyNick;
+
+        // 2. Automatyczna synchronizacja: naprawia rekord w tabeli profiles w bazie
+        if (metaNick && profil && profil.nazwa_gracza !== metaNick) {
+          client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
+        }
 
         // Wypełnienie widoku
         document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
@@ -202,8 +199,7 @@
         document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
         document.getElementById("stat-mecze").textContent = profil?.rozegrane_mecze || 0;
         document.getElementById("stat-wygrane").textContent = profil?.wygrane_mecze || 0;
-        document.getElementById("stat-porazki").textContent =
-          Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
+        document.getElementById("stat-porazki").textContent = Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
 
         // 2. Pobranie historii gier z tabeli public.matches
         const { data: mecze, error: meczeErr } = await client
@@ -269,10 +265,11 @@
         kontenerZakladek.innerHTML = "";
         kontenerTabeleLegow.innerHTML = "";
 
-        const gracze = mecz.statystyki_graczy || mecz.graczeInfo || [
-          { id: 0, nazwa: "Gospodarz" },
-          { id: 1, nazwa: "Gość" },
-        ];
+        const gracze = mecz.statystyki_graczy ||
+          mecz.graczeInfo || [
+            { id: 0, nazwa: "Gospodarz" },
+            { id: 1, nazwa: "Gość" },
+          ];
 
         legi.forEach((legData, legIdx) => {
           const btnTab = document.createElement("button");
@@ -395,10 +392,7 @@
           } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
 
           // 3. Aktualizacja tabeli public.profiles
-          const { error: dbErr } = await client
-            .from("profiles")
-            .update({ avatar_url: publicUrl })
-            .eq("id", userId);
+          const { error: dbErr } = await client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
 
           if (dbErr) throw dbErr;
 
@@ -449,10 +443,7 @@
       // 1. Otwieranie edycji profilu
       document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
         if (!aktualnyUser) return;
-        const obecnyNick =
-          aktualnyProfil?.nazwa_gracza ||
-          aktualnyUser.user_metadata?.username ||
-          (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
+        const obecnyNick = aktualnyProfil?.nazwa_gracza || aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
 
         document.getElementById("edycja-nick").value = obecnyNick;
         document.getElementById("edycja-haslo").value = "";
@@ -475,10 +466,7 @@
         btnZapisz.disabled = true;
 
         // 1. Zapis nazwy gracza do tabeli profiles
-        const { error: profileErr } = await client
-          .from("profiles")
-          .update({ nazwa_gracza: nowyNick })
-          .eq("id", aktualnyUser.id);
+        const { error: profileErr } = await client.from("profiles").update({ nazwa_gracza: nowyNick }).eq("id", aktualnyUser.id);
 
         if (profileErr) {
           btnZapisz.disabled = false;
