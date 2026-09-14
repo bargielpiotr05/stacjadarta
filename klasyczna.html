@@ -593,6 +593,7 @@
             var doceloweLegi = 3;
             var aktualnaKolejka = 1;
 
+
             var gracze = [];
             var liczbaGraczy = 2;
             var aktualnyGraczIndex = 0;
@@ -839,32 +840,39 @@
 
                 wszystkieRzuty = wszystkieRzuty.concat(historiaAktualnegoLegu.filter((r) => r.graczId === graczId));
 
-                let iloscKolejek = wszystkieRzuty.length; // Liczymy podejścia, a nie lotki
-                if (iloscKolejek === 0) return "0.00";
+                if (wszystkieRzuty.length === 0) return "0.00";
 
-                let sumaPunktow = wszystkieRzuty.reduce((sum, r) => sum + r.rzut, 0);
+                let sumaPunktow = 0;
+                let sumaRzuconychLotek = 0;
 
-                return (sumaPunktow / iloscKolejek).toFixed(2);
+                wszystkieRzuty.forEach((r) => {
+                    sumaPunktow += r.rzut;
+                    sumaRzuconychLotek += r.zuzyteLotki !== undefined ? r.zuzyteLotki : 3;
+                });
+
+                if (sumaRzuconychLotek === 0) return "0.00";
+
+                return ((sumaPunktow / sumaRzuconychLotek) * 3).toFixed(2);
             }
 
             function obliczSrednia9Lotek(graczId) {
                 let sumaPunktow = 0;
-                let iloscKolejek = 0;
+                let sumaLotek = 0;
 
                 let wszystkieLegi = [...historiaMeczuLegi, historiaAktualnegoLegu];
 
                 wszystkieLegi.forEach((leg) => {
                     let rzutyGracza = leg.filter((r) => r.graczId === graczId);
-                    let pierwszeRzuty = rzutyGracza.slice(0, 3); // 3 pierwsze kolejki gracza
+                    let pierwszeRzuty = rzutyGracza.slice(0, 3);
 
                     pierwszeRzuty.forEach((r) => {
                         sumaPunktow += r.rzut;
-                        iloscKolejek++;
+                        sumaLotek += r.zuzyteLotki !== undefined ? r.zuzyteLotki : 3;
                     });
                 });
 
-                if (iloscKolejek === 0) return "0.00";
-                return (sumaPunktow / iloscKolejek).toFixed(2);
+                if (sumaLotek === 0) return "0.00";
+                return ((sumaPunktow / sumaLotek) * 3).toFixed(2);
             }
 
             function pobierzOstatniLeg(graczId) {
@@ -1208,6 +1216,7 @@
                 }
 
                 historiaMeczuLegi.push([...historiaAktualnegoLegu]);
+                historiaAktualnegoLegu = [];
 
                 if (zwyciezca.wygraneLegi === doceloweLegi) {
                     aktualizujKartyUI();
@@ -1270,9 +1279,9 @@
                     tytul.textContent = "Szansa na podwójne";
                     opis.textContent = "Ile lotek w tej kolejce rzuciłeś na doubla (D)?";
 
-                    let maxLotekNaDabla = Math.min(3, maxMozliwychLoteKNaDabla);
+                    let maxLotekNaDoubla = Math.min(3, maxMozliwychLoteKNaDabla);
 
-                    for (let i = maxLotekNaDabla; i >= 0; i--) {
+                    for (let i = maxLotekNaDoubla; i >= 0; i--) {
                         let btn = document.createElement("button");
                         btn.className = "popup-btn popup-btn-no";
                         btn.style.backgroundColor = i === 0 ? "#475569" : "var(--secondary-color)";
