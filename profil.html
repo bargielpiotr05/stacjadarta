@@ -149,9 +149,17 @@
     <footer id="wspolny-footer"></footer>
 
     <script>
-      const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
+      const client =
+        window.supabaseKlient ||
+        (window.supabase
+          ? window.supabase.createClient(
+              "https://mjebhhagwxtvhggyjwue.supabase.co",
+              "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+            )
+          : null);
 
       let aktualnyUser = null;
+      let aktualnyProfil = null;
       let ostatnieMeczeCache = [];
 
       async function zaladujProfil() {
@@ -159,49 +167,86 @@
 
         const {
           data: { session },
+          error: sessionErr,
         } = await client.auth.getSession();
-        if (!session || !session.user) {
+
+        if (sessionErr || !session?.user) {
           window.location.href = "./logowanie.html";
           return;
         }
 
         aktualnyUser = session.user;
-        const meta = aktualnyUser.user_metadata || {};
 
-        // 1. Podstawowe dane
-        const nick = meta.username || aktualnyUser.email.split("@")[0];
-        document.getElementById("nazwa-uzytkownika").textContent = nick;
+        // 1. Pobranie rekordu z tabeli public.profiles
+        const { data: profil, error: profilErr } = await client
+          .from("profiles")
+          .select("*")
+          .eq("id", aktualnyUser.id)
+          .maybeSingle();
 
-        if (meta.avatar_url) {
-          document.getElementById("zdjecie-uzytkownika").src = meta.avatar_url;
+        if (profilErr) {
+          console.error("Błąd pobierania profilu:", profilErr);
         }
 
-        // 2. Metryki liczbowe
-        document.getElementById("stat-srednia").textContent = meta.srednia_ogolna || "0.00";
-        document.getElementById("stat-9lotek").textContent = meta.srednia_9lotek || "0.00";
-        document.getElementById("stat-180").textContent = meta.max_180 || 0;
-        document.getElementById("stat-mecze").textContent = meta.mecze_rozegrane || 0;
-        document.getElementById("stat-wygrane").textContent = meta.zwyciestwa || 0;
-        document.getElementById("stat-porazki").textContent = meta.porazki || 0;
+        aktualnyProfil = profil;
 
-        // 3. Renderowanie listy meczów
+        const emailUsera = aktualnyUser.email || "";
+        const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
+        const nazwaGracza = profil?.nazwa_gracza || aktualnyUser.user_metadata?.username || domyslnyNick;
+
+        // Wypełnienie widoku
+        document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
+        document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
+        document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
+        document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
+        document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
+        document.getElementById("stat-mecze").textContent = profil?.rozegrane_mecze || 0;
+        document.getElementById("stat-wygrane").textContent = profil?.wygrane_mecze || 0;
+        document.getElementById("stat-porazki").textContent =
+          Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
+
+        // 2. Pobranie historii gier z tabeli public.matches
+        const { data: mecze, error: meczeErr } = await client
+          .from("matches")
+          .select("*")
+          .or(`host_id.eq.${aktualnyUser.id},gosc_id.eq.${aktualnyUser.id}`)
+          .order("utworzono", { ascending: false })
+          .limit(5);
+
+        if (meczeErr) {
+          console.error("Błąd pobierania meczów:", meczeErr);
+        }
+
         const listaMeczy = document.getElementById("lista-ostatnich-meczy");
-        ostatnieMeczeCache = meta.ostatnie_mecze || [];
+        ostatnieMeczeCache = mecze || [];
 
-        if (ostatnieMeczeCache.length === 0) {
+        if (!mecze || mecze.length === 0) {
           listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
         } else {
-          listaMeczy.innerHTML = ostatnieMeczeCache
-            .map(
-              (m, idx) => `
-                <div class="mecz ${m.czyWygrana ? "wygrana" : "porazka"}">
-                    <p class="przeciwnik">Przeciwnik: <strong>${m.przeciwnik}</strong></p>
-                    <p class="wynik">Wynik: <strong>${m.wynik}</strong></p>
-                    <p class="data">Data: ${m.data}</p>
+          listaMeczy.innerHTML = mecze
+            .map((m, idx) => {
+              const czyHost = m.host_id === aktualnyUser.id;
+              const czyWygrana = m.zwyciezca_id === aktualnyUser.id;
+              const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
+              const dataMeczu = new Date(m.utworzono).toLocaleDateString("pl-PL");
+
+              let przeciwnikNazwa = "Przeciwnik";
+              if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
+                const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
+                przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
+              } else if (m.format_gry) {
+                przeciwnikNazwa = m.format_gry;
+              }
+
+              return `
+                <div class="mecz ${czyWygrana ? "wygrana" : "porazka"}">
+                    <p class="przeciwnik">Przeciwnik: <strong>${przeciwnikNazwa}</strong></p>
+                    <p class="wynik">Wynik: <strong>${wynik}</strong></p>
+                    <p class="data">Data: ${dataMeczu}</p>
                     <button type="button" class="btn-przebieg-profil" onclick="otworzPrzebiegMeczu(${idx})">Przebieg meczu</button>
                 </div>
-              `,
-            )
+              `;
+            })
             .join("");
         }
       }
@@ -214,7 +259,9 @@
 
       window.otworzPrzebiegMeczu = function (index) {
         const mecz = ostatnieMeczeCache[index];
-        if (!mecz || !mecz.historiaMeczuLegi || mecz.historiaMeczuLegi.length === 0) {
+        const legi = mecz?.pelny_przebieg_meczu || mecz?.historiaMeczuLegi;
+
+        if (!mecz || !legi || legi.length === 0) {
           alert("Brak szczegółowej historii rzutów dla tego meczu.");
           return;
         }
@@ -222,10 +269,9 @@
         kontenerZakladek.innerHTML = "";
         kontenerTabeleLegow.innerHTML = "";
 
-        const legi = mecz.historiaMeczuLegi;
-        const gracze = mecz.graczeInfo || [
-          { id: 0, nazwa: "Ja" },
-          { id: 1, nazwa: mecz.przeciwnik },
+        const gracze = mecz.statystyki_graczy || mecz.graczeInfo || [
+          { id: 0, nazwa: "Gospodarz" },
+          { id: 1, nazwa: "Gość" },
         ];
 
         legi.forEach((legData, legIdx) => {
@@ -244,13 +290,13 @@
           divTabContent.className = `zawartosc-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
           divTabContent.id = `zawartosc-leg-${legIdx}`;
 
-          let szerokoscKolumny = Math.floor(90 / gracze.length);
-          let srednieWLegu = {};
+          const szerokoscKolumny = Math.floor(90 / gracze.length);
+          const srednieWLegu = {};
 
           gracze.forEach((g) => {
-            let rzutyGracza = legData.filter((r) => r.graczId === g.id);
-            let sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
-            let iloscKolejek = rzutyGracza.length;
+            const rzutyGracza = legData.filter((r) => r.graczId === g.id);
+            const sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
+            const iloscKolejek = rzutyGracza.length;
             srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
           });
 
@@ -268,7 +314,7 @@
           });
           htmlTabeli += `</tr></thead><tbody>`;
 
-          let rundyMap = {};
+          const rundyMap = {};
           legData.forEach((rekord) => {
             if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
             rundyMap[rekord.kolejka][rekord.graczId] = rekord;
@@ -277,8 +323,8 @@
           Object.keys(rundyMap).forEach((kol) => {
             htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
             gracze.forEach((g) => {
-              let rzutG = rundyMap[kol][g.id];
-              let cel = rzutG
+              const rzutG = rundyMap[kol][g.id];
+              const cel = rzutG
                 ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>`
                 : "-";
               htmlTabeli += `<td>${cel}</td>`;
@@ -308,11 +354,23 @@
 
       inputAvatar.addEventListener("change", async (e) => {
         const plik = e.target.files[0];
-        if (!plik || !aktualnyUser) return;
+        if (!plik) return;
+
+        if (!aktualnyUser) {
+          const { data: sessionData } = await client.auth.getSession();
+          aktualnyUser = sessionData?.session?.user;
+        }
+
+        if (!aktualnyUser) {
+          avatarStatus.textContent = "Zaloguj się ponownie!";
+          avatarStatus.style.color = "#f87171";
+          return;
+        }
 
         if (plik.size > 2 * 1024 * 1024) {
           avatarStatus.textContent = "Plik jest za duży (maks. 2 MB)!";
           avatarStatus.style.color = "#f87171";
+          inputAvatar.value = "";
           return;
         }
 
@@ -320,43 +378,52 @@
         avatarStatus.style.color = "#38bdf8";
 
         try {
-          const folderUsera = aktualnyUser.id;
-          const { data: starePliki } = await client.storage.from("avatary").list(folderUsera);
-          if (starePliki && starePliki.length > 0) {
-            const sciezki = starePliki.map((p) => `${folderUsera}/${p.name}`);
-            await client.storage.from("avatary").remove(sciezki);
-          }
+          const userId = aktualnyUser.id;
+          const ext = plik.name.split(".").pop().toLowerCase() || "png";
+          const nowaSciezka = `${userId}/avatar_${Date.now()}.${ext}`;
 
-          const sciezkaNowegoPliku = `${folderUsera}/avatar`;
-          const { error: uploadErr } = await client.storage.from("avatary").upload(sciezkaNowegoPliku, plik, {
-            upsert: true,
-            contentType: plik.type,
+          // 1. Upload unikalnego pliku
+          const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
+            contentType: plik.type || "image/png",
           });
+
           if (uploadErr) throw uploadErr;
 
+          // 2. Pobranie adresu publicznego
           const {
             data: { publicUrl },
-          } = client.storage.from("avatary").getPublicUrl(sciezkaNowegoPliku);
-          const urlZOdswiezeniem = `${publicUrl}?t=${Date.now()}`;
+          } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
 
+          // 3. Aktualizacja tabeli public.profiles
+          const { error: dbErr } = await client
+            .from("profiles")
+            .update({ avatar_url: publicUrl })
+            .eq("id", userId);
+
+          if (dbErr) throw dbErr;
+
+          // 4. Kopia zapasowa w sesji użytkownika
           await client.auth.updateUser({
-            data: { avatar_url: urlZOdswiezeniem },
+            data: { avatar_url: publicUrl },
           });
           await client.auth.refreshSession();
 
-          imgAvatar.src = urlZOdswiezeniem;
-
+          // 5. Aktualizacja UI
+          imgAvatar.src = publicUrl;
           const headerAvatarWrap = document.querySelector(".user-avatar-wrap");
           if (headerAvatarWrap) {
-            headerAvatarWrap.innerHTML = `<img src="${urlZOdswiezeniem}" alt="Avatar" class="header-avatar-img" />`;
+            headerAvatarWrap.innerHTML = `<img src="${publicUrl}" alt="Avatar" class="header-avatar-img" />`;
           }
 
           avatarStatus.textContent = "Zdjęcie zaktualizowane!";
           avatarStatus.style.color = "#4ade80";
           setTimeout(() => (avatarStatus.textContent = ""), 3000);
         } catch (err) {
+          console.error("Błąd zapisu zdjęcia:", err);
           avatarStatus.textContent = "Nie udało się zapisać zdjęcia.";
           avatarStatus.style.color = "#f87171";
+        } finally {
+          inputAvatar.value = "";
         }
       });
 
@@ -382,12 +449,18 @@
       // 1. Otwieranie edycji profilu
       document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
         if (!aktualnyUser) return;
-        const meta = aktualnyUser.user_metadata || {};
-        document.getElementById("edycja-nick").value = meta.username || aktualnyUser.email.split("@")[0];
+        const obecnyNick =
+          aktualnyProfil?.nazwa_gracza ||
+          aktualnyUser.user_metadata?.username ||
+          (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
+
+        document.getElementById("edycja-nick").value = obecnyNick;
         document.getElementById("edycja-haslo").value = "";
         document.getElementById("edycja-status").style.display = "none";
 
         modalTytul.textContent = "Edytuj profil";
+        blokUsunKonto.style.display = "none";
+        blokWyloguj.style.display = "none";
         formEdycja.style.display = "flex";
         modal.style.display = "flex";
       });
@@ -400,20 +473,38 @@
         const statusDiv = document.getElementById("edycja-status");
 
         btnZapisz.disabled = true;
-        const aktualizacja = { data: { username: nowyNick } };
-        if (noweHaslo) aktualizacja.password = noweHaslo;
 
-        const { error } = await client.auth.updateUser(aktualizacja);
-        btnZapisz.disabled = false;
+        // 1. Zapis nazwy gracza do tabeli profiles
+        const { error: profileErr } = await client
+          .from("profiles")
+          .update({ nazwa_gracza: nowyNick })
+          .eq("id", aktualnyUser.id);
 
-        if (error) {
-          statusDiv.textContent = error.message;
+        if (profileErr) {
+          btnZapisz.disabled = false;
+          statusDiv.textContent = profileErr.message;
           statusDiv.style.display = "block";
           return;
         }
 
+        // 2. Jeśli podano hasło, aktualizacja w Auth
+        if (noweHaslo) {
+          const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
+          if (passErr) {
+            btnZapisz.disabled = false;
+            statusDiv.textContent = passErr.message;
+            statusDiv.style.display = "block";
+            return;
+          }
+        }
+
+        // 3. Kopia zapasowa w metadanych sesji
+        await client.auth.updateUser({ data: { username: nowyNick } });
         await client.auth.refreshSession();
+
+        btnZapisz.disabled = false;
         document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
+        if (aktualnyProfil) aktualnyProfil.nazwa_gracza = nowyNick;
 
         const headerNick = document.querySelector(".user-name");
         if (headerNick) headerNick.textContent = nowyNick;
@@ -424,9 +515,10 @@
       // 2. Otwieranie okna wylogowania
       document.getElementById("btn-wyloguj")?.addEventListener("click", () => {
         modalTytul.textContent = "Wyloguj się";
+        formEdycja.style.display = "none";
+        blokUsunKonto.style.display = "none";
         blokWyloguj.style.display = "block";
         modal.style.display = "flex";
-        formEdycja.style.display = "none";
       });
 
       document.getElementById("wyloguj-sie")?.addEventListener("submit", async (e) => {
@@ -437,8 +529,9 @@
 
       // 3. Otwieranie okna usunięcia konta
       document.getElementById("btn-usun-konto")?.addEventListener("click", () => {
-        formEdycja.style.display = "none";
         modalTytul.textContent = "Usuń konto";
+        formEdycja.style.display = "none";
+        blokWyloguj.style.display = "none";
         blokUsunKonto.style.display = "block";
         modal.style.display = "flex";
       });
@@ -474,6 +567,7 @@
           alert("Konto zostało usunięte.");
           window.location.href = "./index.html";
         } catch (err) {
+          console.error("Błąd usuwania konta:", err);
           alert("Wystąpił błąd podczas usuwania konta.");
           btnUsun.disabled = false;
           btnUsun.textContent = "Potwierdź usunięcie";
