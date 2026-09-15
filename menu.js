@@ -39,18 +39,32 @@ async function sprawdzStanLogowania() {
         const { data: { session } } = await supabaseKlient.auth.getSession();
 
         if (session && session.user) {
-            const userMeta = session.user.user_metadata || {};
-            const nick = userMeta.username || session.user.email.split("@")[0];
-            const avatarUrl = userMeta.avatar_url;
+            const user = session.user;
+            const userMeta = user.user_metadata || {};
+
+            // 1. Pobieramy aktualne dane bezpośrednio z tabeli profiles
+            let nick = userMeta.username || (user.email ? user.email.split("@")[0] : "Gracz");
+            let avatarUrl = userMeta.avatar_url;
+
+            const { data: profil } = await supabaseKlient
+                .from("profiles")
+                .select("nazwa_gracza, avatar_url")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (profil) {
+                if (profil.nazwa_gracza) nick = profil.nazwa_gracza;
+                if (profil.avatar_url) avatarUrl = profil.avatar_url;
+            }
 
             const avatarHtml = avatarUrl
                 ? `<img src="${avatarUrl}" alt="${nick}" class="header-avatar-img" />`
                 : `<span class="user-avatar-icon">👤</span>`;
 
-            // Wersja komputerowa
-            const joinUsDesktop = document.querySelector(".wersja-komputer .join-us");
-            if (joinUsDesktop) {
-                joinUsDesktop.outerHTML = `
+            // 2. Wersja komputerowa: podmieniamy cały blok .dropdown-konto lub dawny .join-us
+            const desktopKonto = document.querySelector(".wersja-komputer .dropdown-konto, .wersja-komputer .join-us");
+            if (desktopKonto) {
+                desktopKonto.outerHTML = `
                     <div class="user-profile-badge">
                         <a href="./profil.html" class="user-profile-link" title="Twój profil">
                             <span class="user-avatar-wrap">${avatarHtml}</span>
@@ -60,24 +74,32 @@ async function sprawdzStanLogowania() {
                 `;
             }
 
-            // Wersja mobilna
-            const joinUsMobile = document.querySelector(".mobilny-menu-links .join-us");
-            if (joinUsMobile) {
-                const liContainer = joinUsMobile.closest("li") || joinUsMobile;
-                liContainer.innerHTML = `
-                    <div class="user-profile-badge-mobile">
-                        <a href="./profil.html" class="user-profile-link">
-                            <span class="user-avatar-wrap">${avatarHtml}</span>
-                            <span class="user-name">${nick}</span>
-                        </a>
-                    </div>
-                `;
+            // 3. Wersja mobilna: podmieniamy przycisk logowania na profil, a rejestrację usuwamy
+            const mobileAuthLinks = document.querySelectorAll(".mobilny-menu-links .join-us");
+            if (mobileAuthLinks.length > 0) {
+                const pierwszyLi = mobileAuthLinks[0].closest("li");
+                if (pierwszyLi) {
+                    pierwszyLi.innerHTML = `
+                        <div class="user-profile-badge-mobile">
+                            <a href="./profil.html" class="user-profile-link">
+                                <span class="user-avatar-wrap">${avatarHtml}</span>
+                                <span class="user-name">${nick}</span>
+                            </a>
+                        </div>
+                    `;
+                }
+
+                // Usuwamy pozostałe linki autoryzacyjne (np. "ZAREJESTRUJ SIĘ")
+                for (let i = 1; i < mobileAuthLinks.length; i++) {
+                    mobileAuthLinks[i].closest("li")?.remove();
+                }
             }
         }
     } catch (err) {
         console.error("Błąd podczas weryfikacji sesji:", err);
     }
 }
+
 function uruchomMenuMobilne() {
     const mobilnyMenuBtn = document.getElementById("mobilny-menu-btn");
     const mobilnyMenuOverlay = document.getElementById("mobilny-menu-overlay");
