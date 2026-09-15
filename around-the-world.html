@@ -1,310 +1,254 @@
 <!doctype html>
 <html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Around the World | Stacja Dart</title>
-    <meta
-      name="description"
-      content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta."
-    />
-    <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <meta property="og:title" content="Stacja Dart" />
-    <meta
-      property="og:description"
-      content="Gry dartowe online, treningi, statystyki i społeczność graczy."
-    />
-    <meta property="og:image" content="./loga/logo.png" />
-    <meta property="og:type" content="website" />
-    <link rel="stylesheet" href="./global.css" />
-    <link rel="stylesheet" href="./around-the-world-style.css" />
-    <link rel="stylesheet" href="./formularz.css" />
-  </head>
-  <body>
-    <header id="wspolny-header"></header>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Around the World | Stacja Dart</title>
+        <meta name="description" content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <meta property="og:title" content="Stacja Dart" />
+        <meta property="og:description" content="Gry dartowe online, treningi, statystyki i społeczność graczy." />
+        <meta property="og:image" content="./loga/logo.png" />
+        <meta property="og:type" content="website" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./around-the-world-style.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
 
-    <main>
-      <div class="menu">
-        <h1 id="tytul-strony">AROUND THE WORLD</h1>
-      </div>
-
-      <div class="formularz-ustawien" id="formularz-kontener">
-        <form id="form-ustawienia" class="formularz-wspolny">
-          <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
-          <div class="sekcja-formularza">
-            <h3 class="sekcja-tytul">UCZESTNICY</h3>
-            <div class="wiersz-odstep">
-              <label>
-                <h4>ILOŚĆ GRACZY:</h4>
-                <select id="ilosc-graczy" class="wspolny-input">
-                  <option value="1">1</option>
-                  <option value="2" selected>2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
-              </label>
+        <main>
+            <div class="menu">
+                <h1 id="tytul-strony">AROUND THE WORLD</h1>
             </div>
-            <div id="kontener-nazw-graczy"></div>
-          </div>
 
-          <div class="sekcja-formularza">
-            <h3 class="sekcja-tytul">PARAMETRY GRY</h3>
-            <div class="grid-2-kolumny">
-              <label>
-                <h4>ZAKOŃCZENIE GRY:</h4>
-                <select id="zakonczenie-gry" class="wspolny-input">
-                  <option value="bull">Single Bull (25)</option>
-                  <option value="double-bull" selected>Bullseye (50)</option>
-                </select>
-              </label>
+            <div class="formularz-ustawien" id="formularz-kontener">
+                <form id="form-ustawienia" class="formularz-wspolny">
+                    <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+                    <div class="sekcja-formularza">
+                        <h3 class="sekcja-tytul">UCZESTNICY</h3>
+                        <div class="wiersz-odstep">
+                            <label>
+                                <h4>ILOŚĆ GRACZY:</h4>
+                                <select id="ilosc-graczy" class="wspolny-input">
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div id="kontener-nazw-graczy"></div>
+                    </div>
 
-              <label>
-                <h4>WYBIERZ TRYB:</h4>
-                <select id="tryb" class="wspolny-input">
-                  <option value="classic">Low to High (1 -> 20)</option>
-                  <option value="reverse">High to Low (20 -> 1)</option>
-                  <option value="random">Random (Losowo)</option>
-                </select>
-              </label>
+                    <div class="sekcja-formularza">
+                        <h3 class="sekcja-tytul">PARAMETRY GRY</h3>
+                        <div class="grid-2-kolumny">
+                            <label>
+                                <h4>ZAKOŃCZENIE GRY:</h4>
+                                <select id="zakonczenie-gry" class="wspolny-input">
+                                    <option value="bull">Single Bull (25)</option>
+                                    <option value="double-bull" selected>Bullseye (50)</option>
+                                </select>
+                            </label>
+
+                            <label>
+                                <h4>WYBIERZ TRYB:</h4>
+                                <select id="tryb" class="wspolny-input">
+                                    <option value="classic">Low to High (1 -> 20)</option>
+                                    <option value="reverse">High to Low (20 -> 1)</option>
+                                    <option value="random">Random (Losowo)</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="wszystkie-liczby">
+                            <label for="wszystkie">
+                                <h4>Wszystkie liczby?</h4>
+                                <input type="checkbox" id="wszystkie" class="wszystkie" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="przycisk-zacznij-grac">
+                        <button type="submit" id="rozpocznij-gre">GRAJ</button>
+                    </div>
+                </form>
             </div>
-            <div class="wszystkie-liczby">
-              <label for="wszystkie">
-                <h4>Wszystkie liczby?</h4>
-                <input type="checkbox" id="wszystkie" class="wszystkie" />
-              </label>
+
+            <!-- EKRAN GRY -->
+            <div class="ekran-gry" id="ekran-gry">
+                <div class="status-baru">
+                    <button type="button" id="powrot-gra">✖</button>
+                    <span id="wyswietl-kolejke">Lotki: 3</span>
+                    <span id="tryb-gry-info">1 -> 20</span>
+                </div>
+
+                <div class="kontener-graczy" id="kontener-graczy-karty"></div>
+
+                <div class="panel-rzutow">
+                    <div class="przyciski-akcji">
+                        <button type="button" class="btn-rzut" id="btn-single">Single</button>
+                        <button type="button" class="btn-rzut" id="btn-double">Double</button>
+                        <button type="button" class="btn-rzut" id="btn-triple">Triple</button>
+                        <button type="button" class="btn-rzut btn-miss" id="btn-pudlo">PUDŁO (MISS)</button>
+                        <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">Cofnij rzut</button>
+                    </div>
+
+                    <div class="przyciski-zakonczenia-sbull przyciski-akcji" style="display: none">
+                        <button type="button" class="btn-rzut" id="btn-zakoncz-sbull">SBULL (25)</button>
+                        <button type="button" class="btn-rzut btn-miss" id="btn-pudlo-sbull">PUDŁO (MISS)</button>
+                        <button type="button" class="btn-cofnij" id="btn-cofnij-rzut-sbull">Cofnij rzut</button>
+                    </div>
+
+                    <div class="przyciski-zakonczenia-bull przyciski-akcji" style="display: none">
+                        <button type="button" class="btn-rzut" id="btn-zakoncz-bull">BULL (50)</button>
+                        <button type="button" class="btn-rzut btn-miss" id="btn-pudlo-bull">PUDŁO (MISS)</button>
+                        <button type="button" class="btn-cofnij" id="btn-cofnij-rzut-bull">Cofnij rzut</button>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div class="przycisk-zacznij-grac">
-            <button type="submit" id="rozpocznij-gre">GRAJ</button>
-          </div>
-        </form>
-      </div>
+            <!-- EKRAN KONCOWY ZAMIAST POPUPU -->
+            <div class="ekran-wygranej" id="ekran-wygranej" style="display: none">
+                <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
+                <h1 id="wygrany">Wygrywa Gracz!</h1>
+                <div class="statystyki">
+                    <table class="tabela-statystyki">
+                        <thead>
+                            <tr id="naglowek-tabeli-statystyk">
+                                <th>STATYSTYKA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-statystyk-body"></tbody>
+                    </table>
+                </div>
+                <div id="przyciski-statystyki">
+                    <button type="button" id="btn-nowa-gra">ROZPOCZNIJ NOWĄ GRĘ</button>
+                </div>
+            </div>
+        </main>
 
-      <!-- EKRAN GRY -->
-      <div class="ekran-gry" id="ekran-gry">
-        <div class="status-baru">
-          <button type="button" id="powrot-gra">✖</button>
-          <span id="wyswietl-kolejke">Lotki: 3</span>
-          <span id="tryb-gry-info">1 -> 20</span>
-        </div>
+        <script>
+            // Elementy Formularza
+            const formularzKontener = document.getElementById("formularz-kontener");
+            const iloscGraczySelect = document.getElementById("ilosc-graczy");
+            const zakonczenieGrySelect = document.getElementById("zakonczenie-gry");
+            const trybSelect = document.getElementById("tryb");
+            const tytulStrony = document.getElementById("tytul-strony");
+            const powrotDoGier = document.getElementById("powrot-do-gier");
+            const formUstawienia = document.getElementById("form-ustawienia");
+            const checkboxWszystkie = document.getElementById("wszystkie");
 
-        <div class="kontener-graczy" id="kontener-graczy-karty"></div>
+            // Elementy Ekranu Gry
+            const ekranGry = document.getElementById("ekran-gry");
+            const kontenerKartGraczy = document.getElementById("kontener-graczy-karty");
+            const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
+            const trybGryInfo = document.getElementById("tryb-gry-info");
+            const powrotGra = document.getElementById("powrot-gra");
 
-        <div class="panel-rzutow">
-          <div class="przyciski-akcji">
-            <button type="button" class="btn-rzut" id="btn-single">
-              Single
-            </button>
-            <button type="button" class="btn-rzut" id="btn-double">
-              Double
-            </button>
-            <button type="button" class="btn-rzut" id="btn-triple">
-              Triple
-            </button>
-            <button type="button" class="btn-rzut btn-miss" id="btn-pudlo">
-              PUDŁO (MISS)
-            </button>
-            <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">
-              Cofnij rzut
-            </button>
-          </div>
+            // Przyciski akcji
+            const btnSingle = document.getElementById("btn-single");
+            const btnDouble = document.getElementById("btn-double");
+            const btnTriple = document.getElementById("btn-triple");
+            const btnPudlo = document.getElementById("btn-pudlo");
+            const btnPudloSbull = document.getElementById("btn-pudlo-sbull");
+            const btnPudloBull = document.getElementById("btn-pudlo-bull");
 
-          <div
-            class="przyciski-zakonczenia-sbull przyciski-akcji"
-            style="display: none"
-          >
-            <button type="button" class="btn-rzut" id="btn-zakoncz-sbull">
-              SBULL (25)
-            </button>
-            <button
-              type="button"
-              class="btn-rzut btn-miss"
-              id="btn-pudlo-sbull"
-            >
-              PUDŁO (MISS)
-            </button>
-            <button type="button" class="btn-cofnij" id="btn-cofnij-rzut-sbull">
-              Cofnij rzut
-            </button>
-          </div>
+            const przyciskiZwykle = document.querySelector(".przyciski-akcji");
+            const przyciskiSbull = document.querySelector(".przyciski-zakonczenia-sbull");
+            const przyciskiBull = document.querySelector(".przyciski-zakonczenia-bull");
 
-          <div
-            class="przyciski-zakonczenia-bull przyciski-akcji"
-            style="display: none"
-          >
-            <button type="button" class="btn-rzut" id="btn-zakoncz-bull">
-              BULL (50)
-            </button>
-            <button type="button" class="btn-rzut btn-miss" id="btn-pudlo-bull">
-              PUDŁO (MISS)
-            </button>
-            <button type="button" class="btn-cofnij" id="btn-cofnij-rzut-bull">
-              Cofnij rzut
-            </button>
-          </div>
-        </div>
-      </div>
+            const btnZakonczSbull = document.getElementById("btn-zakoncz-sbull");
+            const btnZakonczBull = document.getElementById("btn-zakoncz-bull");
 
-      <!-- EKRAN KONCOWY ZAMIAST POPUPU -->
-      <div class="ekran-wygranej" id="ekran-wygranej" style="display: none">
-        <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
-        <h1 id="wygrany">Wygrywa Gracz!</h1>
-        <div class="statystyki">
-          <table class="tabela-statystyki">
-            <thead>
-              <tr id="naglowek-tabeli-statystyk">
-                <th>STATYSTYKA</th>
-              </tr>
-            </thead>
-            <tbody id="tabela-statystyk-body"></tbody>
-          </table>
-        </div>
-        <div id="przyciski-statystyki">
-          <button type="button" id="btn-nowa-gra">
-            ROZPOCZNIJ NOWĄ GRĘ
-          </button>
-        </div>
-      </div>
-    </main>
+            // Nowy ekran końcowy
+            const ekranWygranej = document.getElementById("ekran-wygranej");
+            const naglowekTabeliStatystyk = document.getElementById("naglowek-tabeli-statystyk");
+            const tabelaStatystykBody = document.getElementById("tabela-statystyk-body");
+            const wygranyTekst = document.getElementById("wygrany");
+            const btnNowaGra = document.getElementById("btn-nowa-gra");
 
-    <script>
-      // Elementy Formularza
-      const formularzKontener = document.getElementById("formularz-kontener");
-      const iloscGraczySelect = document.getElementById("ilosc-graczy");
-      const zakonczenieGrySelect = document.getElementById("zakonczenie-gry");
-      const trybSelect = document.getElementById("tryb");
-      const tytulStrony = document.getElementById("tytul-strony");
-      const powrotDoGier = document.getElementById("powrot-do-gier");
-      const formUstawienia = document.getElementById("form-ustawienia");
-      const checkboxWszystkie = document.getElementById("wszystkie");
+            // Stan Gry
+            let gracze = [];
+            let aktualnyGraczIndex = 0;
+            let lotkiWKolejce = 3;
+            let historiaGry = [];
 
-      // Elementy Ekranu Gry
-      const ekranGry = document.getElementById("ekran-gry");
-      const kontenerKartGraczy = document.getElementById(
-        "kontener-graczy-karty",
-      );
-      const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
-      const trybGryInfo = document.getElementById("tryb-gry-info");
-      const powrotGra = document.getElementById("powrot-gra");
-
-      // Przyciski akcji
-      const btnSingle = document.getElementById("btn-single");
-      const btnDouble = document.getElementById("btn-double");
-      const btnTriple = document.getElementById("btn-triple");
-      const btnPudlo = document.getElementById("btn-pudlo");
-      const btnPudloSbull = document.getElementById("btn-pudlo-sbull");
-      const btnPudloBull = document.getElementById("btn-pudlo-bull");
-
-      const przyciskiZwykle = document.querySelector(".przyciski-akcji");
-      const przyciskiSbull = document.querySelector(
-        ".przyciski-zakonczenia-sbull",
-      );
-      const przyciskiBull = document.querySelector(
-        ".przyciski-zakonczenia-bull",
-      );
-
-      const btnZakonczSbull = document.getElementById("btn-zakoncz-sbull");
-      const btnZakonczBull = document.getElementById("btn-zakoncz-bull");
-
-      // Nowy ekran końcowy
-      const ekranWygranej = document.getElementById("ekran-wygranej");
-      const naglowekTabeliStatystyk = document.getElementById(
-        "naglowek-tabeli-statystyk",
-      );
-      const tabelaStatystykBody = document.getElementById(
-        "tabela-statystyk-body",
-      );
-      const wygranyTekst = document.getElementById("wygrany");
-      const btnNowaGra = document.getElementById("btn-nowa-gra");
-
-      // Stan Gry
-      let gracze = [];
-      let aktualnyGraczIndex = 0;
-      let lotkiWKolejce = 3;
-      let historiaGry = [];
-
-      function generujPolaNazwGraczy(ilosc) {
-        const kontener = document.getElementById("kontener-nazw-graczy");
-        kontener.innerHTML = "";
-        for (let i = 1; i <= ilosc; i++) {
-          const label = document.createElement("label");
-          label.innerHTML = `
+            function generujPolaNazwGraczy(ilosc) {
+                const kontener = document.getElementById("kontener-nazw-graczy");
+                kontener.innerHTML = "";
+                for (let i = 1; i <= ilosc; i++) {
+                    const label = document.createElement("label");
+                    label.innerHTML = `
                         <h4>GRACZ ${i}:</h4>
                         <input type="text" id="gracz-${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" />
                     `;
-          kontener.appendChild(label);
-        }
-      }
+                    kontener.appendChild(label);
+                }
+            }
 
-      function generujSekwencje(tryb, zakonczenie) {
-        let baza = [];
-        if (tryb === "classic") {
-          for (let i = 1; i <= 20; i++) baza.push(i);
-        } else if (tryb === "reverse") {
-          for (let i = 20; i >= 1; i--) baza.push(i);
-        } else if (tryb === "random") {
-          for (let i = 1; i <= 20; i++) baza.push(i);
-          baza.sort(() => Math.random() - 0.5);
-        }
+            function generujSekwencje(tryb, zakonczenie) {
+                let baza = [];
+                if (tryb === "classic") {
+                    for (let i = 1; i <= 20; i++) baza.push(i);
+                } else if (tryb === "reverse") {
+                    for (let i = 20; i >= 1; i--) baza.push(i);
+                } else if (tryb === "random") {
+                    for (let i = 1; i <= 20; i++) baza.push(i);
+                    baza.sort(() => Math.random() - 0.5);
+                }
 
-        if (zakonczenie === "bull") baza.push(25);
-        else if (zakonczenie === "double-bull") baza.push(50);
+                if (zakonczenie === "bull") baza.push(25);
+                else if (zakonczenie === "double-bull") baza.push(50);
 
-        return baza;
-      }
+                return baza;
+            }
 
-      iloscGraczySelect.addEventListener("change", (event) => {
-        generujPolaNazwGraczy(parseInt(event.target.value));
-      });
-      generujPolaNazwGraczy(2);
+            iloscGraczySelect.addEventListener("change", (event) => {
+                generujPolaNazwGraczy(parseInt(event.target.value));
+            });
+            generujPolaNazwGraczy(2);
 
-      formUstawienia.addEventListener("submit", (event) => {
-        event.preventDefault();
+            formUstawienia.addEventListener("submit", (event) => {
+                event.preventDefault();
 
-        const iloscGraczy = parseInt(iloscGraczySelect.value);
-        const tryb = trybSelect.value;
-        const zakonczenie = zakonczenieGrySelect.value;
+                const iloscGraczy = parseInt(iloscGraczySelect.value);
+                const tryb = trybSelect.value;
+                const zakonczenie = zakonczenieGrySelect.value;
 
-        let trybTekst = "1 -> 20";
-        if (tryb === "reverse") trybTekst = "20 -> 1";
-        if (tryb === "random") trybTekst = "Losowo";
-        trybGryInfo.textContent = trybTekst;
+                let trybTekst = "1 -> 20";
+                if (tryb === "reverse") trybTekst = "20 -> 1";
+                if (tryb === "random") trybTekst = "Losowo";
+                trybGryInfo.textContent = trybTekst;
 
-        gracze = [];
-        historiaGry = [];
-        aktualnyGraczIndex = 0;
-        lotkiWKolejce = 3;
+                gracze = [];
+                historiaGry = [];
+                aktualnyGraczIndex = 0;
+                lotkiWKolejce = 3;
 
-        kontenerKartGraczy.innerHTML = "";
+                kontenerKartGraczy.innerHTML = "";
 
-        for (let i = 1; i <= iloscGraczy; i++) {
-          let inputNazwy = document.getElementById(`gracz-${i}`);
-          let nazwa =
-            inputNazwy && inputNazwy.value.trim() !== ""
-              ? inputNazwy.value.trim()
-              : `Gracz ${i}`;
-          let sekwencja = generujSekwencje(tryb, zakonczenie);
+                for (let i = 1; i <= iloscGraczy; i++) {
+                    let inputNazwy = document.getElementById(`gracz-${i}`);
+                    let nazwa = inputNazwy && inputNazwy.value.trim() !== "" ? inputNazwy.value.trim() : `Gracz ${i}`;
+                    let sekwencja = generujSekwencje(tryb, zakonczenie);
 
-          gracze.push({
-            id: i,
-            nazwa: nazwa,
-            sekwencja: sekwencja,
-            aktualnyIndeksCelu: 0,
-            rzuty: 0,
-            singles: 0,
-            doubles: 0,
-            triples: 0,
-            pudla: 0,
-            rzutyKolejki: ["-", "-", "-"],
-          });
+                    gracze.push({
+                        id: i,
+                        nazwa: nazwa,
+                        sekwencja: sekwencja,
+                        aktualnyIndeksCelu: 0,
+                        rzuty: 0,
+                        singles: 0,
+                        doubles: 0,
+                        triples: 0,
+                        pudla: 0,
+                        rzutyKolejki: ["-", "-", "-"],
+                    });
 
-          kontenerKartGraczy.innerHTML += `
+                    kontenerKartGraczy.innerHTML += `
                         <div class="karta-gracza ${i === 1 ? "aktywne-tury" : ""}" id="karta-g${i}">
                             <h2>${nazwa}</h2>
                             <h4 class="karta-gracza-cel-tytul">Aktualny cel:</h4>
@@ -317,185 +261,179 @@
                             </div>
                         </div>
                     `;
-        }
+                }
 
-        formularzKontener.style.display = "none";
-        tytulStrony.style.display = "none";
-        powrotDoGier.style.display = "none";
-        ekranWygranej.style.display = "none";
-        ekranGry.style.display = "flex";
+                formularzKontener.style.display = "none";
+                tytulStrony.style.display = "none";
+                powrotDoGier.style.display = "none";
+                ekranWygranej.style.display = "none";
+                ekranGry.style.display = "flex";
 
-        aktualizujUI();
-      });
+                aktualizujUI();
+            });
 
-      function wywietlCelWariantu(cel) {
-        if (cel === 25) return "BULL (25)";
-        if (cel === 50) return "BULL (50)";
-        return cel;
-      }
-
-      function zapiszStan() {
-        historiaGry.push({
-          gracze: JSON.parse(JSON.stringify(gracze)),
-          aktualnyGraczIndex: aktualnyGraczIndex,
-          lotkiWKolejce: lotkiWKolejce,
-        });
-      }
-
-      function cofnijRzut() {
-        if (historiaGry.length === 0) {
-          alert("Brak rzutów do cofnięcia!");
-          return;
-        }
-        const poprzedniStan = historiaGry.pop();
-        gracze = poprzedniStan.gracze;
-        aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
-        lotkiWKolejce = poprzedniStan.lotkiWKolejce;
-        aktualizujUI();
-      }
-
-      document
-        .querySelectorAll(
-          "#btn-cofnij-rzut, #btn-cofnij-rzut-sbull, #btn-cofnij-rzut-bull",
-        )
-        .forEach((btn) => {
-          btn.addEventListener("click", cofnijRzut);
-        });
-
-      function obsluzRzut(mnoznik) {
-        zapiszStan();
-        let gracz = gracze[aktualnyGraczIndex];
-        gracz.rzuty++;
-
-        let aktualnyCel = gracz.sekwencja[gracz.aktualnyIndeksCelu];
-        let etykietaRzutu = "Pudło";
-
-        if (mnoznik > 0) {
-          if (mnoznik === 1) {
-            gracz.singles++;
-            etykietaRzutu = "Single";
-          } else if (mnoznik === 2) {
-            gracz.doubles++;
-            etykietaRzutu = "Double";
-          } else if (mnoznik === 3) {
-            gracz.triples++;
-            etykietaRzutu = "Triple";
-          }
-
-          let przeskok = checkboxWszystkie.checked ? 1 : mnoznik;
-          gracz.aktualnyIndeksCelu += przeskok;
-
-          if (gracz.aktualnyIndeksCelu >= gracz.sekwencja.length) {
-            gracz.aktualnyIndeksCelu = gracz.sekwencja.length;
-            gracz.rzutyKolejki[3 - lotkiWKolejce] = etykietaRzutu;
-            aktualizujUI();
-            zakonczGre(gracz);
-            return;
-          }
-        } else {
-          gracz.pudla++;
-        }
-
-        gracz.rzutyKolejki[3 - lotkiWKolejce] = etykietaRzutu;
-
-        lotkiWKolejce--;
-        if (lotkiWKolejce === 0) {
-          następnyGracz();
-        } else {
-          aktualizujUI();
-        }
-      }
-
-      function następnyGracz() {
-        lotkiWKolejce = 3;
-        gracze[aktualnyGraczIndex].rzutyKolejki = ["-", "-", "-"];
-
-        aktualnyGraczIndex++;
-        if (aktualnyGraczIndex >= gracze.length) {
-          aktualnyGraczIndex = 0;
-        }
-
-        aktualizujUI();
-      }
-
-      function aktualizujUI() {
-        wyswietlKolejke.textContent = `Lotki: ${lotkiWKolejce}`;
-
-        gracze.forEach((g, index) => {
-          const karta = document.getElementById(`karta-g${g.id}`);
-          const celUI = document.getElementById(`cel-gracza-ui-${g.id}`);
-          const trafieniaUI = document.getElementById(`trafienia-g${g.id}`);
-
-          if (index === aktualnyGraczIndex) {
-            karta.classList.add("aktywne-tury");
-          } else {
-            karta.classList.remove("aktywne-tury");
-          }
-
-          if (g.aktualnyIndeksCelu < g.sekwencja.length) {
-            celUI.textContent = wywietlCelWariantu(
-              g.sekwencja[g.aktualnyIndeksCelu],
-            );
-          } else {
-            celUI.textContent = "KONIEC";
-          }
-
-          trafieniaUI.textContent = `${g.aktualnyIndeksCelu}/${g.sekwencja.length}`;
-
-          for (let l = 1; l <= 3; l++) {
-            const lotkaEl = document.getElementById(`lotka-g${g.id}-${l}`);
-            if (lotkaEl) {
-              lotkaEl.textContent = g.rzutyKolejki[l - 1] || "-";
+            function wywietlCelWariantu(cel) {
+                if (cel === 25) return "BULL (25)";
+                if (cel === 50) return "BULL (50)";
+                return cel;
             }
-          }
-        });
 
-        let obecnyGracz = gracze[aktualnyGraczIndex];
-        let cel = obecnyGracz.sekwencja[obecnyGracz.aktualnyIndeksCelu];
+            function zapiszStan() {
+                historiaGry.push({
+                    gracze: JSON.parse(JSON.stringify(gracze)),
+                    aktualnyGraczIndex: aktualnyGraczIndex,
+                    lotkiWKolejce: lotkiWKolejce,
+                });
+            }
 
-        if (cel === 25) {
-          przyciskiZwykle.style.display = "none";
-          przyciskiSbull.style.display = "flex";
-          przyciskiBull.style.display = "none";
-        } else if (cel === 50) {
-          przyciskiZwykle.style.display = "none";
-          przyciskiSbull.style.display = "none";
-          przyciskiBull.style.display = "flex";
-        } else {
-          przyciskiZwykle.style.display = "flex";
-          przyciskiSbull.style.display = "none";
-          przyciskiBull.style.display = "none";
-        }
-      }
+            function cofnijRzut() {
+                if (historiaGry.length === 0) {
+                    alert("Brak rzutów do cofnięcia!");
+                    return;
+                }
+                const poprzedniStan = historiaGry.pop();
+                gracze = poprzedniStan.gracze;
+                aktualnyGraczIndex = poprzedniStan.aktualnyGraczIndex;
+                lotkiWKolejce = poprzedniStan.lotkiWKolejce;
+                aktualizujUI();
+            }
 
-      btnSingle.addEventListener("click", () => obsluzRzut(1));
-      btnDouble.addEventListener("click", () => obsluzRzut(2));
-      btnTriple.addEventListener("click", () => obsluzRzut(3));
-      btnPudlo.addEventListener("click", () => obsluzRzut(0));
-      btnPudloSbull.addEventListener("click", () => obsluzRzut(0));
-      btnPudloBull.addEventListener("click", () => obsluzRzut(0));
+            document.querySelectorAll("#btn-cofnij-rzut, #btn-cofnij-rzut-sbull, #btn-cofnij-rzut-bull").forEach((btn) => {
+                btn.addEventListener("click", cofnijRzut);
+            });
 
-      btnZakonczSbull.addEventListener("click", () => obsluzRzut(1));
-      btnZakonczBull.addEventListener("click", () => obsluzRzut(1));
+            function obsluzRzut(mnoznik) {
+                zapiszStan();
+                let gracz = gracze[aktualnyGraczIndex];
+                gracz.rzuty++;
 
-      powrotGra.addEventListener("click", () => {
-        ekranGry.style.display = "none";
-        formularzKontener.style.display = "block";
-        tytulStrony.style.display = "block";
-        powrotDoGier.style.display = "inline-flex";
-      });
+                let aktualnyCel = gracz.sekwencja[gracz.aktualnyIndeksCelu];
+                let etykietaRzutu = "Pudło";
 
-      function zakonczGre(wygranyGracz) {
-        ekranGry.style.display = "none";
-        
-        wygranyTekst.textContent = `Wygrywa ${wygranyGracz.nazwa}!`;
+                if (mnoznik > 0) {
+                    if (mnoznik === 1) {
+                        gracz.singles++;
+                        etykietaRzutu = "Single";
+                    } else if (mnoznik === 2) {
+                        gracz.doubles++;
+                        etykietaRzutu = "Double";
+                    } else if (mnoznik === 3) {
+                        gracz.triples++;
+                        etykietaRzutu = "Triple";
+                    }
 
-        naglowekTabeliStatystyk.innerHTML = `<th>STATYSTYKA</th>`;
-        gracze.forEach((g) => {
-          naglowekTabeliStatystyk.innerHTML += `<th>${g.nazwa}</th>`;
-        });
+                    let przeskok = checkboxWszystkie.checked ? 1 : mnoznik;
+                    gracz.aktualnyIndeksCelu += przeskok;
 
-        tabelaStatystykBody.innerHTML = `
+                    if (gracz.aktualnyIndeksCelu >= gracz.sekwencja.length) {
+                        gracz.aktualnyIndeksCelu = gracz.sekwencja.length;
+                        gracz.rzutyKolejki[3 - lotkiWKolejce] = etykietaRzutu;
+                        aktualizujUI();
+                        zakonczGre(gracz);
+                        return;
+                    }
+                } else {
+                    gracz.pudla++;
+                }
+
+                gracz.rzutyKolejki[3 - lotkiWKolejce] = etykietaRzutu;
+
+                lotkiWKolejce--;
+                if (lotkiWKolejce === 0) {
+                    następnyGracz();
+                } else {
+                    aktualizujUI();
+                }
+            }
+
+            function następnyGracz() {
+                lotkiWKolejce = 3;
+                gracze[aktualnyGraczIndex].rzutyKolejki = ["-", "-", "-"];
+
+                aktualnyGraczIndex++;
+                if (aktualnyGraczIndex >= gracze.length) {
+                    aktualnyGraczIndex = 0;
+                }
+
+                aktualizujUI();
+            }
+
+            function aktualizujUI() {
+                wyswietlKolejke.textContent = `Lotki: ${lotkiWKolejce}`;
+
+                gracze.forEach((g, index) => {
+                    const karta = document.getElementById(`karta-g${g.id}`);
+                    const celUI = document.getElementById(`cel-gracza-ui-${g.id}`);
+                    const trafieniaUI = document.getElementById(`trafienia-g${g.id}`);
+
+                    if (index === aktualnyGraczIndex) {
+                        karta.classList.add("aktywne-tury");
+                    } else {
+                        karta.classList.remove("aktywne-tury");
+                    }
+
+                    if (g.aktualnyIndeksCelu < g.sekwencja.length) {
+                        celUI.textContent = wywietlCelWariantu(g.sekwencja[g.aktualnyIndeksCelu]);
+                    } else {
+                        celUI.textContent = "KONIEC";
+                    }
+
+                    trafieniaUI.textContent = `${g.aktualnyIndeksCelu}/${g.sekwencja.length}`;
+
+                    for (let l = 1; l <= 3; l++) {
+                        const lotkaEl = document.getElementById(`lotka-g${g.id}-${l}`);
+                        if (lotkaEl) {
+                            lotkaEl.textContent = g.rzutyKolejki[l - 1] || "-";
+                        }
+                    }
+                });
+
+                let obecnyGracz = gracze[aktualnyGraczIndex];
+                let cel = obecnyGracz.sekwencja[obecnyGracz.aktualnyIndeksCelu];
+
+                if (cel === 25) {
+                    przyciskiZwykle.style.display = "none";
+                    przyciskiSbull.style.display = "flex";
+                    przyciskiBull.style.display = "none";
+                } else if (cel === 50) {
+                    przyciskiZwykle.style.display = "none";
+                    przyciskiSbull.style.display = "none";
+                    przyciskiBull.style.display = "flex";
+                } else {
+                    przyciskiZwykle.style.display = "flex";
+                    przyciskiSbull.style.display = "none";
+                    przyciskiBull.style.display = "none";
+                }
+            }
+
+            btnSingle.addEventListener("click", () => obsluzRzut(1));
+            btnDouble.addEventListener("click", () => obsluzRzut(2));
+            btnTriple.addEventListener("click", () => obsluzRzut(3));
+            btnPudlo.addEventListener("click", () => obsluzRzut(0));
+            btnPudloSbull.addEventListener("click", () => obsluzRzut(0));
+            btnPudloBull.addEventListener("click", () => obsluzRzut(0));
+
+            btnZakonczSbull.addEventListener("click", () => obsluzRzut(1));
+            btnZakonczBull.addEventListener("click", () => obsluzRzut(1));
+
+            powrotGra.addEventListener("click", () => {
+                ekranGry.style.display = "none";
+                formularzKontener.style.display = "block";
+                tytulStrony.style.display = "block";
+                powrotDoGier.style.display = "inline-flex";
+            });
+
+            function zakonczGre(wygranyGracz) {
+                ekranGry.style.display = "none";
+
+                wygranyTekst.textContent = `Wygrywa ${wygranyGracz.nazwa}!`;
+
+                naglowekTabeliStatystyk.innerHTML = `<th>STATYSTYKA</th>`;
+                gracze.forEach((g) => {
+                    naglowekTabeliStatystyk.innerHTML += `<th>${g.nazwa}</th>`;
+                });
+
+                tabelaStatystykBody.innerHTML = `
                     <tr>
                         <td>Łącznie rzutów</td>
                         ${gracze.map((g) => `<td>${g.rzuty}</td>`).join("")}
@@ -522,17 +460,17 @@
                     </tr>
                 `;
 
-        ekranWygranej.style.display = "flex";
-      }
+                ekranWygranej.style.display = "flex";
+            }
 
-      btnNowaGra.addEventListener("click", () => {
-        ekranWygranej.style.display = "none";
-        formularzKontener.style.display = "block";
-        tytulStrony.style.display = "block";
-        powrotDoGier.style.display = "inline-flex";
-      });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./menu.js" defer></script>
-  </body>
+            btnNowaGra.addEventListener("click", () => {
+                ekranWygranej.style.display = "none";
+                formularzKontener.style.display = "block";
+                tytulStrony.style.display = "block";
+                powrotDoGier.style.display = "inline-flex";
+            });
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+    </body>
 </html>
