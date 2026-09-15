@@ -112,6 +112,10 @@ header a {
   position: relative;
   display: inline-block;
 }
+.btn-konto-trigger, .dropdown-menu a{
+  text-transform: uppercase;
+  font-size:18px;
+}
 
 /* Przycisk aktywujący */
 .btn-konto-trigger {
@@ -142,25 +146,22 @@ header a {
   background: rgba(17, 24, 39, 0.95);
   border: 1px solid var(--primary-color-border);
   border-radius: 12px;
-  min-width: 160px;
+  min-width: 210px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   padding: 6px 0;
   z-index: 1000;
 }
 
-/* Pokazywanie po najechaniu na kontener */
 .dropdown-konto:hover .dropdown-menu {
   display: block;
 }
 
-/* Elementy wewnątrz menu */
 .dropdown-menu a {
   display: block;
   padding: 10px 16px;
   color: #e2e8f0;
   text-decoration: none;
-  font-size: 14px;
   font-weight: 600;
   transition: background 0.2s;
 }
@@ -174,7 +175,6 @@ header a {
   color: var(--secondary-color);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-/* Niewidzialny mostek utrzymujący stan :hover podczas przesuwania kursora */
 .dropdown-menu::before {
   content: "";
   position: absolute;
@@ -184,7 +184,6 @@ header a {
   height: 10px;
 }
 
-/* --- MOBILNE MENU --- */
 .mobilny-menu-btn {
     display: none;
     flex-direction: column;

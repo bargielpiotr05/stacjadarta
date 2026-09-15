@@ -464,6 +464,53 @@
       color: #fefefe90;
       font-size: 16px;
     }
+    #kalendarz-wydarzen {
+      position: relative;
+      color: white;
+      padding: 20px;
+      width: 100%;
+      min-height: 500px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    #kalendarz-wydarzen::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url("./tla/tlo_zapowiedz-kalendarza.png") no-repeat center center;
+      background-size: cover;
+      filter: blur(2px);
+      z-index: 1;
+    }
+
+    #kalendarz-wydarzen h1 {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      font-size: 36px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      margin: 0;
+      width: 60%;
+    }
+
+    #kalendarz-wydarzen p {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      font-size: 18px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+      margin-top: 20px;
+      max-width: 70%;
+    }
 
     #add-to-home-screen-btn {
       position: relative;
