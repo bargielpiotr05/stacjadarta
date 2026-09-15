@@ -55,6 +55,7 @@
       font-size: 18px;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
       margin-top: 20px;
+      max-width: 70%;
     }
 
     .main-content .join-us {
@@ -456,7 +457,7 @@
       font-size: 18px;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
       margin-top: 20px;
-      max-width: 60%;
+      max-width: 70%;
     }
 
     #dodaj-do-pulpitu-p {
@@ -478,6 +479,7 @@
       border: 2px solid var(--secondary-color);
       border-radius: 50px;
       transition: background-color 0.3s, color 0.3s;
+      margin-bottom:30px;
     }
 
     #add-to-home-screen-btn:hover {
