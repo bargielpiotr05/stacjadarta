@@ -1,35 +1,42 @@
 <header>
-  <div class="header-left-section">
-    <a href="./index.html">
-      <img src="./loga/logo.png" alt="Stacja Dart" />
-      <h1>STACJA DARTA</h1>
-    </a>
-  </div>
-
-  <div class="header-right-section">
-    <div class="wersja-komputer">
-      <a href="./gry.html">GRY</a>
-      <a href="./turnieje.html">TURNIEJE</a>
-      <a href="./online.html">ONLINE</a>
-      <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
-      <a href="./rejestracja.html" class="join-us">DOŁĄCZ DO NAS</a>
+    <div class="header-left-section">
+        <a href="./index.html">
+            <img src="./loga/logo.png" alt="Stacja Dart" />
+            <h1>STACJA DARTA</h1>
+        </a>
     </div>
 
-    <button type="button" id="mobilny-menu-btn" class="mobilny-menu-btn" aria-label="Otwórz menu">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="header-right-section">
+        <div class="wersja-komputer">
+            <a href="./gry.html">GRY</a>
+            <a href="./turnieje.html">TURNIEJE</a>
+            <a href="./online.html">ONLINE</a>
+            <a href="./spolecznosc.html">SPOŁECZNOŚĆ</a>
+            <div class="dropdown-konto">
+                <button class="btn-konto-trigger">Konto <span class="strzalka">▾</span></button>
+                <div class="dropdown-menu">
+                    <a href="./logowanie.html">Zaloguj się</a>
+                    <a href="./rejestracja.html" class="wyroznienie">Zarejestruj się</a>
+                </div>
+            </div>
+        </div>
 
-    <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
-      <div class="mobilny-menu-content">
-        <button type="button" id="mobilny-menu-zamknij" class="mobilny-menu-zamknij">✖</button>
-        <ul class="mobilny-menu-links">
-          <li><a href="./gry.html">GRY</a></li>
-          <li><a href="./turnieje.html">TURNIEJE</a></li>
-          <li><a href="./online.html">ONLINE</a></li>
-          <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
-          <li><a href="./rejestracja.html" class="join-us">DOŁĄCZ DO NAS</a></li>
-        </ul>
-      </div>
+        <button type="button" id="mobilny-menu-btn" class="mobilny-menu-btn" aria-label="Otwórz menu"><span></span><span></span><span></span></button>
+
+        <div id="mobilny-menu-overlay" class="mobilny-menu-overlay">
+            <div class="mobilny-menu-content">
+                <button type="button" id="mobilny-menu-zamknij" class="mobilny-menu-zamknij">✖</button>
+                <ul class="mobilny-menu-links">
+                    <li class="zakladka">menu</li>
+                    <li><a href="./gry.html">GRY</a></li>
+                    <li><a href="./turnieje.html">TURNIEJE</a></li>
+                    <li><a href="./online.html">ONLINE</a></li>
+                    <li><a href="./spolecznosc.html">SPOŁECZNOŚĆ</a></li>
+                    <li class="zakladka"><p>Konto</p></li>
+                    <li><a href="./logowanie.html">ZALOGUJ SIĘ</a></li>
+                    <li><a href="./rejestracja.html" class="wyroznienie">ZAREJESTRUJ SIĘ</a></li>
+                </ul>
+            </div>
+        </div>
     </div>
-  </div>
 </header>

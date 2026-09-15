@@ -106,7 +106,82 @@ header a {
 .header-right-section a:hover {
     text-decoration: underline;
     padding: 5px 10px;
-    border-radius: 50px;
+}
+/* Kontener dropdownu */
+.dropdown-konto {
+  position: relative;
+  display: inline-block;
+}
+
+/* Przycisk aktywujący */
+.btn-konto-trigger {
+  background-color: transparent;
+  color: #fff;
+  border: 2px solid var(--secondary-color);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-konto-trigger:hover {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+/* Rozwijana lista (domyślnie ukryta) */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid var(--primary-color-border);
+  border-radius: 12px;
+  min-width: 160px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  padding: 6px 0;
+  z-index: 1000;
+}
+
+/* Pokazywanie po najechaniu na kontener */
+.dropdown-konto:hover .dropdown-menu {
+  display: block;
+}
+
+/* Elementy wewnątrz menu */
+.dropdown-menu a {
+  display: block;
+  padding: 10px 16px;
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.dropdown-menu a:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+  padding: 10px 16px ;
+}
+
+.dropdown-menu a.wyroznienie {
+  color: var(--secondary-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+/* Niewidzialny mostek utrzymujący stan :hover podczas przesuwania kursora */
+.dropdown-menu::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 10px;
 }
 
 /* --- MOBILNE MENU --- */
@@ -229,6 +304,24 @@ header a {
     align-items: center;
     display: flex;
     justify-content: center;
+}
+.mobilny-menu-links .zakladka{
+  text-align: left;
+  padding: 0 20px ;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--secondary-color);
+  border-bottom: 3px solid var(--secondary-color);
+}
+.mobilny-menu-links .zakladka p{
+  margin: 0;
+  padding:0;
+}
+.mobilny-menu-links .wyroznienie{
+  background-color: var(--secondary-color)!important;
+  color: var(--primary-color) !important;
+  border: none;
 }
     @media (max-width: 1150px) {
       .header-left-section h1 {
