@@ -1720,7 +1720,7 @@
         // Wspólny nagłówek dla obu tabel
         let theadHtml = `<thead><tr><th style="width:28%">Statystyki</th>`;
         gracze.forEach((g) => {
-          theadHtml += `<th>${g.nazwa}</th>`;
+          theadHtml += `<th><div class="nick-przewijany">${g.nazwa}</div></th>`;
         });
         theadHtml += `</tr></thead>`;
 
@@ -1813,7 +1813,7 @@
                                 `;
           gracze.forEach((g) => {
             htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
-                                            ${g.nazwa}<br>
+                                            <div class="nick-przewijany">${g.nazwa}</div>
                                             <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
                                         </th>`;
           });

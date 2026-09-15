@@ -880,6 +880,73 @@ form h4 {
 .tabela-przebiegu tr:nth-child(even) {
   background-color: rgba(255, 255, 255, 0.02);
 }
+/* --- ZABEZPIECZENIE PRZED DŁUGIMI NICKAMI (Wersja Swipe) --- */
+
+.tabela-przebiegu,
+.tabela-statystyki {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Usuwamy przewijanie z całego nagłówka, żeby średnia stała w miejscu */
+.tabela-przebiegu th,
+.tabela-statystyki th {
+    overflow: hidden;
+    padding: 10px 4px; 
+}
+
+/* Nowy kontener TYLKO na nick - pozwala na scrollowanie palcem bez kropek */
+.nick-przewijany {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-overflow: clip;       /* Wyłącza wielokropek (...) */
+    -ms-overflow-style: none;  /* Ukrywa pasek w IE/Edge */
+    scrollbar-width: none;     /* Ukrywa pasek w Firefox */
+    margin-bottom: 4px;        /* Zastępuje dawne <br> nad średnią */
+}
+
+/* Ukrywa pasek przewijania w Chrome/Safari/iOS (zostaje samo przesuwanie palcem) */
+.nick-przewijany::-webkit-scrollbar {
+    display: none;
+}
+
+/* Reset dla komórek z punktami (naprawia ucięty tekst np. "Zdobyte 180") */
+.tabela-przebiegu td,
+.tabela-statystyki td {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word;
+}
+
+/* Sztywna szerokość i brak przewijania dla kolumny "Kolejka" */
+.tabela-przebiegu th:first-child,
+.tabela-przebiegu td:first-child {
+    width: 75px !important;
+    min-width: 75px;
+    overflow: visible !important;
+    white-space: normal !important;
+}
+
+/* Karty graczy na głównym ekranie podczas gry (tu wielokropek zostaje) */
+.karta-gracza h2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
+/* 4. Ucinanie za długiego nicku na głównych kartach graczy (podczas gry) */
+.karta-gracza h2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
 .fura-tekst {
   color: var(--color-red-text);
   font-size: 12px;
