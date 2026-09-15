@@ -20,10 +20,10 @@
     <script src="./menu.js" defer></script>
 
     <script>
-      // Inicjalizacja klienta w klasyczna.html
-      const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
-      const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Inicjalizacja klienta omijająca konflikt nazw z menu.js
+      const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
+      const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+      window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     </script>
 
     <!-- Dodane automatyczne poprawki UI -->
@@ -1554,6 +1554,8 @@
         aktualizujKartyUI();
         sprawdzTureBota();
       }
+
+      // Flaga blokująca wielokrotny zapis w ramach jednego pojedynku
       // Flaga blokująca wielokrotny zapis w ramach jednego pojedynku
       let czyZapisanoStatystykiMeczu = false;
 
@@ -1561,48 +1563,48 @@
         if (czyZapisanoStatystykiMeczu) return;
         czyZapisanoStatystykiMeczu = true;
 
-        const historiaRundDoZapisu = typeof historiaMeczuLegi !== "undefined" ? historiaMeczuLegi : [];
+        const historiaRundDoZapisu = typeof historiaMeczuLegi !== "undefined" ? JSON.parse(JSON.stringify(historiaMeczuLegi)) : [];
 
+        // 1. Bezpieczny obiekt do lokalnego zapisu (omija błędy undefined)
         const podsumowanieMeczu = {
           id: Date.now(),
-          data: new Date().toLocaleDateString("pl-PL", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          }),
+          data: new Date().toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }),
           punktyStartowe: punktyStartowe,
           doceloweLegi: doceloweLegi,
           zwyciezca: zwyciezca ? zwyciezca.nazwa : "Trening",
           gracze: gracze.map((g) => ({
+            id: g.id,
             nazwa: g.nazwa,
             wygraneLegi: g.wygraneLegi,
-            srednia: obliczSredniaGracza(g.id),
-            srednia9: obliczSrednia9Lotek(g.id),
-            najlepszyRzut: g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
+            srednia: typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(g.id) : "0.00",
+            srednia9: typeof obliczSrednia9Lotek === "function" ? obliczSrednia9Lotek(g.id) : "0.00",
+            najlepszyRzut: g.rzuty && g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
             najlepszyLeg: g.najlepszyLeg || "-",
-            liczba180: g.rzuty.filter((r) => r === 180).length,
+            liczba180: g.rzuty ? g.rzuty.filter((r) => r === 180).length : 0,
             skutecznoscDouble: g.lotkiNaDoubla > 0 ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%` : "0%",
           })),
         };
 
-        // 1. Zapis lokalny do pamięci urządzenia
+        // 2. Zapis lokalny do pamięci urządzenia
         const historia = JSON.parse(localStorage.getItem("sd_historia_meczow") || "[]");
         historia.unshift(podsumowanieMeczu);
         if (historia.length > 30) historia.pop();
         localStorage.setItem("sd_historia_meczow", JSON.stringify(historia));
 
-        // 2. Zapis w profilu Supabase
-        if (typeof supabaseClient !== "undefined") {
+        // 3. Zapis do relacyjnych tabel SQL w Supabase
+        if (typeof supabaseClient !== "undefined" && supabaseClient) {
           try {
-            const {
-              data: { session },
-            } = await supabaseClient.auth.getSession();
-            if (!session?.user) return;
-            if (typeof czyWidz !== "undefined" && czyWidz) return;
+            const { data: sessionData, error: sessionErr } = await supabaseClient.auth.getSession();
 
-            const user = session.user;
+            if (sessionErr || !sessionData?.session?.user) {
+              console.warn("Brak sesji. Statystyki nie trafiają do Supabase.");
+              return;
+            }
+
+            const user = sessionData.session.user;
+            const userId = user.id; // Gwarancja UUID z bazy
             const meta = user.user_metadata || {};
-            const mojNick = meta.username || user.email.split("@")[0];
+            const mojNick = meta.username || (user.email ? user.email.split("@")[0] : "Gracz");
 
             let mojGracz = null;
             let rywalGracz = null;
@@ -1617,51 +1619,66 @@
 
             if (!mojGracz) return;
 
-            const czyWygralem = zwyciezca && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa);
-            const nowaMojaSrednia = parseFloat(obliczSredniaGracza(mojGracz.id)) || 0;
-            const nowaSrednia9 = parseFloat(obliczSrednia9Lotek(mojGracz.id)) || 0;
-            const moje180 = mojGracz.rzuty.filter((r) => r === 180).length;
+            // Bezpieczne sprawdzanie zwycięzcy (omija błąd, gdy zwyciezca nie istnieje w trybie treningu)
+            const czyWygralem = zwyciezca ? zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa : false;
 
-            const dotychczasMecze = parseInt(meta.mecze_rozegrane) || 0;
-            const dotychczasWygrane = parseInt(meta.zwyciestwa) || 0;
-            const dotychczasPorazki = parseInt(meta.porazki) || 0;
-            const dotychczasSrednia = parseFloat(meta.srednia_ogolna) || 0;
-            const dotychczasSrednia9 = parseFloat(meta.srednia_9lotek) || 0;
-            const dotychczas180 = parseInt(meta.max_180) || 0;
+            const statyMojGracz = podsumowanieMeczu.gracze.find((g) => g.id === mojGracz.id);
+            const nowaMojaSrednia = parseFloat(statyMojGracz?.srednia) || 0;
+            const nowaSrednia9 = parseFloat(statyMojGracz?.srednia9) || 0;
+            const moje180 = statyMojGracz?.liczba180 || 0;
 
-            const noweMecze = dotychczasMecze + 1;
-            const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
+            // ==========================================
+            // KROK A: Aktualizacja public.profiles
+            // ==========================================
+            const { data: obecnyProfil } = await supabaseClient.from("profiles").select("*").eq("id", userId).maybeSingle();
 
-            const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
+            if (obecnyProfil) {
+              const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
+              const dotychczasWygrane = parseInt(obecnyProfil.wygrane_mecze) || 0;
+              const dotychczasSrednia = parseFloat(obecnyProfil.srednia) || 0;
+              const dotychczasSrednia9 = parseFloat(obecnyProfil.srednia_9_lotek) || 0;
+              const dotychczas180 = parseInt(obecnyProfil.ilosc_180) || 0;
 
-            const wynikMeczu = rywalGracz ? `${mojGracz.wygraneLegi} - ${rywalGracz.wygraneLegi}` : `${mojGracz.wygraneLegi} legów`;
+              const noweMecze = dotychczasMecze + 1;
+              const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
+              const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
 
-            const historiaZProfilu = Array.isArray(meta.ostatnie_mecze) ? meta.ostatnie_mecze : [];
-            const nowyWpis = {
-              id: Date.now(),
-              przeciwnik: rywalGracz ? rywalGracz.nazwa : "Trening Solo",
-              wynik: wynikMeczu,
-              czyWygrana: czyWygralem,
-              data: new Date().toLocaleDateString("pl-PL"),
-              historiaMeczuLegi: historiaRundDoZapisu,
-              graczeInfo: gracze.map((g) => ({ id: g.id, nazwa: g.nazwa })),
+              await supabaseClient
+                .from("profiles")
+                .update({
+                  rozegrane_mecze: noweMecze,
+                  wygrane_mecze: czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane,
+                  srednia: nowaSredniaOgolna,
+                  srednia_9_lotek: nowaSrednia9Ogolna,
+                  ilosc_180: dotychczas180 + moje180,
+                  zaktualizowano: new Date().toISOString(),
+                })
+                .eq("id", userId);
+            }
+
+            // ==========================================
+            // KROK B: Zapisanie przebiegu meczu do public.matches
+            // ==========================================
+            const idZwyciezcy = czyWygralem ? userId : null;
+
+            const payloadMeczu = {
+              host_id: userId,
+              gosc_id: null,
+              zwyciezca_id: idZwyciezcy,
+              wynik_host: mojGracz.wygraneLegi || 0,
+              wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
+              format_gry: `${punktyStartowe} ${trybWyjscia.toUpperCase()}`,
+              pelny_przebieg_meczu: historiaRundDoZapisu,
+              statystyki_graczy: podsumowanieMeczu.gracze,
             };
 
-            const zaktualizowanaHistoria = [nowyWpis, ...historiaZProfilu].slice(0, 5);
+            const { error: matchErr } = await supabaseClient.from("matches").insert([payloadMeczu]);
 
-            await supabaseClient.auth.updateUser({
-              data: {
-                mecze_rozegrane: noweMecze,
-                zwyciestwa: czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane,
-                porazki: !czyWygralem && gracze.length > 1 ? dotychczasPorazki + 1 : dotychczasPorazki,
-                srednia_ogolna: nowaSredniaOgolna,
-                srednia_9lotek: nowaSrednia9Ogolna,
-                max_180: dotychczas180 + moje180,
-                ostatnie_mecze: zaktualizowanaHistoria,
-              },
-            });
+            if (matchErr) {
+              console.error("Błąd zapisu tabeli matches:", matchErr);
+            }
           } catch (err) {
-            console.error("Błąd zapisu statystyk gracza:", err);
+            console.error("Krytyczny błąd zapisu statystyk (Supabase):", err);
           }
         }
       }
@@ -1892,28 +1909,6 @@
       // ==========================================
       // PANCERNY AUTOZAPIS MECZU (F5)
       // ==========================================
-
-      function zapiszStanMeczuDoStorage() {
-        if (ekranGry.style.display !== "block" || new URLSearchParams(window.location.search).get("pokoj")) return;
-
-        const daneMeczu = {
-          punktyStartowe,
-          doceloweLegi,
-          aktualnaKolejka,
-          gracze,
-          liczbaGraczy,
-          aktualnyGraczIndex,
-          graczZaczynajacyLegIndex,
-          trybWejscia,
-          trybWyjscia,
-          limitLotekAktywny,
-          maksymalnyLimitLotek,
-          historiaMeczuLegi,
-          historiaAktualnegoLegu,
-        };
-
-        localStorage.setItem("sd_trwajacy_mecz", JSON.stringify(daneMeczu));
-      }
 
       function usunStanMeczuZStorage() {
         localStorage.removeItem("sd_trwajacy_mecz");
