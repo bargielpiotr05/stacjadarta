@@ -30,17 +30,14 @@
       background-size: cover;
       filter: blur(2px);
       z-index: 1;
-      -webkit-mask-image: radial-gradient(
-        circle,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0) 100%
-      );
-      mask-image: radial-gradient(
-        circle,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0) 100%
-      );
+      -webkit-mask-image: radial-gradient(circle,
+          rgba(0, 0, 0, 1) 60%,
+          rgba(0, 0, 0, 0) 100%);
+      mask-image: radial-gradient(circle,
+          rgba(0, 0, 0, 1) 60%,
+          rgba(0, 0, 0, 0) 100%);
     }
+
     .main-content h1 {
       position: relative;
       z-index: 2;
@@ -50,6 +47,7 @@
       margin: 0;
       width: 60%;
     }
+
     .main-content p {
       position: relative;
       z-index: 2;
@@ -58,6 +56,7 @@
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
       margin-top: 20px;
     }
+
     .main-content .join-us {
       position: relative;
       z-index: 2;
@@ -103,8 +102,10 @@
       flex: 0 0 calc((100% - 40px) / 3);
       display: flex;
       flex-direction: row;
-      align-items: flex-start; /* Wyrównanie ikony do góry tekstu */
-      gap: 20px; /* Odstęp między ikoną a tekstem */
+      align-items: flex-start;
+      /* Wyrównanie ikony do góry tekstu */
+      gap: 20px;
+      /* Odstęp między ikoną a tekstem */
       background-color: var(--primary-color);
       color: white;
       padding: 25px;
@@ -126,11 +127,13 @@
     .carousel-text-content {
       display: flex;
       flex-direction: column;
-      text-align: left; /* Zmiana wyrównania tekstu na lewo */
+      text-align: left;
+      /* Zmiana wyrównania tekstu na lewo */
     }
 
     .carousel-block h2 {
-      margin: 0 0 10px 0; /* Usunięcie górnego marginesu i dodanie dolnego */
+      margin: 0 0 10px 0;
+      /* Usunięcie górnego marginesu i dodanie dolnego */
       color: white;
       font-weight: bold;
       font-size: 22px;
@@ -143,21 +146,20 @@
     }
 
     .carousel-block img {
-      flex-shrink: 0; /* Blokuje zgniatanie ikony */
+      flex-shrink: 0;
+      /* Blokuje zgniatanie ikony */
       width: 48px;
       height: auto;
       border-radius: 10px;
       padding-top: 30px;
 
       /* Zielony filtr */
-      filter: brightness(0) saturate(100%) invert(64%) sepia(80%) saturate(450%)
-        hue-rotate(74deg) brightness(95%) contrast(90%);
+      filter: brightness(0) saturate(100%) invert(64%) sepia(80%) saturate(450%) hue-rotate(74deg) brightness(95%) contrast(90%);
       transition: filter 0.3s ease;
     }
 
     .carousel-block:hover img {
-      filter: brightness(0) saturate(100%) invert(80%) sepia(50%) saturate(400%)
-        hue-rotate(74deg) brightness(105%) contrast(100%);
+      filter: brightness(0) saturate(100%) invert(80%) sepia(50%) saturate(400%) hue-rotate(74deg) brightness(105%) contrast(100%);
     }
 
     .carousel-btn {
@@ -189,9 +191,11 @@
     .prev-btn {
       left: 5px;
     }
+
     .next-btn {
       right: 5px;
     }
+
     /* Styl dla głównego kontenera stopki */
 
     @media (max-width: 900px) {
@@ -203,14 +207,18 @@
     @media (max-width: 600px) {
       .carousel-block {
         flex: 0 0 100%;
-        flex-direction: column; /* Na małych ekranach przywraca ikonę nad tekst dla lepszej czytelności */
+        flex-direction: column;
+        /* Na małych ekranach przywraca ikonę nad tekst dla lepszej czytelności */
         align-items: center;
         text-align: center;
       }
+
       .carousel-text-content {
         text-align: center;
       }
-    } /* --- NOWE MOBILNE MENU (WYSUWANE Z BOKU) --- */
+    }
+
+    /* --- NOWE MOBILNE MENU (WYSUWANE Z BOKU) --- */
     .mobilny-menu-btn {
       display: none;
       flex-direction: column;
@@ -257,7 +265,8 @@
     .mobilny-menu-content {
       position: fixed;
       top: 0;
-      right: -100%; /* Startuje schowane poza ekranem */
+      right: -100%;
+      /* Startuje schowane poza ekranem */
       width: 60%;
       max-width: 350px;
       height: 100vh;
@@ -273,7 +282,8 @@
     }
 
     .mobilny-menu-overlay.otwarte .mobilny-menu-content {
-      right: 0; /* Wysuwa się płynnie do zera */
+      right: 0;
+      /* Wysuwa się płynnie do zera */
     }
 
     .mobilny-menu-zamknij {
@@ -336,6 +346,7 @@
       width: 80%;
       border-radius: 18px !important;
     }
+
     .mobilny-menu-links li:has(a.join-us) {
       background-color: var(--primary-color);
       color: var(--primary-color) !important;
@@ -349,6 +360,7 @@
       background-color: var(--secondary-color-hover);
       color: var(--primary-color) !important;
     }
+
     .zapowiedz-aplikacji {
       position: relative;
       display: flex;
@@ -356,15 +368,18 @@
       min-height: 600px;
       overflow: hidden;
       max-width: 1200px;
-        margin: 0 auto;
+      margin: 0 auto;
     }
+
     .lewa-strona {
       width: 40%;
       padding: 40px;
     }
+
     .info-aplikacji {
       background-color: var(--primary-color);
     }
+
     .info-aplikacji h2 {
       background-color: var(--primary-color);
       padding-top: 20px;
@@ -374,12 +389,14 @@
       margin: 0;
       border-top: 2px solid var(--secondary-color);
     }
+
     .lewa-strona p {
       color: lightgrey;
       font-size: 16px;
       line-height: 1.6;
       text-align: left;
     }
+
     .prawa-strona-tlo {
       width: 60%;
       display: flex;
@@ -387,45 +404,248 @@
       align-items: center;
       margin: 10px;
     }
+
     .prawa-strona-tlo img {
       width: auto;
       height: 80%;
       padding: 20px;
     }
 
+    #dodaj-do-pulpitu {
+      position: relative;
+      color: white;
+      padding: 20px;
+      width: 100%;
+      min-height: 500px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    #dodaj-do-pulpitu::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url("./tla/background_zapowiedz.png") no-repeat center center;
+      background-size: cover;
+      filter: blur(2px);
+      z-index: 1;
+    }
+
+    #dodaj-do-pulpitu h1 {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      font-size: 36px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      margin: 0;
+      width: 60%;
+    }
+
+    #dodaj-do-pulpitu p {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      font-size: 18px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+      margin-top: 20px;
+      max-width: 60%;
+    }
+
+    #dodaj-do-pulpitu-p {
+      color: #fefefe90;
+      font-size: 16px;
+    }
+
+    #add-to-home-screen-btn {
+      position: relative;
+      z-index: 2;
+      font-weight: bold;
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+      text-decoration: none;
+      text-transform: uppercase;
+      color: white;
+      background-color: var(--secondary-color);
+      border: 2px solid var(--secondary-color);
+      border-radius: 50px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    #add-to-home-screen-btn:hover {
+      background-color: var(--secondary-color-hover);
+      color: var(--primary-color) !important;
+      text-decoration: none !important;
+      cursor: pointer;
+    }
+    .przewin-do-gory{
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: var(--secondary-color);
+      color: var(--primary-color);
+      border: none;
+      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      font-size: 24px;
+      text-align: center;
+      line-height: 40px;
+      cursor: pointer;
+      z-index: 1000;
+      text-decoration: none;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* --- GŁÓWNA KARUZELA BANEROWA (#karuzela-main) --- */
+#karuzela-main {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.karuzela-main-window {
+  width: 100%;
+  overflow: hidden;
+}
+
+.karuzela-main-track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.blok-karuzeli {
+  flex: 0 0 100%;
+  min-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Przyciski nawigacyjne lewo/prawo */
+.main-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(17, 24, 39, 0.65);
+  color: var(--secondary-color);
+  border: 2px solid var(--secondary-color);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
+}
+
+.main-carousel-btn:hover {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+.main-carousel-btn.prev {
+  left: 20px;
+}
+
+.main-carousel-btn.next {
+  right: 20px;
+}
+
+/* Kropki wskaźnika aktywnego slajdu */
+.karuzela-main-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.karuzela-main-dots .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--secondary-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.karuzela-main-dots .dot.active {
+  background: var(--secondary-color);
+  transform: scale(1.25);
+}
+
+@media (max-width: 768px) {
+  .main-carousel-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+  .main-carousel-btn.prev {
+    left: 10px;
+  }
+  .main-carousel-btn.next {
+    right: 10px;
+  }
+}
     /* --- MEDIA QUERY DLA MOBILNEGO MENU --- */
     @media (max-width: 1150px) {
       .header-left-section h1 {
         display: none;
       }
+
       .header-right-section .wersja-komputer {
         display: none;
       }
+
       .mobilny-menu-btn {
         display: flex;
       }
+
       .main-content h1 {
         font-size: 28px;
         width: 80%;
       }
     }
+
     @media (max-width: 1500px) {
       .zapowiedz-aplikacji {
         flex-direction: column;
         align-items: center;
         max-width: 100%;
       }
+
       .info-aplikacji {
         display: flex;
         flex-direction: column;
       }
+
       .lewa-strona {
         width: 90%;
         padding: 5px;
       }
+
       .prawa-strona-tlo {
         width: 100%;
       }
+
       .prawa-strona-tlo img {
         height: 300px;
         padding: 0;

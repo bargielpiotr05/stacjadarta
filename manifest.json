@@ -1,0 +1,21 @@
+{
+  "name": "Stacja Darta",
+  "short_name": "Stacja Darta",
+  "description": "Platforma dartowa online - gry, treningi, statystyki i społeczność graczy.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090723",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "./loga/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./loga/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
