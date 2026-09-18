@@ -323,7 +323,38 @@ main {
     width: 100%;
     padding: 12px;
 }
-.btn-primary{
-
+#model-drabinkowy{
+    width: 100%;
+}
+#lewa-strona{
+    width: 50%;
+}
+.mecz{
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-form-color);
+    padding:0;
+    width: 150px;
+    margin: 20px 0;
+}
+.nazwa-gracz{
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+#gracz-1:first-child{
+    border-bottom: 1px solid var(--secondary-color);
+}
+.gracz{
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.wynik-gracz{
+    background-color: var(--primary-form-inside-border-color);
+    width: 30%;
+    margin: 0;
+    text-align: center;
+    padding: 5px;
 }
 @media (max-width: 1050px) {}

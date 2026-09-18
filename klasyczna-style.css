@@ -1034,6 +1034,9 @@ form h4 {
 .popup-btn-yes:hover {
   background-color: var(--secondary-color-hover);
 }
+.popup-btn-no{
+  margin-bottom:10px;
+}
 .popup-btn-no {
   background-color: #475569;
   color: white;
