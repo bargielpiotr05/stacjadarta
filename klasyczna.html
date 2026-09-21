@@ -1695,6 +1695,41 @@
 
             function zakonczMecz(zwyciezca) {
                 zapiszMeczDoHistorii(zwyciezca);
+                let czyToTurniej = false;
+
+                // --- INTEGRACJA Z TURNIEJAMI: ZAPIS WYNIKU ---
+                const suroweDaneTurnieju = localStorage.getItem("sd_konfiguracja_gry");
+                if (suroweDaneTurnieju) {
+                    try {
+                        const konfiguracja = JSON.parse(suroweDaneTurnieju);
+                        if (konfiguracja.tryb === "turniej") {
+                            czyToTurniej = true;
+
+                            // Pobieramy średnie OBU graczy
+                            const sredniaZwyciezcy = typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(zwyciezca.id) : "0.00";
+                            const przegrany = gracze.find((g) => g.id !== zwyciezca.id);
+                            const sredniaPrzegranego = przegrany && typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(przegrany.id) : "0.00";
+
+                            // Zapisujemy wynik do schowka turniejowego (z podziałem na role wygrany/przegrany)
+                            const wynikiTurnieju = JSON.parse(localStorage.getItem("sd_wyniki_turnieju") || "{}");
+                            wynikiTurnieju[konfiguracja.meczId] = {
+                                zwyciezca: zwyciezca.nazwa,
+                                przegrany: przegrany ? przegrany.nazwa : "Przeciwnik",
+                                wygraneZwyciezcy: zwyciezca.wygraneLegi,
+                                wygranePrzegranego: przegrany ? przegrany.wygraneLegi : 0,
+                                sredniaZwyciezcy: `(${sredniaZwyciezcy})`,
+                                sredniaPrzegranego: `(${sredniaPrzegranego})`,
+                            };
+
+                            localStorage.setItem("sd_wyniki_turnieju", JSON.stringify(wynikiTurnieju));
+                            localStorage.removeItem("sd_konfiguracja_gry"); // Czyścimy schowek meczowy
+                        }
+                    } catch (e) {
+                        console.error("Błąd zapisu wyników turniejowych:", e);
+                    }
+                }
+
+                // --- ZMIANA EKRANU UI ---
                 ekranGry.style.display = "none";
                 ekranWygranej.style.display = "flex";
                 powrotDoGier.style.display = "inline-flex";
@@ -1705,7 +1740,13 @@
                     wygranyTekst.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
                 }
 
-                // Przywracamy domyślnie pierwszą zakładkę
+                // ZMIANA TEKSTU PRZYCISKU POWROTNEGO
+                const btnKolejna = document.getElementById("zacznij-kolejna");
+                if (btnKolejna) {
+                    btnKolejna.textContent = czyToTurniej ? "WRÓĆ DO TURNIEJU" : "ROZPOCZNIJ NOWĄ GRĘ";
+                }
+
+                // Przywracamy domyślnie pierwszą zakładkę statystyk
                 przelaczStatystyki("ogolne");
 
                 // Wspólny nagłówek dla obu tabel
@@ -1854,6 +1895,13 @@
             });
 
             przyciskKolejnaGra.addEventListener("click", () => {
+                // Jeśli jesteśmy w trybie turniejowym, przycisk ma wracać do drabinki/grup
+                if (przyciskKolejnaGra.textContent === "WRÓĆ DO TURNIEJU") {
+                    window.location.href = "./turnieje.html";
+                    return;
+                }
+
+                // Normalny tryb gry - resetujemy tarczę
                 ekranWygranej.style.display = "none";
                 formularzUstawien.style.display = "flex";
                 tytulStrony.style.display = "block";
@@ -1914,6 +1962,7 @@
 
                 const daneMeczu = {
                     punktyStartowe,
+                    limitLotek: typeof maksymalnyLimitLotek !== 'undefined' ? maksymalnyLimitLotek : 30,
                     doceloweLegi,
                     aktualnaKolejka,
                     gracze,
@@ -1944,6 +1993,7 @@
                     const stan = JSON.parse(suroweDane);
 
                     punktyStartowe = stan.punktyStartowe;
+                    maksymalnyLimitLotek = stan.limit || 30;
                     doceloweLegi = stan.doceloweLegi;
                     aktualnaKolejka = stan.aktualnaKolejka;
                     gracze = stan.gracze;
@@ -2063,6 +2113,68 @@
             if (!new URLSearchParams(window.location.search).get("pokoj")) {
                 przywrocMeczZStorage();
             }
+            // ==========================================
+            // INTEGRACJA Z MODUŁEM TURNIEJOWYM
+            // ==========================================
+            document.addEventListener("DOMContentLoaded", () => {
+                const suroweDane = localStorage.getItem("sd_konfiguracja_gry");
+                if (!suroweDane) return;
+
+                const konfiguracja = JSON.parse(suroweDane);
+                if (konfiguracja.tryb !== "turniej") return;
+
+                // Usuń ewentualny stary autozapis gry solo, aby nie brać starych stanów
+                localStorage.removeItem("sd_trwajacy_mecz");
+
+                // 1. Wpisanie graczy
+                const inputGracz1 = document.getElementById("nazwa-gracza1");
+                const inputGracz2 = document.getElementById("nazwa-gracza2");
+
+                if (inputGracz1) {
+                    inputGracz1.value = konfiguracja.gracz1;
+                    inputGracz1.disabled = true;
+                }
+                if (inputGracz2) {
+                    inputGracz2.value = konfiguracja.gracz2;
+                    inputGracz2.disabled = true;
+                }
+
+                // 2. Ustawienie parametrów gry
+                const inputPunkty = document.getElementById("punkty");
+                if (inputPunkty) {
+                    inputPunkty.value = konfiguracja.punktyStartowe;
+                    inputPunkty.disabled = true;
+                }
+
+                const maxLiczbaLotek = document.getElementById("limit-lotek-wartosc");
+                if(maxLiczbaLotek){
+                    maxLiczbaLotek.value = konfiguracja.limitLotek;
+                    maxLiczbaLotek.disabled = true;
+                }
+
+                const inputLiczbaRund = document.getElementById("liczba_rund");
+                if (inputLiczbaRund && konfiguracja.doIluWygranych) {
+                    inputLiczbaRund.value = konfiguracja.doIluWygranych;
+                    inputLiczbaRund.disabled = true;
+                }
+
+                const selectWejsciaEl = document.getElementById("select-wejscia");
+                if (selectWejsciaEl) {
+                    selectWejsciaEl.value = konfiguracja.in;
+                    selectWejsciaEl.disabled = true;
+                }
+
+                const selectWyjsciaEl = document.getElementById("select-wyjscia");
+                if (selectWyjsciaEl) {
+                    selectWyjsciaEl.value = konfiguracja.out;
+                    selectWyjsciaEl.disabled = true;
+                }
+
+                setTimeout(() => {
+                    const przyciskGraj = document.getElementById("zacznij-grac");
+                    if (przyciskGraj) przyciskGraj.click();
+                }, 200);
+            });
         </script>
 
         <script src="./dartbot.js" defer></script>

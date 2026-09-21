@@ -26,7 +26,7 @@
                 <div class="sekcja-formularza">
                     <h3 class="sekcja-tytul">Uczestnicy turnieju</h3>
                     <div>
-                        <button type="button" id="zobacz-liste-graczy">Lista Graczy (Ilość: <span id="licznik-graczy-btn">2</span> graczy)</button>
+                        <button type="button" id="zobacz-liste-graczy">Lista Graczy (Ilość: <span id="licznik-graczy-btn">0</span> graczy)</button>
                     </div>
                 </div>
 
@@ -82,53 +82,56 @@
                     </label>
                 </div>
 
+                <!-- NOWE POLE (ukryte domyślnie, pokazuje się gdy Faza grupowa jest zaznaczona) -->
+                <div id="opcje-fazy-pucharowej" class="sekcja-formularza" style="display: none; margin-top: 15px">
+                    <label>
+                        <h4>Awans z każdej grupy (ilość graczy):</h4>
+                        <input type="number" id="ilu-wychodzi" class="wspolny-input" min="1" value="2" />
+                    </label>
+                </div>
+
                 <div class="przycisk-zacznij-grac">
                     <button type="button" id="zacznij-grac">Wylosuj drabinkę</button>
                 </div>
             </form>
+            <button onclick="zresetujSystemTurnieju()" type="button" class="btn-reset-turnieju" style="display: none">Zakończ turniej</button>
+            <!-- SEKCJA TABELA -->
+            <div id="model-tabela" style="display: none">
+                <h2>Grupy</h2>
 
-            <div id="model-drabinkowy">
-                <h1>Drabinka</h1>
-                <div id="lewa-strona">
-                    <div id="mecz-1" class="mecz">
-                        <div id="gracz-1" class="gracz">
-                            <p id="nazwa-gracz-1" class="nazwa-gracz">Gracz 1</p>
-                            <p id="wynik-gracz-1" class="wynik-gracz">1</p>
-                        </div>
-                        <div id="gracz-2" class="gracz">
-                            <p id="nazwa-gracz-2" class="nazwa-gracz">Gracz 2</p>
-                            <p id="wynik-gracz-2" class="wynik-gracz">3</p>    
-                        </div>
+                <!-- DODAJEMY WRAPPER TYLKO NA SAME TABELE -->
+                <div class="grupy-kontener"></div>
+                <!-- KONIEC WRAPPERA -->
+            </div>
+            <!-- SEKCJA DRABINKI -->
+            <div id="model-drabinkowy" style="display: none">
+                <h2>Drabinka</h2>
+
+                <!-- DODAJEMY WRAPPER SCROLLOWANIA -->
+                <div class="drabinka-scroll-wrapper">
+                    <div id="poziom-turnieju">
+                        <span>Ćwierćfinały (1/4)</span>
+                        <span>Półfinały (1/2)</span>
+                        <span>Finał</span>
                     </div>
-                    <div id="mecz-2" class="mecz">
-                        <div id="gracz-1" class="gracz">
-                            <p id="nazwa-gracz-1" class="nazwa-gracz">Gracz 1</p>
-                            <p id="wynik-gracz-1" class="wynik-gracz">1</p>
+
+                    <div class="drabinka-kontener">
+                        <!-- RUNDA 1 (Ćwierćfinały) -->
+
+                        <div class="drabinka-runda">
+                            <!-- PARA 1 -->
+                            <div class="drabinka-para"></div>
+                            <!-- PARA 2 -->
+                            <div class="drabinka-para"></div>
                         </div>
-                        <div id="gracz-2" class="gracz">
-                            <p id="nazwa-gracz-2" class="nazwa-gracz">Gracz 2</p>
-                            <p id="wynik-gracz-2" class="wynik-gracz">2</p>    
+
+                        <!-- RUNDA 2 (Półfinały) -->
+                        <div class="drabinka-runda">
+                            <div class="drabinka-para"></div>
                         </div>
-                    </div>
-                    <div id="mecz-3" class="mecz">
-                        <div id="gracz-1" class="gracz">
-                            <p id="nazwa-gracz-1" class="nazwa-gracz">Gracz 1</p>
-                            <p id="wynik-gracz-1" class="wynik-gracz">0</p>
-                        </div>
-                        <div id="gracz-2" class="gracz">
-                            <p id="nazwa-gracz-2" class="nazwa-gracz">Gracz 2</p>
-                            <p id="wynik-gracz-2" class="wynik-gracz">2</p>    
-                        </div>
-                    </div>
-                    <div id="mecz-4" class="mecz trwa">
-                        <div id="gracz-1" class="gracz">
-                            <p id="nazwa-gracz-1" class="nazwa-gracz">Gracz 1</p>
-                            <p id="wynik-gracz-1" class="wynik-gracz">1</p>
-                        </div>
-                        <div id="gracz-2" class="gracz">
-                            <p id="nazwa-gracz-2" class="nazwa-gracz">Gracz 2</p>
-                            <p id="wynik-gracz-2" class="wynik-gracz">1</p>    
-                        </div>
+
+                        <!-- RUNDA 3 (Finał) -->
+                        <div class="drabinka-runda runda-finalowa"></div>
                     </div>
                 </div>
             </div>
@@ -148,7 +151,7 @@
 
                         <!-- INTERAKTYWNY BLOK DODAWANIA GRACZA W LIŚCIE -->
                         <div id="wiersz-dodaj-gracza" class="wiersz-dodaj-gracza">
-                            <span class="numer-gracza" id="nr-dodaj-gracza">#3</span>
+                            <span class="numer-gracza" id="nr-dodaj-gracza">#1</span>
                             <div class="kafel-dodaj-wewnatrz">Dodaj gracza +</div>
                             <div class="placeholder-usun"></div>
                         </div>
@@ -189,8 +192,54 @@
             function aktualizujTekstPrzyciskuTurnieju() {
                 if (grupaChk && zacznijGracBtn) {
                     zacznijGracBtn.textContent = grupaChk.checked ? "Wylosuj grupy" : "Wylosuj drabinkę";
+
+                    const opcjePucharowe = document.getElementById("opcje-fazy-pucharowej");
+                    if (opcjePucharowe) {
+                        opcjePucharowe.style.display = grupaChk.checked ? "block" : "none";
+                    }
                 }
             }
+            // ======================================================
+            // PODŚWIETLANIE TYCH SAMYCH MECZÓW W TABELI
+            // ======================================================
+            const tabelaKontener = document.getElementById("model-tabela");
+
+            // Kiedy myszka wjeżdża na komórkę
+            tabelaKontener.addEventListener("mouseover", (e) => {
+                if (e.target.tagName === "TD") {
+                    const komorka = e.target;
+                    const zawartosc = komorka.textContent.trim();
+                    const tabela = komorka.closest("table");
+                    if (!tabela) return;
+
+                    // Pobieramy nagłówek dla aktualnej kolumny (żeby sprawdzić czy to "Mecz")
+                    const naglowek = tabela.rows[0].cells[komorka.cellIndex].textContent.toLowerCase();
+
+                    // Sprawdzamy czy w komórce jest numerek ORAZ czy kolumna nazywa się "Mecz..."
+                    if (zawartosc !== "" && !isNaN(zawartosc) && naglowek.includes("mecz")) {
+                        const wszystkieKomorki = tabela.querySelectorAll("td");
+                        wszystkieKomorki.forEach((td) => {
+                            const naglowekInnej = tabela.rows[0].cells[td.cellIndex].textContent.toLowerCase();
+
+                            // Zaznaczamy tylko, jeśli to ten sam numerek I też leży w kolumnie "Mecz"
+                            if (td.textContent.trim() === zawartosc && naglowekInnej.includes("mecz")) {
+                                td.classList.add("podswietlony-mecz");
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Kiedy myszka zjeżdża z komórki (usuwamy podświetlenie)
+            tabelaKontener.addEventListener("mouseout", (e) => {
+                if (e.target.tagName === "TD") {
+                    const aktualnaTabela = e.target.closest("table");
+                    if (!aktualnaTabela) return;
+
+                    const podswietlone = aktualnaTabela.querySelectorAll(".podswietlony-mecz");
+                    podswietlone.forEach((td) => td.classList.remove("podswietlony-mecz"));
+                }
+            });
 
             // Nasłuchiwanie na kliknięcie/zmianę stanu
             grupaChk?.addEventListener("change", aktualizujTekstPrzyciskuTurnieju);
@@ -316,6 +365,525 @@
                 dodajPoleGracza(gracz1);
                 dodajPoleGracza(gracz2);
             }
+            // ======================================================
+            // GŁÓWNY SILNIK GENERUJĄCY PODGLĄD WIZUALNY
+            // ======================================================
+            // Poprawiona obsługa przycisku "Wylosuj grupy / drabinkę"
+            zacznijGracBtn.addEventListener("click", () => {
+                const inputyGraczy = document.querySelectorAll(".input-gracza-turniej");
+                let listaGraczy = [];
+
+                inputyGraczy.forEach((input) => {
+                    if (input.value.trim() !== "") listaGraczy.push(input.value.trim());
+                });
+
+                if (listaGraczy.length < 2) {
+                    alert("Dodaj minimum 2 graczy!");
+                    return;
+                }
+
+                if (grupaChk.checked && listaGraczy.length < 3) {
+                    alert("Faza grupowa wymaga minimum 3 graczy!");
+                    return;
+                }
+
+                // TASUJEMY GRACZY TYLKO TUTAJ (przed startem drabinki)
+                if (!grupaChk.checked) {
+                    listaGraczy = listaGraczy.sort(() => Math.random() - 0.5);
+                }
+
+                const doceloweLegi = document.getElementById("liczba_rund").value || 3;
+                const docelowePunkty = document.getElementById("punkty").value || 501;
+
+                // KLUCZOWE: Czyścimy stare wyniki z pamięci przed wylosowaniem nowego turnieju!
+                localStorage.removeItem("sd_wyniki_turnieju");
+
+                // Zapisujemy stan turnieju
+                const iluWychodziEl = document.getElementById("ilu-wychodzi");
+                const awanse = iluWychodziEl ? iluWychodziEl.value : 2;
+
+                // Zapisujemy stan turnieju
+                localStorage.setItem(
+                    "sd_aktywny_turniej_stan",
+                    JSON.stringify({
+                        typ: grupaChk.checked ? "grupy" : "drabinka",
+                        gracze: listaGraczy,
+                        legi: doceloweLegi,
+                        punkty: docelowePunkty,
+                        limitLotek: typeof maksymalnyLimitLotek !== "undefined" ? maksymalnyLimitLotek : 30,
+                        iluWychodzi: awanse,
+                        faza: "grupowa", // Dodajemy wskaźnik fazy!
+                    }),
+                );
+
+                document.getElementById("formularz-ustawien").style.display = "none";
+                const widokTabeli = document.getElementById("model-tabela");
+                const widokDrabinki = document.getElementById("model-drabinkowy");
+
+                if (grupaChk.checked) {
+                    widokDrabinki.style.display = "none";
+                    widokTabeli.style.display = "block";
+                    generujFazeGrupowaPodglad(listaGraczy);
+                } else {
+                    widokTabeli.style.display = "none";
+                    widokDrabinki.style.display = "block";
+                    generujDrabinkePodglad(listaGraczy);
+                }
+
+                lokalneWczytajWynikiMeczow();
+            });
+
+            // ======================================================
+            // POMOCNICZA FUNKCJA: ŚREDNIA TURNIEJOWA ZAWODNIKA
+            // ======================================================
+            function obliczSredniaTurniejowa(nazwaGracza, wynikiTurnieju) {
+                let sumaSrednich = 0;
+                let liczbaMeczow = 0;
+
+                for (const meczId in wynikiTurnieju) {
+                    const mecz = wynikiTurnieju[meczId];
+                    if (mecz.zwyciezca === nazwaGracza && mecz.sredniaZwyciezcy) {
+                        // Wyciągamy same liczby z formatu "(50.00)"
+                        let sr = parseFloat(mecz.sredniaZwyciezcy.replace(/[^0-9.]/g, ""));
+                        if (!isNaN(sr)) {
+                            sumaSrednich += sr;
+                            liczbaMeczow++;
+                        }
+                    } else if (mecz.przegrany === nazwaGracza && mecz.sredniaPrzegranego) {
+                        let sr = parseFloat(mecz.sredniaPrzegranego.replace(/[^0-9.]/g, ""));
+                        if (!isNaN(sr)) {
+                            sumaSrednich += sr;
+                            liczbaMeczow++;
+                        }
+                    }
+                }
+
+                if (liczbaMeczow === 0) return "0.00";
+                return (sumaSrednich / liczbaMeczow).toFixed(2);
+            }
+
+            // 1. GENERATOR TABELI (STAŁA KOLEJNOŚĆ, DYNAMICZNE MIEJSCE + ŚREDNIA)
+            function generujFazeGrupowaPodglad(graczePoczatkowi) {
+                const kontener = document.getElementById("model-tabela");
+                const btnZakonczTurniej = document.querySelector(".btn-reset-turnieju");
+                btnZakonczTurniej.style.display = "block";
+                kontener.innerHTML = "<h2>Grupy</h2>";
+
+                let gracze = [...graczePoczatkowi];
+                let iloscGrup = 1;
+                if (gracze.length >= 6) {
+                    iloscGrup = Math.ceil(gracze.length / 4);
+                }
+
+                const grupy = Array.from({ length: iloscGrup }, () => []);
+                gracze.forEach((gracz, index) => {
+                    grupy[index % iloscGrup].push(gracz);
+                });
+
+                const kontenerGrup = document.createElement("div");
+                kontenerGrup.className = "grupy-kontener";
+
+                let globalneIdMeczu = 1;
+
+                const suroweWyniki = localStorage.getItem("sd_wyniki_turnieju");
+                const wynikiTurnieju = suroweWyniki ? JSON.parse(suroweWyniki) : {};
+
+                grupy.forEach((grupaGraczy, i) => {
+                    const nazwaGrupy = iloscGrup > 1 ? `Grupa ${String.fromCharCode(65 + i)}` : "Tabela Główna";
+
+                    const macierzMeczow = {};
+                    for (let w = 0; w < grupaGraczy.length; w++) {
+                        for (let k = w + 1; k < grupaGraczy.length; k++) {
+                            const g1 = grupaGraczy[w];
+                            const g2 = grupaGraczy[k];
+                            const idMeczu = globalneIdMeczu++;
+                            macierzMeczow[`${g1}-${g2}`] = idMeczu;
+                            macierzMeczow[`${g2}-${g1}`] = idMeczu;
+                        }
+                    }
+
+                    // TWORZENIE RANKINGU (TYLKO DLA OBLICZENIA MIEJSCA)
+                    let statystykiGraczy = grupaGraczy.map((nazwa) => ({
+                        nazwa: nazwa,
+                        meczeWyg: 0,
+                        legiWyg: 0,
+                        legiPrz: 0,
+                        roznicLegow: 0,
+                        miejsce: 0,
+                    }));
+
+                    statystykiGraczy.forEach((staty) => {
+                        grupaGraczy.forEach((przeciwnik) => {
+                            if (staty.nazwa !== przeciwnik) {
+                                const idMeczu = macierzMeczow[`${staty.nazwa}-${przeciwnik}`];
+                                if (wynikiTurnieju[idMeczu]) {
+                                    const wynik = wynikiTurnieju[idMeczu];
+                                    let mojeWygrane = 0;
+                                    let mojePrzegrane = 0;
+
+                                    if (wynik.zwyciezca === staty.nazwa) {
+                                        staty.meczeWyg += 1;
+                                        mojeWygrane = parseInt(wynik.wygraneZwyciezcy);
+                                        mojePrzegrane = parseInt(wynik.wygranePrzegranego);
+                                    } else if (wynik.przegrany === staty.nazwa) {
+                                        mojeWygrane = parseInt(wynik.wygranePrzegranego);
+                                        mojePrzegrane = parseInt(wynik.wygraneZwyciezcy);
+                                    }
+
+                                    staty.legiWyg += mojeWygrane;
+                                    staty.legiPrz += mojePrzegrane;
+                                }
+                            }
+                        });
+                        staty.roznicLegow = staty.legiWyg - staty.legiPrz;
+                    });
+
+                    // Sortujemy Kopię tablicy, żeby dowiedzieć się, które jest miejsce
+                    let posortowanyRanking = [...statystykiGraczy].sort((a, b) => {
+                        if (b.meczeWyg !== a.meczeWyg) return b.meczeWyg - a.meczeWyg;
+                        if (b.roznicLegow !== a.roznicLegow) return b.roznicLegow - a.roznicLegow;
+                        return b.legiWyg - a.legiWyg;
+                    });
+
+                    // Nadajemy miejsca z posortowanego rankingu z powrotem do oryginału
+                    posortowanyRanking.forEach((zawodnik, pozycja) => {
+                        const aktualnyZaw = statystykiGraczy.find((g) => g.nazwa === zawodnik.nazwa);
+                        aktualnyZaw.miejsce = pozycja + 1;
+                    });
+
+                    // TWORZENIE HTML WEDŁUG ORYGINALNEJ KOLEJNOŚCI GRACZY
+                    let tableHTML = `
+                        <div class="pojedyncza-grupa" style="width: 100%;">
+                            <h3 style="text-align:center; color: var(--secondary-color); margin-top:0;">${nazwaGrupy}</h3>
+                            <table style="width: 100%;">
+                                <tr><th></th>
+                    `;
+
+                    grupaGraczy.forEach((_, idx) => {
+                        tableHTML += `<th>Mecz ${idx + 1}</th>`;
+                    });
+                    tableHTML += `<th>MIEJSCE</th></tr>`;
+
+                    grupaGraczy.forEach((graczWiersz, wierszIdx) => {
+                        // OBLICZANIE ŚREDNIEJ DO TABELI
+                        const srTurniejowa = obliczSredniaTurniejowa(graczWiersz, wynikiTurnieju);
+
+                        tableHTML += `
+                        <tr>
+                            <td style="text-align: left; padding: 10px;">
+                                <div style="font-weight: bold;">${graczWiersz}</div>
+                                <div style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-top: 3px;">Śr: ${srTurniejowa}</div>
+                            </td>`;
+
+                        grupaGraczy.forEach((graczKolumna, kolumnaIdx) => {
+                            if (wierszIdx === kolumnaIdx) {
+                                tableHTML += `<td></td>`;
+                            } else {
+                                const idMeczu = macierzMeczow[`${graczWiersz}-${graczKolumna}`];
+
+                                tableHTML += `
+                                    <td class="oczekujacy-mecz" 
+                                        data-mecz-id="${idMeczu}" 
+                                        data-gracz1="${graczWiersz}" 
+                                        data-gracz2="${graczKolumna}" 
+                                        title="Zagraj: ${graczWiersz} vs ${graczKolumna}">
+                                        ${idMeczu}
+                                    </td>`;
+                            }
+                        });
+
+                        // DYNAMICZNE WSTAWIANIE OBLICZONEGO MIEJSCA W OSTATNIEJ KOLUMNIE (przywrócone kolory)
+                        const aktualneStaty = statystykiGraczy.find((g) => g.nazwa === graczWiersz);
+
+                        let stylMiejsca = "";
+                        if (aktualneStaty.miejsce === 1) stylMiejsca = "color: #fbbf24; font-weight: bold;";
+                        if (aktualneStaty.miejsce === 2) stylMiejsca = "color: #94a3b8; font-weight: bold;";
+
+                        tableHTML += `<td style="${stylMiejsca}">${aktualneStaty.miejsce}</td></tr>`;
+                    });
+
+                    tableHTML += `</table></div>`;
+                    kontenerGrup.innerHTML += tableHTML;
+                });
+                kontener.appendChild(kontenerGrup);
+            }
+
+            // 2. INTELIGENTNY GENERATOR DRABINKI (ŚREDNIE, KORONACJA, WOLNE LOSY)
+            function generujDrabinkePodglad(graczePoczatkowi) {
+                const wrapper = document.querySelector(".drabinka-scroll-wrapper");
+                const btnZakonczTurniej = document.querySelector(".btn-reset-turnieju");
+                btnZakonczTurniej.style.display = "block";
+                wrapper.innerHTML = "";
+
+                let gracze = [...graczePoczatkowi];
+                let potega = 2;
+                while (potega < gracze.length) potega *= 2;
+
+                const brakuje = potega - gracze.length;
+                for (let i = 0; i < brakuje; i++) gracze.push("-");
+
+                const drabinkaMecze = [];
+                let globalneId = 100;
+
+                const suroweWyniki = localStorage.getItem("sd_wyniki_turnieju");
+                const wynikiTurnieju = suroweWyniki ? JSON.parse(suroweWyniki) : {};
+
+                // --- LOGIKA BUDOWY DRABINKI (W TLE) ---
+                const runda1 = [];
+                for (let i = 0; i < gracze.length; i += 2) {
+                    runda1.push({ id: globalneId++, g1: gracze[i], g2: gracze[i + 1] });
+                }
+                drabinkaMecze.push(runda1);
+
+                const iloscRund = Math.log2(potega);
+
+                // Automatyczne wypełnianie kolejnych rund
+                for (let r = 1; r < iloscRund; r++) {
+                    const poprzednia = drabinkaMecze[r - 1];
+                    const obecna = [];
+
+                    for (let i = 0; i < poprzednia.length; i += 2) {
+                        let m1 = poprzednia[i];
+                        let m2 = poprzednia[i + 1];
+
+                        // Kto awansuje z pierwszego meczu pary?
+                        let w1 = "TBD";
+                        if (m1) {
+                            if (m1.g1 === "-") w1 = m1.g2;
+                            else if (m1.g2 === "-") w1 = m1.g1;
+                            else if (wynikiTurnieju[m1.id]) w1 = wynikiTurnieju[m1.id].zwyciezca;
+                        }
+
+                        // Kto awansuje z drugiego meczu pary?
+                        let w2 = "TBD";
+                        if (m2) {
+                            if (m2.g1 === "-") w2 = m2.g2;
+                            else if (m2.g2 === "-") w2 = m2.g1;
+                            else if (wynikiTurnieju[m2.id]) w2 = wynikiTurnieju[m2.id].zwyciezca;
+                        }
+
+                        obecna.push({ id: globalneId++, g1: w1, g2: w2 });
+                    }
+                    drabinkaMecze.push(obecna);
+                }
+
+                // --- WIZUALNE RENDEROWANIE DRABINKI ---
+                let poziomy = `<div id="poziom-turnieju">`;
+                for (let i = 1; i <= iloscRund; i++) {
+                    let nazwa = `Runda ${i}`;
+                    if (i === iloscRund) nazwa = "Finał";
+                    else if (i === iloscRund - 1) nazwa = "Półfinały (1/2)";
+                    else if (i === iloscRund - 2) nazwa = "Ćwierćfinały (1/4)";
+                    poziomy += `<span>${nazwa}</span>`;
+                }
+                poziomy += `</div>`;
+
+                let kontenerMeczow = `<div class="drabinka-kontener">`;
+                let czyZakonczonoFinal = false;
+                let ostatecznyMistrz = "";
+
+                for (let r = 0; r < iloscRund; r++) {
+                    let meczeWRundzie = drabinkaMecze[r];
+                    let klasaRundy = r === iloscRund - 1 ? "drabinka-runda runda-finalowa" : "drabinka-runda";
+                    kontenerMeczow += `<div class="${klasaRundy}">`;
+
+                    for (let p = 0; p < meczeWRundzie.length; p++) {
+                        if (p % 2 === 0) kontenerMeczow += `<div class="drabinka-para">`;
+
+                        let meczDane = meczeWRundzie[p];
+                        let g1 = meczDane.g1;
+                        let g2 = meczDane.g2;
+                        let idMeczu = meczDane.id;
+
+                        let wygrany1 = "";
+                        let wygrany2 = "";
+                        let wynik1 = "-";
+                        let wynik2 = "-";
+                        let srednia1 = "";
+                        let srednia2 = "";
+                        let statusKlasa = "";
+                        let attrZagraj = "";
+
+                        let toAutopass = g1 === "-" || g2 === "-";
+
+                        if (toAutopass) {
+                            wygrany1 = g2 === "-" ? "wygrany" : "przegrany";
+                            wygrany2 = g1 === "-" ? "wygrany" : "przegrany";
+                            wynik1 = g2 === "-" ? "W" : "-";
+                            wynik2 = g1 === "-" ? "W" : "-";
+                        } else if (wynikiTurnieju[idMeczu]) {
+                            const wynik = wynikiTurnieju[idMeczu];
+
+                            if (r === iloscRund - 1) {
+                                czyZakonczonoFinal = true;
+                                ostatecznyMistrz = wynik.zwyciezca;
+                            }
+
+                            if (wynik.zwyciezca === g1) {
+                                wygrany1 = "wygrany";
+                                wygrany2 = "przegrany";
+                                wynik1 = wynik.wygraneZwyciezcy;
+                                wynik2 = wynik.wygranePrzegranego;
+                                srednia1 = `<span class="srednia-drabinka">${wynik.sredniaZwyciezcy}</span>`;
+                                srednia2 = `<span class="srednia-drabinka">${wynik.sredniaPrzegranego}</span>`;
+                            } else {
+                                wygrany1 = "przegrany";
+                                wygrany2 = "wygrany";
+                                wynik1 = wynik.wygranePrzegranego;
+                                wynik2 = wynik.wygraneZwyciezcy;
+                                srednia1 = `<span class="srednia-drabinka">${wynik.sredniaPrzegranego}</span>`;
+                                srednia2 = `<span class="srednia-drabinka">${wynik.sredniaZwyciezcy}</span>`;
+                            }
+                        } else if (g1 !== "TBD" && g2 !== "TBD") {
+                            statusKlasa = "oczekujacy-mecz drabinka-mecz-aktywny";
+                            attrZagraj = `data-mecz-id="${idMeczu}" data-gracz1="${g1}" data-gracz2="${g2}" title="Zagraj: ${g1} vs ${g2}"`;
+                        }
+
+                        kontenerMeczow += `
+                        <div class="drabinka-mecz ${statusKlasa}" ${attrZagraj}>
+                            <div class="uczestnik ${wygrany1}">
+                                <div><span class="nick">${g1}</span>${srednia1}</div>
+                                <span class="wynik">${wynik1}</span>
+                            </div>
+                            <div class="uczestnik ${wygrany2}">
+                                <div><span class="nick">${g2}</span>${srednia2}</div>
+                                <span class="wynik">${wynik2}</span>
+                            </div>
+                        </div>`;
+
+                        if (p % 2 === 1 || p === meczeWRundzie.length - 1) kontenerMeczow += `</div>`;
+                    }
+                    kontenerMeczow += `</div>`;
+                }
+
+                // --- MODUŁ MISTRZA (Z Ogólną Średnią Turniejową) ---
+                if (czyZakonczonoFinal) {
+                    const sredniaMistrza = obliczSredniaTurniejowa(ostatecznyMistrz, wynikiTurnieju);
+                    kontenerMeczow += `
+                    <div class="drabinka-runda">
+                        <div class="drabinka-mecz mistrz-kafelek">
+                            <h3>🏆 Zwycięzca</h3>
+                            <div class="uczestnik wygrany" style="flex-direction: column; align-items: center; gap: 5px;">
+                                <div>${ostatecznyMistrz}</div>
+                                <span class="srednia-drabinka" style="color: #fbbf24; opacity: 0.9; font-size: 13px;">Śr. Turnieju: ${sredniaMistrza}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-reset-turnieju" onclick="zresetujSystemTurnieju()">Zakończ turniej</button>
+                    </div>`;
+                }
+
+                kontenerMeczow += `</div>`;
+                wrapper.innerHTML = poziomy + kontenerMeczow;
+            }
+            // ======================================================
+            // KLIKNIĘCIE W MECZ (GRUPOWY LUB DRABINKA) -> PRZEJŚCIE DO TARCZY
+            // ======================================================
+            document.addEventListener("click", (e) => {
+                const meczKafelek = e.target.closest(".oczekujacy-mecz");
+                if (!meczKafelek) return;
+
+                const gracz1 = meczKafelek.getAttribute("data-gracz1");
+                const gracz2 = meczKafelek.getAttribute("data-gracz2");
+                const idMeczu = meczKafelek.getAttribute("data-mecz-id");
+
+                if (confirm(`Czy chcesz rozpocząć mecz:\n${gracz1} vs ${gracz2}?`)) {
+                    const stanTurnieju = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                    const punkty = stanTurnieju.punkty || 501;
+                    const liczbaRund = stanTurnieju.legi || 3;
+
+                    const zasadaWejscia = document.getElementById("select-wejscia").value;
+                    const zasadaWyjscia = document.getElementById("select-wyjscia").value;
+                    const limitLotekInput = document.getElementById("limit-lotek-wartosc");
+                    const czyLimitWlaczony = document.getElementById("wlacz-limit-lotek").checked;
+
+                    const konfiguracjaMeczu = {
+                        tryb: "turniej",
+                        limitLotek: czyLimitWlaczony ? parseInt(limitLotekInput.value) || 30 : 30,
+                        meczId: idMeczu,
+                        gracz1: gracz1,
+                        gracz2: gracz2,
+                        punktyStartowe: parseInt(punkty),
+                        doIluWygranych: parseInt(liczbaRund),
+                        in: zasadaWejscia,
+                        out: zasadaWyjscia,
+                    };
+
+                    localStorage.setItem("sd_konfiguracja_gry", JSON.stringify(konfiguracjaMeczu));
+                    window.location.href = "./klasyczna.html";
+                }
+            });
+
+            // ======================================================
+            // PRZYWRACANIE WIDOKU GRUP/DRABINKI PO POWROCIE Z TARCZY
+            // ======================================================
+            document.addEventListener("DOMContentLoaded", () => {
+                const zapisaneUstawieniaTurnieju = localStorage.getItem("sd_aktywny_turniej_stan");
+
+                if (zapisaneUstawieniaTurnieju) {
+                    const stan = JSON.parse(zapisaneUstawieniaTurnieju);
+
+                    document.getElementById("formularz-ustawien").style.display = "none";
+                    const widokTabeli = document.getElementById("model-tabela");
+                    const widokDrabinki = document.getElementById("model-drabinkowy");
+
+                    if (stan.typ === "grupy") {
+                        widokDrabinki.style.display = "none";
+                        widokTabeli.style.display = "block";
+                        generujFazeGrupowaPodglad(stan.gracze);
+                    } else {
+                        widokTabeli.style.display = "none";
+                        widokDrabinki.style.display = "block";
+                        generujDrabinkePodglad(stan.gracze);
+                    }
+
+                    // Nakładamy wyniki na nowo wygenerowaną strukturę (grupy i drabinki)
+                    lokalneWczytajWynikiMeczow();
+                }
+            });
+
+            function lokalneWczytajWynikiMeczow() {
+                const suroweWyniki = localStorage.getItem("sd_wyniki_turnieju");
+                if (!suroweWyniki) return;
+
+                const wynikiTurnieju = JSON.parse(suroweWyniki);
+
+                // Szukamy TYLKO komórek w tabeli grupowej
+                const oczekujaceMeczeTabeli = document.querySelectorAll("td[data-mecz-id]");
+
+                oczekujaceMeczeTabeli.forEach((element) => {
+                    const idMeczu = element.getAttribute("data-mecz-id");
+                    if (!idMeczu) return;
+
+                    if (wynikiTurnieju[idMeczu]) {
+                        const daneMeczu = wynikiTurnieju[idMeczu];
+                        const graczWiersza = element.getAttribute("data-gracz1");
+                        let wyswietlanyWynik = "";
+                        let wyswietlanaSrednia = "";
+
+                        if (graczWiersza === daneMeczu.zwyciezca) {
+                            wyswietlanyWynik = `${daneMeczu.wygraneZwyciezcy}:${daneMeczu.wygranePrzegranego}`;
+                            wyswietlanaSrednia = daneMeczu.sredniaZwyciezcy;
+                        } else {
+                            wyswietlanyWynik = `${daneMeczu.wygranePrzegranego}:${daneMeczu.wygraneZwyciezcy}`;
+                            wyswietlanaSrednia = daneMeczu.sredniaPrzegranego;
+                        }
+
+                        element.className = "zakonczony";
+                        element.innerHTML = `<span class="wynik-gracza">${wyswietlanyWynik}</span><br /><span class="srednia-gracza">${wyswietlanaSrednia}</span>`;
+                        element.removeAttribute("title");
+                        element.removeAttribute("data-mecz-id");
+                    }
+                });
+            }
+            // Funkcja resetująca stan i czyszcząca pamięć
+            window.zresetujSystemTurnieju = function () {
+                if (confirm("Czy na pewno chcesz zakończyć turniej? Ta akcja wyczyści obecną drabinkę/grupę.")) {
+                    localStorage.removeItem("sd_aktywny_turniej_stan");
+                    localStorage.removeItem("sd_wyniki_turnieju");
+                    localStorage.removeItem("sd_konfiguracja_gry");
+                    window.location.reload();
+                }
+            };
         </script>
     </body>
 </html>
