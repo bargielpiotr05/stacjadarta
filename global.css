@@ -92,7 +92,7 @@ header a {
 }
 .join-us {
     border: 2px solid var(--secondary-color);
-    border-radius: 50px;
+    border-radius: 0px;
     font-weight: bold;
     background-color: var(--secondary-color);
     padding: 10px 30px;
@@ -290,11 +290,10 @@ header a {
     color: var(--secondary-color);
 }
 .mobilny-menu-links li a.join-us {
-    margin-top: 10px;
     background-color: var(--secondary-color);
     color: var(--primary-color) !important;
     border: none;
-    width: 80%;
+    width: 100%;
 }
 .mobilny-menu-links li:has(a.join-us) {
     background-color: var(--primary-color);
