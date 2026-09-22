@@ -503,8 +503,7 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
 
 function zastosujStanGry(dane) {
   if (!dane || !dane.gracze) return;
-
-  if (dane.wersjaStanu && dane.wersjaStanu < lokalnaWersjaStanu) {
+  if (dane.wersjaStanu && dane.wersjaStanu <= lokalnaWersjaStanu) {
     return;
   }
   if (dane.wersjaStanu) {
@@ -639,6 +638,7 @@ function podepnijNasluchSilnika() {
     const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
 
     if (czyTrybOnline && (czyWidz || graczIndex !== mojIndeksOnline)) {
+      // Oszukana odpowiedź u drugiego gracza, aby skrypt nie zablokował się w tle
       callback(czyZakonczyl ? 3 : 3, 0);
       return;
     }
@@ -646,13 +646,6 @@ function podepnijNasluchSilnika() {
     if (typeof staryPopupDoubles === "function") {
       staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, (lotkaKonczaca, lotkiNaDoubla) => {
         callback(lotkaKonczaca, lotkiNaDoubla);
-
-        if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
-          setTimeout(() => {
-            window.sprawdzTureOnline();
-            wyslijAktualnyStanGry();
-          }, 50);
-        }
       });
     }
   };
