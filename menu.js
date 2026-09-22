@@ -75,7 +75,7 @@ async function sprawdzStanLogowania() {
             }
 
             // 3. Wersja mobilna: podmieniamy przycisk logowania na profil, a rejestrację usuwamy
-            const mobileAuthLinks = document.querySelectorAll(".mobilny-menu-links .join-us");
+            const mobileAuthLinks = document.querySelectorAll(".mobilny-menu-links .konto");
             if (mobileAuthLinks.length > 0) {
                 const pierwszyLi = mobileAuthLinks[0].closest("li");
                 if (pierwszyLi) {
