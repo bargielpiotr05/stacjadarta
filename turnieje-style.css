@@ -197,7 +197,7 @@ main {
 }
 
 .btn-usun-wiersz:hover {
-    background-color:var(--color-red-btn-hover);
+    background-color: var(--color-red-btn-hover);
     color: #fff;
 }
 
@@ -753,30 +753,61 @@ main {
     color: #94a3b8;
 }
 
+.btn-reset-turnieju {
+    background-color: var(--color-red-btn);
+    color: var(--color-red-text);
+    border: 1px solid var(--color-red-btn-border);
+}
+
+.btn-reset-turnieju:hover {
+    background-color: var(--color-red-btn-hover);
+    color: var(--color-red-text-hover);
+    border-color: var(--color-red-btn-border-hover);
+}
+
+#kontener-awaryjny-reset {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 40px;
+    width: 100%
+}
+
 @media (max-width: 1150px) {
-    body, html {
-        overflow-x: hidden; /* Bezwzględnie blokuje poziomy pasek przewijania całego dokumentu */
+
+    body,
+    html {
+        overflow-x: hidden;
+        /* Bezwzględnie blokuje poziomy pasek przewijania całego dokumentu */
     }
 
     main {
         padding: 0;
-        width: 100%;       /* Upewnia się, że main nie wychodzi poza szerokość ekranu */
+        width: 100%;
+        /* Upewnia się, że main nie wychodzi poza szerokość ekranu */
         box-sizing: border-box;
     }
 
     .grupy-kontener {
         grid-template-columns: 1fr;
-        width: 100%;       /* Zapobiega wyciekaniu kontenera poza main */
-        overflow-x: auto;  /* Jeśli tabele są za szerokie, to niech się same scrollują poziomo wewnątrz */
-        padding: 10px;     /* Daje margines oddychający dla tabel */
+        width: 100%;
+        /* Zapobiega wyciekaniu kontenera poza main */
+        overflow-x: auto;
+        /* Jeśli tabele są za szerokie, to niech się same scrollują poziomo wewnątrz */
+        padding: 10px;
+        /* Daje margines oddychający dla tabel */
         box-sizing: border-box;
     }
-    
-    #model-drabinkowy, #model-tabela {
+
+    #model-drabinkowy,
+    #model-tabela {
         width: 100%;
-        margin: 0;         /* Redukuje auto marginesy */
-        padding: 10px;     /* Daje margines oddychający */
-        border-radius: 0;  /* Trochę więcej miejsca dla małych ekranów */
+        margin: 0;
+        /* Redukuje auto marginesy */
+        padding: 10px;
+        /* Daje margines oddychający */
+        border-radius: 0;
+        /* Trochę więcej miejsca dla małych ekranów */
         box-sizing: border-box;
     }
 
@@ -834,10 +865,12 @@ main {
     .srednia-gracza {
         font-size: 8px !important;
     }
-    .tabela-bilans-legi{
+
+    .tabela-bilans-legi {
         font-size: 10px !important;
     }
-    .tabela-miejsce-gracza{
+
+    .tabela-miejsce-gracza {
         font-size: 12px !important;
     }
 }

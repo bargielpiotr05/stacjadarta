@@ -94,6 +94,7 @@
                     <button type="button" id="zacznij-grac">Wylosuj drabinkę</button>
                 </div>
             </form>
+
             <!-- SEKCJA TABELA -->
             <div id="model-tabela" style="display: none">
                 <h2>Grupy</h2>
@@ -134,6 +135,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- MODAL USTAWIEŃ LEGÓW (Grupa + Drabinka) -->
             <div id="modal-ustawienia-legow" class="modal-overlay" style="display: none">
                 <div class="modal-box-graczy">
@@ -207,6 +209,10 @@
                         <button type="button" id="zatwierdz-graczy" class="btn-primary">Zatwierdź</button>
                     </div>
                 </div>
+            </div>
+                        <!-- STAŁY AWARYJNY PRZYCISK ZAKOŃCZENIA TURNIEJU -->
+            <div id="kontener-awaryjny-reset" style="display: none; text-align: center; margin: 20px auto 40px auto; width: 100%">
+                <button type="button" class="btn-reset-turnieju" onclick="zresetujSystemTurnieju()" style="padding: 12px 25px; font-size: 14px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3)">Zakończ turniej (Anuluj)</button>
             </div>
         </main>
         <footer id="wspolny-footer"></footer>
@@ -455,7 +461,6 @@
 
                 // KLUCZOWE: Czyścimy stare wyniki z pamięci przed wylosowaniem nowego turnieju!
 
-                // KLUCZOWE: Czyścimy stare wyniki z pamięci przed wylosowaniem nowego turnieju!
                 localStorage.removeItem("sd_wyniki_turnieju");
 
                 // Zapisujemy stan turnieju
@@ -478,6 +483,7 @@
                 );
 
                 document.getElementById("formularz-ustawien").style.display = "none";
+                document.getElementById("kontener-awaryjny-reset").style.display = "block";
                 const widokTabeli = document.getElementById("model-tabela");
                 const widokDrabinki = document.getElementById("model-drabinkowy");
 
@@ -541,6 +547,12 @@
 
                 const kontenerGrup = document.createElement("div");
                 kontenerGrup.className = "grupy-kontener";
+
+                // --- CENTROWANIE GDY JEST TYLKO JEDNA GRUPA ---
+                if (iloscGrup === 1) {
+                    kontenerGrup.style.display = "flex";
+                    kontenerGrup.style.justifyContent = "center";
+                }
 
                 let globalneIdMeczu = 1;
                 let czyWszystkieMeczeRozegrane = true;
@@ -618,9 +630,9 @@
                         }
                     });
 
-                    // SZTYWNY LAYOUT TABELI - Koniec z pływającymi i nierównymi kolumnami
+                    // SZTYWNY LAYOUT TABELI ORAZ ZABEZPIECZENIE SZEROKOŚCI DLA POJEDYNCZEJ GRUPY
                     let tableHTML = `
-                        <div class="pojedyncza-grupa" style="width: 100%;">
+                        <div class="pojedyncza-grupa" style="width: 100%; ${iloscGrup === 1 ? "max-width: 850px;" : ""}">
                             <h3 style="text-align:center; color: var(--secondary-color); margin-top:0;">${nazwaGrupy}</h3>
                             <table style="width: 100%; table-layout: fixed;">
                                 <tr>
@@ -668,7 +680,6 @@
                         if (aktualneStaty.miejsce <= awansZGrupyLiczba) {
                             stylMiejsca = "color: #fbbf24; font-weight: bold;";
                         }
-                        
 
                         tableHTML += `
                             <td style="" class="tabela-bilans-legi">
@@ -710,7 +721,7 @@
 
                     setTimeout(() => {
                         const btnKonfiguracja = document.getElementById("btn-ustawienia-legow-po-fazie");
-                        if(btnKonfiguracja) {
+                        if (btnKonfiguracja) {
                             btnKonfiguracja.addEventListener("click", () => {
                                 const modalUstawieniaLegow = document.getElementById("modal-ustawienia-legow");
                                 if (modalUstawieniaLegow) modalUstawieniaLegow.style.display = "flex";
@@ -739,7 +750,7 @@
                     }, 100);
                 }
             }
-// 2. INTELIGENTNY GENERATOR DRABINKI (Z PODPISAMI LEGÓW I ATYBUTAMI RUNDY)
+            // 2. INTELIGENTNY GENERATOR DRABINKI (Z PODPISAMI LEGÓW I ATYBUTAMI RUNDY)
             function generujDrabinkePodglad(graczePoczatkowi) {
                 const wrapper = document.querySelector(".drabinka-scroll-wrapper");
                 const btnZakonczTurniej = document.querySelector(".btn-reset-turnieju");
@@ -810,12 +821,25 @@
                     let odlegloscOdFinalu = iloscRund - i + 1;
                     let etapId = "runda";
 
-                    if (odlegloscOdFinalu === 1) { nazwa = "Finał"; etapId = "final"; }
-                    else if (odlegloscOdFinalu === 2) { nazwa = "Półfinały (1/2)"; etapId = "1-2"; }
-                    else if (odlegloscOdFinalu === 3) { nazwa = "Ćwierćfinały (1/4)"; etapId = "1-4"; }
-                    else if (odlegloscOdFinalu === 4) { nazwa = "1/8 Finału"; etapId = "1-8"; }
-                    else if (odlegloscOdFinalu === 5) { nazwa = "1/16 Finału"; etapId = "1-16"; }
-                    else if (odlegloscOdFinalu === 6) { nazwa = "1/32 Finału"; etapId = "1-32"; }
+                    if (odlegloscOdFinalu === 1) {
+                        nazwa = "Finał";
+                        etapId = "final";
+                    } else if (odlegloscOdFinalu === 2) {
+                        nazwa = "Półfinały (1/2)";
+                        etapId = "1-2";
+                    } else if (odlegloscOdFinalu === 3) {
+                        nazwa = "Ćwierćfinały (1/4)";
+                        etapId = "1-4";
+                    } else if (odlegloscOdFinalu === 4) {
+                        nazwa = "1/8 Finału";
+                        etapId = "1-8";
+                    } else if (odlegloscOdFinalu === 5) {
+                        nazwa = "1/16 Finału";
+                        etapId = "1-16";
+                    } else if (odlegloscOdFinalu === 6) {
+                        nazwa = "1/32 Finału";
+                        etapId = "1-32";
+                    }
 
                     // POBIERANIE LICZBY LEGÓW Z USTAWIEN POPUP'A (LUB DOMYŚLNEJ Z GRUP)
                     let liczbaLegowWTejRundzie = zapisaneLegiRund[etapId] || domyslneLegi;
@@ -991,6 +1015,7 @@
                     const stan = JSON.parse(zapisaneUstawieniaTurnieju);
 
                     document.getElementById("formularz-ustawien").style.display = "none";
+                    document.getElementById("kontener-awaryjny-reset").style.display = "block";
                     const widokTabeli = document.getElementById("model-tabela");
                     const widokDrabinki = document.getElementById("model-drabinkowy");
 
@@ -1095,10 +1120,12 @@
                 }
             });
 
-            const zamknijLegi = () => { if(modalUstawieniaLegow) modalUstawieniaLegow.style.display = "none"; };
-            
+            const zamknijLegi = () => {
+                if (modalUstawieniaLegow) modalUstawieniaLegow.style.display = "none";
+            };
+
             if (btnZamknijLegi) btnZamknijLegi.addEventListener("click", zamknijLegi);
-            
+
             // Logika Zapisu: Aktualizuje stan i nadpisuje localStorage "w locie"
             if (btnZapiszLegi) {
                 btnZapiszLegi.addEventListener("click", () => {
@@ -1121,11 +1148,11 @@
                         stanT.legiRund = noweLegiRund;
                         localStorage.setItem("sd_aktywny_turniej_stan", JSON.stringify(stanT));
                     }
-                    
+
                     zamknijLegi();
                 });
             }
-            
+
             if (modalUstawieniaLegow) {
                 modalUstawieniaLegow.addEventListener("click", (e) => {
                     if (e.target === modalUstawieniaLegow) zamknijLegi();
@@ -1136,13 +1163,13 @@
                 let stanT = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
                 if (stanT && Object.keys(stanT).length > 0 && stanT.legiRund) {
                     const legiRund = stanT.legiRund;
-                    if(document.getElementById("leg-grupy")) document.getElementById("leg-grupy").value = stanT.legi;
-                    if(document.getElementById("leg-1-32")) document.getElementById("leg-1-32").value = legiRund["1-32"] || "";
-                    if(document.getElementById("leg-1-16")) document.getElementById("leg-1-16").value = legiRund["1-16"] || "";
-                    if(document.getElementById("leg-1-8")) document.getElementById("leg-1-8").value = legiRund["1-8"] || "";
-                    if(document.getElementById("leg-1-4")) document.getElementById("leg-1-4").value = legiRund["1-4"] || "";
-                    if(document.getElementById("leg-1-2")) document.getElementById("leg-1-2").value = legiRund["1-2"] || "";
-                    if(document.getElementById("leg-final")) document.getElementById("leg-final").value = legiRund["final"] || "";
+                    if (document.getElementById("leg-grupy")) document.getElementById("leg-grupy").value = stanT.legi;
+                    if (document.getElementById("leg-1-32")) document.getElementById("leg-1-32").value = legiRund["1-32"] || "";
+                    if (document.getElementById("leg-1-16")) document.getElementById("leg-1-16").value = legiRund["1-16"] || "";
+                    if (document.getElementById("leg-1-8")) document.getElementById("leg-1-8").value = legiRund["1-8"] || "";
+                    if (document.getElementById("leg-1-4")) document.getElementById("leg-1-4").value = legiRund["1-4"] || "";
+                    if (document.getElementById("leg-1-2")) document.getElementById("leg-1-2").value = legiRund["1-2"] || "";
+                    if (document.getElementById("leg-final")) document.getElementById("leg-final").value = legiRund["final"] || "";
                 }
             }
         </script>
