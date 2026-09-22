@@ -591,6 +591,19 @@ header a {
     font-weight: bold;
     cursor: pointer;
 }
+.btn-primary{
+  background-color: var(--primary-color-lighter);
+  border: 1px solid var(--primary-color-border);
+  color: white;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-primary:hover{
+  background-color: var(--primary-color-more-lighter);
+  border-color: var(--primary-color-border-hover);
+}
 
 /* Dostosowanie mobilne */
 @media (max-width: 1150px) {

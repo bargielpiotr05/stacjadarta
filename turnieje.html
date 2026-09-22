@@ -39,8 +39,8 @@
                             <input type="number" id="punkty" class="wspolny-input" placeholder="501" min="0" value="501" />
                         </label>
                         <label>
-                            <h4>Do ilu?</h4>
-                            <input type="number" id="liczba_rund" class="wspolny-input" min="1" value="3" />
+                            <h4>Do ilu wygranych?</h4>
+                            <button type="button" id="btn-ustawienia-legow" class="wspolny-input">⚙️ Konfiguracja</button>
                         </label>
                     </div>
 
@@ -94,7 +94,6 @@
                     <button type="button" id="zacznij-grac">Wylosuj drabinkę</button>
                 </div>
             </form>
-            <button onclick="zresetujSystemTurnieju()" type="button" class="btn-reset-turnieju" style="display: none">Zakończ turniej</button>
             <!-- SEKCJA TABELA -->
             <div id="model-tabela" style="display: none">
                 <h2>Grupy</h2>
@@ -135,7 +134,54 @@
                     </div>
                 </div>
             </div>
+            <!-- MODAL USTAWIEŃ LEGÓW (Grupa + Drabinka) -->
+            <div id="modal-ustawienia-legow" class="modal-overlay" style="display: none">
+                <div class="modal-box-graczy">
+                    <div class="modal-naglowek-graczy">
+                        <h3>Konfiguracja Legów</h3>
+                        <button type="button" id="zamknij-modal-legow" class="btn-zamknij-modal">&times;</button>
+                    </div>
 
+                    <p class="modal-podtytul">Ustaw, do ilu wygranych legów toczą się mecze na poszczególnych etapach. Zostawienie pustego pola skopiuje wartość z fazy grupowej.</p>
+
+                    <div class="kontener-pol-graczy" style="margin-top: 5px">
+                        <div class="grid-2-kolumny">
+                            <label
+                                ><h4>Faza Grupowa:</h4>
+                                <input type="number" id="leg-grupy" class="wspolny-input" min="1" value="3"
+                            /></label>
+                            <label
+                                ><h4>1/32 Finału:</h4>
+                                <input type="number" id="leg-1-32" class="wspolny-input" min="1"
+                            /></label>
+                            <label
+                                ><h4>1/16 Finału:</h4>
+                                <input type="number" id="leg-1-16" class="wspolny-input" min="1"
+                            /></label>
+                            <label
+                                ><h4>1/8 Finału:</h4>
+                                <input type="number" id="leg-1-8" class="wspolny-input" min="1"
+                            /></label>
+                            <label
+                                ><h4>Ćwierćfinały (1/4):</h4>
+                                <input type="number" id="leg-1-4" class="wspolny-input" min="1"
+                            /></label>
+                            <label
+                                ><h4>Półfinały (1/2):</h4>
+                                <input type="number" id="leg-1-2" class="wspolny-input" min="1"
+                            /></label>
+                            <label style="grid-column: span 2"
+                                ><h4>Finał:</h4>
+                                <input type="number" id="leg-final" class="wspolny-input" min="1"
+                            /></label>
+                        </div>
+                    </div>
+
+                    <div class="modal-akcje-graczy">
+                        <button type="button" id="zapisz-ustawienia-legow" class="btn-primary">Zatwierdź</button>
+                    </div>
+                </div>
+            </div>
             <!-- MODAL DLA LISTY GRACZY -->
             <div id="modal-dla-graczy" class="modal-overlay" style="display: none">
                 <div class="modal-box-graczy">
@@ -392,8 +438,22 @@
                     listaGraczy = listaGraczy.sort(() => Math.random() - 0.5);
                 }
 
-                const doceloweLegi = document.getElementById("liczba_rund").value || 3;
                 const docelowePunkty = document.getElementById("punkty").value || 501;
+
+                // --- NOWE POBIERANIE LEGÓW Z MODALA ---
+                const inputGrupy = document.getElementById("leg-grupy");
+                const doceloweLegi = inputGrupy ? parseInt(inputGrupy.value) || 3 : 3;
+
+                const legiRund = {
+                    "1-32": parseInt(document.getElementById("leg-1-32")?.value) || doceloweLegi,
+                    "1-16": parseInt(document.getElementById("leg-1-16")?.value) || doceloweLegi,
+                    "1-8": parseInt(document.getElementById("leg-1-8")?.value) || doceloweLegi,
+                    "1-4": parseInt(document.getElementById("leg-1-4")?.value) || doceloweLegi,
+                    "1-2": parseInt(document.getElementById("leg-1-2")?.value) || doceloweLegi,
+                    final: parseInt(document.getElementById("leg-final")?.value) || doceloweLegi,
+                };
+
+                // KLUCZOWE: Czyścimy stare wyniki z pamięci przed wylosowaniem nowego turnieju!
 
                 // KLUCZOWE: Czyścimy stare wyniki z pamięci przed wylosowaniem nowego turnieju!
                 localStorage.removeItem("sd_wyniki_turnieju");
@@ -409,6 +469,7 @@
                         typ: grupaChk.checked ? "grupy" : "drabinka",
                         gracze: listaGraczy,
                         legi: doceloweLegi,
+                        legiRund: legiRund,
                         punkty: docelowePunkty,
                         limitLotek: typeof maksymalnyLimitLotek !== "undefined" ? maksymalnyLimitLotek : 30,
                         iluWychodzi: awanse,
@@ -462,11 +523,9 @@
                 return (sumaSrednich / liczbaMeczow).toFixed(2);
             }
 
-            // 1. GENERATOR TABELI (STAŁA KOLEJNOŚĆ, DYNAMICZNE MIEJSCE + ŚREDNIA)
+            // 1. GENERATOR TABELI (STAŁA KOLEJNOŚĆ, DYNAMICZNE MIEJSCE, ŚREDNIE I AWANSE)
             function generujFazeGrupowaPodglad(graczePoczatkowi) {
                 const kontener = document.getElementById("model-tabela");
-                const btnZakonczTurniej = document.querySelector(".btn-reset-turnieju");
-                btnZakonczTurniej.style.display = "block";
                 kontener.innerHTML = "<h2>Grupy</h2>";
 
                 let gracze = [...graczePoczatkowi];
@@ -484,9 +543,14 @@
                 kontenerGrup.className = "grupy-kontener";
 
                 let globalneIdMeczu = 1;
+                let czyWszystkieMeczeRozegrane = true;
+                const awansujacyGracze = [];
 
                 const suroweWyniki = localStorage.getItem("sd_wyniki_turnieju");
                 const wynikiTurnieju = suroweWyniki ? JSON.parse(suroweWyniki) : {};
+
+                const stanT = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                const awansZGrupyLiczba = parseInt(stanT.iluWychodzi) || 2;
 
                 grupy.forEach((grupaGraczy, i) => {
                     const nazwaGrupy = iloscGrup > 1 ? `Grupa ${String.fromCharCode(65 + i)}` : "Tabela Główna";
@@ -502,7 +566,6 @@
                         }
                     }
 
-                    // TWORZENIE RANKINGU (TYLKO DLA OBLICZENIA MIEJSCA)
                     let statystykiGraczy = grupaGraczy.map((nazwa) => ({
                         nazwa: nazwa,
                         meczeWyg: 0,
@@ -532,47 +595,56 @@
 
                                     staty.legiWyg += mojeWygrane;
                                     staty.legiPrz += mojePrzegrane;
+                                } else {
+                                    czyWszystkieMeczeRozegrane = false;
                                 }
                             }
                         });
                         staty.roznicLegow = staty.legiWyg - staty.legiPrz;
                     });
 
-                    // Sortujemy Kopię tablicy, żeby dowiedzieć się, które jest miejsce
                     let posortowanyRanking = [...statystykiGraczy].sort((a, b) => {
                         if (b.meczeWyg !== a.meczeWyg) return b.meczeWyg - a.meczeWyg;
                         if (b.roznicLegow !== a.roznicLegow) return b.roznicLegow - a.roznicLegow;
                         return b.legiWyg - a.legiWyg;
                     });
 
-                    // Nadajemy miejsca z posortowanego rankingu z powrotem do oryginału
                     posortowanyRanking.forEach((zawodnik, pozycja) => {
                         const aktualnyZaw = statystykiGraczy.find((g) => g.nazwa === zawodnik.nazwa);
                         aktualnyZaw.miejsce = pozycja + 1;
+
+                        if (aktualnyZaw.miejsce <= awansZGrupyLiczba) {
+                            awansujacyGracze.push(aktualnyZaw.nazwa);
+                        }
                     });
 
-                    // TWORZENIE HTML WEDŁUG ORYGINALNEJ KOLEJNOŚCI GRACZY
+                    // SZTYWNY LAYOUT TABELI - Koniec z pływającymi i nierównymi kolumnami
                     let tableHTML = `
                         <div class="pojedyncza-grupa" style="width: 100%;">
                             <h3 style="text-align:center; color: var(--secondary-color); margin-top:0;">${nazwaGrupy}</h3>
-                            <table style="width: 100%;">
-                                <tr><th></th>
+                            <table style="width: 100%; table-layout: fixed;">
+                                <tr>
+                                    <th class="tabela-kontener-graczy"></th>
                     `;
 
                     grupaGraczy.forEach((_, idx) => {
-                        tableHTML += `<th>Mecz ${idx + 1}</th>`;
+                        tableHTML += `<th class="tabela-blok-mecze">Mecz ${idx + 1}</th>`;
                     });
-                    tableHTML += `<th>MIEJSCE</th></tr>`;
+
+                    tableHTML += `
+                                    <th class="tabela-blok-legi">LEGI</th>
+                                    <th class="tabela-blok-miejsce">MIEJSCE</th>
+                                </tr>`;
 
                     grupaGraczy.forEach((graczWiersz, wierszIdx) => {
-                        // OBLICZANIE ŚREDNIEJ DO TABELI
                         const srTurniejowa = obliczSredniaTurniejowa(graczWiersz, wynikiTurnieju);
+                        const aktualneStaty = statystykiGraczy.find((g) => g.nazwa === graczWiersz);
 
                         tableHTML += `
                         <tr>
-                            <td style="text-align: left; padding: 10px;">
-                                <div style="font-weight: bold;">${graczWiersz}</div>
-                                <div style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-top: 3px;">Śr: ${srTurniejowa}</div>
+                            <td class="tabela-blok-gracza">
+                                <div class="tabela-nick-gracza">${graczWiersz}</div>
+                                <div class="tabela-srednia-gracza">Śr: ${srTurniejowa}</div>
                             </td>`;
 
                         grupaGraczy.forEach((graczKolumna, kolumnaIdx) => {
@@ -592,27 +664,86 @@
                             }
                         });
 
-                        // DYNAMICZNE WSTAWIANIE OBLICZONEGO MIEJSCA W OSTATNIEJ KOLUMNIE (przywrócone kolory)
-                        const aktualneStaty = statystykiGraczy.find((g) => g.nazwa === graczWiersz);
-
                         let stylMiejsca = "";
-                        if (aktualneStaty.miejsce === 1) stylMiejsca = "color: #fbbf24; font-weight: bold;";
-                        if (aktualneStaty.miejsce === 2) stylMiejsca = "color: #94a3b8; font-weight: bold;";
+                        if (aktualneStaty.miejsce <= awansZGrupyLiczba) {
+                            stylMiejsca = "color: #fbbf24; font-weight: bold;";
+                        }
+                        
 
-                        tableHTML += `<td style="${stylMiejsca}">${aktualneStaty.miejsce}</td></tr>`;
+                        tableHTML += `
+                            <td style="" class="tabela-bilans-legi">
+                                ${aktualneStaty.legiWyg}:${aktualneStaty.legiPrz}
+                            </td>
+                            <td class="tabela-miejsce-gracza" style="${stylMiejsca}">${aktualneStaty.miejsce}</td>
+                        </tr>`;
                     });
 
                     tableHTML += `</table></div>`;
                     kontenerGrup.innerHTML += tableHTML;
                 });
                 kontener.appendChild(kontenerGrup);
-            }
 
-            // 2. INTELIGENTNY GENERATOR DRABINKI (ŚREDNIE, KORONACJA, WOLNE LOSY)
+                // --- GENEROWANIE PRZYCISKU PRZEJŚCIA DO DRABINKI ---
+                if (stanT.faza !== "pucharowa") {
+                    const sekcjaPrzejscia = document.createElement("div");
+                    sekcjaPrzejscia.style.textAlign = "center";
+                    sekcjaPrzejscia.style.marginTop = "40px";
+                    sekcjaPrzejscia.style.width = "100%";
+                    sekcjaPrzejscia.style.display = "flex";
+                    sekcjaPrzejscia.style.flexDirection = "column";
+                    sekcjaPrzejscia.style.alignItems = "center";
+                    sekcjaPrzejscia.style.gap = "15px";
+
+                    let tekstPrzycisku = czyWszystkieMeczeRozegrane ? "Rozpocznij Fazę Pucharową" : "Dokończ mecze by awansować!";
+                    let stanPrzycisku = czyWszystkieMeczeRozegrane ? "" : "disabled style='opacity:0.5; cursor:not-allowed;'";
+
+                    sekcjaPrzejscia.innerHTML = `
+                        <button type="button" id="btn-ustawienia-legow-po-fazie" class="btn-primary" style="background-color: var(--primary-color-lighter); padding: 10px 25px; font-size: 15px; border-radius: 8px;">
+                            ⚙️ Konfiguruj legi w Drabince
+                        </button>
+                        
+                        <button type="button" id="btn-awans-do-drabinki" class="btn-primary" style="padding: 15px 30px; font-size: 18px; margin-top: 10px;" ${stanPrzycisku}>
+                            ${tekstPrzycisku}
+                        </button>
+                    `;
+                    kontener.appendChild(sekcjaPrzejscia);
+
+                    setTimeout(() => {
+                        const btnKonfiguracja = document.getElementById("btn-ustawienia-legow-po-fazie");
+                        if(btnKonfiguracja) {
+                            btnKonfiguracja.addEventListener("click", () => {
+                                const modalUstawieniaLegow = document.getElementById("modal-ustawienia-legow");
+                                if (modalUstawieniaLegow) modalUstawieniaLegow.style.display = "flex";
+                            });
+                        }
+
+                        const btnAwans = document.getElementById("btn-awans-do-drabinki");
+                        if (btnAwans && czyWszystkieMeczeRozegrane) {
+                            btnAwans.addEventListener("click", () => {
+                                if (confirm(`Do drabinki awansuje ${awansujacyGracze.length} graczy.\n\nCzy chcesz rozpocząć Finały?`)) {
+                                    let stanDoZapisania = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                                    stanDoZapisania.faza = "pucharowa";
+                                    stanDoZapisania.graczePucharowi = awansujacyGracze.sort(() => Math.random() - 0.5);
+                                    localStorage.setItem("sd_aktywny_turniej_stan", JSON.stringify(stanDoZapisania));
+
+                                    sekcjaPrzejscia.style.display = "none";
+                                    document.getElementById("model-drabinkowy").style.display = "block";
+
+                                    generujDrabinkePodglad(stanDoZapisania.graczePucharowi);
+                                    lokalneWczytajWynikiMeczow();
+
+                                    document.getElementById("model-drabinkowy").scrollIntoView({ behavior: "smooth" });
+                                }
+                            });
+                        }
+                    }, 100);
+                }
+            }
+// 2. INTELIGENTNY GENERATOR DRABINKI (Z PODPISAMI LEGÓW I ATYBUTAMI RUNDY)
             function generujDrabinkePodglad(graczePoczatkowi) {
                 const wrapper = document.querySelector(".drabinka-scroll-wrapper");
                 const btnZakonczTurniej = document.querySelector(".btn-reset-turnieju");
-                btnZakonczTurniej.style.display = "block";
+                if (btnZakonczTurniej) btnZakonczTurniej.style.display = "block";
                 wrapper.innerHTML = "";
 
                 let gracze = [...graczePoczatkowi];
@@ -627,6 +758,11 @@
 
                 const suroweWyniki = localStorage.getItem("sd_wyniki_turnieju");
                 const wynikiTurnieju = suroweWyniki ? JSON.parse(suroweWyniki) : {};
+
+                // --- POBIERANIE USTAWIEŃ LEGÓW Z PAMIĘCI ---
+                const stanT = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                const domyslneLegi = stanT.legi || 3;
+                const zapisaneLegiRund = stanT.legiRund || {};
 
                 // --- LOGIKA BUDOWY DRABINKI (W TLE) ---
                 const runda1 = [];
@@ -667,14 +803,28 @@
                     drabinkaMecze.push(obecna);
                 }
 
-                // --- WIZUALNE RENDEROWANIE DRABINKI ---
+                // --- WIZUALNE RENDEROWANIE DRABINKI (Z PODPISAMI LEGÓW) ---
                 let poziomy = `<div id="poziom-turnieju">`;
                 for (let i = 1; i <= iloscRund; i++) {
                     let nazwa = `Runda ${i}`;
-                    if (i === iloscRund) nazwa = "Finał";
-                    else if (i === iloscRund - 1) nazwa = "Półfinały (1/2)";
-                    else if (i === iloscRund - 2) nazwa = "Ćwierćfinały (1/4)";
-                    poziomy += `<span>${nazwa}</span>`;
+                    let odlegloscOdFinalu = iloscRund - i + 1;
+                    let etapId = "runda";
+
+                    if (odlegloscOdFinalu === 1) { nazwa = "Finał"; etapId = "final"; }
+                    else if (odlegloscOdFinalu === 2) { nazwa = "Półfinały (1/2)"; etapId = "1-2"; }
+                    else if (odlegloscOdFinalu === 3) { nazwa = "Ćwierćfinały (1/4)"; etapId = "1-4"; }
+                    else if (odlegloscOdFinalu === 4) { nazwa = "1/8 Finału"; etapId = "1-8"; }
+                    else if (odlegloscOdFinalu === 5) { nazwa = "1/16 Finału"; etapId = "1-16"; }
+                    else if (odlegloscOdFinalu === 6) { nazwa = "1/32 Finału"; etapId = "1-32"; }
+
+                    // POBIERANIE LICZBY LEGÓW Z USTAWIEN POPUP'A (LUB DOMYŚLNEJ Z GRUP)
+                    let liczbaLegowWTejRundzie = zapisaneLegiRund[etapId] || domyslneLegi;
+
+                    poziomy += `
+                    <div style="min-width: 240px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 5px;">
+                        <span style="padding-bottom: 0;">${nazwa}</span>
+                        <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-top: -2px;">do ${liczbaLegowWTejRundzie} wygranych</span>
+                    </div>`;
                 }
                 poziomy += `</div>`;
 
@@ -685,6 +835,17 @@
                 for (let r = 0; r < iloscRund; r++) {
                     let meczeWRundzie = drabinkaMecze[r];
                     let klasaRundy = r === iloscRund - 1 ? "drabinka-runda runda-finalowa" : "drabinka-runda";
+
+                    // OBLICZANIE ETAPU (np. final, 1-2, 1-4) POTRZEBNEGO DO ZACIĄGANIA LEGÓW Z MODALA
+                    let odlegloscOdFinalu = iloscRund - r;
+                    let etapId = "runda";
+                    if (odlegloscOdFinalu === 1) etapId = "final";
+                    else if (odlegloscOdFinalu === 2) etapId = "1-2";
+                    else if (odlegloscOdFinalu === 3) etapId = "1-4";
+                    else if (odlegloscOdFinalu === 4) etapId = "1-8";
+                    else if (odlegloscOdFinalu === 5) etapId = "1-16";
+                    else if (odlegloscOdFinalu === 6) etapId = "1-32";
+
                     kontenerMeczow += `<div class="${klasaRundy}">`;
 
                     for (let p = 0; p < meczeWRundzie.length; p++) {
@@ -736,7 +897,8 @@
                             }
                         } else if (g1 !== "TBD" && g2 !== "TBD") {
                             statusKlasa = "oczekujacy-mecz drabinka-mecz-aktywny";
-                            attrZagraj = `data-mecz-id="${idMeczu}" data-gracz1="${g1}" data-gracz2="${g2}" title="Zagraj: ${g1} vs ${g2}"`;
+                            // DODANY data-runda ABY SYSTEM WIEDZIAŁ ILE LEGÓW POBRAĆ Z POPUPA!
+                            attrZagraj = `data-mecz-id="${idMeczu}" data-gracz1="${g1}" data-gracz2="${g2}" data-runda="${etapId}" title="Zagraj: ${g1} vs ${g2}"`;
                         }
 
                         kontenerMeczow += `
@@ -756,7 +918,6 @@
                     kontenerMeczow += `</div>`;
                 }
 
-                // --- MODUŁ MISTRZA (Z Ogólną Średnią Turniejową) ---
                 if (czyZakonczonoFinal) {
                     const sredniaMistrza = obliczSredniaTurniejowa(ostatecznyMistrz, wynikiTurnieju);
                     kontenerMeczow += `
@@ -786,10 +947,18 @@
                 const gracz2 = meczKafelek.getAttribute("data-gracz2");
                 const idMeczu = meczKafelek.getAttribute("data-mecz-id");
 
+                // Nowość: pobieramy rundę meczu, jeśli to drabinka
+                const rundaMeczu = meczKafelek.getAttribute("data-runda");
+
                 if (confirm(`Czy chcesz rozpocząć mecz:\n${gracz1} vs ${gracz2}?`)) {
                     const stanTurnieju = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
                     const punkty = stanTurnieju.punkty || 501;
-                    const liczbaRund = stanTurnieju.legi || 3;
+
+                    // ODCZYT LEGÓW: Jeśli mecz ma przypisaną rundę (drabinka) i ma ona swoje ustawienie, weź je. Jeśli to grupa, bierzemy z głównego.
+                    let liczbaRund = stanTurnieju.legi || 3;
+                    if (rundaMeczu && stanTurnieju.legiRund && stanTurnieju.legiRund[rundaMeczu]) {
+                        liczbaRund = stanTurnieju.legiRund[rundaMeczu];
+                    }
 
                     const zasadaWejscia = document.getElementById("select-wejscia").value;
                     const zasadaWyjscia = document.getElementById("select-wyjscia").value;
@@ -812,7 +981,6 @@
                     window.location.href = "./klasyczna.html";
                 }
             });
-
             // ======================================================
             // PRZYWRACANIE WIDOKU GRUP/DRABINKI PO POWROCIE Z TARCZY
             // ======================================================
@@ -826,7 +994,19 @@
                     const widokTabeli = document.getElementById("model-tabela");
                     const widokDrabinki = document.getElementById("model-drabinkowy");
 
-                    if (stan.typ === "grupy") {
+                    // PRIORYTET: Jeśli jesteśmy w fazie pucharowej, zablokuj grupy!
+                    if (stan.faza === "pucharowa") {
+                        // ZMIANA: Pokazujemy obie sekcje naraz!
+                        if (stan.typ === "grupy") {
+                            widokTabeli.style.display = "block";
+                            generujFazeGrupowaPodglad(stan.gracze);
+                        } else {
+                            widokTabeli.style.display = "none";
+                        }
+
+                        widokDrabinki.style.display = "block";
+                        generujDrabinkePodglad(stan.graczePucharowi || stan.gracze);
+                    } else if (stan.typ === "grupy") {
                         widokDrabinki.style.display = "none";
                         widokTabeli.style.display = "block";
                         generujFazeGrupowaPodglad(stan.gracze);
@@ -836,7 +1016,7 @@
                         generujDrabinkePodglad(stan.gracze);
                     }
 
-                    // Nakładamy wyniki na nowo wygenerowaną strukturę (grupy i drabinki)
+                    // Nakładamy wyniki na nowo wygenerowaną strukturę
                     lokalneWczytajWynikiMeczow();
                 }
             });
@@ -884,6 +1064,87 @@
                     window.location.reload();
                 }
             };
+            // Zapisuje indywidualne ustawienia legów dla danej rundy w drabince
+            window.zapiszLegiRundy = function (runda, wartosc) {
+                let stan = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                if (!stan.legiRund) stan.legiRund = {};
+                stan.legiRund[runda] = parseInt(wartosc) || 3;
+                localStorage.setItem("sd_aktywny_turniej_stan", JSON.stringify(stan));
+            };
+            // ======================================================
+            // MODAL USTAWIEŃ LEGÓW (GRUPOWA + DRABINKA)
+            // ======================================================
+            const modalUstawieniaLegow = document.getElementById("modal-ustawienia-legow");
+            const btnUstawieniaLegow = document.getElementById("btn-ustawienia-legow");
+            const btnZamknijLegi = document.getElementById("zamknij-modal-legow");
+            const btnZapiszLegi = document.getElementById("zapisz-ustawienia-legow");
+
+            // Otwieranie z głównego przycisku w formularzu
+            if (btnUstawieniaLegow) {
+                btnUstawieniaLegow.addEventListener("click", () => {
+                    wczytajObecneUstawieniaDoModala();
+                    modalUstawieniaLegow.style.display = "flex";
+                });
+            }
+
+            // Otwieranie z dynamicznego przycisku tworzonego pod Grupą
+            document.addEventListener("click", (e) => {
+                if (e.target && e.target.id === "btn-ustawienia-legow-po-fazie") {
+                    wczytajObecneUstawieniaDoModala();
+                    modalUstawieniaLegow.style.display = "flex";
+                }
+            });
+
+            const zamknijLegi = () => { if(modalUstawieniaLegow) modalUstawieniaLegow.style.display = "none"; };
+            
+            if (btnZamknijLegi) btnZamknijLegi.addEventListener("click", zamknijLegi);
+            
+            // Logika Zapisu: Aktualizuje stan i nadpisuje localStorage "w locie"
+            if (btnZapiszLegi) {
+                btnZapiszLegi.addEventListener("click", () => {
+                    const inputGrupy = document.getElementById("leg-grupy");
+                    const doceloweLegi = inputGrupy ? parseInt(inputGrupy.value) || 3 : 3;
+
+                    const noweLegiRund = {
+                        "1-32": parseInt(document.getElementById("leg-1-32")?.value) || doceloweLegi,
+                        "1-16": parseInt(document.getElementById("leg-1-16")?.value) || doceloweLegi,
+                        "1-8": parseInt(document.getElementById("leg-1-8")?.value) || doceloweLegi,
+                        "1-4": parseInt(document.getElementById("leg-1-4")?.value) || doceloweLegi,
+                        "1-2": parseInt(document.getElementById("leg-1-2")?.value) || doceloweLegi,
+                        final: parseInt(document.getElementById("leg-final")?.value) || doceloweLegi,
+                    };
+
+                    let stanT = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                    if (stanT && Object.keys(stanT).length > 0) {
+                        // Jesteśmy w trakcie turnieju, aktualizujemy żywy stan
+                        stanT.legi = doceloweLegi;
+                        stanT.legiRund = noweLegiRund;
+                        localStorage.setItem("sd_aktywny_turniej_stan", JSON.stringify(stanT));
+                    }
+                    
+                    zamknijLegi();
+                });
+            }
+            
+            if (modalUstawieniaLegow) {
+                modalUstawieniaLegow.addEventListener("click", (e) => {
+                    if (e.target === modalUstawieniaLegow) zamknijLegi();
+                });
+            }
+
+            function wczytajObecneUstawieniaDoModala() {
+                let stanT = JSON.parse(localStorage.getItem("sd_aktywny_turniej_stan") || "{}");
+                if (stanT && Object.keys(stanT).length > 0 && stanT.legiRund) {
+                    const legiRund = stanT.legiRund;
+                    if(document.getElementById("leg-grupy")) document.getElementById("leg-grupy").value = stanT.legi;
+                    if(document.getElementById("leg-1-32")) document.getElementById("leg-1-32").value = legiRund["1-32"] || "";
+                    if(document.getElementById("leg-1-16")) document.getElementById("leg-1-16").value = legiRund["1-16"] || "";
+                    if(document.getElementById("leg-1-8")) document.getElementById("leg-1-8").value = legiRund["1-8"] || "";
+                    if(document.getElementById("leg-1-4")) document.getElementById("leg-1-4").value = legiRund["1-4"] || "";
+                    if(document.getElementById("leg-1-2")) document.getElementById("leg-1-2").value = legiRund["1-2"] || "";
+                    if(document.getElementById("leg-final")) document.getElementById("leg-final").value = legiRund["final"] || "";
+                }
+            }
         </script>
     </body>
 </html>
