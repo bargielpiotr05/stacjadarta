@@ -20,8 +20,6 @@
         <header id="wspolny-header"></header>
         <main>
             <form id="formularz-ustawien" class="formularz-wspolny" onsubmit="event.preventDefault()">
-                <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
-
                 <!-- SEKCJA 1: GRACZE -->
                 <div class="sekcja-formularza">
                     <h3 class="sekcja-tytul">Uczestnicy turnieju</h3>
@@ -210,7 +208,7 @@
                     </div>
                 </div>
             </div>
-                        <!-- STAŁY AWARYJNY PRZYCISK ZAKOŃCZENIA TURNIEJU -->
+            <!-- STAŁY AWARYJNY PRZYCISK ZAKOŃCZENIA TURNIEJU -->
             <div id="kontener-awaryjny-reset" style="display: none; text-align: center; margin: 20px auto 40px auto; width: 100%">
                 <button type="button" class="btn-reset-turnieju" onclick="zresetujSystemTurnieju()" style="padding: 12px 25px; font-size: 14px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3)">Zakończ turniej (Anuluj)</button>
             </div>
@@ -324,7 +322,7 @@
             const wierszDodaj = document.getElementById("wiersz-dodaj-gracza");
             const nrDodajSpan = document.getElementById("nr-dodaj-gracza");
 
-            function dodajPoleGracza(domyslnaWartosc = "") {
+function dodajPoleGracza(domyslnaWartosc = "") {
                 const wiersze = kontenerPol.querySelectorAll(".wiersz-gracza");
                 const nr = wiersze.length + 1;
 
@@ -349,8 +347,9 @@
 
                 btnUsun.addEventListener("click", () => {
                     const aktualneWiersze = kontenerPol.querySelectorAll(".wiersz-gracza");
-                    if (aktualneWiersze.length <= 2) {
-                        alert("Turniej wymaga co najmniej 2 uczestników!");
+                    // Pozwalamy usunąć aż do 1 pola
+                    if (aktualneWiersze.length <= 1) {
+                        alert("Lista graczy nie może być całkowicie pusta!");
                         return;
                     }
                     wiersz.remove();
@@ -367,6 +366,9 @@
 
                 przenumerujGraczy();
                 aktualizujLicznik();
+                
+                // Zwracamy nowo utworzony input
+                return input;
             }
 
             function przenumerujGraczy() {
@@ -386,8 +388,10 @@
 
             // Kliknięcie wiersza dodawania
             wierszDodaj?.addEventListener("click", () => {
-                dodajPoleGracza();
+                const nowyInput = dodajPoleGracza();
                 kontenerPol.scrollTop = kontenerPol.scrollHeight;
+                // Od razu łapiemy focus na nowe pole
+                if (nowyInput) nowyInput.focus();
             });
 
             async function zainicjalizujGraczy() {
@@ -411,11 +415,19 @@
 
                 const pamiec = JSON.parse(localStorage.getItem("sd_ostatni_gracze") || "[]");
 
-                const gracz1 = nickZalogowanego || pamiec[0] || "Gracz 1";
-                const gracz2 = pamiec[1] || "";
-
-                dodajPoleGracza(gracz1);
-                dodajPoleGracza(gracz2);
+                if (pamiec.length > 0) {
+                    // Odtwarzamy pamięć, jeśli była (ale upewniamy się, że Gracz 1 to my)
+                    pamiec.forEach((imie, idx) => {
+                        if (idx === 0) {
+                            dodajPoleGracza(nickZalogowanego || imie);
+                        } else {
+                            dodajPoleGracza(imie);
+                        }
+                    });
+                } else {
+                    // Gdy brak pamięci, dodajemy tylko JEDNO pole na start
+                    dodajPoleGracza(nickZalogowanego || "");
+                }
             }
             // ======================================================
             // GŁÓWNY SILNIK GENERUJĄCY PODGLĄD WIZUALNY
@@ -1009,6 +1021,7 @@
             // PRZYWRACANIE WIDOKU GRUP/DRABINKI PO POWROCIE Z TARCZY
             // ======================================================
             document.addEventListener("DOMContentLoaded", () => {
+                zainicjalizujGraczy();
                 const zapisaneUstawieniaTurnieju = localStorage.getItem("sd_aktywny_turniej_stan");
 
                 if (zapisaneUstawieniaTurnieju) {

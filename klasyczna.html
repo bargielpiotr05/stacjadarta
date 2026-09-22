@@ -1604,11 +1604,19 @@
                             mojGracz = gracze[mojIndeksOnline];
                             rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
                         } else {
-                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === mojNick.trim().toLowerCase()) || gracze[0];
-                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id);
+                            // ZMIANA: Usunięto awaryjne "|| gracze[0]". Szukamy tylko po faktycznym nicku.
+                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === mojNick.trim().toLowerCase());
+                            if (mojGracz) {
+                                rywalGracz = gracze.find((g) => g.id !== mojGracz.id);
+                            }
                         }
 
-                        if (!mojGracz) return;
+                        // ZABEZPIECZENIE: Jeżeli w tym meczu nie ma Twojego nicku (np. to mecz innych graczy w turnieju),
+                        // kończymy działanie tej funkcji i NIE aktualizujemy profilu w bazie danych.
+                        if (!mojGracz) {
+                            console.log("Zalogowany gracz nie bierze udziału w tym meczu. Pomijam zapis do Supabase.");
+                            return;
+                        }
 
                         // Bezpieczne sprawdzanie zwycięzcy (omija błąd, gdy zwyciezca nie istnieje w trybie treningu)
                         const czyWygralem = zwyciezca ? zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa : false;
