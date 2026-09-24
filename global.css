@@ -603,6 +603,14 @@ header a {
   background-color: var(--primary-color-more-lighter);
   border-color: var(--primary-color-border-hover);
 }
+.social-icons img {
+  width: 50px;
+  height: 50px;
+  transition: transform 0.3s ease;
+}
+.social-icons img:hover {
+  transform: scale(1.1);
+}
 
 /* Dostosowanie mobilne */
 @media (max-width: 1150px) {
