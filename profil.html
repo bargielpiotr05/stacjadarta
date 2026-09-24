@@ -323,7 +323,7 @@
                     client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
                 }
 
-                // --- NOWE: Zmiany UI dla obcego profilu ---
+                // --- NOWE: Zmiany UI dla obcego profilu i sprawdzanie znajomości ---
                 if (!czyMojProfil) {
                     // Ukrywamy edycję i wgrywanie zdjęcia
                     const btnEdycja = document.getElementById("btn-edycja-profilu");
@@ -337,10 +337,36 @@
                     document.getElementById("akcje-wlasciciela").style.display = "none";
                     document.getElementById("akcje-goscia").style.display = "flex";
                     
-                    // Do przycisku zaproszenia przypisujemy ID tego rywala
                     const btnDodaj = document.getElementById("btn-dodaj-znajomego");
                     if (btnDodaj) {
                         btnDodaj.setAttribute("data-rywal-id", profilId);
+                        
+                        // Pobieramy Twoje znajomości i szukamy powiązania z tym profilem
+                        const { data: relacje } = await client
+                            .from("znajomi")
+                            .select("*")
+                            .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                            
+                        const relacja = relacje?.find(r => r.zapraszajacy_id === profilId || r.zapraszany_id === profilId);
+
+                        // Modyfikujemy przycisk na podstawie statusu
+                        if (relacja) {
+                            if (relacja.status === 'zaakceptowane') {
+                                btnDodaj.textContent = "✓ Twój znajomy";
+                                btnDodaj.className = "btn-secondary";
+                                btnDodaj.disabled = true;
+                            } else if (relacja.status === 'oczekujace') {
+                                if (relacja.zapraszajacy_id === aktualnyUser.id) {
+                                    btnDodaj.textContent = "⏳ Wysłano zaproszenie";
+                                    btnDodaj.className = "btn-secondary";
+                                    btnDodaj.disabled = true;
+                                } else {
+                                    btnDodaj.textContent = "Oczekuje! Akceptuj";
+                                    btnDodaj.className = "btn-primary";
+                                    btnDodaj.setAttribute("data-relacja-id", relacja.id);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -811,37 +837,48 @@
                     btnUsun.textContent = "Potwierdź usunięcie";
                 }
             });
-            // --- OBSŁUGA WYSYŁANIA ZAPROSZENIA ---
+            // --- OBSŁUGA WYSYŁANIA / AKCEPTOWANIA ZAPROSZENIA ---
             const btnDodajZnajomego = document.getElementById("btn-dodaj-znajomego");
             if (btnDodajZnajomego) {
                 btnDodajZnajomego.addEventListener("click", async function() {
                     if (!aktualnyUser) return;
                     
+                    const relacjaId = this.getAttribute("data-relacja-id");
                     const rywalId = this.getAttribute("data-rywal-id");
-                    if (!rywalId) return;
-
+                    
                     this.disabled = true;
-                    this.textContent = "Wysyłanie...";
-
-                    // Wrzucamy zaproszenie do bazy
-                    const { error } = await client.from("znajomi").insert([
-                        { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }
-                    ]);
-
-                    if (error) {
-                        // Błąd 23505 to naruszenie unikalności (czyli już go zaprosiłeś albo już jesteście znajomymi)
-                        if (error.code === '23505') {
-                            alert("Zaproszenie zostało już wysłane lub ten gracz jest już Twoim znajomym.");
+                    
+                    if (relacjaId) {
+                        // Ktoś nas zaprosił, więc akceptujemy
+                        this.textContent = "Akceptowanie...";
+                        const { error } = await client.from("znajomi").update({ status: 'zaakceptowane' }).eq('id', relacjaId);
+                        
+                        if (!error) {
+                            this.textContent = "✓ Twój znajomy";
+                            this.className = "btn-secondary";
                         } else {
-                            console.error("Błąd wysyłania zaproszenia:", error);
-                            alert("Wystąpił błąd podczas wysyłania zaproszenia.");
+                            this.disabled = false;
+                            this.textContent = "Błąd akceptacji.";
                         }
-                        this.textContent = "Zaproś do znajomych";
-                        this.disabled = false;
-                    } else {
-                        this.textContent = "✓ Wysłano zaproszenie";
-                        this.style.backgroundColor = "#4ade80"; // Zmiana na jasny zielony
-                        this.style.color = "#0b091f";
+                    } else if (rywalId) {
+                        // Wysyłamy nowe zaproszenie
+                        this.textContent = "Wysyłanie...";
+                        const { error } = await client.from("znajomi").insert([
+                            { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }
+                        ]);
+
+                        if (error) {
+                            if (error.code === '23505') {
+                                this.textContent = "Zaproszenie już istnieje";
+                            } else {
+                                console.error("Błąd wysyłania zaproszenia:", error);
+                                this.textContent = "Błąd wysyłania";
+                                this.disabled = false;
+                            }
+                        } else {
+                            this.textContent = "⏳ Wysłano zaproszenie";
+                            this.className = "btn-wyslane-zaproszenie";
+                        }
                     }
                 });
             }
