@@ -37,9 +37,9 @@
                     <button id="btn-edycja-profilu" type="button">Edytuj profil</button>
                 </div>
 
-                <div id="sekcja-statystyk">
+                <div id="sekcja-statystyk" class="sekcje-gracza">
                     <h3>Statystyki</h3>
-                    <div id="bloki-statystyk">
+                    <div id="bloki-statystyk" class="bloki-sekcji">
                         <div id="srednia-gracza" class="wspolny-div">
                             <h4>Średnia:</h4>
                             <p id="stat-srednia">0.00</p>
@@ -63,6 +63,36 @@
                         <div id="porażki" class="wspolny-div">
                             <h4>Porażki:</h4>
                             <p id="stat-porazki">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sekcja-sprzetu" class="sekcje-gracza">
+                    <h3>Sprzęt</h3>
+                    <div id="bloki-sprzetu" class="bloki-sekcji">
+                        <div id="barele" class="wspolny-div">
+                            <h4>Barele:</h4>
+                            <p id="barele-gracza">23 Gram Jeffrey de Graaf G1</p>
+                        </div>
+                        <div id="shaft" class="wspolny-div">
+                            <h4>Shafty:</h4>
+                            <p id="shafty-gracza">K-Flex Stephen Bunting NO2</p>
+                        </div>
+                        <div id="groty" class="wspolny-div">
+                            <h4>Groty:</h4>
+                            <p id="groty-gracza">Swiss Points RVE Silver 40mm</p>
+                        </div>
+                        <div id="tarcza" class="wspolny-div">
+                            <h4>Tarcza:</h4>
+                            <p id="tarcza-gracza">Winmau Blade 6</p>
+                        </div>
+                        <div id="autoscore" class="wspolny-div">
+                            <h4>Auto-score:</h4>
+                            <p id="autoscore-gracza">-</p>
+                        </div>
+                        <div id="druzyna" class="wspolny-div">
+                            <h4>Drużyna:</h4>
+                            <p id="druzyna-gracza">ADT</p>
                         </div>
                     </div>
                 </div>
@@ -96,12 +126,13 @@
             <div id="modal-edycja-profilu" class="modal-overlay" style="display: none">
                 <div class="modal-zawartosc">
                     <div class="modal-header">
-                        <h3 id="modal-tytul">Edytuj profil</h3>
+                        <h2 id="modal-tytul">Edytuj profil</h2>
                         <button type="button" class="btn-zamknij-modal" id="btn-zamknij-edycje">&times;</button>
                     </div>
 
                     <!-- FORMULARZ EDYCJI PROFILU -->
                     <form id="form-edycja-profilu" class="modal-form">
+                        <h3 class="nazwa-sekcji">Konto</h3>
                         <label class="form-grupa">
                             <span>Nazwa użytkownika (Nick):</span>
                             <input type="text" id="edycja-nick" required minlength="3" />
@@ -111,7 +142,38 @@
                             <span>Nowe hasło (pozostaw puste, jeśli bez zmian):</span>
                             <input type="password" id="edycja-haslo" minlength="6" placeholder="Wpisz nowe hasło..." />
                         </label>
+                        <label class="form-grupa">
+                            <a id="sprzet-gracza" style="cursor: pointer; user-select: none">
+                                <h3 class="nazwa-sekcji">Sprzęt <span class="ikona-strzalki">∨</span></h3>
+                            </a>
+                        </label>
 
+                        <div class="strefa-sprzetu">
+                            <label class="form-grupa">
+                                <span>Barele</span>
+                                <input type="text" id="edycja-barele" placeholder="23 Gram Jeffrey de Graaf G1" />
+                            </label>
+                            <label class="form-grupa">
+                                <span>Shafty</span>
+                                <input type="text" id="edycja-shafty" placeholder="K-Flex Stephen Bunting NO2" />
+                            </label>
+                            <label class="form-grupa">
+                                <span>Groty</span>
+                                <input type="text" id="edycja-groty" placeholder="Swiss Points RVE Silver 40mm" />
+                            </label>
+                            <label class="form-grupa">
+                                <span>Tarcza</span>
+                                <input type="text" id="edycja-tarczy" placeholder="Winmau Blade 6" />
+                            </label>
+                            <label class="form-grupa">
+                                <span>Auto-score</span>
+                                <input type="text" id="edycja-auto-score" placeholder="Scolia" />
+                            </label>
+                            <label class="form-grupa">
+                                <span>Drużyna</span>
+                                <input type="text" id="edycja-druzyny" placeholder="ADT" />
+                            </label>
+                        </div>
                         <div id="edycja-status" style="display: none; padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; margin-top: 5px"></div>
 
                         <div class="modal-akcje">
@@ -147,87 +209,103 @@
         <footer id="wspolny-footer"></footer>
 
         <script>
-                        const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
+            const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
 
-                        let aktualnyUser = null;
-                        let aktualnyProfil = null;
-                        let ostatnieMeczeCache = [];
+            const btnSprzet = document.getElementById("sprzet-gracza");
+            const strefaSprzetu = document.querySelector(".strefa-sprzetu");
 
-                        async function zaladujProfil() {
-                            if (!client) return;
+            btnSprzet.addEventListener("click", (e) => {
+                e.preventDefault();
+                btnSprzet.classList.toggle("aktywny");
+                strefaSprzetu.classList.toggle("otwarta");
+            });
+            let aktualnyUser = null;
+            let aktualnyProfil = null;
+            let ostatnieMeczeCache = [];
 
-                            const {
-                                data: { session },
-                                error: sessionErr,
-                            } = await client.auth.getSession();
+            async function zaladujProfil() {
+                if (!client) return;
 
-                            if (sessionErr || !session?.user) {
-                                window.location.href = "./logowanie.html";
-                                return;
+                const {
+                    data: { session },
+                    error: sessionErr,
+                } = await client.auth.getSession();
+
+                if (sessionErr || !session?.user) {
+                    window.location.href = "./logowanie.html";
+                    return;
+                }
+
+                aktualnyUser = session.user;
+
+                // 1. Pobranie rekordu z tabeli public.profiles
+                const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", aktualnyUser.id).maybeSingle();
+
+                if (profilErr) {
+                    console.error("Błąd pobierania profilu:", profilErr);
+                }
+
+                aktualnyProfil = profil;
+
+                const emailUsera = aktualnyUser.email || "";
+                const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
+
+                // 1. Priorytet ma Twój prawdziwy nick z konta (user_metadata)
+                const metaNick = aktualnyUser.user_metadata?.username;
+                const nazwaGracza = metaNick || profil?.nazwa_gracza || domyslnyNick;
+
+                // 2. Automatyczna synchronizacja: naprawia rekord w tabeli profiles w bazie
+                if (metaNick && profil && profil.nazwa_gracza !== metaNick) {
+                    client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
+                }
+
+                // Wypełnienie widoku
+                document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
+                document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
+                document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
+                document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
+                document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
+                document.getElementById("stat-mecze").textContent = profil?.rozegrane_mecze || 0;
+                document.getElementById("stat-wygrane").textContent = profil?.wygrane_mecze || 0;
+                document.getElementById("stat-porazki").textContent = Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
+
+                // --- NOWE: Ładowanie sprzętu gracza ---
+                document.getElementById("barele-gracza").textContent = profil?.barele || "-";
+                document.getElementById("shafty-gracza").textContent = profil?.shafty || "-";
+                document.getElementById("groty-gracza").textContent = profil?.groty || "-";
+                document.getElementById("tarcza-gracza").textContent = profil?.tarcza || "-";
+                document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
+                document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
+
+                // 2. Pobranie historii gier z tabeli public.matches
+                const { data: mecze, error: meczeErr } = await client.from("matches").select("*").or(`host_id.eq.${aktualnyUser.id},gosc_id.eq.${aktualnyUser.id}`).order("utworzono", { ascending: false }).limit(5);
+
+                if (meczeErr) {
+                    console.error("Błąd pobierania meczów:", meczeErr);
+                }
+
+                const listaMeczy = document.getElementById("lista-ostatnich-meczy");
+                ostatnieMeczeCache = mecze || [];
+
+                if (!mecze || mecze.length === 0) {
+                    listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
+                } else {
+                    listaMeczy.innerHTML = mecze
+                        .map((m, idx) => {
+                            const czyHost = m.host_id === aktualnyUser.id;
+                            const czyWygrana = m.zwyciezca_id === aktualnyUser.id;
+                            const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
+                            const dataMeczu = new Date(m.utworzono).toLocaleDateString("pl-PL");
+
+                            let przeciwnikNazwa = "Przeciwnik";
+                            if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
+                                const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
+                                przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
+                            } else if (m.format_gry) {
+                                przeciwnikNazwa = m.format_gry;
                             }
 
-                            aktualnyUser = session.user;
-
-                            // 1. Pobranie rekordu z tabeli public.profiles
-                            const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", aktualnyUser.id).maybeSingle();
-
-                            if (profilErr) {
-                                console.error("Błąd pobierania profilu:", profilErr);
-                            }
-
-                            aktualnyProfil = profil;
-
-                            const emailUsera = aktualnyUser.email || "";
-                            const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
-
-                            // 1. Priorytet ma Twój prawdziwy nick z konta (user_metadata)
-                            const metaNick = aktualnyUser.user_metadata?.username;
-                            const nazwaGracza = metaNick || profil?.nazwa_gracza || domyslnyNick;
-
-                            // 2. Automatyczna synchronizacja: naprawia rekord w tabeli profiles w bazie
-                            if (metaNick && profil && profil.nazwa_gracza !== metaNick) {
-                                client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
-                            }
-
-                            // Wypełnienie widoku
-                            document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
-                            document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
-                            document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
-                            document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
-                            document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
-                            document.getElementById("stat-mecze").textContent = profil?.rozegrane_mecze || 0;
-                            document.getElementById("stat-wygrane").textContent = profil?.wygrane_mecze || 0;
-                            document.getElementById("stat-porazki").textContent = Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
-
-                            // 2. Pobranie historii gier z tabeli public.matches
-                            const { data: mecze, error: meczeErr } = await client.from("matches").select("*").or(`host_id.eq.${aktualnyUser.id},gosc_id.eq.${aktualnyUser.id}`).order("utworzono", { ascending: false }).limit(5);
-
-                            if (meczeErr) {
-                                console.error("Błąd pobierania meczów:", meczeErr);
-                            }
-
-                            const listaMeczy = document.getElementById("lista-ostatnich-meczy");
-                            ostatnieMeczeCache = mecze || [];
-
-                            if (!mecze || mecze.length === 0) {
-                                listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
-                            } else {
-                                listaMeczy.innerHTML = mecze
-                                    .map((m, idx) => {
-                                        const czyHost = m.host_id === aktualnyUser.id;
-                                        const czyWygrana = m.zwyciezca_id === aktualnyUser.id;
-                                        const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
-                                        const dataMeczu = new Date(m.utworzono).toLocaleDateString("pl-PL");
-
-                                        let przeciwnikNazwa = "Przeciwnik";
-                                        if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
-                                            const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
-                                            przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
-                                        } else if (m.format_gry) {
-                                            przeciwnikNazwa = m.format_gry;
-                                        }
-
-                                        return `
+                            return `
                             <div class="mecz ${czyWygrana ? "wygrana" : "porazka"}">
                                 <p class="przeciwnik">Przeciwnik: <strong>${przeciwnikNazwa}</strong></p>
                                 <p class="wynik">Wynik: <strong>${wynik}</strong></p>
@@ -235,327 +313,371 @@
                                 <button type="button" class="btn-przebieg-profil" onclick="otworzPrzebiegMeczu(${idx})">Przebieg meczu</button>
                             </div>
                           `;
-                                    })
-                                    .join("");
-                            }
-                        }
+                        })
+                        .join("");
+                }
+            }
 
-                        // --- PRZEGLĄDANIE PRZEBIEGU MECZU ---
-                        const modalPrzebiegu = document.getElementById("modal-przebiegu");
-                        const btnZamknijPrzebieg = document.getElementById("zamknij-przebieg");
-                        const kontenerZakladek = document.getElementById("kontener-zakladek");
-                        const kontenerTabeleLegow = document.getElementById("kontener-tabele-legow");
+            // --- PRZEGLĄDANIE PRZEBIEGU MECZU ---
+            const modalPrzebiegu = document.getElementById("modal-przebiegu");
+            const btnZamknijPrzebieg = document.getElementById("zamknij-przebieg");
+            const kontenerZakladek = document.getElementById("kontener-zakladek");
+            const kontenerTabeleLegow = document.getElementById("kontener-tabele-legow");
 
-                        window.otworzPrzebiegMeczu = function (index) {
-                            const mecz = ostatnieMeczeCache[index];
-                            const legi = mecz?.pelny_przebieg_meczu || mecz?.historiaMeczuLegi;
+            window.otworzPrzebiegMeczu = function (index) {
+                const mecz = ostatnieMeczeCache[index];
+                const legi = mecz?.pelny_przebieg_meczu || mecz?.historiaMeczuLegi;
 
-                            if (!mecz || !legi || legi.length === 0) {
-                                alert("Brak szczegółowej historii rzutów dla tego meczu.");
-                                return;
-                            }
+                if (!mecz || !legi || legi.length === 0) {
+                    alert("Brak szczegółowej historii rzutów dla tego meczu.");
+                    return;
+                }
 
-                            kontenerZakladek.innerHTML = "";
-                            kontenerTabeleLegow.innerHTML = "";
+                kontenerZakladek.innerHTML = "";
+                kontenerTabeleLegow.innerHTML = "";
 
-                            const gracze = mecz.statystyki_graczy ||
-                                mecz.graczeInfo || [
-                                    { id: 0, nazwa: "Gospodarz" },
-                                    { id: 1, nazwa: "Gość" },
-                                ];
+                const gracze = mecz.statystyki_graczy ||
+                    mecz.graczeInfo || [
+                        { id: 0, nazwa: "Gospodarz" },
+                        { id: 1, nazwa: "Gość" },
+                    ];
 
-                            legi.forEach((legData, legIdx) => {
-                                const btnTab = document.createElement("button");
-                                btnTab.className = `przycisk-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
-                                btnTab.textContent = `Leg ${legIdx + 1}`;
-                                btnTab.addEventListener("click", () => {
-                                    document.querySelectorAll(".przycisk-zakladki").forEach((b) => b.classList.remove("aktywna"));
-                                    document.querySelectorAll(".zawartosc-zakladki").forEach((z) => z.classList.remove("aktywna"));
-                                    btnTab.classList.add("aktywna");
-                                    document.getElementById(`zawartosc-leg-${legIdx}`).classList.add("aktywna");
-                                });
-                                kontenerZakladek.appendChild(btnTab);
+                legi.forEach((legData, legIdx) => {
+                    const btnTab = document.createElement("button");
+                    btnTab.className = `przycisk-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
+                    btnTab.textContent = `Leg ${legIdx + 1}`;
+                    btnTab.addEventListener("click", () => {
+                        document.querySelectorAll(".przycisk-zakladki").forEach((b) => b.classList.remove("aktywna"));
+                        document.querySelectorAll(".zawartosc-zakladki").forEach((z) => z.classList.remove("aktywna"));
+                        btnTab.classList.add("aktywna");
+                        document.getElementById(`zawartosc-leg-${legIdx}`).classList.add("aktywna");
+                    });
+                    kontenerZakladek.appendChild(btnTab);
 
-                                const divTabContent = document.createElement("div");
-                                divTabContent.className = `zawartosc-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
-                                divTabContent.id = `zawartosc-leg-${legIdx}`;
+                    const divTabContent = document.createElement("div");
+                    divTabContent.className = `zawartosc-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
+                    divTabContent.id = `zawartosc-leg-${legIdx}`;
 
-                                const szerokoscKolumny = Math.floor(90 / gracze.length);
-                                const srednieWLegu = {};
+                    const szerokoscKolumny = Math.floor(90 / gracze.length);
+                    const srednieWLegu = {};
 
-                                gracze.forEach((g) => {
-                                    const rzutyGracza = legData.filter((r) => r.graczId === g.id);
-                                    const sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
-                                    const iloscKolejek = rzutyGracza.length;
-                                    srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
-                                });
+                    gracze.forEach((g) => {
+                        const rzutyGracza = legData.filter((r) => r.graczId === g.id);
+                        const sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
+                        const iloscKolejek = rzutyGracza.length;
+                        srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
+                    });
 
-                                let htmlTabeli = `
+                    let htmlTabeli = `
                         <table class="tabela-przebiegu">
                             <thead>
                                 <tr>
                                     <th style="width: 10%;">Kolejka</th>
                       `;
-                                gracze.forEach((g) => {
-                                    htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
+                    gracze.forEach((g) => {
+                        htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
                             ${g.nazwa}<br>
                             <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
                         </th>`;
-                                });
-                                htmlTabeli += `</tr></thead><tbody>`;
+                    });
+                    htmlTabeli += `</tr></thead><tbody>`;
 
-                                const rundyMap = {};
-                                legData.forEach((rekord) => {
-                                    if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
-                                    rundyMap[rekord.kolejka][rekord.graczId] = rekord;
-                                });
+                    const rundyMap = {};
+                    legData.forEach((rekord) => {
+                        if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
+                        rundyMap[rekord.kolejka][rekord.graczId] = rekord;
+                    });
 
-                                Object.keys(rundyMap).forEach((kol) => {
-                                    htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
-                                    gracze.forEach((g) => {
-                                        const rzutG = rundyMap[kol][g.id];
-                                        const cel = rzutG ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>` : "-";
-                                        htmlTabeli += `<td>${cel}</td>`;
-                                    });
-                                    htmlTabeli += `</tr>`;
-                                });
-
-                                htmlTabeli += `</tbody></table>`;
-                                divTabContent.innerHTML = htmlTabeli;
-                                kontenerTabeleLegow.appendChild(divTabContent);
-                            });
-
-                            modalPrzebiegu.style.display = "flex";
-                        };
-
-                        btnZamknijPrzebieg?.addEventListener("click", () => {
-                            modalPrzebiegu.style.display = "none";
+                    Object.keys(rundyMap).forEach((kol) => {
+                        htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
+                        gracze.forEach((g) => {
+                            const rzutG = rundyMap[kol][g.id];
+                            const cel = rzutG ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>` : "-";
+                            htmlTabeli += `<td>${cel}</td>`;
                         });
+                        htmlTabeli += `</tr>`;
+                    });
 
-                        // --- OBSŁUGA AVATARA ---
-                        const avatarContainer = document.getElementById("avatar-container");
-                        const inputAvatar = document.getElementById("input-avatar");
-                        const avatarStatus = document.getElementById("avatar-status");
-                        const imgAvatar = document.getElementById("zdjecie-uzytkownika");
+                    htmlTabeli += `</tbody></table>`;
+                    divTabContent.innerHTML = htmlTabeli;
+                    kontenerTabeleLegow.appendChild(divTabContent);
+                });
 
-                        avatarContainer.addEventListener("click", () => inputAvatar.click());
+                modalPrzebiegu.style.display = "flex";
+            };
 
-                        inputAvatar.addEventListener("change", async (e) => {
-                            const plik = e.target.files[0];
-                            if (!plik) return;
+            btnZamknijPrzebieg?.addEventListener("click", () => {
+                modalPrzebiegu.style.display = "none";
+            });
 
-                            if (!aktualnyUser) {
-                                const { data: sessionData } = await client.auth.getSession();
-                                aktualnyUser = sessionData?.session?.user;
-                            }
+            // --- OBSŁUGA AVATARA ---
+            const avatarContainer = document.getElementById("avatar-container");
+            const inputAvatar = document.getElementById("input-avatar");
+            const avatarStatus = document.getElementById("avatar-status");
+            const imgAvatar = document.getElementById("zdjecie-uzytkownika");
 
-                            if (!aktualnyUser) {
-                                avatarStatus.textContent = "Zaloguj się ponownie!";
-                                avatarStatus.style.color = "#f87171";
-                                return;
-                            }
+            avatarContainer.addEventListener("click", () => inputAvatar.click());
 
-                            if (plik.size > 2 * 1024 * 1024) {
-                                avatarStatus.textContent = "Plik jest za duży (maks. 2 MB)!";
-                                avatarStatus.style.color = "#f87171";
-                                inputAvatar.value = "";
-                                return;
-                            }
+            inputAvatar.addEventListener("change", async (e) => {
+                const plik = e.target.files[0];
+                if (!plik) return;
 
-                            avatarStatus.textContent = "Wgrywanie zdjęcia...";
-                            avatarStatus.style.color = "#38bdf8";
+                if (!aktualnyUser) {
+                    const { data: sessionData } = await client.auth.getSession();
+                    aktualnyUser = sessionData?.session?.user;
+                }
 
-                            try {
-                                const userId = aktualnyUser.id;
-                                const ext = plik.name.split(".").pop().toLowerCase() || "png";
-                                const nowaSciezka = `${userId}/avatar_${Date.now()}.${ext}`;
+                if (!aktualnyUser) {
+                    avatarStatus.textContent = "Zaloguj się ponownie!";
+                    avatarStatus.style.color = "#f87171";
+                    return;
+                }
 
-                                // 1. Upload unikalnego pliku
-                                const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
-                                    contentType: plik.type || "image/png",
-                                    upsert: true
-                                });
-                              
+                if (plik.size > 2 * 1024 * 1024) {
+                    avatarStatus.textContent = "Plik jest za duży (maks. 2 MB)!";
+                    avatarStatus.style.color = "#f87171";
+                    inputAvatar.value = "";
+                    return;
+                }
 
-                                if (uploadErr) throw uploadErr;
+                avatarStatus.textContent = "Wgrywanie zdjęcia...";
+                avatarStatus.style.color = "#38bdf8";
 
-                                // 2. Pobranie adresu publicznego
-                                const {
-                                    data: { publicUrl },
-                                } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
+                try {
+                    const userId = aktualnyUser.id;
+                    const ext = plik.name.split(".").pop().toLowerCase() || "png";
+                    const nowaSciezka = `${userId}/avatar_${Date.now()}.${ext}`;
 
-                                // 3. Aktualizacja tabeli public.profiles
-                                const { error: dbErr } = await client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
+                    // 1. Upload unikalnego pliku
+                    const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
+                        contentType: plik.type || "image/png",
+                        upsert: true,
+                    });
 
-                                if (dbErr) throw dbErr;
+                    if (uploadErr) throw uploadErr;
 
-                                // 4. Kopia zapasowa w sesji użytkownika
-                                await client.auth.updateUser({
-                                    data: { avatar_url: publicUrl },
-                                });
-                                await client.auth.refreshSession();
+                    // 2. Pobranie adresu publicznego
+                    const {
+                        data: { publicUrl },
+                    } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
 
-                                // 5. Aktualizacja UI
-                                imgAvatar.src = publicUrl;
-                                const headerAvatarWrap = document.querySelector(".user-avatar-wrap");
-                                if (headerAvatarWrap) {
-                                    headerAvatarWrap.innerHTML = `<img src="${publicUrl}" alt="Avatar" class="header-avatar-img" />`;
-                                }
+                    // 3. Aktualizacja tabeli public.profiles
+                    const { error: dbErr } = await client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
 
-                                avatarStatus.textContent = "Zdjęcie zaktualizowane!";
-                                avatarStatus.style.color = "#4ade80";
-                                setTimeout(() => (avatarStatus.textContent = ""), 3000);
-                            } catch (err) {
-                                console.error("Błąd zapisu zdjęcia:", err);
-                                avatarStatus.textContent = "Nie udało się zapisać zdjęcia.";
-                                avatarStatus.style.color = "#f87171";
-                            } finally {
-                                inputAvatar.value = "";
-                            }
+                    if (dbErr) throw dbErr;
+
+                    // 4. Kopia zapasowa w sesji użytkownika
+                    await client.auth.updateUser({
+                        data: { avatar_url: publicUrl },
+                    });
+                    await client.auth.refreshSession();
+
+                    // 5. Aktualizacja UI
+                    imgAvatar.src = publicUrl;
+                    const headerAvatarWrap = document.querySelector(".user-avatar-wrap");
+                    if (headerAvatarWrap) {
+                        headerAvatarWrap.innerHTML = `<img src="${publicUrl}" alt="Avatar" class="header-avatar-img" />`;
+                    }
+
+                    avatarStatus.textContent = "Zdjęcie zaktualizowane!";
+                    avatarStatus.style.color = "#4ade80";
+                    setTimeout(() => (avatarStatus.textContent = ""), 3000);
+                } catch (err) {
+                    console.error("Błąd zapisu zdjęcia:", err);
+                    avatarStatus.textContent = "Nie udało się zapisać zdjęcia.";
+                    avatarStatus.style.color = "#f87171";
+                } finally {
+                    inputAvatar.value = "";
+                }
+            });
+
+            // --- ZARZĄDZANIE MODALAMI ---
+            const modal = document.getElementById("modal-edycja-profilu");
+            const modalTytul = document.getElementById("modal-tytul");
+            const formEdycja = document.getElementById("form-edycja-profilu");
+            const blokUsunKonto = document.getElementById("usun-konto-blok");
+            const blokWyloguj = document.getElementById("wyloguj-blok");
+            const btnZamknijModal = document.getElementById("btn-zamknij-edycje");
+            const przyciskiAnuluj = document.querySelectorAll(".btn-anuluj-modal");
+
+            const zamknijWszystkieSekcjeModala = () => {
+                modal.style.display = "none";
+                formEdycja.style.display = "none";
+                blokUsunKonto.style.display = "none";
+                blokWyloguj.style.display = "none";
+            };
+
+            btnZamknijModal?.addEventListener("click", zamknijWszystkieSekcjeModala);
+            przyciskiAnuluj.forEach((btn) => btn.addEventListener("click", zamknijWszystkieSekcjeModala));
+
+            // 1. Otwieranie edycji profilu
+            document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
+                if (!aktualnyUser) return;
+                const obecnyNick = aktualnyProfil?.nazwa_gracza || aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
+
+                document.getElementById("edycja-nick").value = obecnyNick;
+                document.getElementById("edycja-haslo").value = "";
+                
+                // --- NOWE: Wypełnianie inputów sprzętu ---
+                document.getElementById("edycja-barele").value = aktualnyProfil?.barele || "";
+                document.getElementById("edycja-shafty").value = aktualnyProfil?.shafty || "";
+                document.getElementById("edycja-groty").value = aktualnyProfil?.groty || "";
+                document.getElementById("edycja-tarczy").value = aktualnyProfil?.tarcza || "";
+                document.getElementById("edycja-auto-score").value = aktualnyProfil?.auto_score || "";
+                document.getElementById("edycja-druzyny").value = aktualnyProfil?.druzyna || "";
+
+                document.getElementById("edycja-status").style.display = "none";
+
+                modalTytul.textContent = "Edytuj profil";
+                blokUsunKonto.style.display = "none";
+                blokWyloguj.style.display = "none";
+                formEdycja.style.display = "flex";
+                modal.style.display = "flex";
+            });
+
+            formEdycja?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const nowyNick = document.getElementById("edycja-nick").value.trim();
+                const noweHaslo = document.getElementById("edycja-haslo").value;
+                
+                // --- NOWE: Pobieranie wartości sprzętu z formularza ---
+                const noweBarele = document.getElementById("edycja-barele").value.trim();
+                const noweShafty = document.getElementById("edycja-shafty").value.trim();
+                const noweGroty = document.getElementById("edycja-groty").value.trim();
+                const nowaTarcza = document.getElementById("edycja-tarczy").value.trim();
+                const nowyAutoScore = document.getElementById("edycja-auto-score").value.trim();
+                const nowaDruzyna = document.getElementById("edycja-druzyny").value.trim();
+
+                const btnZapisz = document.getElementById("btn-zapisz-edycje");
+                const statusDiv = document.getElementById("edycja-status");
+
+                btnZapisz.disabled = true;
+
+                // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles
+                const { error: profileErr } = await client.from("profiles").update({ 
+                    nazwa_gracza: nowyNick,
+                    barele: noweBarele,
+                    shafty: noweShafty,
+                    groty: noweGroty,
+                    tarcza: nowaTarcza,
+                    auto_score: nowyAutoScore,
+                    druzyna: nowaDruzyna
+                }).eq("id", aktualnyUser.id);
+
+                if (profileErr) {
+                    btnZapisz.disabled = false;
+                    statusDiv.textContent = profileErr.message;
+                    statusDiv.style.display = "block";
+                    return;
+                }
+
+                // 2. Jeśli podano hasło, aktualizacja w Auth
+                if (noweHaslo) {
+                    const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
+                    if (passErr) {
+                        btnZapisz.disabled = false;
+                        statusDiv.textContent = passErr.message;
+                        statusDiv.style.display = "block";
+                        return;
+                    }
+                }
+
+                // 3. Kopia zapasowa w metadanych sesji
+                await client.auth.updateUser({ data: { username: nowyNick } });
+                await client.auth.refreshSession();
+
+                btnZapisz.disabled = false;
+                
+                // Aktualizacja UI bez odświeżania strony
+                document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
+                
+                document.getElementById("barele-gracza").textContent = noweBarele || "-";
+                document.getElementById("shafty-gracza").textContent = noweShafty || "-";
+                document.getElementById("groty-gracza").textContent = noweGroty || "-";
+                document.getElementById("tarcza-gracza").textContent = nowaTarcza || "-";
+                document.getElementById("autoscore-gracza").textContent = nowyAutoScore || "-";
+                document.getElementById("druzyna-gracza").textContent = nowaDruzyna || "-";
+
+                // Aktualizacja lokalnego obiektu pamięci
+                if (aktualnyProfil) {
+                    aktualnyProfil.nazwa_gracza = nowyNick;
+                    aktualnyProfil.barele = noweBarele;
+                    aktualnyProfil.shafty = noweShafty;
+                    aktualnyProfil.groty = noweGroty;
+                    aktualnyProfil.tarcza = nowaTarcza;
+                    aktualnyProfil.auto_score = nowyAutoScore;
+                    aktualnyProfil.druzyna = nowaDruzyna;
+                }
+
+                const headerNick = document.querySelector(".user-name");
+                if (headerNick) headerNick.textContent = nowyNick;
+
+                zamknijWszystkieSekcjeModala();
+            });
+
+            // 2. Otwieranie okna wylogowania
+            document.getElementById("btn-wyloguj")?.addEventListener("click", () => {
+                modalTytul.textContent = "Wyloguj się";
+                formEdycja.style.display = "none";
+                blokUsunKonto.style.display = "none";
+                blokWyloguj.style.display = "block";
+                modal.style.display = "flex";
+            });
+
+            document.getElementById("wyloguj-sie")?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                await client.auth.signOut();
+                window.location.href = "./index.html";
+            });
+
+            // 3. Otwieranie okna usunięcia konta
+            document.getElementById("btn-usun-konto")?.addEventListener("click", () => {
+                modalTytul.textContent = "Usuń konto";
+                formEdycja.style.display = "none";
+                blokWyloguj.style.display = "none";
+                blokUsunKonto.style.display = "block";
+                modal.style.display = "flex";
+            });
+
+            document.getElementById("form-usun-konto")?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                if (!aktualnyUser) return;
+
+                const btnUsun = document.getElementById("btn-potwierdz-usuniecie");
+                btnUsun.disabled = true;
+                btnUsun.textContent = "Usuwanie...";
+
+                try {
+                    const folderUsera = aktualnyUser.id;
+                    const { data: pliki } = await client.storage.from("avatary").list(folderUsera);
+                    if (pliki && pliki.length > 0) {
+                        const sciezki = pliki.map((p) => `${folderUsera}/${p.name}`);
+                        await client.storage.from("avatary").remove(sciezki);
+                    }
+
+                    const { error: rpcErr } = await client.rpc("usun_konto_uzytkownika");
+                    if (rpcErr) {
+                        await client.auth.updateUser({
+                            data: {
+                                username: "Konto Usunięte",
+                                avatar_url: null,
+                                ostatnie_mecze: [],
+                            },
                         });
+                    }
 
-                        // --- ZARZĄDZANIE MODALAMI ---
-                        const modal = document.getElementById("modal-edycja-profilu");
-                        const modalTytul = document.getElementById("modal-tytul");
-                        const formEdycja = document.getElementById("form-edycja-profilu");
-                        const blokUsunKonto = document.getElementById("usun-konto-blok");
-                        const blokWyloguj = document.getElementById("wyloguj-blok");
-                        const btnZamknijModal = document.getElementById("btn-zamknij-edycje");
-                        const przyciskiAnuluj = document.querySelectorAll(".btn-anuluj-modal");
+                    await client.auth.signOut();
+                    alert("Konto zostało usunięte.");
+                    window.location.href = "./index.html";
+                } catch (err) {
+                    console.error("Błąd usuwania konta:", err);
+                    alert("Wystąpił błąd podczas usuwania konta.");
+                    btnUsun.disabled = false;
+                    btnUsun.textContent = "Potwierdź usunięcie";
+                }
+            });
 
-                        const zamknijWszystkieSekcjeModala = () => {
-                            modal.style.display = "none";
-                            formEdycja.style.display = "none";
-                            blokUsunKonto.style.display = "none";
-                            blokWyloguj.style.display = "none";
-                        };
-
-                        btnZamknijModal?.addEventListener("click", zamknijWszystkieSekcjeModala);
-                        przyciskiAnuluj.forEach((btn) => btn.addEventListener("click", zamknijWszystkieSekcjeModala));
-
-                        // 1. Otwieranie edycji profilu
-                        document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
-                            if (!aktualnyUser) return;
-                            const obecnyNick = aktualnyProfil?.nazwa_gracza || aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
-
-                            document.getElementById("edycja-nick").value = obecnyNick;
-                            document.getElementById("edycja-haslo").value = "";
-                            document.getElementById("edycja-status").style.display = "none";
-
-                            modalTytul.textContent = "Edytuj profil";
-                            blokUsunKonto.style.display = "none";
-                            blokWyloguj.style.display = "none";
-                            formEdycja.style.display = "flex";
-                            modal.style.display = "flex";
-                        });
-
-                        formEdycja?.addEventListener("submit", async (e) => {
-                            e.preventDefault();
-                            const nowyNick = document.getElementById("edycja-nick").value.trim();
-                            const noweHaslo = document.getElementById("edycja-haslo").value;
-                            const btnZapisz = document.getElementById("btn-zapisz-edycje");
-                            const statusDiv = document.getElementById("edycja-status");
-
-                            btnZapisz.disabled = true;
-
-                            // 1. Zapis nazwy gracza do tabeli profiles
-                            const { error: profileErr } = await client.from("profiles").update({ nazwa_gracza: nowyNick }).eq("id", aktualnyUser.id);
-
-                            if (profileErr) {
-                                btnZapisz.disabled = false;
-                                statusDiv.textContent = profileErr.message;
-                                statusDiv.style.display = "block";
-                                return;
-                            }
-
-                            // 2. Jeśli podano hasło, aktualizacja w Auth
-                            if (noweHaslo) {
-                                const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
-                                if (passErr) {
-                                    btnZapisz.disabled = false;
-                                    statusDiv.textContent = passErr.message;
-                                    statusDiv.style.display = "block";
-                                    return;
-                                }
-                            }
-
-                            // 3. Kopia zapasowa w metadanych sesji
-                            await client.auth.updateUser({ data: { username: nowyNick } });
-                            await client.auth.refreshSession();
-
-                            btnZapisz.disabled = false;
-                            document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
-                            if (aktualnyProfil) aktualnyProfil.nazwa_gracza = nowyNick;
-
-                            const headerNick = document.querySelector(".user-name");
-                            if (headerNick) headerNick.textContent = nowyNick;
-
-                            zamknijWszystkieSekcjeModala();
-                        });
-
-                        // 2. Otwieranie okna wylogowania
-                        document.getElementById("btn-wyloguj")?.addEventListener("click", () => {
-                            modalTytul.textContent = "Wyloguj się";
-                            formEdycja.style.display = "none";
-                            blokUsunKonto.style.display = "none";
-                            blokWyloguj.style.display = "block";
-                            modal.style.display = "flex";
-                        });
-
-                        document.getElementById("wyloguj-sie")?.addEventListener("submit", async (e) => {
-                            e.preventDefault();
-                            await client.auth.signOut();
-                            window.location.href = "./index.html";
-                        });
-
-                        // 3. Otwieranie okna usunięcia konta
-                        document.getElementById("btn-usun-konto")?.addEventListener("click", () => {
-                            modalTytul.textContent = "Usuń konto";
-                            formEdycja.style.display = "none";
-                            blokWyloguj.style.display = "none";
-                            blokUsunKonto.style.display = "block";
-                            modal.style.display = "flex";
-                        });
-
-                        document.getElementById("form-usun-konto")?.addEventListener("submit", async (e) => {
-                            e.preventDefault();
-                            if (!aktualnyUser) return;
-
-                            const btnUsun = document.getElementById("btn-potwierdz-usuniecie");
-                            btnUsun.disabled = true;
-                            btnUsun.textContent = "Usuwanie...";
-
-                            try {
-                                const folderUsera = aktualnyUser.id;
-                                const { data: pliki } = await client.storage.from("avatary").list(folderUsera);
-                                if (pliki && pliki.length > 0) {
-                                    const sciezki = pliki.map((p) => `${folderUsera}/${p.name}`);
-                                    await client.storage.from("avatary").remove(sciezki);
-                                }
-
-                                const { error: rpcErr } = await client.rpc("usun_konto_uzytkownika");
-                                if (rpcErr) {
-                                    await client.auth.updateUser({
-                                        data: {
-                                            username: "Konto Usunięte",
-                                            avatar_url: null,
-                                            ostatnie_mecze: [],
-                                        },
-                                    });
-                                }
-
-                                await client.auth.signOut();
-                                alert("Konto zostało usunięte.");
-                                window.location.href = "./index.html";
-                            } catch (err) {
-                                console.error("Błąd usuwania konta:", err);
-                                alert("Wystąpił błąd podczas usuwania konta.");
-                                btnUsun.disabled = false;
-                                btnUsun.textContent = "Potwierdź usunięcie";
-                            }
-                        });
-
-                        document.addEventListener("DOMContentLoaded", zaladujProfil);
+            document.addEventListener("DOMContentLoaded", zaladujProfil);
         </script>
     </body>
 </html>

@@ -114,7 +114,7 @@ main {
 }
 
 /* --- SEKCJA STATYSTYK --- */
-#sekcja-statystyk,
+.sekcje-gracza,
 #sekcja-ostatnich-meczy {
   display: flex;
   flex-direction: column;
@@ -122,7 +122,7 @@ main {
   margin-top: 35px;
 }
 
-#sekcja-statystyk h3,
+.sekcje-gracza h3,
 #sekcja-ostatnich-meczy h3 {
   text-align: center;
   font-size: 24px;
@@ -131,7 +131,7 @@ main {
   letter-spacing: 0.5px;
 }
 
-#bloki-statystyk {
+.bloki-sekcji {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
@@ -145,6 +145,7 @@ main {
   padding: 16px 24px;
   border: 1px solid var(--primary-color-border-hover);
   border-radius: 10px;
+  text-align: center;
   transition:
     transform 0.2s ease,
     border-color 0.2s ease;
@@ -157,7 +158,7 @@ main {
 
 .wspolny-div h4 {
   margin: 0;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 600;
   color: #cbd5e1;
 }
@@ -167,6 +168,7 @@ main {
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
+  padding: 8px;
 }
 
 /* --- LISTA OSTATNICH MECZÓW --- */
@@ -293,6 +295,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  border:none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .form-grupa {
@@ -367,10 +372,37 @@ main {
 .btn-danger:hover {
   background-color: #b91c1c;
 }
+/* Płynny obrót samej strzałki */
+.ikona-strzalki {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    margin-left: 4px;
+}
 
+#sprzet-gracza.aktywny .ikona-strzalki {
+    transform: rotate(180deg);
+}
+
+/* Płynne rozwijanie i zwijanie strefy z polami */
+.strefa-sprzetu {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+}
+
+.strefa-sprzetu.otwarta {
+    max-height: 700px; /* Wartość z zapasem przewyższająca łączną wysokość 6 inputów */
+    opacity: 1;
+}
+.nazwa-sekcji{
+  color: var(--secondary-color);
+  margin: 0;
+  border-bottom: 2px solid var(--secondary-color);
+}
 /* --- RESPONSYWNOŚĆ --- */
 @media (max-width: 1050px) {
-  #bloki-statystyk {
+  .bloki-sekcji {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -390,7 +422,7 @@ main {
     width: 100%;
   }
 
-  #bloki-statystyk {
+  .bloki-sekcji {
     grid-template-columns: 1fr;
   }
 
