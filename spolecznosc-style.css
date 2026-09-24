@@ -1,0 +1,113 @@
+/* Siatka graczy (Karty) */
+.gracze-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.pusty-stan {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+    font-size: 15px;
+}
+
+/* Karta Gracza */
+.karta-gracza {
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color-border-hover);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.karta-gracza:hover {
+    transform: translateY(-3px);
+    border-color: rgba(64, 218, 64, 0.5);
+}
+
+.karta-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 12px;
+    border: 2px solid var(--primary-color-border-hover);
+}
+
+.karta-info h3 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #fff;
+}
+
+.karta-ranga {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.karta-staty {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.karta-staty strong {
+    color: #fff;
+}
+
+.karta-akcje {
+    display: flex;
+    flex-direction: column; /* Zmiana: Układa przyciski jeden pod drugim */
+    gap: 8px;
+    width: 100%;
+}
+
+.karta-akcje button {
+    flex-grow: 1;
+    padding: 10px 0; /* Zwiększony padding dla lepszego klikania */
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+/* Wygląd zablokowanego przycisku (np. po wysłaniu zaproszenia) */
+.karta-akcje button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-usun {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-usun:hover {
+    background: rgba(239, 68, 68, 0.3);
+}

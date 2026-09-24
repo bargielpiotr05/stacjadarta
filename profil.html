@@ -120,8 +120,16 @@
                 </div>
 
                 <div id="btn-container">
-                    <button type="button" id="btn-usun-konto">Usuń konto</button>
-                    <button type="button" id="btn-wyloguj">Wyloguj się</button>
+                    <!-- Przyciski właściciela profilu -->
+                    <div id="akcje-wlasciciela" style="display: flex; gap: 16px; width: 100%; justify-content: center;">
+                        <button type="button" id="btn-usun-konto">Usuń konto</button>
+                        <button type="button" id="btn-wyloguj">Wyloguj się</button>
+                    </div>
+                    
+                    <!-- Przyciski dla gościa odwiedzającego obcy profil -->
+                    <div id="akcje-goscia" style="display: none; width: 100%; justify-content: center;">
+                        <button type="button" id="btn-dodaj-znajomego" class="btn-primary" style="padding: 12px 30px; font-size: 16px;">Zaproś do znajomych</button>
+                    </div>
                 </div>
             </div>
 
@@ -287,33 +295,60 @@
                 }
 
                 aktualnyUser = session.user;
+                
+                // --- NOWE: Detekcja czyj to profil ---
+                const paramId = new URLSearchParams(window.location.search).get("id");
+                const profilId = paramId || aktualnyUser.id; // Jeśli brak w URL, ładuje nasz profil
+                const czyMojProfil = (profilId === aktualnyUser.id);
 
                 // 1. Pobranie rekordu z tabeli public.profiles
-                const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", aktualnyUser.id).maybeSingle();
+                const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", profilId).maybeSingle();
 
-                if (profilErr) {
+                if (profilErr || !profil) {
                     console.error("Błąd pobierania profilu:", profilErr);
+                    document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono takiego gracza.</h2>`;
+                    return;
                 }
 
                 aktualnyProfil = profil;
 
-                const emailUsera = aktualnyUser.email || "";
+                // Ustalanie Nicku
+                const emailUsera = czyMojProfil ? (aktualnyUser.email || "") : "";
                 const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
+                const metaNick = czyMojProfil ? aktualnyUser.user_metadata?.username : null;
+                const nazwaGracza = czyMojProfil ? (metaNick || profil?.nazwa_gracza || domyslnyNick) : profil?.nazwa_gracza;
 
-                // 1. Priorytet ma Twój prawdziwy nick z konta (user_metadata)
-                const metaNick = aktualnyUser.user_metadata?.username;
-                const nazwaGracza = metaNick || profil?.nazwa_gracza || domyslnyNick;
-
-                // 2. Automatyczna synchronizacja: naprawia rekord w tabeli profiles w bazie
-                if (metaNick && profil && profil.nazwa_gracza !== metaNick) {
+                // Automatyczna synchronizacja (tylko na naszym profilu)
+                if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick) {
                     client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
+                }
+
+                // --- NOWE: Zmiany UI dla obcego profilu ---
+                if (!czyMojProfil) {
+                    // Ukrywamy edycję i wgrywanie zdjęcia
+                    const btnEdycja = document.getElementById("btn-edycja-profilu");
+                    if (btnEdycja) btnEdycja.style.display = "none";
+                    
+                    const avatarOverlay = document.querySelector(".avatar-overlay");
+                    if (avatarOverlay) avatarOverlay.style.display = "none";
+                    document.getElementById("avatar-container").style.pointerEvents = "none";
+
+                    // Przełączamy dolne przyciski
+                    document.getElementById("akcje-wlasciciela").style.display = "none";
+                    document.getElementById("akcje-goscia").style.display = "flex";
+                    
+                    // Do przycisku zaproszenia przypisujemy ID tego rywala
+                    const btnDodaj = document.getElementById("btn-dodaj-znajomego");
+                    if (btnDodaj) {
+                        btnDodaj.setAttribute("data-rywal-id", profilId);
+                    }
                 }
 
                 // Wypełnienie podstawowego widoku
                 document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
                 document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
 
-                // --- DYNAMICZNA RANGA (TERAZ OBOK NICKU) ---
+                // Dynamiczna ranga
                 const sr = parseFloat(profil?.srednia || 0);
                 const tagRanga = document.getElementById("tag-ranga");
                 if (tagRanga) {
@@ -328,6 +363,9 @@
                     tagRanga.style.backgroundColor = ranga.border.replace("0.3)", "0.1)").replace("0.4)", "0.15)");
                     tagRanga.style.border = `1px solid ${ranga.border}`;
                     tagRanga.style.display = "inline-flex";
+                    
+                    const btnInfo = document.getElementById("btn-info-rangi");
+                    if (btnInfo) btnInfo.style.display = "inline-flex";
                 }
 
                 if (profil?.utworzono) {
@@ -335,22 +373,21 @@
                     document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
                 }
 
-                // --- OBLICZANIE WSKAŹNIKA WIN RATE ---
+                // Win Rate i Statystyki
                 const rozegrane = profil?.rozegrane_mecze || 0;
                 const wygrane = profil?.wygrane_mecze || 0;
                 const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
                 const headerWinrate = document.getElementById("header-winrate");
                 if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
 
-                // Reszta statystyk
                 document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
                 document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
                 document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
-                document.getElementById("stat-mecze").textContent = profil?.rozegrane_mecze || 0;
-                document.getElementById("stat-wygrane").textContent = profil?.wygrane_mecze || 0;
-                document.getElementById("stat-porazki").textContent = Math.max(0, (profil?.rozegrane_mecze || 0) - (profil?.wygrane_mecze || 0));
+                document.getElementById("stat-mecze").textContent = rozegrane;
+                document.getElementById("stat-wygrane").textContent = wygrane;
+                document.getElementById("stat-porazki").textContent = Math.max(0, rozegrane - wygrane);
 
-                // --- NOWE: Ładowanie sprzętu gracza ---
+                // Sprzęt gracza
                 document.getElementById("barele-gracza").textContent = profil?.barele || "-";
                 document.getElementById("shafty-gracza").textContent = profil?.shafty || "-";
                 document.getElementById("groty-gracza").textContent = profil?.groty || "-";
@@ -358,8 +395,8 @@
                 document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
                 document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
 
-                // 2. Pobranie historii gier z tabeli public.matches
-                const { data: mecze, error: meczeErr } = await client.from("matches").select("*").or(`host_id.eq.${aktualnyUser.id},gosc_id.eq.${aktualnyUser.id}`).order("utworzono", { ascending: false }).limit(5);
+                // 2. Pobranie historii gier dla wyświetlanego profilu (profilId)
+                const { data: mecze, error: meczeErr } = await client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(5);
 
                 if (meczeErr) {
                     console.error("Błąd pobierania meczów:", meczeErr);
@@ -373,8 +410,8 @@
                 } else {
                     listaMeczy.innerHTML = mecze
                         .map((m, idx) => {
-                            const czyHost = m.host_id === aktualnyUser.id;
-                            const czyWygrana = m.zwyciezca_id === aktualnyUser.id;
+                            const czyHost = m.host_id === profilId;
+                            const czyWygrana = m.zwyciezca_id === profilId;
                             const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
                             const dataMeczu = new Date(m.utworzono).toLocaleDateString("pl-PL");
 
@@ -774,6 +811,40 @@
                     btnUsun.textContent = "Potwierdź usunięcie";
                 }
             });
+            // --- OBSŁUGA WYSYŁANIA ZAPROSZENIA ---
+            const btnDodajZnajomego = document.getElementById("btn-dodaj-znajomego");
+            if (btnDodajZnajomego) {
+                btnDodajZnajomego.addEventListener("click", async function() {
+                    if (!aktualnyUser) return;
+                    
+                    const rywalId = this.getAttribute("data-rywal-id");
+                    if (!rywalId) return;
+
+                    this.disabled = true;
+                    this.textContent = "Wysyłanie...";
+
+                    // Wrzucamy zaproszenie do bazy
+                    const { error } = await client.from("znajomi").insert([
+                        { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }
+                    ]);
+
+                    if (error) {
+                        // Błąd 23505 to naruszenie unikalności (czyli już go zaprosiłeś albo już jesteście znajomymi)
+                        if (error.code === '23505') {
+                            alert("Zaproszenie zostało już wysłane lub ten gracz jest już Twoim znajomym.");
+                        } else {
+                            console.error("Błąd wysyłania zaproszenia:", error);
+                            alert("Wystąpił błąd podczas wysyłania zaproszenia.");
+                        }
+                        this.textContent = "Zaproś do znajomych";
+                        this.disabled = false;
+                    } else {
+                        this.textContent = "✓ Wysłano zaproszenie";
+                        this.style.backgroundColor = "#4ade80"; // Zmiana na jasny zielony
+                        this.style.color = "#0b091f";
+                    }
+                });
+            }
 
             document.addEventListener("DOMContentLoaded", zaladujProfil);
         </script>
