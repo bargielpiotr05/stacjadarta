@@ -29,12 +29,27 @@
                         <input type="file" id="input-avatar" accept="image/png, image/jpeg, image/webp" style="display: none" />
                     </div>
 
+                    <!-- Lewa strona: Nick i Tagi -->
                     <div class="user-info-box">
-                        <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
+                        <div class="nick-row">
+                            <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
+                            <div class="ranga-wrapper">
+                                <span id="tag-ranga" class="tag-ranga" style="display: none;"></span>
+                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?">?</button>
+                            </div>
+                        </div>
+                        <span id="tag-data" class="tag-data"></span>
                         <span id="avatar-status" class="avatar-status"></span>
                     </div>
 
-                    <button id="btn-edycja-profilu" type="button">Edytuj profil</button>
+                    <!-- Prawa strona: Wypełnienie pustki (Win Rate + Przycisk) -->
+                    <div class="header-statystyki-szybkie">
+                        <div class="szybki-stat">
+                            <span>Win Rate</span>
+                            <strong id="header-winrate">0.0%</strong>
+                        </div>
+                        <button id="btn-edycja-profilu" type="button">Edytuj profil</button>
+                    </div>
                 </div>
 
                 <div id="sekcja-statystyk" class="sekcje-gracza">
@@ -181,6 +196,7 @@
                             <button type="submit" class="btn-primary" id="btn-zapisz-edycje">Zapisz zmiany</button>
                         </div>
                     </form>
+                    
 
                     <!-- FORMULARZ USUNIĘCIA KONTA -->
                     <div id="usun-konto-blok" style="display: none">
@@ -202,6 +218,40 @@
                                 <button type="submit" class="btn-primary" id="btn-potwierdz-wylogowanie">Wyloguj się</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL INFO O RANGACH -->
+            <div id="modal-info-rangi" class="modal-overlay" style="display: none">
+                <div class="modal-zawartosc">
+                    <div class="modal-header">
+                        <h2>System Rang w Stacji Dart</h2>
+                        <button type="button" class="btn-zamknij-modal" id="btn-zamknij-info-rangi">&times;</button>
+                    </div>
+                    <div>
+                        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Twoja ranga jest automatycznie przypisywana na podstawie ogólnej średniej punktowej widocznej na profilu.</p>
+                        <div class="lista-rang">
+                            <div class="ranga-item">
+                                <span class="tag-ranga" style="color: #60a5fa; background: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);">💎 MISTRZ</span> 
+                                <span>70.00+</span>
+                            </div>
+                            <div class="ranga-item">
+                                <span class="tag-ranga" style="color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4);">🔥 EKSPERT</span> 
+                                <span>55.00 - 69.99</span>
+                            </div>
+                            <div class="ranga-item">
+                                <span class="tag-ranga" style="color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4);">🏆 PÓŁZAWODOWIEC</span> 
+                                <span>45.00 - 54.99</span>
+                            </div>
+                            <div class="ranga-item">
+                                <span class="tag-ranga" style="color: #e2e8f0; background: rgba(226, 232, 240, 0.15); border: 1px solid rgba(226, 232, 240, 0.3);">🎯 GRACZ KLUBOWY</span> 
+                                <span>35.00 - 44.99</span>
+                            </div>
+                            <div class="ranga-item">
+                                <span class="tag-ranga" style="color: #a3e635; background: rgba(163, 230, 53, 0.15); border: 1px solid rgba(163, 230, 53, 0.3);">🌱 AMATOR</span> 
+                                <span>Poniżej 35.00</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -259,9 +309,40 @@
                     client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
                 }
 
-                // Wypełnienie widoku
+                // Wypełnienie podstawowego widoku
                 document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
                 document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
+
+                // --- DYNAMICZNA RANGA (TERAZ OBOK NICKU) ---
+                const sr = parseFloat(profil?.srednia || 0);
+                const tagRanga = document.getElementById("tag-ranga");
+                if (tagRanga) {
+                    let ranga = { nazwa: "Amator", ikona: "🌱", color: "#a3e635", border: "rgba(163, 230, 53, 0.3)" };
+                    if (sr >= 70) ranga = { nazwa: "Mistrz", ikona: "💎", color: "#60a5fa", border: "rgba(96, 165, 250, 0.4)" };
+                    else if (sr >= 55) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
+                    else if (sr >= 45) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
+                    else if (sr >= 35) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
+
+                    tagRanga.innerHTML = `${ranga.ikona} ${ranga.nazwa}`;
+                    tagRanga.style.color = ranga.color;
+                    tagRanga.style.backgroundColor = ranga.border.replace("0.3)", "0.1)").replace("0.4)", "0.15)");
+                    tagRanga.style.border = `1px solid ${ranga.border}`;
+                    tagRanga.style.display = "inline-flex";
+                }
+
+                if (profil?.utworzono) {
+                    const dataDolaczenia = new Date(profil.utworzono).toLocaleDateString("pl-PL", { year: 'numeric', month: 'long' });
+                    document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
+                }
+
+                // --- OBLICZANIE WSKAŹNIKA WIN RATE ---
+                const rozegrane = profil?.rozegrane_mecze || 0;
+                const wygrane = profil?.wygrane_mecze || 0;
+                const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
+                const headerWinrate = document.getElementById("header-winrate");
+                if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
+
+                // Reszta statystyk
                 document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
                 document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
                 document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
@@ -499,6 +580,23 @@
             const blokWyloguj = document.getElementById("wyloguj-blok");
             const btnZamknijModal = document.getElementById("btn-zamknij-edycje");
             const przyciskiAnuluj = document.querySelectorAll(".btn-anuluj-modal");
+
+            // 4. Modal z opisem rang
+            const modalInfoRangi = document.getElementById("modal-info-rangi");
+            const btnInfoRangi = document.getElementById("btn-info-rangi");
+            const btnZamknijInfoRangi = document.getElementById("btn-zamknij-info-rangi");
+
+            btnInfoRangi?.addEventListener("click", () => {
+                if (modalInfoRangi) modalInfoRangi.style.display = "flex";
+            });
+
+            btnZamknijInfoRangi?.addEventListener("click", () => {
+                if (modalInfoRangi) modalInfoRangi.style.display = "none";
+            });
+
+            modalInfoRangi?.addEventListener("click", (e) => {
+                if (e.target === modalInfoRangi) modalInfoRangi.style.display = "none";
+            });
 
             const zamknijWszystkieSekcjeModala = () => {
                 modal.style.display = "none";

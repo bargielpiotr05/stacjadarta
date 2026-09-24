@@ -72,10 +72,140 @@ main {
   opacity: 1;
 }
 
+/* --- ZMIANY W NAGŁÓWKU (WYPEŁNIENIE PUSTKI) --- */
 .user-info-box {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex-grow: 1; /* To wypycha przyciski na prawą stronę */
+}
+
+.nick-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+/* --- PRZYCISK INFO (?) I MODAL RANG --- */
+.ranga-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.btn-info-rangi {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--secondary-color); /* Zgrywa się z tłem profilu */
+  color: black;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  z-index: 10;
+}
+
+.lista-rang {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ranga-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ranga-item span:last-child {
+  font-weight: 700;
+  color: #cbd5e1;
+  font-size: 15px;
+}
+
+.header-statystyki-szybkie {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 15px 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.szybki-stat {
+  text-align: right;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 25px;
+}
+
+.szybki-stat span {
+  display: block;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.szybki-stat strong {
+  font-size: 26px;
+  color: var(--secondary-color);
+  font-weight: 800;
+}
+
+.tag-ranga {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.tag-data {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Responsywność dla telefonów */
+@media (max-width: 768px) {
+  .header-statystyki-szybkie {
+    flex-direction: column;
+    width: 100%;
+    text-align: center;
+    gap: 15px;
+    padding: 15px;
+  }
+  .szybki-stat {
+    text-align: center;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 0;
+    padding-bottom: 15px;
+    width: 100%;
+  }
+  .nick-row {
+    justify-content: center;
+  }
 }
 
 #nazwa-uzytkownika {
