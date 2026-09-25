@@ -362,12 +362,12 @@
                         if (relacja) {
                             if (relacja.status === 'zaakceptowane') {
                                 btnDodaj.textContent = "✓ Twój znajomy";
-                                btnDodaj.className = "btn-secondary";
+                                btnDodaj.className = "btn-zaakceptowane-zaproszenie";
                                 btnDodaj.disabled = true;
                             } else if (relacja.status === 'oczekujace') {
                                 if (relacja.zapraszajacy_id === aktualnyUser.id) {
                                     btnDodaj.textContent = "⏳ Wysłano zaproszenie";
-                                    btnDodaj.className = "btn-secondary";
+                                    btnDodaj.className = "btn-wyslano-zaproszenie";
                                     btnDodaj.disabled = true;
                                 } else {
                                     btnDodaj.textContent = "Oczekuje! Akceptuj";

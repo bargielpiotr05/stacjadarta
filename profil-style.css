@@ -425,7 +425,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border:none !important;
+  border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
 }
@@ -504,31 +504,46 @@ main {
 }
 /* Płynny obrót samej strzałki */
 .ikona-strzalki {
-    display: inline-block;
-    transition: transform 0.3s ease;
-    margin-left: 4px;
+  display: inline-block;
+  transition: transform 0.3s ease;
+  margin-left: 4px;
 }
 
 #sprzet-gracza.aktywny .ikona-strzalki {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 /* Płynne rozwijanie i zwijanie strefy z polami */
 .strefa-sprzetu {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.4s ease-out,
+    opacity 0.3s ease-out;
 }
 
 .strefa-sprzetu.otwarta {
-    max-height: 700px; /* Wartość z zapasem przewyższająca łączną wysokość 6 inputów */
-    opacity: 1;
+  max-height: 700px; /* Wartość z zapasem przewyższająca łączną wysokość 6 inputów */
+  opacity: 1;
 }
-.nazwa-sekcji{
+.nazwa-sekcji {
   color: var(--secondary-color);
   margin: 0;
   border-bottom: 2px solid var(--secondary-color);
+}
+.btn-wyslano-zaproszenie {
+  background-color: var(--primary-color-lighter);
+  color: lightgrey;
+  border: 1px solid var(--primary-color-border);
+  border-radius: 12px;
+}
+.btn-zaakceptowane-zaproszenie{
+  background-color:var(--secondary-color);
+  color: black;
+  border: 1px solid var(--secondary-color);
+  border-radius: 12px;
+  font-weight: 700;
 }
 /* --- RESPONSYWNOŚĆ --- */
 @media (max-width: 1050px) {
