@@ -113,8 +113,8 @@ window.sprawdzTureOnline = function () {
     if (!mojaKolej) {
       inpWynik.disabled = true; // Zawsze zablokowane w turze rywala
     } else {
-      // W naszej turze włączamy input TYLKO na komputerach (>=1500px)
-      inpWynik.disabled = (window.innerWidth < 1500);
+      // W naszej turze włączamy input TYLKO na komputerach (>=1200px)
+      inpWynik.disabled = (window.innerWidth < 1200);
 
       // Jeśli jesteśmy na komputerze (pole nie jest disabled), wymuszamy focus
       if (!inpWynik.disabled) {
@@ -455,7 +455,8 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
 
   if (!czyTrybOnline || listaGraczy.length === 0) return;
 
-  lokalnaWersjaStanu = Date.now();
+  // Inkrementujemy licznik wersji zamiast pobierać Date.now()
+  lokalnaWersjaStanu = (Number(lokalnaWersjaStanu) || 0) + 1;
 
   const stan = {
     aktualnyGraczIndex: graczIndex,
@@ -638,7 +639,6 @@ function podepnijNasluchSilnika() {
     const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : window.aktualnyGraczIndex;
 
     if (czyTrybOnline && (czyWidz || graczIndex !== mojIndeksOnline)) {
-      // Oszukana odpowiedź u drugiego gracza, aby skrypt nie zablokował się w tle
       callback(czyZakonczyl ? 3 : 3, 0);
       return;
     }
@@ -646,9 +646,21 @@ function podepnijNasluchSilnika() {
     if (typeof staryPopupDoubles === "function") {
       staryPopupDoubles(czyZakonczyl, punktyPrzed, rzucone, maxLotek, (lotkaKonczaca, lotkiNaDoubla) => {
         callback(lotkaKonczaca, lotkiNaDoubla);
+        window.sprawdzTureOnline();
+        if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+          wyslijAktualnyStanGry();
+        }
       });
+    } else {
+      // Zapasowe wywołanie callbacku, jeśli popup nie istnieje
+      callback(czyZakonczyl ? 3 : 0, 0);
+      window.sprawdzTureOnline();
+      if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci) {
+        wyslijAktualnyStanGry();
+      }
     }
   };
+
 
   const orgResetuj = window.resetujLeg;
   window.resetujLeg = function () {
@@ -735,13 +747,20 @@ function podepnijNasluchSilnika() {
 
   window.addEventListener("pagehide", () => {
     if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
-      fetch(`${SUPABASE_URL}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
-        method: "DELETE",
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        keepalive: true
+      window.addEventListener("pagehide", () => {
+        if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
+          const sUrl = window.SUPABASE_URL || "https://mjebhhagwxtvhggyjwue.supabase.co";
+          const sKey = window.SUPABASE_ANON_KEY || "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+
+          fetch(`${sUrl}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
+            method: "DELETE",
+            headers: {
+              apikey: sKey,
+              Authorization: `Bearer ${sKey}`
+            },
+            keepalive: true
+          });
+        }
       });
     }
   });
@@ -758,3 +777,13 @@ async function usunAktualnyPokoj() {
     console.warn("Błąd usuwania stołu:", err);
   }
 }
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible" && czyTrybOnline && onlineKodPokoju) {
+    const { data } = await supabaseClient
+      .from("rooms")
+      .select("stan_gry")
+      .eq("kod_pokoju", onlineKodPokoju)
+      .maybeSingle();
+    if (data?.stan_gry) zastosujStanGry(data.stan_gry);
+  }
+});
