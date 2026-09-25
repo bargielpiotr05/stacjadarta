@@ -2,14 +2,12 @@
       display: flex;
       flex-direction: column;
       background-color: var(--primary-color-lighter);
-      width: 100%;
     }
 
     .main-content {
       position: relative;
       color: white;
       padding: 20px;
-      width: 100%;
       min-height: 500px;
       overflow: hidden;
       display: flex;
@@ -48,7 +46,7 @@
       width: 60%;
     }
 
-    .main-content p {
+    .blok-karuzeli p {
       position: relative;
       z-index: 2;
       text-align: center;
@@ -73,7 +71,6 @@
         color 0.3s;
     }
 
-    /* --- STYLOWANIE KARUZELI --- */
     .carousel-container {
       display: flex;
       align-items: center;
@@ -98,15 +95,12 @@
       width: 100%;
     }
 
-    /* Układ flex rzędu ustawia ikonę po lewej, a tekst po prawej */
     .carousel-block {
       flex: 0 0 calc((100% - 40px) / 3);
       display: flex;
       flex-direction: row;
       align-items: flex-start;
-      /* Wyrównanie ikony do góry tekstu */
       gap: 20px;
-      /* Odstęp między ikoną a tekstem */
       background-color: var(--primary-color);
       color: white;
       padding: 25px;
@@ -124,17 +118,14 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     }
 
-    /* Kontener grupujący nagłówek i opis, by układały się w pionie */
     .carousel-text-content {
       display: flex;
       flex-direction: column;
       text-align: left;
-      /* Zmiana wyrównania tekstu na lewo */
     }
 
     .carousel-block h2 {
       margin: 0 0 10px 0;
-      /* Usunięcie górnego marginesu i dodanie dolnego */
       color: white;
       font-weight: bold;
       font-size: 22px;
@@ -148,13 +139,11 @@
 
     .carousel-block img {
       flex-shrink: 0;
-      /* Blokuje zgniatanie ikony */
       width: 48px;
       height: auto;
       border-radius: 10px;
       padding-top: 30px;
 
-      /* Zielony filtr */
       filter: brightness(0) saturate(100%) invert(64%) sepia(80%) saturate(450%) hue-rotate(74deg) brightness(95%) contrast(90%);
       transition: filter 0.3s ease;
     }
@@ -197,8 +186,6 @@
       right: 5px;
     }
 
-    /* Styl dla głównego kontenera stopki */
-
     @media (max-width: 900px) {
       .carousel-block {
         flex: 0 0 calc((100% - 20px) / 2);
@@ -209,7 +196,6 @@
       .carousel-block {
         flex: 0 0 100%;
         flex-direction: column;
-        /* Na małych ekranach przywraca ikonę nad tekst dla lepszej czytelności */
         align-items: center;
         text-align: center;
       }
@@ -308,20 +294,7 @@
       width: 60%;
     }
 
-    #dodaj-do-pulpitu p {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      font-size: 18px;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-      margin-top: 20px;
-      max-width: 70%;
-    }
 
-    #dodaj-do-pulpitu-p {
-      color: #fefefe90;
-      font-size: 16px;
-    }
     #kalendarz-wydarzen {
       position: relative;
       color: white;
@@ -403,7 +376,6 @@
       border-radius: 12px;
       width: 40px;
       height: 40px;
-      font-size: 24px;
       text-align: center;
       line-height: 40px;
       cursor: pointer;
@@ -414,7 +386,6 @@
       justify-content: center;
       align-items: center;
     }
-    /* --- GŁÓWNA KARUZELA BANEROWA (#karuzela-main) --- */
 #karuzela-main {
   position: relative;
   width: 100%;
@@ -434,12 +405,9 @@
 
 .blok-karuzeli {
   flex: 0 0 100%;
-  min-width: 100%;
-  width: 100%;
   box-sizing: border-box;
 }
 
-/* Przyciski nawigacyjne lewo/prawo */
 .main-carousel-btn {
   position: absolute;
   top: 50%;
@@ -473,7 +441,6 @@
   right: 20px;
 }
 
-/* Kropki wskaźnika aktywnego slajdu */
 .karuzela-main-dots {
   position: absolute;
   bottom: 20px;
@@ -501,23 +468,21 @@
 
 @media (max-width: 768px) {
   .main-carousel-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
-  }
-  .main-carousel-btn.prev {
-    left: 10px;
-  }
-  .main-carousel-btn.next {
-    right: 10px;
+    display: none !important;
   }
 }
-    /* --- MEDIA QUERY DLA MOBILNEGO MENU --- */
     @media (max-width: 1150px) {
 
       .main-content h1 {
-        font-size: 28px;
-        width: 80%;
+        font-size: 28px !important;
+        width: 100%;
+      }
+      .blok-karuzeli p{
+        max-width: 100% !important;
+      }
+      .blok-karuzeli h1{
+        font-size: 28px !important;
+        width: 90% !important;
       }
     }
 
