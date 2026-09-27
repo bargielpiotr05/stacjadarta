@@ -266,6 +266,7 @@ async function stworzStolZKonfiguracji() {
     const dystans = parseInt(document.getElementById("nowy-dystans")?.value || 3);
     const wejscie = document.getElementById("nowe-wejscie")?.value || "si";
     const wyjscie = document.getElementById("nowe-wyjscie")?.value || "do";
+    const maxLotek = parseInt(document.getElementById("nowy-max-lotek")?.value || 30);
     const czyPrywatny = document.getElementById("nowy-czy-prywatny")?.checked || false;
     const formatTekst = `${punkty} ${wyjscie.toUpperCase()}`;
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
@@ -287,6 +288,7 @@ async function stworzStolZKonfiguracji() {
           dystans: dystans,
           zasady_wejscia: wejscie,
           zasady_wyjscia: wyjscie,
+          limit_lotek: maxLotek,
           czy_prywatny: czyPrywatny,
           status: "waiting"
         }

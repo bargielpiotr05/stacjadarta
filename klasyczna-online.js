@@ -87,41 +87,47 @@ window.sprawdzTureOnline = function () {
   if (!czyTrybOnline) return;
 
   const graczIndex = (typeof aktualnyGraczIndex !== "undefined") ? aktualnyGraczIndex : (window.aktualnyGraczIndex || 0);
-  const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
-  const graczRzucajacy = listaGraczy[graczIndex];
+  const mojaKolej = (graczIndex === mojIndeksOnline);
+
+  // 1. Obliczamy rzucone lotki i limit
+  const kolejka = (typeof aktualnaKolejka !== "undefined") ? aktualnaKolejka : (window.aktualnaKolejka || 1);
+  const rzuconeLotki = (kolejka - 1) * 3;
+  const limitAktywny = window.limitLotekAktywny || (typeof limitLotekAktywny !== "undefined" && limitLotekAktywny);
+  const maxLotek = window.maksymalnyLimitLotek || (typeof maksymalnyLimitLotek !== "undefined" && maksymalnyLimitLotek) || 30;
 
   const belkaKolejki = document.getElementById("wyswietl-kolejke");
+  const tekstLotek = limitAktywny
+    ? `Lotki: ${rzuconeLotki} / ${maxLotek}`
+    : `Lotki: ${rzuconeLotki}`;
+
+  // 2. Wypisujemy na środkowej belce TYLKO lotki i limit
+  if (belkaKolejki) {
+    if (czyWidz) {
+      belkaKolejki.innerHTML = `<span style="color: #38bdf8;">👁 WIDZ</span> • <strong>${tekstLotek}</strong>`;
+    } else {
+      belkaKolejki.innerHTML = `<strong>${tekstLotek}</strong>`;
+    }
+  }
 
   if (czyWidz) {
     const opcjeLiczenia = document.querySelector(".opcje-liczenia");
     if (opcjeLiczenia) opcjeLiczenia.style.display = "none";
-
-    if (belkaKolejki) {
-      belkaKolejki.innerHTML = `<span style="color: #38bdf8; font-weight: bold;">👁 TRYB WIDZA | Rzuca: ${graczRzucajacy?.nazwa || "Gracz"}</span>`;
-    }
     return;
   }
 
-  const mojaKolej = (graczIndex === mojIndeksOnline);
+  // 3. Sterowanie blokadami inputów (zostaje bez zmian)
   const inpWynik = document.getElementById("wpisz-wynik");
   const btnZatwierdz = document.getElementById("zatwierdz-rzut");
   const strefaKlik = document.querySelector(".strefa-klikania");
   const strefaManual = document.querySelector(".strefa-manualna");
 
-  // NAPRAWA: Zablokowanie klawiatury tel. + AUTO-FOCUS na PC
   if (inpWynik) {
     if (!mojaKolej) {
-      inpWynik.disabled = true; // Zawsze zablokowane w turze rywala
+      inpWynik.disabled = true;
     } else {
-      // W naszej turze włączamy input TYLKO na komputerach (>=1200px)
       inpWynik.disabled = (window.innerWidth < 1200);
-
-      // Jeśli jesteśmy na komputerze (pole nie jest disabled), wymuszamy focus
       if (!inpWynik.disabled) {
-        // setTimeout gwarantuje, że focus wskoczy zaraz po odświeżeniu DOM
-        setTimeout(() => {
-          inpWynik.focus();
-        }, 50);
+        setTimeout(() => inpWynik.focus(), 50);
       }
     }
   }
@@ -137,12 +143,6 @@ window.sprawdzTureOnline = function () {
     strefaManual.style.pointerEvents = mojaKolej ? "auto" : "none";
     strefaManual.style.opacity = mojaKolej ? "1" : "0.45";
     strefaManual.style.transition = "opacity 0.25s ease";
-  }
-
-  if (belkaKolejki) {
-    belkaKolejki.innerHTML = mojaKolej
-      ? `<span style="color: var(--secondary-color); font-weight: bold;">🎯 Twoja tura!</span>`
-      : `<span style="color: #94a3b8;">⏳ Rzuca: <strong>${graczRzucajacy?.nazwa || "Rywal"}</strong></span>`;
   }
 };
 
@@ -286,6 +286,17 @@ function startMeczuOnline(pokoj) {
   window.trybWejscia = pokoj.zasady_wejscia || "si";
   window.trybWyjscia = pokoj.zasady_wyjscia || "do";
   window.liczbaGraczy = 2;
+
+  // PRZEKAZANIE LIMITU Z BAZY:
+  if (pokoj.limit_lotek && Number(pokoj.limit_lotek) > 0) {
+    window.limitLotekAktywny = true;
+    window.maksymalnyLimitLotek = Number(pokoj.limit_lotek);
+    if (typeof limitLotekAktywny !== "undefined") limitLotekAktywny = true;
+    if (typeof maksymalnyLimitLotek !== "undefined") maksymalnyLimitLotek = Number(pokoj.limit_lotek);
+  } else {
+    window.limitLotekAktywny = false;
+    if (typeof limitLotekAktywny !== "undefined") limitLotekAktywny = false;
+  }
 
   if (typeof punktyStartowe !== "undefined") punktyStartowe = window.punktyStartowe;
   if (typeof doceloweLegi !== "undefined") doceloweLegi = window.doceloweLegi;
@@ -573,7 +584,8 @@ function zastosujStanGry(dane) {
 
   const elKolejka = document.getElementById("wyswietl-kolejke");
   if (elKolejka && !czyWidz) {
-    elKolejka.textContent = `Lotki: ${(dane.aktualnaKolejka - 1) * 3}`;
+    const sufiksLimitu = window.limitLotekAktywny ? ` / ${window.maksymalnyLimitLotek}` : "";
+    elKolejka.textContent = `Lotki: ${(dane.aktualnaKolejka - 1) * 3}${sufiksLimitu}`;
   }
 
   if (typeof aktualizujCalaHistorieLeguUI === "function") {
