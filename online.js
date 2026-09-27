@@ -1,59 +1,74 @@
 // ============================================================
 // 1. INICJALIZACJA I STAN LOKALNY
 // ============================================================
-const supabaseClient = window.supabaseKlient || (window.supabase
+const supabaseClient = window.supabaseClient || window.supabaseKlient || (window.supabase
   ? window.supabase.createClient(
     "https://mjebhhagwxtvhggyjwue.supabase.co",
-    "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+    "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        lock: async (name, acquireTimeout, fn) => await fn()
+      }
+    }
   )
   : null);
+
+window.supabaseClient = supabaseClient;
+window.supabaseKlient = supabaseClient;
 
 let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
 let wszystkiePokoje = [];
 let zalogowanyNick = null;
 
-// Pobieranie IP z timeoutem (bezpieczne dla adblocków i incognito)
+function odczytajSesjeZPamieci() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const s = parsed?.currentSession || parsed;
+          if (s?.user) return s;
+        }
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function pobierzMojeIP() {
   try {
     const controller = new AbortController();
-    const tId = setTimeout(() => controller.abort(), 1500);
+    const tId = setTimeout(() => controller.abort(), 1200);
     const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
     clearTimeout(tId);
     if (res.ok) {
       const data = await res.json();
       mojeIP = data.ip;
     }
-  } catch (err) {
-    // Pozostaje domyślny gosc_...
-  }
+  } catch (err) {}
 }
 
-// Sprawdzenie profilu zalogowanego użytkownika
 async function sprawdzProfilGracza() {
   const poleNickHosta = document.getElementById("nowy-host-nick");
-  if (!supabaseClient) {
-    if (poleNickHosta) poleNickHosta.value = "Gość_" + Math.floor(100 + Math.random() * 900);
-    return;
-  }
+  const sesja = odczytajSesjeZPamieci();
 
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session?.user) {
-      zalogowanyNick = session.user.user_metadata?.username || session.user.email.split("@")[0];
-      if (poleNickHosta) {
-        poleNickHosta.value = zalogowanyNick;
-        poleNickHosta.readOnly = true;
-      }
-    } else {
-      zalogowanyNick = null;
-      if (poleNickHosta) {
-        poleNickHosta.value = "Gość_" + Math.floor(100 + Math.random() * 900);
-        poleNickHosta.readOnly = false;
-      }
+  if (sesja?.user) {
+    zalogowanyNick = sesja.user.user_metadata?.username || (sesja.user.email ? sesja.user.email.split("@")[0] : "Gracz");
+    if (poleNickHosta) {
+      poleNickHosta.value = zalogowanyNick;
+      poleNickHosta.readOnly = true;
     }
-  } catch (err) {
-    console.warn("Tryb gościa:", err);
-    if (poleNickHosta) poleNickHosta.value = "Gość";
+  } else {
+    zalogowanyNick = null;
+    if (poleNickHosta) {
+      poleNickHosta.value = "Gość_" + Math.floor(100 + Math.random() * 900);
+      poleNickHosta.readOnly = false;
+    }
   }
 }
 
@@ -83,12 +98,10 @@ async function sprawdzCzyZbanowany(ip) {
 async function pobierzStoły() {
   if (!supabaseClient) return;
 
-  // Pobieramy stoły publiczne lub takie, gdzie czy_prywatny jest puste (null)
   const { data, error } = await supabaseClient
     .from("rooms")
     .select("*")
     .in("status", ["waiting", "in_progress"])
-    .or("czy_prywatny.is.null,czy_prywatny.eq.false")
     .order("utworzono", { ascending: false })
     .limit(30);
 
@@ -97,7 +110,8 @@ async function pobierzStoły() {
     return;
   }
 
-  wszystkiePokoje = data || [];
+  // Odsiewamy pokoje prywatne bezpiecznie w JS
+  wszystkiePokoje = (data || []).filter((p) => p.czy_prywatny !== true);
   renderujStoly(wszystkiePokoje);
 }
 

@@ -281,21 +281,50 @@
     <footer id="wspolny-footer"></footer>
 
     <script>
+      // Bezpieczny odczyt sesji z pamięci telefonu (omija zawieszanie w WebKit)
+      function odczytajSesjeZPamieci() {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) {
+              const raw = localStorage.getItem(k);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                const s = parsed?.currentSession || parsed;
+                if (s?.user) return s;
+              }
+            }
+          }
+        } catch (e) {}
+        return null;
+      }
+
       const client =
+        window.supabaseClient ||
         window.supabaseKlient ||
         (window.supabase
           ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R", {
-              auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+              auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                lock: async (name, acquireTimeout, fn) => await fn(),
+              },
             })
           : null);
+
+      window.supabaseClient = client;
+      window.supabaseKlient = client;
+
       const btnSprzet = document.getElementById("sprzet-gracza");
       const strefaSprzetu = document.querySelector(".strefa-sprzetu");
 
-      btnSprzet.addEventListener("click", (e) => {
+      btnSprzet?.addEventListener("click", (e) => {
         e.preventDefault();
         btnSprzet.classList.toggle("aktywny");
         strefaSprzetu.classList.toggle("otwarta");
       });
+
       let aktualnyUser = null;
       let aktualnyProfil = null;
       let ostatnieMeczeCache = [];
@@ -303,17 +332,19 @@
       async function zaladujProfil() {
         if (!client) return;
 
-        // 1. Podwójna weryfikacja sesji pod iOS Safari
-        let {
-          data: { session },
-        } = await client.auth.getSession();
+        // 1. Błyskawiczny odczyt sesji (nie czeka na zawieszone Promise w iOS)
+        let session = odczytajSesjeZPamieci();
 
-        if (!session) {
-          const { data: userData } = await client.auth.getUser();
-          if (userData?.user) {
-            const refreshed = await client.auth.getSession();
-            session = refreshed.data?.session || { user: userData.user };
-          }
+        // 2. Fallback z limitem czasu 600ms na wypadek pustej pamięci
+        if (!session?.user) {
+          try {
+            const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 600));
+            const reqPromise = client.auth
+              .getSession()
+              .then(({ data }) => data?.session)
+              .catch(() => null);
+            session = await Promise.race([reqPromise, timeoutPromise]);
+          } catch (e) {}
         }
 
         if (!session?.user) {
