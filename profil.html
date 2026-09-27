@@ -281,8 +281,13 @@
     <footer id="wspolny-footer"></footer>
 
     <script>
-      const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
-
+      const client =
+        window.supabaseKlient ||
+        (window.supabase
+          ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R", {
+              auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+            })
+          : null);
       const btnSprzet = document.getElementById("sprzet-gracza");
       const strefaSprzetu = document.querySelector(".strefa-sprzetu");
 
@@ -298,12 +303,20 @@
       async function zaladujProfil() {
         if (!client) return;
 
-        const {
+        // 1. Podwójna weryfikacja sesji pod iOS Safari
+        let {
           data: { session },
-          error: sessionErr,
         } = await client.auth.getSession();
 
-        if (sessionErr || !session?.user) {
+        if (!session) {
+          const { data: userData } = await client.auth.getUser();
+          if (userData?.user) {
+            const refreshed = await client.auth.getSession();
+            session = refreshed.data?.session || { user: userData.user };
+          }
+        }
+
+        if (!session?.user) {
           window.location.href = "./logowanie.html";
           return;
         }
@@ -1009,7 +1022,9 @@
           }
         });
       }
-
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) zaladujProfil();
+      });
       document.addEventListener("DOMContentLoaded", zaladujProfil);
     </script>
   </body>

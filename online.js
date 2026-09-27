@@ -3,9 +3,9 @@
 // ============================================================
 const supabaseClient = window.supabaseKlient || (window.supabase
   ? window.supabase.createClient(
-      "https://mjebhhagwxtvhggyjwue.supabase.co",
-      "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
-    )
+    "https://mjebhhagwxtvhggyjwue.supabase.co",
+    "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+  )
   : null);
 
 let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
@@ -82,22 +82,31 @@ async function sprawdzCzyZbanowany(ip) {
 // ============================================================
 async function pobierzStoły() {
   if (!supabaseClient) return;
-  const dwaGodzinyTemu = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
+  // Pobieramy stoły publiczne lub takie, gdzie czy_prywatny jest puste (null)
   const { data, error } = await supabaseClient
     .from("rooms")
     .select("*")
     .in("status", ["waiting", "in_progress"])
-    .eq("czy_prywatny", false)
-    .gt("utworzono", dwaGodzinyTemu)
-    .order("utworzono", { ascending: false });
+    .or("czy_prywatny.is.null,czy_prywatny.eq.false")
+    .order("utworzono", { ascending: false })
+    .limit(30);
 
   if (error) {
     console.error("Błąd pobierania stołów:", error);
     return;
   }
+
   wszystkiePokoje = data || [];
   renderujStoly(wszystkiePokoje);
+}
+
+// Inicjalizacja bez blokowania przez zewnętrzne API
+async function inicjalizujDane() {
+  await sprawdzProfilGracza();
+  pobierzMojeIP(); // Uruchamiane w tle, nie blokuje renderowania lobby
+  await pobierzStoły();
+  wlaczRealtimeLobby();
 }
 
 function renderujStoly(lista) {
@@ -226,11 +235,19 @@ window.dolaczDoPokoju = async function (kodPokoju, tryb) {
     const goscToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, goscToken);
 
+    // Pobieramy ID zalogowanego gościa (jeśli jest zalogowany)
+    let goscUserId = null;
+    try {
+      const { data: sessData } = await supabaseClient.auth.getSession();
+      goscUserId = sessData?.session?.user?.id || null;
+    } catch (e) { }
+
     const { error: updateErr } = await supabaseClient
       .from("rooms")
       .update({
         gosc_nazwa: nick,
         gosc_token: goscToken,
+        gosc_id: goscUserId, // <--- Zapisujemy UUID konta gracza
         status: "in_progress"
       })
       .eq("kod_pokoju", kodPokoju);
