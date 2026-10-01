@@ -259,19 +259,19 @@
               </div>
               <div class="ranga-item">
                 <span class="tag-ranga" style="color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4)">🔥 EKSPERT</span>
-                <span>55.00 - 69.99</span>
+                <span>50.00 - 64.99</span>
               </div>
               <div class="ranga-item">
                 <span class="tag-ranga" style="color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4)">🏆 PÓŁZAWODOWIEC</span>
-                <span>45.00 - 54.99</span>
+                <span>40.00 - 49.99</span>
               </div>
               <div class="ranga-item">
                 <span class="tag-ranga" style="color: #e2e8f0; background: rgba(226, 232, 240, 0.15); border: 1px solid rgba(226, 232, 240, 0.3)">🎯 GRACZ KLUBOWY</span>
-                <span>35.00 - 44.99</span>
+                <span>30.00 - 39.99</span>
               </div>
               <div class="ranga-item">
                 <span class="tag-ranga" style="color: #a3e635; background: rgba(163, 230, 53, 0.15); border: 1px solid rgba(163, 230, 53, 0.3)">🌱 AMATOR</span>
-                <span>Poniżej 35.00</span>
+                <span>Poniżej 30.00</span>
               </div>
             </div>
           </div>
@@ -435,9 +435,9 @@
         if (tagRanga) {
           let ranga = { nazwa: "Amator", ikona: "🌱", color: "#a3e635", border: "rgba(163, 230, 53, 0.3)" };
           if (sr >= 70) ranga = { nazwa: "Mistrz", ikona: "💎", color: "#60a5fa", border: "rgba(96, 165, 250, 0.4)" };
-          else if (sr >= 55) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
-          else if (sr >= 45) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
-          else if (sr >= 35) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
+          else if (sr >= 50) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
+          else if (sr >= 40) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
+          else if (sr >= 30) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
 
           tagRanga.innerHTML = `${ranga.ikona} ${ranga.nazwa}`;
           tagRanga.style.color = ranga.color;
