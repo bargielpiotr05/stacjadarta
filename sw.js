@@ -7,6 +7,8 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  if (new URL(e.request.url).origin !== self.location.origin) return;
+
   // Przekazywanie żądań sieciowych
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
