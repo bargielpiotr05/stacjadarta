@@ -9,12 +9,11 @@ export default {
         return new Response("Method not allowed", { status: 405, headers: { Allow: "GET" } });
       }
 
-      const authorization = request.headers.get("Authorization");
       const apiKey = request.headers.get("apikey");
       const profileId = url.searchParams.get("id");
 
-      if (!authorization?.startsWith("Bearer ") || !apiKey) {
-        return Response.json({ message: "Wymagane jest zalogowanie." }, { status: 401 });
+      if (!apiKey) {
+        return Response.json({ message: "Brak klucza API." }, { status: 401 });
       }
 
       if (!profileId || !/^[0-9a-f-]{36}$/i.test(profileId)) {
@@ -33,7 +32,6 @@ export default {
         const response = await fetch(upstreamUrl, {
           headers: {
             apikey: apiKey,
-            Authorization: authorization,
             Accept: "application/json",
           },
           cache: "no-store",
