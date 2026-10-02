@@ -1,15 +1,17 @@
 <!doctype html>
 <html lang="pl">
     <head>
-                <!-- Google tag (gtag.js) -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
 
-                    gtag('config', 'G-6Q270446R2');
-                </script>
+            gtag("config", "G-6Q270446R2");
+        </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Społeczność | Stacja Dart</title>
@@ -18,6 +20,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./formularz.css" />
         <!-- Ładujemy style z online, żeby uzyskać ten sam wygląd zakładek i paska wyszukiwania -->
         <link rel="stylesheet" href="./online-style.css" />
         <link rel="stylesheet" href="./spolecznosc-style.css" />
@@ -28,21 +31,17 @@
         <header id="wspolny-header"></header>
         <main>
             <div class="online-main">
-                
                 <!-- PRZEŁĄCZNIK ZAKŁADEK (Design z Online) -->
                 <div class="lobby-tabs-wrapper">
                     <div class="lobby-tabs">
                         <button class="tab-btn aktywna-zakladka" data-cel="sekcja-szukaj">Wyszukiwarka</button>
                         <button class="tab-btn" data-cel="sekcja-znajomi">Moi znajomi</button>
-                        <button class="tab-btn" data-cel="sekcja-zaproszenia">
-                            Zaproszenia <span id="badge-zaproszenia" style="display:none; background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:11px; margin-left:6px; font-weight:bold;">0</span>
-                        </button>
+                        <button class="tab-btn" data-cel="sekcja-zaproszenia">Zaproszenia <span id="badge-zaproszenia" style="display: none; background: #ef4444; color: white; border-radius: 50%; padding: 2px 7px; font-size: 11px; margin-left: 6px; font-weight: bold">0</span></button>
                     </div>
                 </div>
 
                 <!-- ZAKŁADKA 1: WYSZUKIWARKA -->
                 <div id="sekcja-szukaj" class="lobby-sekcja">
-                    
                     <!-- Pasek wyszukiwania (Design z Online) -->
                     <div class="lobby-action-bar">
                         <div class="gorna-filtracja">
@@ -65,7 +64,7 @@
                 </div>
 
                 <!-- ZAKŁADKA 2: ZNAJOMI -->
-                <div id="sekcja-znajomi" class="lobby-sekcja" style="display: none;">
+                <div id="sekcja-znajomi" class="lobby-sekcja" style="display: none">
                     <div class="lobby-list-header">
                         <h3>Twoja lista znajomych</h3>
                     </div>
@@ -75,7 +74,7 @@
                 </div>
 
                 <!-- ZAKŁADKA 3: ZAPROSZENIA -->
-                <div id="sekcja-zaproszenia" class="lobby-sekcja" style="display: none;">
+                <div id="sekcja-zaproszenia" class="lobby-sekcja" style="display: none">
                     <div class="lobby-list-header">
                         <h3>Oczekujące zaproszenia do znajomych</h3>
                     </div>
@@ -83,18 +82,68 @@
                         <div class="pusty-stan">Brak nowych zaproszeń.</div>
                     </div>
                 </div>
+            </div>
+            <!-- MODAL KONFIGURACJI ZAPROSZENIA -->
+            <div id="modal-konfiguracja-gry" class="custom-popup-overlay" style="display: none">
+                <div class="custom-popup-box">
+                    <h3>Zaproś: <span id="konfiguracja-nick-znajomego"></span></h3>
+                    <p>Skonfiguruj zasady dla prywatnego stołu.</p>
 
+                    <div class="konfiguracja-opcje">
+                        <label>
+                            <h4>Format:</h4>
+                            <select id="konf-punkty" class="wspolny-input">
+                                <option value="301">301</option>
+                                <option value="501" selected>501</option>
+                                <option value="701">701</option>
+                            </select>
+                        </label>
+                        <label>
+                            <h4>Dystans:</h4>
+                            <select id="konf-legi" class="wspolny-input">
+                                <option value="1">1 leg</option>
+                                <option value="2">2 legi</option>
+                                <option value="3" selected>3 legi</option>
+                                <option value="5">5 legów</option>
+                                <option value="7">7 legów</option>
+                            </select>
+                        </label>
+                        <label>
+                            <h4>Wejście:</h4>
+                            <select id="konf-in" class="wspolny-input">
+                                <option value="si" selected>Single IN</option>
+                                <option value="di">Double IN</option>
+                                <option value="ti">Triple IN</option>
+                            </select>
+                        </label>
+                        <label>
+                            <h4>Wyjście:</h4>
+                            <select id="konf-out" class="wspolny-input">
+                                <option value="so">Single OUT</option>
+                                <option value="do" selected>Double OUT</option>
+                                <option value="to">Triple OUT</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="custom-popup-buttons" style="margin-top: 25px">
+                        <button type="button" class="btn-secondary" onclick="zamknijKonfiguracjeGry()">Anuluj</button>
+                        <button type="button" id="btn-wyslij-konf" class="btn-primary" onclick="wyslijZaproszenieZKonfiguracja()">Wyślij</button>
+                    </div>
+                </div>
             </div>
         </main>
         <footer id="wspolny-footer"></footer>
 
         <script>
-            const client = window.supabaseKlient || (window.supabase ? window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R") : null);
+            let client = null;
             let aktualnyUser = null;
 
             async function autoryzacja() {
                 if (!client) return false;
-                const { data: { session } } = await client.auth.getSession();
+                const {
+                    data: { session },
+                } = await client.auth.getSession();
                 if (!session?.user) {
                     window.location.href = "./logowanie.html";
                     return false;
@@ -104,13 +153,13 @@
             }
 
             // --- PRZEŁĄCZANIE ZAKŁADEK (Dostosowane do nowych klas) ---
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('aktywna-zakladka'));
-                    document.querySelectorAll('.lobby-sekcja').forEach(z => z.style.display = 'none');
-                    
-                    btn.classList.add('aktywna-zakladka');
-                    document.getElementById(btn.getAttribute('data-cel')).style.display = 'block';
+            document.querySelectorAll(".tab-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("aktywna-zakladka"));
+                    document.querySelectorAll(".lobby-sekcja").forEach((z) => (z.style.display = "none"));
+
+                    btn.classList.add("aktywna-zakladka");
+                    document.getElementById(btn.getAttribute("data-cel")).style.display = "block";
                 });
             });
 
@@ -118,13 +167,22 @@
             function generujKarteGracza(gracz, akcjaHtml) {
                 const avatar = gracz.avatar_url || "./loga/logo.png";
                 const sr = Number(gracz.srednia || 0).toFixed(2);
-                
+
                 let rangaStyl = "color: #e2e8f0; background: rgba(226, 232, 240, 0.15); border: 1px solid rgba(226, 232, 240, 0.3);";
                 let rangaNazwa = "🎯 Klubowy";
-                if (sr >= 70) { rangaStyl = "color: #60a5fa; background: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);"; rangaNazwa = "💎 Mistrz"; }
-                else if (sr >= 55) { rangaStyl = "color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4);"; rangaNazwa = "🔥 Ekspert"; }
-                else if (sr >= 45) { rangaStyl = "color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4);"; rangaNazwa = "🏆 Półzawodowiec"; }
-                else if (sr < 35) { rangaStyl = "color: #a3e635; background: rgba(163, 230, 53, 0.15); border: 1px solid rgba(163, 230, 53, 0.3);"; rangaNazwa = "🌱 Amator"; }
+                if (sr >= 70) {
+                    rangaStyl = "color: #60a5fa; background: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);";
+                    rangaNazwa = "💎 Mistrz";
+                } else if (sr >= 55) {
+                    rangaStyl = "color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.4);";
+                    rangaNazwa = "🔥 Ekspert";
+                } else if (sr >= 45) {
+                    rangaStyl = "color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4);";
+                    rangaNazwa = "🏆 Półzawodowiec";
+                } else if (sr < 35) {
+                    rangaStyl = "color: #a3e635; background: rgba(163, 230, 53, 0.15); border: 1px solid rgba(163, 230, 53, 0.3);";
+                    rangaNazwa = "🌱 Amator";
+                }
 
                 return `
                 <div class="karta-gracza">
@@ -151,14 +209,9 @@
                     return;
                 }
                 kontener.innerHTML = `<div class="pusty-stan">Szukanie...</div>`;
-                
+
                 // 1. Pobieramy graczy pasujących do wyszukiwania
-                const { data, error } = await client
-                    .from('profiles')
-                    .select('id, nazwa_gracza, avatar_url, srednia')
-                    .ilike('nazwa_gracza', `%${fraza}%`)
-                    .neq('id', aktualnyUser.id)
-                    .limit(20);
+                const { data, error } = await client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").ilike("nazwa_gracza", `%${fraza}%`).neq("id", aktualnyUser.id).limit(20);
 
                 if (error || !data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
@@ -166,108 +219,113 @@
                 }
 
                 // 2. Pobieramy NASZE relacje z bazy (aby wiedzieć, kogo już zaprosiliśmy)
-                const { data: relacje } = await client
-                    .from('znajomi')
-                    .select('*')
-                    .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
-                    
+                const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+
                 // Tworzymy słownik relacji (szybsze sprawdzanie)
                 const relMap = {};
                 if (relacje) {
-                    relacje.forEach(r => {
+                    relacje.forEach((r) => {
                         const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
                         relMap[innyId] = r;
                     });
                 }
 
                 // 3. Budujemy HTML kart
-                kontener.innerHTML = data.map(gracz => {
-                    const rel = relMap[gracz.id];
-                    let przyciskZapros = "";
-                    
-                    // Logika wyboru przycisku
-                    if (!rel) {
-                        przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
-                    } else if (rel.status === 'zaakceptowane') {
-                        przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
-                    } else if (rel.status === 'oczekujace') {
-                        if (rel.zapraszajacy_id === aktualnyUser.id) {
-                            przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
-                        } else {
-                            przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
-                        }
-                    }
+                kontener.innerHTML = data
+                    .map((gracz) => {
+                        const rel = relMap[gracz.id];
+                        let przyciskZapros = "";
 
-                    return generujKarteGracza(gracz, 
-                        `<button type="button" class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Odwiedź Profil</button>
-                         ${przyciskZapros}`
-                    );
-                }).join("");
+                        // Logika wyboru przycisku
+                        if (!rel) {
+                            przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
+                        } else if (rel.status === "zaakceptowane") {
+                            przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
+                        } else if (rel.status === "oczekujace") {
+                            if (rel.zapraszajacy_id === aktualnyUser.id) {
+                                przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
+                            } else {
+                                przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
+                            }
+                        }
+
+                        return generujKarteGracza(
+                            gracz,
+                            `<button type="button" class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Odwiedź Profil</button>
+                         ${przyciskZapros}`,
+                        );
+                    })
+                    .join("");
             });
 
             // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
                 const { data, error } = await client
-                    .from('znajomi')
-                    .select('id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)')
-                    .eq('status', 'zaakceptowane')
+                    .from("znajomi")
+                    .select("id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)")
+                    .eq("status", "zaakceptowane")
                     .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
 
                 const kontener = document.getElementById("lista-znajomych");
-                
+
                 if (error || !data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                     return;
                 }
 
-                kontener.innerHTML = data.map(relacja => {
-                    const gracz = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany : relacja.zapraszajacy;
-                    return generujKarteGracza(gracz, 
-                        `<button class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Profil</button>
-                         <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>`
-                    );
-                }).join("");
+                kontener.innerHTML = data
+                    .map((relacja) => {
+                        const gracz = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany : relacja.zapraszajacy;
+                        return generujKarteGracza(
+                            gracz,
+                            `
+                         <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
+                         <button class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Profil</button>
+                         <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
+                        `,
+                        );
+                    })
+                    .join("");
             }
 
             // --- 3. ZAPROSZENIA ---
             async function pobierzZaproszenia() {
-                const { data, error } = await client
-                    .from('znajomi')
-                    .select('id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia)')
-                    .eq('zapraszany_id', aktualnyUser.id)
-                    .eq('status', 'oczekujace');
+                const { data, error } = await client.from("znajomi").select("id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia)").eq("zapraszany_id", aktualnyUser.id).eq("status", "oczekujace");
 
                 const kontener = document.getElementById("lista-zaproszen");
                 const badge = document.getElementById("badge-zaproszenia");
 
                 if (error || !data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
-                    badge.style.display = 'none';
+                    badge.style.display = "none";
                     return;
                 }
 
                 badge.textContent = data.length;
-                badge.style.display = 'inline-flex';
+                badge.style.display = "inline-flex";
 
-                kontener.innerHTML = data.map(rel => generujKarteGracza(rel.zapraszajacy, 
-                    `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
-                     <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>`
-                )).join("");
+                kontener.innerHTML = data
+                    .map((rel) =>
+                        generujKarteGracza(
+                            rel.zapraszajacy,
+                            `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
+                     <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>`,
+                        ),
+                    )
+                    .join("");
             }
 
-// --- AKCJE ZNAJOMYCH ---
-            
+            // --- AKCJE ZNAJOMYCH ---
+
             // NOWA FUNKCJA: Zapraszanie bezpośrednio z karty wyszukiwania
             window.zaprosZSzukajki = async (rywalId, btnElement) => {
                 btnElement.disabled = true;
                 btnElement.textContent = "Wysyłanie...";
-                
-                const { error } = await client.from("znajomi").insert([
-                    { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }
-                ]);
+
+                const { error } = await client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]);
 
                 if (error) {
-                    if (error.code === '23505') {
+                    if (error.code === "23505") {
                         btnElement.textContent = "Już wysłano!";
                     } else {
                         btnElement.textContent = "Błąd";
@@ -276,20 +334,111 @@
                 } else {
                     btnElement.textContent = "⏳ Wysłano zaproszenie";
                     btnElement.className = "btn-secondary"; // Zmienia kolor na zgaszony
-                    
+
                     // Odświeżamy listę zaproszeń "w tle", gdyby rywal jakimś cudem wysłał je równocześnie
                     pobierzZaproszenia();
                 }
             };
 
             window.akceptuj = async (relacjaId) => {
-                await client.from('znajomi').update({ status: 'zaakceptowane' }).eq('id', relacjaId);
+                await client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId);
                 pobierzZaproszenia();
                 pobierzZnajomych();
+            };
+            // --- KONFIGURACJA GRY Z ZNAJOMYM ---
+            let tempZnajomyId = null;
+            let tempZnajomyNick = null;
+
+            window.otworzKonfiguracjeGry = function (znajomyId, znajomyNick) {
+                tempZnajomyId = znajomyId;
+                tempZnajomyNick = znajomyNick;
+                document.getElementById("konfiguracja-nick-znajomego").textContent = znajomyNick;
+                document.getElementById("modal-konfiguracja-gry").style.display = "flex";
+            };
+
+            window.zamknijKonfiguracjeGry = function () {
+                document.getElementById("modal-konfiguracja-gry").style.display = "none";
+                tempZnajomyId = null;
+                tempZnajomyNick = null;
+            };
+
+            window.wyslijZaproszenieZKonfiguracja = async function () {
+                if (!tempZnajomyId || !aktualnyUser) return;
+
+                const btnSubmit = document.getElementById("btn-wyslij-konf");
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = "Wysyłanie...";
+
+                // Pobieramy dane z formularza
+                const punktyStartowe = parseInt(document.getElementById("konf-punkty").value);
+                const doceloweLegi = parseInt(document.getElementById("konf-legi").value);
+                const zasadyIn = document.getElementById("konf-in").value;
+                const zasadyOut = document.getElementById("konf-out").value;
+                const formatGry = `${punktyStartowe} ${zasadyOut.toUpperCase()}`;
+
+                const kodPokoju = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const mojNick = aktualnyUser.user_metadata?.username || aktualnyUser.email.split("@")[0];
+
+                // --- 1. TWORZENIE STOŁU W BAZIE ONLINE Z PARAMETRAMI ---
+                const { error: errorStolu } = await client.from("rooms").insert([
+                    {
+                        kod_pokoju: kodPokoju,
+                        host_id: aktualnyUser.id,
+                        host_nazwa: mojNick,
+                        punkty_startowe: punktyStartowe,
+                        docelowe_legi: doceloweLegi,
+                        zasady_wejscia: zasadyIn,
+                        zasady_wyjscia: zasadyOut,
+                        format_gry: formatGry,
+                        status: "waiting",
+                        czy_prywatny: true,
+                    },
+                ]);
+
+                if (errorStolu) {
+                    alert("Błąd podczas tworzenia stołu.");
+                    console.error("Błąd tworzenia stołu:", errorStolu);
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = "Wyślij zaproszenie";
+                    return;
+                }
+
+                // --- 2. WYSYŁANIE ZAPROSZENIA ---
+                const { error: errorZaproszenia } = await client.from("game_invites").insert([
+                    {
+                        od_kogo_id: aktualnyUser.id,
+                        od_kogo_nick: mojNick,
+                        do_kogo_id: tempZnajomyId,
+                        kod_pokoju: kodPokoju,
+                    },
+                ]);
+
+                if (errorZaproszenia) {
+                    alert("Błąd podczas wysyłania zaproszenia.");
+                    console.error(errorZaproszenia);
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = "Wyślij zaproszenie";
+                } else {
+                    // Sukces - Przenosimy do gry!
+                    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}`;
+                }
             };
 
             // Start
             document.addEventListener("DOMContentLoaded", async () => {
+                // ŁATKA DLA iOS: Czekamy (max 1 sekundę), aż menu.js połączy się z bazą
+                let proby = 0;
+                while (!window.supabaseKlient && proby < 20) {
+                    await new Promise((r) => setTimeout(r, 50));
+                    proby++;
+                }
+                client = window.supabaseKlient;
+
+                if (!client) {
+                    console.error("Błąd ładowania Supabase na iOS.");
+                    return;
+                }
+
                 // Wyzwolenie szukania na Enter w polu tekstowym
                 document.getElementById("input-szukaj").addEventListener("keypress", (e) => {
                     if (e.key === "Enter") document.getElementById("btn-szukaj").click();

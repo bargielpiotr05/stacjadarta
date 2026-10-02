@@ -1,28 +1,38 @@
 // ============================================================
 // 1. INICJALIZACJA I STAN LOKALNY
 // ============================================================
-const supabaseClient = window.supabaseClient || window.supabaseKlient || (window.supabase
-  ? window.supabase.createClient(
-    "https://mjebhhagwxtvhggyjwue.supabase.co",
-    "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        lock: async (name, acquireTimeout, fn) => await fn()
-      }
-    }
-  )
-  : null);
 
-window.supabaseClient = supabaseClient;
-window.supabaseKlient = supabaseClient;
+// Definiujemy getter, który ZAWSZE sięga po najnowszego klienta, a nie zapisuje "null" przy starcie skryptu
+Object.defineProperty(window, 'supabaseClient', {
+    get: function() {
+        return window.supabaseKlient;
+    }
+});
 
 let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
 let wszystkiePokoje = [];
 let zalogowanyNick = null;
 
+// Dodatkowe opóźnienie dla inicjalizacji, dając czas menu.js na pobranie sesji
+async function inicjalizujDane() {
+  await pobierzMojeIP(); // To można zrobić w tle
+  
+  // Czekamy maksymalnie 1 sekundę na załadowanie klienta przez menu.js
+  let proby = 0;
+  while (!window.supabaseKlient && proby < 10) {
+      await new Promise(r => setTimeout(r, 100));
+      proby++;
+  }
+  
+  if (!window.supabaseKlient) {
+      console.error("Nie udało się połączyć z bazą danych.");
+      return;
+  }
+
+  await sprawdzProfilGracza();
+  await pobierzStoły();
+  wlaczRealtimeLobby();
+}
 function odczytajSesjeZPamieci() {
   try {
     for (let i = 0; i < localStorage.length; i++) {

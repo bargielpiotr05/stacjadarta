@@ -25,7 +25,7 @@ main::before {
   z-index: 1;
 }
 
-main > * {
+main>* {
   position: relative;
   z-index: 2;
 }
@@ -69,6 +69,7 @@ form {
   gap: 25px;
 }
 
+
 .sekcja-formularza {
   background-color: var(--primary-form-inside-color);
   border: 1px solid var(--primary-form-inside-border-color);
@@ -104,8 +105,91 @@ form {
   width: 100%;
 }
 
-#kontener-nazw-graczy > label:nth-child(odd):last-child,
-#kontener-nazw-graczy > div:nth-child(odd):last-child {
+#default-dodaj-gracza {
+  display: flex;
+  flex-direction: row;
+}
+
+#default-dodaj-gracza .usun-pole-gracza {
+  width: 46px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+.input-nazwa-gracza {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Gdy input jest sam w kafelku (brak przycisku X obok), zaokrągla rogi */
+.input-nazwa-gracza:only-child {
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+.dodawanie-uczestnikow {
+  max-width: 480px;
+  text-align: left
+}
+
+.dodawanie-uczestnikow-div-inside {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px
+}
+
+.btn-zamknij-popup-uczestnicy {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1
+}
+
+.btn-dodaj-kolejnego-gracza {
+  cursor: pointer !important;
+}
+
+/* Pasek zakładek w oknie dodawania gracza */
+.opcje-graczy-tabs {
+  display: flex;
+  gap: 5px;
+  background: var(--primary-color-lighter);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--primary-color-border);
+}
+
+.btn-opcja-gracza {
+  flex: 1;
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  padding: 8px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-opcja-gracza.aktywna-opcja {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.zakladka-dodaj-tresc {
+  animation: fadeIn 0.2s ease-in-out;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#kontener-nazw-graczy>label:nth-child(odd):last-child,
+#kontener-nazw-graczy>div:nth-child(odd):last-child {
   grid-column: span 2;
   max-width: 50%;
   margin: 0 auto;
@@ -217,6 +301,7 @@ form h4 {
 #zacznij-grac:active {
   transform: scale(0.98);
 }
+
 .przycisk-zacznij-grac {
   display: flex;
   justify-content: center;
@@ -229,6 +314,7 @@ form h4 {
   margin: 0 auto;
   text-align: center;
 }
+
 .status-baru {
   font-size: 22px;
   font-weight: bold;
@@ -243,9 +329,11 @@ form h4 {
   border-radius: 15px;
   padding: 10px 20px;
 }
+
 #wyswietl-kolejke {
   margin-left: 150px;
 }
+
 #powrot-gra {
   background-color: var(--light-grey);
   color: white;
@@ -256,11 +344,13 @@ form h4 {
   border-radius: 10px;
   padding: 6px 14px;
 }
+
 #powrot-gra:hover {
   background-color: var(--red-btn-hover);
   border-color: var(--red-btn-border-hover);
   color: var(--red-text-hover);
 }
+
 .kontener-graczy {
   display: flex;
   flex-wrap: wrap;
@@ -268,6 +358,7 @@ form h4 {
   gap: 20px;
   margin-bottom: 20px;
 }
+
 .karta-gracza {
   background-color: var(--primary-color);
   border: 2px solid var(--primary-color-border);
@@ -279,25 +370,30 @@ form h4 {
   transition: all 0.3s ease;
   opacity: 0.5;
 }
+
 .karta-gracza.aktywne-tury {
   opacity: 1;
   border-color: var(--secondary-color);
   box-shadow: 0 0 20px rgba(64, 218, 64, 0.2);
 }
+
 .karta-gracza h2 {
   margin: 0 0 5px 0;
   font-size: 24px;
   color: #ccc;
 }
+
 .karta-gracza.aktywne-tury h2 {
   color: white;
 }
+
 .stan-meczu {
   font-size: 14px;
   color: var(--secondary-color);
   font-weight: bold;
   margin-bottom: 10px;
 }
+
 .wynik-główny {
   font-size: 64px;
   font-weight: bold;
@@ -360,6 +456,7 @@ form h4 {
   border-bottom: 1px solid var(--primary-color-border);
   z-index: 1;
 }
+
 #zamknij-przebieg {
   background-color: #475569;
   color: white;
@@ -369,6 +466,7 @@ form h4 {
   cursor: pointer;
   font-weight: bold;
 }
+
 .tabela-historii-karty td {
   padding: 6px 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -387,6 +485,7 @@ form h4 {
   margin-bottom: 25px;
   text-align: left;
 }
+
 .blok-historii-legu h3 {
   margin: 0 0 10px 0;
   font-size: 14px;
@@ -396,6 +495,7 @@ form h4 {
   border-bottom: 1px solid var(--primary-color-border);
   padding-bottom: 6px;
 }
+
 .lista-historii-legu {
   max-height: 120px;
   overflow-y: auto;
@@ -405,6 +505,7 @@ form h4 {
   flex-direction: column;
   gap: 6px;
 }
+
 .wpis-historii-legu {
   display: flex;
   justify-content: space-between;
@@ -419,11 +520,13 @@ form h4 {
   flex-direction: column;
   gap: 15px;
 }
+
 .metoda-wprowadzania {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
+
 .btn-metoda {
   background-color: var(--primary-color-lighter);
   color: #ccc;
@@ -435,6 +538,7 @@ form h4 {
   cursor: pointer;
   transition: all 0.3s;
 }
+
 .btn-metoda.aktywna-metoda {
   background-color: var(--secondary-color);
   color: var(--primary-color);
@@ -465,11 +569,13 @@ form h4 {
   margin-bottom: 10px;
   outline: none;
 }
+
 #wpisz-wynik::-webkit-outer-spin-button,
 #wpisz-wynik::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 #wpisz-wynik {
   appearance: textfield;
   -moz-appearance: textfield;
@@ -490,6 +596,7 @@ form h4 {
 .btn-zero {
   grid-column: 2;
 }
+
 #cofnij-cyfre {
   background-color: var(--primary-color-lighter);
 }
@@ -623,9 +730,11 @@ form h4 {
   background: var(--primary-color-lighter);
   border-bottom: 3px solid var(--primary-color-more-lighter);
 }
+
 .double {
   display: none;
 }
+
 .triple {
   display: none;
 }
@@ -656,6 +765,7 @@ form h4 {
 #zatwierdz-klik-kolejke:hover {
   background: var(--secondary-color-hover);
 }
+
 .btn-cofnij {
   background-color: var(--color-red-btn);
   border: 2px solid var(--color-red-btn-border);
@@ -669,17 +779,20 @@ form h4 {
   transition: all 0.3s;
   flex: 1;
 }
+
 .btn-cofnij:hover {
   background-color: var(--color-red-btn-hover);
   border-color: var(--color-red-btn-border-hover);
   color: var(--color-red-text-hover);
 }
+
 .kontener-przycisków {
   display: flex;
   flex-direction: row;
   gap: 10px;
   width: 100%;
 }
+
 /* PRZEŁĄCZNIK WIDOKÓW STATYSTYK */
 .statystyki-tabs-wrapper {
   display: flex;
@@ -715,6 +828,7 @@ form h4 {
   color: var(--primary-color);
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
 }
+
 .ekran-wygranej {
   background-color: var(--primary-color);
   padding: 40px;
@@ -731,11 +845,13 @@ form h4 {
   position: relative !important;
   display: none;
 }
+
 .statystyki {
   margin: 25px 0;
   overflow-x: auto;
   width: 100%;
 }
+
 #zobacz-przebieg {
   background-color: var(--primary-color-lighter);
   color: white;
@@ -746,6 +862,7 @@ form h4 {
   font-weight: bold;
   font-size: 16px;
 }
+
 #zacznij-kolejna {
   background-color: var(--secondary-color);
   color: var(--primary-color);
@@ -757,16 +874,19 @@ form h4 {
   text-transform: uppercase;
   font-size: 16px;
 }
+
 #przyciski-statystyki {
   display: flex;
   flex-direction: row;
   gap: 20px;
 }
+
 .tabela-statystyki {
   width: 100%;
   border-collapse: collapse;
   font-size: 16px;
 }
+
 .tabela-statystyki th {
   background-color: var(--primary-color-lighter);
   color: var(--secondary-color);
@@ -776,20 +896,25 @@ form h4 {
   border: 1px solid #332d70;
   text-align: center;
 }
+
 .tabela-statystyki tr:nth-child(even) {
   background-color: var(--primary-color-more-lighter);
 }
+
 .tabela-statystyki th:first-child {
   text-align: left;
 }
+
 .tabela-statystyki td {
   padding: 12px 10px;
   border: 1px solid #332d70;
   text-align: center;
 }
+
 .tabela-statystyki td:first-child {
   text-align: left;
 }
+
 #wygrany {
   color: var(--secondary-color);
   margin-top: 0;
@@ -803,6 +928,7 @@ form h4 {
   overflow-x: auto;
   padding-bottom: 5px;
 }
+
 .przycisk-zakladki {
   background-color: var(--primary-color-lighter);
   color: #ccc;
@@ -815,13 +941,16 @@ form h4 {
   white-space: nowrap;
   transition: all 0.2s;
 }
+
 .przycisk-zakladki.aktywna {
   background-color: var(--secondary-color);
   color: var(--primary-color);
 }
+
 .zawartosc-zakladki {
   display: none;
 }
+
 .zawartosc-zakladki.aktywna {
   display: block;
 }
@@ -840,6 +969,7 @@ form h4 {
   padding: 20px;
   box-sizing: border-box;
 }
+
 .zawartosc-modal {
   background-color: var(--primary-color);
   border: 2px solid var(--primary-color-border);
@@ -852,11 +982,13 @@ form h4 {
   box-sizing: border-box;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
+
 .zawartosc-modal h2 {
   text-align: center;
   color: #cccccc;
   margin-top: 0;
 }
+
 .tabela-przebiegu {
   width: 100%;
   border-collapse: collapse;
@@ -864,6 +996,7 @@ form h4 {
   color: white;
   text-align: center;
 }
+
 .tabela-przebiegu th {
   background-color: var(--primary-color-lighter);
   padding: 12px;
@@ -872,81 +1005,89 @@ form h4 {
   font-size: 13px;
   border: 1px solid var(--primary-color-border);
 }
+
 .tabela-przebiegu td {
   padding: 12px;
   border: 1px solid var(--primary-color-border);
   font-size: 15px;
 }
+
 .tabela-przebiegu tr:nth-child(even) {
   background-color: rgba(255, 255, 255, 0.02);
 }
+
 /* --- ZABEZPIECZENIE PRZED DŁUGIMI NICKAMI (Wersja Swipe) --- */
 
 .tabela-przebiegu,
 .tabela-statystyki {
-    table-layout: fixed;
-    width: 100%;
+  table-layout: fixed;
+  width: 100%;
 }
 
 /* Usuwamy przewijanie z całego nagłówka, żeby średnia stała w miejscu */
 .tabela-przebiegu th,
 .tabela-statystyki th {
-    overflow: hidden;
-    padding: 10px 4px; 
+  overflow: hidden;
+  padding: 10px 4px;
 }
 
 /* Nowy kontener TYLKO na nick - pozwala na scrollowanie palcem bez kropek */
 .nick-przewijany {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    text-overflow: clip;       /* Wyłącza wielokropek (...) */
-    -ms-overflow-style: none;  /* Ukrywa pasek w IE/Edge */
-    scrollbar-width: none;     /* Ukrywa pasek w Firefox */
-    margin-bottom: 4px;        /* Zastępuje dawne <br> nad średnią */
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  text-overflow: clip;
+  /* Wyłącza wielokropek (...) */
+  -ms-overflow-style: none;
+  /* Ukrywa pasek w IE/Edge */
+  scrollbar-width: none;
+  /* Ukrywa pasek w Firefox */
+  margin-bottom: 4px;
+  /* Zastępuje dawne <br> nad średnią */
 }
 
 /* Ukrywa pasek przewijania w Chrome/Safari/iOS (zostaje samo przesuwanie palcem) */
 .nick-przewijany::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 /* Reset dla komórek z punktami (naprawia ucięty tekst np. "Zdobyte 180") */
 .tabela-przebiegu td,
 .tabela-statystyki td {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    word-wrap: break-word;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
 }
 
 /* Sztywna szerokość i brak przewijania dla kolumny "Kolejka" */
 .tabela-przebiegu th:first-child,
 .tabela-przebiegu td:first-child {
-    width: 75px !important;
-    min-width: 75px;
-    overflow: visible !important;
-    white-space: normal !important;
+  width: 75px !important;
+  min-width: 75px;
+  overflow: visible !important;
+  white-space: normal !important;
 }
 
 /* Karty graczy na głównym ekranie podczas gry (tu wielokropek zostaje) */
 .karta-gracza h2 {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
 }
 
 /* 4. Ucinanie za długiego nicku na głównych kartach graczy (podczas gry) */
 .karta-gracza h2 {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
 }
+
 .fura-tekst {
   color: var(--color-red-text);
   font-size: 12px;
@@ -967,6 +1108,7 @@ form h4 {
   padding: 20px;
   box-sizing: border-box;
 }
+
 .custom-popup-box {
   background-color: var(--primary-color);
   border: 3px solid var(--secondary-color);
@@ -982,36 +1124,42 @@ form h4 {
   letter-spacing: 1px;
   color: var(--secondary-color);
 }
+
 .custom-popup-box h3 {
   margin-top: 0;
   font-size: 22px;
   letter-spacing: 1px;
   color: var(--secondary-color);
 }
+
 .custom-popup-box p {
   font-size: 16px;
   color: lightgrey;
   line-height: 1.5;
   margin-bottom: 25px;
 }
+
 .custom-popup-buttons {
   display: flex;
   gap: 15px;
   justify-content: center;
   flex-wrap: wrap;
 }
+
 #popup-doubles-tytul {
   margin-top: 0;
   font-size: 22px;
   letter-spacing: 1px;
   color: var(--secondary-color);
 }
+
 #popup-doubles-opis {
   font-size: 16px;
   color: #cccccc;
   line-height: 1.5;
   margin-bottom: 25px;
 }
+
 .popup-btn {
   flex: 1;
   padding: 12px 20px;
@@ -1026,27 +1174,34 @@ form h4 {
     background-color 0.2s,
     transform 0.1s;
 }
+
 .popup-btn-yes {
   background-color: var(--secondary-color);
   color: var(--primary-color);
   margin-bottom: 10px;
 }
+
 .popup-btn-yes:hover {
   background-color: var(--secondary-color-hover);
 }
-.popup-btn-no{
-  margin-bottom:10px;
+
+.popup-btn-no {
+  margin-bottom: 10px;
 }
+
 .popup-btn-no {
   background-color: #475569;
   color: white;
 }
+
 .popup-btn-no:hover {
   background-color: #64748b;
 }
+
 .popup-btn:active {
   transform: scale(0.98);
 }
+
 #wylosowana-osoba {
   display: none;
   position: fixed;
@@ -1065,6 +1220,7 @@ form h4 {
   animation: fadeIn 0.3s ease-in-out;
   border: 2px solid var(--secondary-color);
 }
+
 #formularz-ustawien {
   position: relative !important;
 }
@@ -1074,6 +1230,7 @@ form h4 {
     opacity: 0;
     top: 0;
   }
+
   to {
     opacity: 1;
     top: 20px;
@@ -1142,19 +1299,20 @@ form h4 {
   font-weight: bold;
   color: #fff;
 }
+
 #btn-dartbot {
   font-weight: 600;
   cursor: pointer;
   text-transform: none;
   transition: 0.3s;
 }
-#popup-konfiguracji-bota .custom-popup-box {
-  max-width: 450px;
-}
+
+
 .bot-slider-container {
   margin: 25px 0;
   text-align: left;
 }
+
 .bot-slider-container label {
   display: flex;
   justify-content: space-between;
@@ -1162,16 +1320,19 @@ form h4 {
   margin-bottom: 15px;
   font-size: 18px;
 }
+
 #bot-slider-val {
   color: var(--secondary-color);
   font-weight: bold;
   font-size: 22px;
 }
+
 .bot-slider-container input[type="range"] {
   width: 100%;
   cursor: pointer;
   accent-color: var(--secondary-color);
 }
+
 .bot-statistics {
   margin-top: 25px;
   font-size: 15px;
@@ -1180,35 +1341,44 @@ form h4 {
   padding: 15px;
   border-radius: 8px;
 }
+
 .bot-statistics div {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
 }
+
 .bot-statistics div:last-child {
   margin-bottom: 0;
 }
+
 #bot-stat-good {
   color: #4ade80;
 }
+
 #bot-stat-bad {
   color: #f87171;
 }
+
 #bot-stat-checkout {
   color: #38bdf8;
 }
+
 @media (max-width: 1050px) {
   main {
     padding: 0;
     margin: 0;
   }
+
   #tytul-strony {
     margin: 0;
   }
+
   form {
     padding: 20px;
     width: 100%;
   }
+
   .kontener-graczy {
     display: flex;
     flex-direction: row;
@@ -1218,6 +1388,7 @@ form h4 {
     box-sizing: border-box;
     margin-bottom: 7px;
   }
+
   .karta-gracza {
     min-width: 0;
     flex: 1 1 calc(50% - 10px);
@@ -1225,73 +1396,92 @@ form h4 {
     padding: 12px 8px;
     margin: 2px;
   }
+
   .karta-gracza h2 {
     font-size: 18px;
   }
+
   .wynik-główny {
     font-size: 38px;
   }
+
   .srednia-gracza {
     font-size: 14px;
   }
+
   .kontener-przycisków {
     margin-top: 20px;
   }
+
   .kontener-klawiszy {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(6, 1fr);
     height: auto;
     gap: 5px;
   }
+
   .kontener-klawiszy button {
     height: 45px;
     font-size: 14px;
   }
+
   .strefa-klikania {
     gap: 0;
   }
+
   .status-baru {
     font-size: 15px;
     padding: 3px;
     margin-bottom: 7px;
   }
+
   .opcje-liczenia {
     gap: 4px;
   }
+
   .btn-metoda {
     max-width: 150px;
     font-size: 13px;
   }
+
   .tab-btn {
     padding: 6px;
     font-size: 14px;
   }
+
   #wpisz-wynik {
     padding: 6px;
     font-size: 18px;
     margin-bottom: 4px;
     color: white !important;
   }
+
   .btn-cyfra {
     font-size: 14px;
   }
+
   .strefa-manualna {
     gap: 6px;
   }
+
   .header-left-section h1 {
     display: none;
   }
+
   .zakladka-btn-karta {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   #wyswietl-kolejke {
     margin-left: 50px;
   }
+
   .ekran-wygranej {
     padding: 10px;
   }
+
   #formularz-ustawien {
     padding-top: 60px !important;
   }

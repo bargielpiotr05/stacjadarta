@@ -1,0 +1,116 @@
+main {
+    background-color: var(--primary-color-lighter);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+    gap: 20px;
+}
+
+.header-text {
+    text-align: center;
+    color: white;
+    font-size: 40px;
+    border-bottom: 2px solid var(--secondary-color);
+    line-height: 1.8;
+    background-color: var(--primary-form-color);
+    width: 100%;
+    margin: 0;
+    padding: 20px 0;
+}
+
+.blok-nowosci {
+    border-radius: 8px;
+    background-color: var(--primary-form-color);
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 20px;
+    border-top: 2px solid var(--secondary-color);
+}
+
+.blok-head {
+    display: flex;
+    justify-content: space-between;
+}
+
+.blok-head h1 {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+.blok-head p {
+    color: #979797;
+    font-weight: bold;
+}
+
+.blok-zmiany {
+    border-radius: 8px;
+    border: 1px solid var(--primary-form-inside-color);
+    background-color: var(--primary-color-lighter);
+}
+
+.blok-zmiany li {
+    padding: 12px 15px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    font-size: 15px;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.blok-zmiany li b {
+    color: #ffffff;
+    font-size: 16px;
+    margin-right: 4px;
+    transition: color 0.2s ease;
+}
+
+.blok-zmiany li:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: #ffffff;
+}
+
+.blok-zmiany li:not(:last-child) {
+    border-bottom: 1px solid var(--primary-color-border);
+}
+
+#kontener-logotypow {
+    display: flex;
+    justify-content: space-evenly;
+
+}
+
+#kontener-logotypow img {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+}
+
+#kontener-logotypow a {
+    text-decoration: none;
+    color: white;
+    display:flex;
+    align-items: center;
+}
+
+#kontener-logotypow .instagram {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(to bottom, purple,red ,yellow);
+}
+#kontener-logotypow .facebook {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(to bottom, blue,blue, blue,blue,  white, blue);
+}

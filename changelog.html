@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-6Q270446R2");
+        </script>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ChangeLog | Stacja Dart</title>
+        <meta name="description" content="Platforma dartowa online - gry, treningi, statystyki i społeczność graczy darta." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <meta property="og:title" content="Stacja Dart" />
+        <meta property="og:description" content="Gry dartowe online, treningi, statystyki i społeczność graczy." />
+        <meta property="og:image" content="./loga/logo.png" />
+        <meta property="og:type" content="website" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+        <link rel="stylesheet" href="./changelog-style.css" />
+        <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+
+        <script>
+            // Inicjalizacja klienta omijająca konflikt nazw z menu.js
+            const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
+            const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+            window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+        </script>
+
+        <!-- Dodane automatyczne poprawki UI -->
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+        <main>
+            <h1 class="header-text">Dziennik zmian i nowości!</h1>
+
+            <!-- BLOK NOWOŚCI V1.1 -->
+            <div class="blok-nowosci">
+                <div class="blok-head">
+                    <h1>Aktualizacja v1.1</h1>
+                    <p>Data: 02-10-2026</p>
+                </div>
+                <div class="blok-zmiany">
+                    <ul>
+                        <li><b>Nowy system wyboru uczestników:</b> przejrzyste okno modalne z podziałem na zakładki (Znajomi, DartBot, Ty, Gość).</li>
+                        <li><b>Szybkie dodawanie znajomych:</b> możliwość wstawienia rywala do meczu jednym kliknięciem bezpośrednio z listy kontaktów.</li>
+                        <li><b>Globalne powiadomienia o grze:</b> system zaproszeń działający w czasie rzeczywistym, wyświetlający pop-up na każdej podstronie platformy.</li>
+                        <li><b>Konfigurator prywatnych stołów:</b> możliwość dokładnego ustalenia zasad (format punktowy, dystans w legach, zasady wejścia i wyjścia) przed wysłaniem wyzwania znajomemu.</li>
+                        <li><b>Płynne dołączanie do meczu (Matchmaking):</b> zautomatyzowane tworzenie prywatnych pokoi i łączenie graczy od razu po akceptacji zaproszenia, bez konieczności przepisywania kodów.</li>
+                        <li><b>Optymalizacja zapisu meczów:</b> wdrożono architekturę Host-Authoritative, która zapobiega tworzeniu się duplikatów w historii meczów po zakończeniu gry online.</li>
+                        <li><b>Odświeżenie wizualne:</b> dopracowany wygląd formularzy oraz okien modalnych w trybie Klasycznej Gry 501.</li>
+                    </ul>
+                </div>
+                <p>Aby zobaczyć zmiany wizualnie, odwiedź nasze profile społecznościowe:</p>
+                <div id="kontener-logotypow">
+                    <label class="instagram">
+                        <a href="www.instagram.com/stacjadarta/" target="_blank">
+                            <img src="./ikony/instagram.png" alt="Instagram" />
+                            <span>Instagram</span>
+                        </a>
+                    </label>
+                    <label class="facebook">
+                        <a href="www.facebook.com/stacjadarta/" target="_blank">
+                            <img src="./ikony/facebook.png" alt="Facebook" />
+                            <span>Facebook</span>
+                        </a>
+                    </label>
+                </div>
+            </div>
+            <!-- BLOK NOWOŚCI V1.0 -->
+            <div class="blok-nowosci">
+                <div class="blok-head">
+                    <h1>Aktualizacja v1.0</h1>
+                    <p>Data: 24-09-2026</p>
+                </div>
+                <div class="blok-zmiany">
+                    <ul>
+                        <li><b>Sparingi z wirtualnym przeciwnikiem:</b> wdrożenie DartBota z dopasowaniem poziomu trudności pod średnią gracza.</li>
+                        <li><b>Rozgrywka Online 1v1 na żywo:</b> tworzenie prywatnych stołów oraz dołączanie przez prosty kod pokoju w przeglądarce.</li>
+                        <li><b>Wirtualny licznik meczowy:</b> automatyczne liczenie punktacji, obsługa rzutów, podpowiedzi finiszów i wskaźniki rund.</li>
+                        <li><b>Statystyki pomeczowe i historia:</b> szczegółowe raporty po meczu (średnie, pierwsze 9 lotek, checkouty) oraz archiwum pojedynków w profilu użytkownika.</li>
+                    </ul>
+                </div>
+                <p>Aby zobaczyć zmiany wizualnie, odwiedź nasze profile społecznościowe:</p>
+                <div id="kontener-logotypow">
+                    <label class="instagram">
+                        <a href="www.instagram.com/stacjadarta/" target="_blank" rel="noopener noreferrer">
+                            <img src="./ikony/instagram.png" alt="Instagram" />
+                            <span>Instagram</span>
+                            </a>
+                    </label>
+                    <label class="facebook">
+                        <a href="www.facebook.com/stacjadarta/" target="_blank" rel="noopener noreferrer">
+                            <img src="./ikony/facebook.png" alt="Facebook" />
+                            <span>Facebook</span>
+                        </a>
+                    </label>
+                </div>
+            </div>
+        </main>
+        <footer id="wspolny-footer"></footer>
+    </body>
+</html>

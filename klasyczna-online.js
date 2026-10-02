@@ -173,18 +173,43 @@ async function inicjalizujPoczekalnieOnline(kod) {
     return;
   }
 
-  if (onlineTryb === "widz") {
+  // --- KRYTYCZNA ZMIANA: ROZPOZNAWANIE GRACZA (ZAMIAST TOKENÓW) ---
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const user = session?.user;
+
+  if (onlineTryb === "widz" || !user) {
     czyWidz = true;
     mojIndeksOnline = -1;
   } else {
-    const zapisanyToken = sessionStorage.getItem(`sd_token_${kod}`);
-    if (pokoj.host_token && pokoj.host_token === zapisanyToken) {
+    // 1. Sprawdzamy czy jestem Hostem
+    if (pokoj.host_id === user.id) {
       mojIndeksOnline = 0;
       czyWidz = false;
-    } else if (pokoj.gosc_token && pokoj.gosc_token === zapisanyToken) {
+    } 
+    // 2. Sprawdzamy czy byłem już przypisany jako gość (odświeżenie strony)
+    else if (pokoj.gosc_id === user.id) {
       mojIndeksOnline = 1;
       czyWidz = false;
-    } else {
+    } 
+    // 3. JESTEM GOŚCIEM Z ZAPROSZENIA - Wchodzę i ZAJMUJĘ STÓŁ!
+    else if (pokoj.gosc_id === null && pokoj.status === 'waiting') {
+      mojIndeksOnline = 1;
+      czyWidz = false;
+      
+      const { data: mojProfil } = await supabaseClient.from("profiles").select("nazwa_gracza").eq("id", user.id).maybeSingle();
+      const mojNick = mojProfil?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
+      
+      // Zapisujemy się w bazie, żeby Host dostał powiadomienie
+      await supabaseClient.from('rooms').update({
+         gosc_id: user.id,
+         gosc_nazwa: mojNick
+      }).eq('kod_pokoju', kod);
+      
+      pokoj.gosc_id = user.id;
+      pokoj.gosc_nazwa = mojNick;
+    } 
+    // 4. Stół pełny - mogę być tylko widzem
+    else {
       mojIndeksOnline = -1;
       czyWidz = true;
     }
@@ -248,6 +273,17 @@ async function inicjalizujPoczekalnieOnline(kod) {
       { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
       (payload) => {
         const zaktualizowanyPokoj = payload.new;
+        
+        // Host zauważa gościa i odpala mecz
+        if (mojIndeksOnline === 0 && zaktualizowanyPokoj.status === "waiting" && zaktualizowanyPokoj.gosc_id) {
+            supabaseClient.from("rooms").update({ 
+                status: "in_progress",
+                aktualny_gracz_id: zaktualizowanyPokoj.host_id,
+                stan_meczu: { tura: 1, pozostale_rzuty: 3 }
+            }).eq("kod_pokoju", kod).then();
+        }
+
+        // Gdy status zmieni się na in_progress (odpala u obu)
         if (zaktualizowanyPokoj.status === "in_progress" && !czyMeczJuzWystartowal) {
           if (kanalCzekaniaPoczekalni) {
             supabaseClient.removeChannel(kanalCzekaniaPoczekalni);

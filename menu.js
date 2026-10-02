@@ -1,20 +1,24 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-// 1. Zabezpieczenie przed tworzeniem duplikatów klienta w Safari (wspólny obiekt)
-if (!window.supabaseClient && !window.supabaseKlient && window.supabase) {
-    const instancja = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
-        }
-    });
-    window.supabaseClient = instancja;
-    window.supabaseKlient = instancja;
+// 1. Bardzo rygorystyczne zabezpieczenie przed duplikowaniem instancji Supabase
+if (!window.supabaseClient) {
+    if (window.supabase) {
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        });
+    } else {
+        console.error("Biblioteka Supabase nie została załadowana przed menu.js!");
+    }
 }
 
-const supabaseKlient = window.supabaseClient || window.supabaseKlient;
+// Ujednolicenie zmiennych na całą aplikację
+window.supabaseKlient = window.supabaseClient;
+const supabaseKlient = window.supabaseClient;
 
 async function wczytajFragment(sciezka, selektor, element) {
     // Cache-busting dla iOS Safari (zapobiega serwowaniu starego nagłówka z pamięci)
@@ -191,3 +195,76 @@ window.addEventListener("pageshow", async (event) => {
 });
 
 document.addEventListener("DOMContentLoaded", wczytajWspolneElementy);
+// ==========================================
+// GLOBALNY SYSTEM ZAPROSZEŃ DO GRY (REALTIME)
+// ==========================================
+
+async function inicjalizujGlobalneZaproszenia() {
+    const klient = window.supabaseClient || window.supabaseKlient;
+    if (!klient) return;
+
+    const { data: { session } } = await klient.auth.getSession();
+    if (!session?.user) return; // Nasłuchują tylko zalogowani
+    const myId = session.user.id;
+
+    // 1. Wstrzykujemy globalny HTML popupa do dokumentu (niewidoczny domyślnie)
+    const popupHtml = `
+        <div id="global-invite-popup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+            <div style="background: var(--primary-color, #16124f); border: 3px solid var(--secondary-color, #40da40); border-radius: 15px; padding: 30px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 0 30px rgba(64, 218, 64, 0.3);">
+                <h3 style="color: var(--secondary-color, #40da40); margin-top: 0; font-size: 22px;">ZAPROSZENIE DO GRY! 🎯</h3>
+                <p style="color: #fff; font-size: 16px; margin: 20px 0;">
+                    Gracz <strong id="invite-sender-nick" style="color: #38bdf8;">KTOŚ</strong> chce z Tobą zagrać!
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                    <button id="btn-akceptuj-zaproszenie" style="flex: 1; padding: 12px; background: var(--secondary-color, #40da40); color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">Akceptuj</button>
+                    <button id="btn-odrzuc-zaproszenie" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">Odrzuć</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', popupHtml);
+
+    // 2. Podpinamy nasłuch na tabelę 'game_invites' przez Supabase Realtime
+    klient.channel('custom-invite-channel')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'game_invites',
+                filter: `do_kogo_id=eq.${myId}` // Nasłuchuj TYLKO zaproszeń skierowanych do mnie
+            },
+            (payload) => {
+                const noweZaproszenie = payload.new;
+                pokazGlobalnyPopup(noweZaproszenie);
+            }
+        )
+        .subscribe();
+
+    // 3. Funkcja wyświetlająca i obsługująca wstrzyknięty popup
+    function pokazGlobalnyPopup(invite) {
+        const popup = document.getElementById("global-invite-popup");
+        document.getElementById("invite-sender-nick").textContent = invite.od_kogo_nick;
+        popup.style.display = "flex";
+
+        // Co się stanie po kliknięciu Akceptuj
+        document.getElementById("btn-akceptuj-zaproszenie").onclick = async () => {
+            // Opcjonalnie: Zaktualizuj status w bazie na 'zaakceptowane'
+            await klient.from('game_invites').update({ status: 'zaakceptowane' }).eq('id', invite.id);
+            popup.style.display = "none";
+            // Przeniesienie do gry
+            window.location.href = `./klasyczna.html?pokoj=${invite.kod_pokoju}`;
+        };
+
+        // Co się stanie po kliknięciu Odrzuć
+        document.getElementById("btn-odrzuc-zaproszenie").onclick = async () => {
+            await klient.from('game_invites').update({ status: 'odrzucone' }).eq('id', invite.id);
+            popup.style.display = "none";
+        };
+    }
+}
+
+// Uruchamiamy system zaproszeń zaraz po załadowaniu DOM (razem z resztą menu)
+document.addEventListener("DOMContentLoaded", () => {
+    inicjalizujGlobalneZaproszenia();
+});
