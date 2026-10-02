@@ -138,6 +138,7 @@
         <script>
             let client = null;
             let aktualnyUser = null;
+            let aktualnaSesja = null;
 
             function zLimitemCzasu(obietnica, etap) {
                 let timerId;
@@ -146,6 +147,26 @@
                 });
 
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
+            async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
+                const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
+                Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
+
+                const headers = { apikey: client.supabaseKey };
+                if (zSesja) {
+                    if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
+                    headers.Authorization = `Bearer ${aktualnaSesja.access_token}`;
+                }
+
+                return zLimitemCzasu(
+                    fetch(url, { headers, cache: "no-store" }).then(async (response) => {
+                        const wynik = await response.json();
+                        if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
+                        return wynik;
+                    }),
+                    etap,
+                );
             }
 
             async function autoryzacja() {
@@ -157,6 +178,7 @@
                     window.location.href = "./logowanie.html";
                     return false;
                 }
+                aktualnaSesja = session;
                 aktualnyUser = session.user;
                 return true;
             }
@@ -277,12 +299,13 @@
                 const kontener = document.getElementById("lista-znajomych");
                 let wynik;
                 try {
-                    wynik = await zLimitemCzasu(
-                        client
-                            .from("znajomi")
-                            .select("id, zapraszajacy_id, zapraszany_id")
-                            .eq("status", "zaakceptowane")
-                            .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`),
+                    wynik = await pobierzWierszeApi(
+                        "znajomi",
+                        {
+                            select: "id,zapraszajacy_id,zapraszany_id",
+                            status: "eq.zaakceptowane",
+                            or: `(zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id})`,
+                        },
                         "pobieranie relacji znajomych",
                     );
                 } catch (error) {
@@ -290,14 +313,8 @@
                     return;
                 }
 
-                const { data: relacje, error } = wynik;
-
-                if (error) {
-                    kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
-                    return;
-                }
-
-                if (!relacje || relacje.length === 0) {
+                const relacje = wynik;
+                if (relacje.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                     return;
                 }
@@ -305,21 +322,18 @@
                 const idsZnajomych = [...new Set(relacje.map((relacja) => (relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id)))];
                 let wynikProfili;
                 try {
-                    wynikProfili = await zLimitemCzasu(
-                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZnajomych),
+                    wynikProfili = await pobierzWierszeApi(
+                        "profiles",
+                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
                         "pobieranie profili znajomych",
+                        false,
                     );
                 } catch (error) {
                     kontener.textContent = `Błąd pobierania profili znajomych: ${error.message}`;
                     return;
                 }
 
-                if (wynikProfili.error) {
-                    kontener.textContent = `Błąd pobierania profili znajomych: ${wynikProfili.error.message}`;
-                    return;
-                }
-
-                const profilePoId = new Map((wynikProfili.data || []).map((profil) => [profil.id, profil]));
+                const profilePoId = new Map(wynikProfili.map((profil) => [profil.id, profil]));
                 const znajomi = relacje
                     .map((relacja) => {
                         const idZnajomego = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id;
@@ -352,8 +366,9 @@
                 const badge = document.getElementById("badge-zaproszenia");
                 let wynik;
                 try {
-                    wynik = await zLimitemCzasu(
-                        client.from("znajomi").select("id, zapraszajacy_id").eq("zapraszany_id", aktualnyUser.id).eq("status", "oczekujace"),
+                    wynik = await pobierzWierszeApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id", zapraszany_id: `eq.${aktualnyUser.id}`, status: "eq.oczekujace" },
                         "pobieranie zaproszeń",
                     );
                 } catch (error) {
@@ -362,33 +377,29 @@
                     return;
                 }
 
-                const { data: relacje, error } = wynik;
-
-                if (error) {
-                    kontener.textContent = `Błąd pobierania zaproszeń: ${error.message}`;
-                    badge.style.display = "none";
-                    return;
-                }
-
-                if (!relacje || relacje.length === 0) {
+                const relacje = wynik;
+                if (relacje.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
                     badge.style.display = "none";
                     return;
                 }
 
                 const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))];
-                const wynikProfili = await zLimitemCzasu(
-                    client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZapraszajacych),
-                    "pobieranie profili zapraszających",
-                );
-
-                if (wynikProfili.error) {
-                    kontener.textContent = `Błąd pobierania profili zapraszających: ${wynikProfili.error.message}`;
+                let wynikProfili;
+                try {
+                    wynikProfili = await pobierzWierszeApi(
+                        "profiles",
+                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZapraszajacych.join(",")})` },
+                        "pobieranie profili zapraszających",
+                        false,
+                    );
+                } catch (error) {
+                    kontener.textContent = `Błąd pobierania profili zapraszających: ${error.message}`;
                     badge.style.display = "none";
                     return;
                 }
 
-                const profilePoId = new Map((wynikProfili.data || []).map((profil) => [profil.id, profil]));
+                const profilePoId = new Map(wynikProfili.map((profil) => [profil.id, profil]));
                 const zaproszenia = relacje.map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) })).filter((relacja) => relacja.zapraszajacy);
 
                 badge.textContent = zaproszenia.length;
