@@ -104,6 +104,8 @@ async function pobierzStoły() {
 
   if (error) {
     console.error("Błąd pobierania stołów:", error);
+    const kontener = document.querySelector(".grid-pokojow");
+    if (kontener) kontener.textContent = `Błąd pobierania stołów: ${error.message}`;
     return;
   }
 

@@ -213,7 +213,12 @@
                 // 1. Pobieramy graczy pasujących do wyszukiwania
                 const { data, error } = await client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").ilike("nazwa_gracza", `%${fraza}%`).neq("id", aktualnyUser.id).limit(20);
 
-                if (error || !data || data.length === 0) {
+                if (error) {
+                    kontener.textContent = `Błąd wyszukiwania graczy: ${error.message}`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
                     return;
                 }
@@ -268,7 +273,12 @@
 
                 const kontener = document.getElementById("lista-znajomych");
 
-                if (error || !data || data.length === 0) {
+                if (error) {
+                    kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                     return;
                 }
@@ -295,7 +305,13 @@
                 const kontener = document.getElementById("lista-zaproszen");
                 const badge = document.getElementById("badge-zaproszenia");
 
-                if (error || !data || data.length === 0) {
+                if (error) {
+                    kontener.textContent = `Błąd pobierania zaproszeń: ${error.message}`;
+                    badge.style.display = "none";
+                    return;
+                }
+
+                if (!data || data.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
                     badge.style.display = "none";
                     return;
