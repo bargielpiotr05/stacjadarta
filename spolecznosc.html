@@ -139,11 +139,20 @@
             let client = null;
             let aktualnyUser = null;
 
+            function zLimitemCzasu(obietnica, etap) {
+                let timerId;
+                const timeout = new Promise((resolve, reject) => {
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 12000);
+                });
+
+                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
             async function autoryzacja() {
                 if (!client) return false;
                 const {
                     data: { session },
-                } = await client.auth.getSession();
+                } = await zLimitemCzasu(client.auth.getSession(), "sprawdzanie sesji");
                 if (!session?.user) {
                     window.location.href = "./logowanie.html";
                     return false;
@@ -265,13 +274,23 @@
 
             // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
-                const { data, error } = await client
-                    .from("znajomi")
-                    .select("id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)")
-                    .eq("status", "zaakceptowane")
-                    .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
-
                 const kontener = document.getElementById("lista-znajomych");
+                let wynik;
+                try {
+                    wynik = await zLimitemCzasu(
+                        client
+                            .from("znajomi")
+                            .select("id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)")
+                            .eq("status", "zaakceptowane")
+                            .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`),
+                        "pobieranie listy znajomych",
+                    );
+                } catch (error) {
+                    kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
+                    return;
+                }
+
+                const { data, error } = wynik;
 
                 if (error) {
                     kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
@@ -446,6 +465,7 @@
 
                 if (!client) {
                     console.error("Błąd ładowania Supabase.");
+                    document.getElementById("lista-znajomych").textContent = "Błąd: brak klienta Supabase.";
                     return;
                 }
 
@@ -454,9 +474,13 @@
                     if (e.key === "Enter") document.getElementById("btn-szukaj").click();
                 });
 
-                if (await autoryzacja()) {
-                    pobierzZnajomych();
-                    pobierzZaproszenia();
+                try {
+                    if (await autoryzacja()) {
+                        await Promise.all([pobierzZnajomych(), pobierzZaproszenia()]);
+                    }
+                } catch (error) {
+                    console.error("Błąd inicjalizacji społeczności:", error);
+                    document.getElementById("lista-znajomych").textContent = `Błąd inicjalizacji: ${error.message}`;
                 }
             });
         </script>
