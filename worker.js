@@ -53,6 +53,34 @@ export default {
       }
     }
 
+    if (url.pathname.startsWith("/api/supabase/rest/v1/")) {
+      if (!["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"].includes(request.method)) {
+        return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, HEAD, POST, PATCH, DELETE, OPTIONS" } });
+      }
+
+      const upstreamUrl = new URL(`${SUPABASE_URL}${url.pathname.slice("/api/supabase".length)}${url.search}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const upstreamResponse = await fetch(new Request(upstreamUrl, request), { signal: controller.signal });
+        const headers = new Headers();
+
+        for (const name of ["content-type", "content-range", "content-profile", "content-location", "preference-applied", "location", "etag"]) {
+          const value = upstreamResponse.headers.get(name);
+          if (value) headers.set(name, value);
+        }
+
+        headers.set("Cache-Control", "no-store");
+        return new Response(upstreamResponse.body, { status: upstreamResponse.status, headers });
+      } catch (error) {
+        const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
+        return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     return env.ASSETS.fetch(request);
   },
 };

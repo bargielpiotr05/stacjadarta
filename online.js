@@ -6,6 +6,7 @@ const supabaseClient = window.supabaseKlient;
 let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
 let wszystkiePokoje = [];
 let zalogowanyNick = null;
+let lobbyPollingId = null;
 
 async function inicjalizujDane() {
   pobierzMojeIP(); // Pobieranie IP w tle
@@ -195,6 +196,13 @@ function renderujStoly(lista) {
 // ============================================================
 function wlaczRealtimeLobby() {
   if (!supabaseClient) return;
+
+  if (lobbyPollingId === null) {
+    lobbyPollingId = window.setInterval(() => {
+      if (document.visibilityState === "visible") pobierzStoły();
+    }, 15000);
+  }
+
   supabaseClient
     .channel("public-rooms-lobby")
     .on(

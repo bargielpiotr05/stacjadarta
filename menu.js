@@ -1,9 +1,22 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
+function supabaseProxyFetch(input, init) {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const url = new URL(request.url);
+
+    if (url.origin !== SUPABASE_URL || !url.pathname.startsWith("/rest/v1/")) {
+        return fetch(request);
+    }
+
+    const proxyUrl = new URL(`/api/supabase${url.pathname}${url.search}`, window.location.origin);
+    return fetch(new Request(proxyUrl, request));
+}
+
 if (!window.supabaseClient) {
     if (window.supabase) {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: { fetch: supabaseProxyFetch },
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
