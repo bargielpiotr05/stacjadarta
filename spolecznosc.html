@@ -297,23 +297,22 @@
             // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
                 const kontener = document.getElementById("lista-znajomych");
-                let wynik;
+                let relacje;
                 try {
-                    wynik = await pobierzWierszeApi(
-                        "znajomi",
-                        {
-                            select: "id,zapraszajacy_id,zapraszany_id",
-                            status: "eq.zaakceptowane",
-                            or: `(zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id})`,
-                        },
-                        "pobieranie relacji znajomych",
-                    );
+                    const warunki = {
+                        select: "id,zapraszajacy_id,zapraszany_id",
+                        status: "eq.zaakceptowane",
+                    };
+                    const [wyslane, otrzymane] = await Promise.all([
+                        pobierzWierszeApi("znajomi", { ...warunki, zapraszajacy_id: `eq.${aktualnyUser.id}` }, "pobieranie wysłanych relacji"),
+                        pobierzWierszeApi("znajomi", { ...warunki, zapraszany_id: `eq.${aktualnyUser.id}` }, "pobieranie otrzymanych relacji"),
+                    ]);
+                    relacje = [...wyslane, ...otrzymane];
                 } catch (error) {
                     kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
                     return;
                 }
 
-                const relacje = wynik;
                 if (relacje.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                     return;
