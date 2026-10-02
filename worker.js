@@ -1,6 +1,8 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 
 export default {
+  const buffersSmallResult = ["/rest/v1/znajomi", "/rest/v1/profiles", "/rest/v1/rooms"].includes(route);
+  const responseBody = buffersSmallResult ? await upstreamResponse.arrayBuffer() : upstreamResponse.body;
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -83,7 +85,7 @@ export default {
 
         headers.set("Cache-Control", "no-store");
         console.log("Supabase REST proxy response", request.method, route, upstreamResponse.status, Date.now() - startedAt);
-        return new Response(upstreamResponse.body, { status: upstreamResponse.status, headers });
+  return new Response(responseBody, { status: upstreamResponse.status, headers });
       } catch (error) {
         const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
         console.error("Supabase REST proxy failure", request.method, route, error.name, Date.now() - startedAt);
