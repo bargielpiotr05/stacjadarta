@@ -424,18 +424,12 @@
                 }
             };
 
-            // Start
+// Start
             document.addEventListener("DOMContentLoaded", async () => {
-                // ŁATKA DLA iOS: Czekamy (max 1 sekundę), aż menu.js połączy się z bazą
-                let proby = 0;
-                while (!window.supabaseKlient && proby < 20) {
-                    await new Promise((r) => setTimeout(r, 50));
-                    proby++;
-                }
                 client = window.supabaseKlient;
 
                 if (!client) {
-                    console.error("Błąd ładowania Supabase na iOS.");
+                    console.error("Błąd ładowania Supabase.");
                     return;
                 }
 

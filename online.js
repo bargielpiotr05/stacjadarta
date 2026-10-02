@@ -1,30 +1,16 @@
 // ============================================================
 // 1. INICJALIZACJA I STAN LOKALNY
 // ============================================================
-
-// Definiujemy getter, który ZAWSZE sięga po najnowszego klienta, a nie zapisuje "null" przy starcie skryptu
-Object.defineProperty(window, 'supabaseClient', {
-    get: function() {
-        return window.supabaseKlient;
-    }
-});
+const supabaseClient = window.supabaseKlient;
 
 let mojeIP = "gosc_" + Math.random().toString(36).substring(2, 8);
 let wszystkiePokoje = [];
 let zalogowanyNick = null;
 
-// Dodatkowe opóźnienie dla inicjalizacji, dając czas menu.js na pobranie sesji
 async function inicjalizujDane() {
-  await pobierzMojeIP(); // To można zrobić w tle
+  pobierzMojeIP(); // Pobieranie IP w tle
   
-  // Czekamy maksymalnie 1 sekundę na załadowanie klienta przez menu.js
-  let proby = 0;
-  while (!window.supabaseKlient && proby < 10) {
-      await new Promise(r => setTimeout(r, 100));
-      proby++;
-  }
-  
-  if (!window.supabaseKlient) {
+  if (!supabaseClient) {
       console.error("Nie udało się połączyć z bazą danych.");
       return;
   }

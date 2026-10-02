@@ -1,14 +1,16 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-// 1. Bardzo rygorystyczne zabezpieczenie przed duplikowaniem instancji Supabase
+// 1. Zabezpieczenie przed duplikowaniem instancji Supabase
 if (!window.supabaseClient) {
     if (window.supabase) {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
-                detectSessionInUrl: true
+                detectSessionInUrl: true,
+                // KRYTYCZNA ŁATKA DLA IOS / SAFARI - MUSI TU BYĆ:
+                lock: async (name, acquireTimeout, fn) => await fn()
             }
         });
     } else {
@@ -16,7 +18,6 @@ if (!window.supabaseClient) {
     }
 }
 
-// Ujednolicenie zmiennych na całą aplikację
 window.supabaseKlient = window.supabaseClient;
 const supabaseKlient = window.supabaseClient;
 

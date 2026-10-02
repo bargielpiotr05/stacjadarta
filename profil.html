@@ -439,8 +439,13 @@
                 }
 
                 if (profil?.utworzono) {
-                    const dataDolaczenia = new Date(profil.utworzono).toLocaleDateString("pl-PL", { year: "numeric", month: "long" });
-                    document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
+                    try {
+                        const bezpiecznaData = profil.utworzono.replace(" ", "T");
+                        const dataDolaczenia = new Date(bezpiecznaData).toLocaleDateString("pl-PL", { year: "numeric", month: "long" });
+                        document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
+                    } catch (e) {
+                        console.warn("Błąd parsowania daty");
+                    }
                 }
 
                 // Win Rate i Statystyki
@@ -483,7 +488,13 @@
                             const czyHost = m.host_id === profilId;
                             const czyWygrana = m.zwyciezca_id === profilId;
                             const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
-                            const dataMeczu = new Date(m.utworzono).toLocaleDateString("pl-PL");
+                            let dataMeczu = "-";
+                            if (m.utworzono) {
+                                try {
+                                    const bezpiecznaDataM = m.utworzono.replace(" ", "T");
+                                    dataMeczu = new Date(bezpiecznaDataM).toLocaleDateString("pl-PL");
+                                } catch (e) {}
+                            }
 
                             let przeciwnikNazwa = "Przeciwnik";
                             if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
