@@ -1,7 +1,6 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-// 1. Zabezpieczenie przed duplikowaniem instancji Supabase
 if (!window.supabaseClient) {
     if (window.supabase) {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -9,7 +8,7 @@ if (!window.supabaseClient) {
                 persistSession: true,
                 autoRefreshToken: true,
                 detectSessionInUrl: true,
-                // KRYTYCZNA ŁATKA DLA IOS / SAFARI - MUSI TU BYĆ:
+                // KRYTYCZNA ŁATKA DLA IOS / SAFARI - BEZ NIEJ BAZA UMIERA:
                 lock: async (name, acquireTimeout, fn) => await fn()
             }
         });
