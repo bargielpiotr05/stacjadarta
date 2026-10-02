@@ -327,7 +327,7 @@
 
                     // 2. ODCZYT SESJI ZABEZPIECZONY PRZED AWARIĄ W TRYBIE INCOGNITO
                     let session = odczytajSesjeZPamieci();
-                    
+
                     if (!session?.user) {
                         const { data } = await client.auth.getSession();
                         session = data?.session;
@@ -342,7 +342,7 @@
 
                     // 3. DETEKCJA PROFILU
                     const paramId = new URLSearchParams(window.location.search).get("id");
-                    const profilId = paramId || aktualnyUser.id; 
+                    const profilId = paramId || aktualnyUser.id;
                     const czyMojProfil = profilId === aktualnyUser.id;
 
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH
@@ -437,7 +437,7 @@
                     const rozegrane = profil?.rozegrane_mecze || 0;
                     const wygrane = profil?.wygrane_mecze || 0;
                     const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
-                    
+
                     const headerWinrate = document.getElementById("header-winrate");
                     if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
 
@@ -465,7 +465,8 @@
                     if (!mecze || mecze.length === 0) {
                         listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
                     } else {
-                        listaMeczy.innerHTML = mecze.map((m, idx) => {
+                        listaMeczy.innerHTML = mecze
+                            .map((m, idx) => {
                                 const czyHost = m.host_id === profilId;
                                 const czyWygrana = m.zwyciezca_id === profilId;
                                 const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
@@ -491,7 +492,8 @@
                                         <p class="data">Data: ${dataMeczu}</p>
                                         <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
                                     </div>`;
-                            }).join("");
+                            })
+                            .join("");
                     }
                 } catch (error) {
                     // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE
@@ -1036,9 +1038,15 @@
                 });
             }
             window.addEventListener("pageshow", (event) => {
-                if (event.persisted) zaladujProfil();
+                if (event.persisted) {
+                    setTimeout(zaladujProfil, 1000);
+                }
             });
-            document.addEventListener("DOMContentLoaded", zaladujProfil);
+
+            document.addEventListener("DOMContentLoaded", () => {
+                // Twój pomysł: Czekamy równą sekundę, aż menu.js skończy pracę
+                setTimeout(zaladujProfil, 1000);
+            });
         </script>
     </body>
 </html>
