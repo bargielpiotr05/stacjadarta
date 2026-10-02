@@ -277,24 +277,6 @@
         <footer id="wspolny-footer"></footer>
 
         <script>
-            // Bezpieczny odczyt sesji z pamięci telefonu (omija zawieszanie w WebKit)
-            function odczytajSesjeZPamieci() {
-                try {
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const k = localStorage.key(i);
-                        if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) {
-                            const raw = localStorage.getItem(k);
-                            if (raw) {
-                                const parsed = JSON.parse(raw);
-                                const s = parsed?.currentSession || parsed;
-                                if (s?.user) return s;
-                            }
-                        }
-                    }
-                } catch (e) {}
-                return null;
-            }
-
             let client = null;
 
             const btnSprzet = document.getElementById("sprzet-gracza");
@@ -325,12 +307,15 @@
                         return;
                     }
 
-                    // 2. ODCZYT SESJI ZABEZPIECZONY PRZED AWARIĄ W TRYBIE INCOGNITO
-                    let session = odczytajSesjeZPamieci();
+                    // Użyj sesji zarządzanej przez Supabase Auth, aby uwzględnić jej odświeżenie.
+                    let { data: { session } } = await client.auth.getSession();
 
-                    if (!session?.user) {
-                        const { data } = await client.auth.getSession();
-                        session = data?.session;
+                    if (!session) {
+                        const { data: userData } = await client.auth.getUser();
+                        if (userData?.user) {
+                            const refreshed = await client.auth.getSession();
+                            session = refreshed.data?.session || { user: userData.user };
+                        }
                     }
 
                     if (!session?.user) {
