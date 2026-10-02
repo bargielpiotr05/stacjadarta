@@ -63,7 +63,14 @@ export default {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
-        const upstreamResponse = await fetch(new Request(upstreamUrl, request), { signal: controller.signal });
+        const upstreamRequest = new Request(upstreamUrl, request);
+        const upstreamHeaders = new Headers(upstreamRequest.headers);
+        if (request.method === "GET" && url.pathname === "/api/supabase/rest/v1/profiles") {
+          upstreamHeaders.delete("Authorization");
+        }
+
+        const forwardedRequest = new Request(upstreamRequest, { headers: upstreamHeaders, signal: controller.signal });
+        const upstreamResponse = await fetch(forwardedRequest);
         const headers = new Headers();
 
         for (const name of ["content-type", "content-range", "content-profile", "content-location", "preference-applied", "location", "etag"]) {

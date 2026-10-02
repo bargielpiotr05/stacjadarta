@@ -280,31 +280,60 @@
                     wynik = await zLimitemCzasu(
                         client
                             .from("znajomi")
-                            .select("id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)")
+                            .select("id, zapraszajacy_id, zapraszany_id")
                             .eq("status", "zaakceptowane")
                             .or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`),
-                        "pobieranie listy znajomych",
+                        "pobieranie relacji znajomych",
                     );
                 } catch (error) {
                     kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
                     return;
                 }
 
-                const { data, error } = wynik;
+                const { data: relacje, error } = wynik;
 
                 if (error) {
                     kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                if (!relacje || relacje.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                     return;
                 }
 
-                kontener.innerHTML = data
+                const idsZnajomych = [...new Set(relacje.map((relacja) => (relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id)))];
+                let wynikProfili;
+                try {
+                    wynikProfili = await zLimitemCzasu(
+                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZnajomych),
+                        "pobieranie profili znajomych",
+                    );
+                } catch (error) {
+                    kontener.textContent = `Błąd pobierania profili znajomych: ${error.message}`;
+                    return;
+                }
+
+                if (wynikProfili.error) {
+                    kontener.textContent = `Błąd pobierania profili znajomych: ${wynikProfili.error.message}`;
+                    return;
+                }
+
+                const profilePoId = new Map((wynikProfili.data || []).map((profil) => [profil.id, profil]));
+                const znajomi = relacje
                     .map((relacja) => {
-                        const gracz = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany : relacja.zapraszajacy;
+                        const idZnajomego = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id;
+                        return { relacja, gracz: profilePoId.get(idZnajomego) };
+                    })
+                    .filter((wynikZnajomego) => wynikZnajomego.gracz);
+
+                if (znajomi.length === 0) {
+                    kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
+                    return;
+                }
+
+                kontener.innerHTML = znajomi
+                    .map(({ relacja, gracz }) => {
                         return generujKarteGracza(
                             gracz,
                             `
@@ -319,10 +348,21 @@
 
             // --- 3. ZAPROSZENIA ---
             async function pobierzZaproszenia() {
-                const { data, error } = await client.from("znajomi").select("id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia)").eq("zapraszany_id", aktualnyUser.id).eq("status", "oczekujace");
-
                 const kontener = document.getElementById("lista-zaproszen");
                 const badge = document.getElementById("badge-zaproszenia");
+                let wynik;
+                try {
+                    wynik = await zLimitemCzasu(
+                        client.from("znajomi").select("id, zapraszajacy_id").eq("zapraszany_id", aktualnyUser.id).eq("status", "oczekujace"),
+                        "pobieranie zaproszeń",
+                    );
+                } catch (error) {
+                    kontener.textContent = `Błąd pobierania zaproszeń: ${error.message}`;
+                    badge.style.display = "none";
+                    return;
+                }
+
+                const { data: relacje, error } = wynik;
 
                 if (error) {
                     kontener.textContent = `Błąd pobierania zaproszeń: ${error.message}`;
@@ -330,16 +370,31 @@
                     return;
                 }
 
-                if (!data || data.length === 0) {
+                if (!relacje || relacje.length === 0) {
                     kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
                     badge.style.display = "none";
                     return;
                 }
 
-                badge.textContent = data.length;
+                const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))];
+                const wynikProfili = await zLimitemCzasu(
+                    client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZapraszajacych),
+                    "pobieranie profili zapraszających",
+                );
+
+                if (wynikProfili.error) {
+                    kontener.textContent = `Błąd pobierania profili zapraszających: ${wynikProfili.error.message}`;
+                    badge.style.display = "none";
+                    return;
+                }
+
+                const profilePoId = new Map((wynikProfili.data || []).map((profil) => [profil.id, profil]));
+                const zaproszenia = relacje.map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) })).filter((relacja) => relacja.zapraszajacy);
+
+                badge.textContent = zaproszenia.length;
                 badge.style.display = "inline-flex";
 
-                kontener.innerHTML = data
+                kontener.innerHTML = zaproszenia
                     .map((rel) =>
                         generujKarteGracza(
                             rel.zapraszajacy,
