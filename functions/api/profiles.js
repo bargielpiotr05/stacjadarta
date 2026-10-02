@@ -18,6 +18,9 @@ export async function onRequestGet({ request }) {
   upstreamUrl.searchParams.set("id", `eq.${profileId}`);
   upstreamUrl.searchParams.set("limit", "1");
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     const upstreamResponse = await fetch(upstreamUrl, {
       headers: {
@@ -26,6 +29,7 @@ export async function onRequestGet({ request }) {
         Accept: "application/json",
       },
       cache: "no-store",
+      signal: controller.signal,
     });
 
     return new Response(upstreamResponse.body, {
@@ -35,7 +39,10 @@ export async function onRequestGet({ request }) {
         "Cache-Control": "no-store",
       },
     });
-  } catch {
-    return Response.json({ message: "Serwer strony nie połączył się z bazą danych." }, { status: 502 });
+  } catch (error) {
+    const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Serwer strony nie połączył się z bazą danych.";
+    return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
