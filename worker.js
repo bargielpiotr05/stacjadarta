@@ -61,6 +61,9 @@ export default {
       const upstreamUrl = new URL(`${SUPABASE_URL}${url.pathname.slice("/api/supabase".length)}${url.search}`);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const startedAt = Date.now();
+      const route = url.pathname.slice("/api/supabase".length);
+      console.log("Supabase REST proxy start", request.method, route);
 
       try {
         const upstreamRequest = new Request(upstreamUrl, request);
@@ -79,9 +82,11 @@ export default {
         }
 
         headers.set("Cache-Control", "no-store");
+        console.log("Supabase REST proxy response", request.method, route, upstreamResponse.status, Date.now() - startedAt);
         return new Response(upstreamResponse.body, { status: upstreamResponse.status, headers });
       } catch (error) {
         const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
+        console.error("Supabase REST proxy failure", request.method, route, error.name, Date.now() - startedAt);
         return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
       } finally {
         clearTimeout(timeoutId);
