@@ -279,6 +279,15 @@
         <script>
             let client = null;
 
+            function zLimitemCzasu(obietnica, etap) {
+                let timerId;
+                const timeout = new Promise((resolve, reject) => {
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 15000);
+                });
+
+                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
             const btnSprzet = document.getElementById("sprzet-gracza");
             const strefaSprzetu = document.querySelector(".strefa-sprzetu");
 
@@ -308,12 +317,12 @@
                     }
 
                     // Użyj sesji zarządzanej przez Supabase Auth, aby uwzględnić jej odświeżenie.
-                    let { data: { session } } = await client.auth.getSession();
+                    let { data: { session } } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji");
 
                     if (!session) {
-                        const { data: userData } = await client.auth.getUser();
+                        const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
                         if (userData?.user) {
-                            const refreshed = await client.auth.getSession();
+                            const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji");
                             session = refreshed.data?.session || { user: userData.user };
                         }
                     }
@@ -331,9 +340,14 @@
                     const czyMojProfil = profilId === aktualnyUser.id;
 
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH
-                    const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", profilId).maybeSingle();
+                    const { data: profil, error: profilErr } = await zLimitemCzasu(
+                        client.from("profiles").select("*").eq("id", profilId).maybeSingle(),
+                        "pobieranie profilu",
+                    );
 
-                    if (profilErr || !profil) {
+                    if (profilErr) throw profilErr;
+
+                    if (!profil) {
                         document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono gracza.</h2>`;
                         return;
                     }
