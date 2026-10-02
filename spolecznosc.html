@@ -302,6 +302,7 @@
                     const warunki = {
                         select: "id,zapraszajacy_id,zapraszany_id",
                         status: "eq.zaakceptowane",
+                        limit: "100",
                     };
                     const [wyslane, otrzymane] = await Promise.all([
                         pobierzWierszeApi("znajomi", { ...warunki, zapraszajacy_id: `eq.${aktualnyUser.id}` }, "pobieranie wysłanych relacji"),
