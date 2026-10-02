@@ -288,30 +288,6 @@
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
             }
 
-            async function pobierzProfilPrzezRest(profilId, accessToken) {
-                const kolumny = "id, nazwa_gracza, avatar_url, utworzono, srednia, srednia_9_lotek, ilosc_180, rozegrane_mecze, wygrane_mecze, barele, shafty, groty, tarcza, auto_score, druzyna";
-                const url = new URL(`${client.supabaseUrl}/rest/v1/profiles`);
-                url.searchParams.set("select", kolumny);
-                url.searchParams.set("id", `eq.${profilId}`);
-                url.searchParams.set("limit", "1");
-
-                const response = await zLimitemCzasu(
-                    fetch(url, {
-                        headers: {
-                            apikey: client.supabaseKey,
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                        cache: "no-store",
-                    }),
-                    "bezpośrednie zapytanie REST",
-                );
-
-                if (!response.ok) throw new Error(`Supabase REST HTTP ${response.status}`);
-
-                const profiles = await response.json();
-                return profiles[0] || null;
-            }
-
             const btnSprzet = document.getElementById("sprzet-gracza");
             const strefaSprzetu = document.querySelector(".strefa-sprzetu");
 
@@ -364,24 +340,19 @@
                     const czyMojProfil = profilId === aktualnyUser.id;
 
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH
-                    let wynikProfilu;
-                    try {
-                        wynikProfilu = await zLimitemCzasu(
-                            client
-                                .from("profiles")
-                                .select("id, nazwa_gracza, avatar_url, utworzono, srednia, srednia_9_lotek, ilosc_180, rozegrane_mecze, wygrane_mecze, barele, shafty, groty, tarcza, auto_score, druzyna")
-                                .eq("id", profilId)
-                                .maybeSingle(),
-                            "pobieranie profilu",
-                        );
-                    } catch (error) {
-                        if (!error.message.includes("pobieranie profilu")) throw error;
-                        wynikProfilu = { data: await pobierzProfilPrzezRest(profilId, session.access_token), error: null };
-                    }
-
-                    const { data: profil, error: profilErr } = wynikProfilu;
-
-                    if (profilErr) throw profilErr;
+                    const response = await zLimitemCzasu(
+                        fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
+                            headers: {
+                                apikey: client.supabaseKey,
+                                Authorization: `Bearer ${session.access_token}`,
+                            },
+                            cache: "no-store",
+                        }),
+                        "pobieranie profilu przez serwer strony",
+                    );
+                    const profiles = await response.json();
+                    if (!response.ok) throw new Error(profiles.message || `Błąd pobierania profilu (HTTP ${response.status})`);
+                    const profil = profiles[0] || null;
 
                     if (!profil) {
                         document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono gracza.</h2>`;
