@@ -98,19 +98,19 @@
                     <div id="bloki-sprzetu" class="bloki-sekcji">
                         <div id="barele" class="wspolny-div">
                             <h4>Barele:</h4>
-                            <p id="barele-gracza">23 Gram Jeffrey de Graaf G1</p>
+                            <p id="barele-gracza">-</p>
                         </div>
                         <div id="shaft" class="wspolny-div">
                             <h4>Shafty:</h4>
-                            <p id="shafty-gracza">K-Flex Stephen Bunting NO2</p>
+                            <p id="shafty-gracza">-</p>
                         </div>
                         <div id="groty" class="wspolny-div">
                             <h4>Groty:</h4>
-                            <p id="groty-gracza">Swiss Points RVE Silver 40mm</p>
+                            <p id="groty-gracza">-</p>
                         </div>
                         <div id="tarcza" class="wspolny-div">
                             <h4>Tarcza:</h4>
-                            <p id="tarcza-gracza">Winmau Blade 6</p>
+                            <p id="tarcza-gracza">-</p>
                         </div>
                         <div id="autoscore" class="wspolny-div">
                             <h4>Auto-score:</h4>
@@ -118,7 +118,7 @@
                         </div>
                         <div id="druzyna" class="wspolny-div">
                             <h4>Drużyna:</h4>
-                            <p id="druzyna-gracza">ADT</p>
+                            <p id="druzyna-gracza">-</p>
                         </div>
                     </div>
                 </div>
@@ -311,209 +311,193 @@
             let ostatnieMeczeCache = [];
 
             async function zaladujProfil() {
-                // ŁATKA DLA iOS: Czekamy ułamek sekundy na inicjalizację z menu.js
-                let proby = 0;
-                while (!window.supabaseKlient && proby < 20) {
-                    await new Promise((r) => setTimeout(r, 50));
-                    proby++;
-                }
-                client = window.supabaseKlient;
+                try {
+                    // 1. NIEZAWODNE CZEKANIE NA BAZĘ (Safari często odpala skrypty za wcześnie)
+                    let proby = 0;
+                    while (!window.supabaseKlient && proby < 20) {
+                        await new Promise((r) => setTimeout(r, 50));
+                        proby++;
+                    }
+                    client = window.supabaseKlient;
 
-                if (!client) return;
+                    if (!client) {
+                        document.getElementById("nazwa-uzytkownika").textContent = "Błąd: Brak połączenia z bazą";
+                        return;
+                    }
 
-                // 1. Błyskawiczny odczyt sesji (nie czeka na zawieszone Promise w iOS)
-                let session = odczytajSesjeZPamieci();
+                    // 2. ODCZYT SESJI ZABEZPIECZONY PRZED AWARIĄ W TRYBIE INCOGNITO
+                    let session = odczytajSesjeZPamieci();
+                    
+                    if (!session?.user) {
+                        const { data } = await client.auth.getSession();
+                        session = data?.session;
+                    }
 
-                // 2. Fallback z limitem czasu 600ms na wypadek pustej pamięci
-                if (!session?.user) {
-                    try {
-                        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 600));
-                        const reqPromise = client.auth
-                            .getSession()
-                            .then(({ data }) => data?.session)
-                            .catch(() => null);
-                        session = await Promise.race([reqPromise, timeoutPromise]);
-                    } catch (e) {}
-                }
+                    if (!session?.user) {
+                        window.location.href = "./logowanie.html";
+                        return;
+                    }
 
-                if (!session?.user) {
-                    window.location.href = "./logowanie.html";
-                    return;
-                }
+                    aktualnyUser = session.user;
 
-                aktualnyUser = session.user;
+                    // 3. DETEKCJA PROFILU
+                    const paramId = new URLSearchParams(window.location.search).get("id");
+                    const profilId = paramId || aktualnyUser.id; 
+                    const czyMojProfil = profilId === aktualnyUser.id;
 
-                // --- NOWE: Detekcja czyj to profil ---
-                const paramId = new URLSearchParams(window.location.search).get("id");
-                const profilId = paramId || aktualnyUser.id; // Jeśli brak w URL, ładuje nasz profil
-                const czyMojProfil = profilId === aktualnyUser.id;
+                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH
+                    const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", profilId).maybeSingle();
 
-                // 1. Pobranie rekordu z tabeli public.profiles
-                const { data: profil, error: profilErr } = await client.from("profiles").select("*").eq("id", profilId).maybeSingle();
+                    if (profilErr || !profil) {
+                        document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono gracza.</h2>`;
+                        return;
+                    }
 
-                if (profilErr || !profil) {
-                    console.error("Błąd pobierania profilu:", profilErr);
-                    document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono takiego gracza.</h2>`;
-                    return;
-                }
+                    aktualnyProfil = profil;
 
-                aktualnyProfil = profil;
+                    // Ustalanie Nicku
+                    const emailUsera = czyMojProfil ? aktualnyUser.email || "" : "";
+                    const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
+                    const metaNick = czyMojProfil ? aktualnyUser.user_metadata?.username : null;
+                    const nazwaGracza = czyMojProfil ? metaNick || profil?.nazwa_gracza || domyslnyNick : profil?.nazwa_gracza;
 
-                // Ustalanie Nicku
-                const emailUsera = czyMojProfil ? aktualnyUser.email || "" : "";
-                const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
-                const metaNick = czyMojProfil ? aktualnyUser.user_metadata?.username : null;
-                const nazwaGracza = czyMojProfil ? metaNick || profil?.nazwa_gracza || domyslnyNick : profil?.nazwa_gracza;
+                    if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick) {
+                        client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
+                    }
 
-                // Automatyczna synchronizacja (tylko na naszym profilu)
-                if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick) {
-                    client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
-                }
+                    // Obsługa UI obcego profilu
+                    if (!czyMojProfil) {
+                        const btnEdycja = document.getElementById("btn-edycja-profilu");
+                        if (btnEdycja) btnEdycja.style.display = "none";
 
-                // --- NOWE: Zmiany UI dla obcego profilu i sprawdzanie znajomości ---
-                if (!czyMojProfil) {
-                    // Ukrywamy edycję i wgrywanie zdjęcia
-                    const btnEdycja = document.getElementById("btn-edycja-profilu");
-                    if (btnEdycja) btnEdycja.style.display = "none";
+                        const avatarOverlay = document.querySelector(".avatar-overlay");
+                        if (avatarOverlay) avatarOverlay.style.display = "none";
+                        document.getElementById("avatar-container").style.pointerEvents = "none";
 
-                    const avatarOverlay = document.querySelector(".avatar-overlay");
-                    if (avatarOverlay) avatarOverlay.style.display = "none";
-                    document.getElementById("avatar-container").style.pointerEvents = "none";
+                        document.getElementById("akcje-wlasciciela").style.display = "none";
+                        document.getElementById("akcje-goscia").style.display = "flex";
 
-                    // Przełączamy dolne przyciski
-                    document.getElementById("akcje-wlasciciela").style.display = "none";
-                    document.getElementById("akcje-goscia").style.display = "flex";
+                        const btnDodaj = document.getElementById("btn-dodaj-znajomego");
+                        if (btnDodaj) {
+                            btnDodaj.setAttribute("data-rywal-id", profilId);
+                            const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                            const relacja = relacje?.find((r) => r.zapraszajacy_id === profilId || r.zapraszany_id === profilId);
 
-                    const btnDodaj = document.getElementById("btn-dodaj-znajomego");
-                    if (btnDodaj) {
-                        btnDodaj.setAttribute("data-rywal-id", profilId);
-
-                        // Pobieramy Twoje znajomości i szukamy powiązania z tym profilem
-                        const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
-
-                        const relacja = relacje?.find((r) => r.zapraszajacy_id === profilId || r.zapraszany_id === profilId);
-
-                        // Modyfikujemy przycisk na podstawie statusu
-                        if (relacja) {
-                            if (relacja.status === "zaakceptowane") {
-                                btnDodaj.textContent = "✓ Twój znajomy";
-                                btnDodaj.className = "btn-zaakceptowane-zaproszenie";
-                                btnDodaj.disabled = true;
-                            } else if (relacja.status === "oczekujace") {
-                                if (relacja.zapraszajacy_id === aktualnyUser.id) {
-                                    btnDodaj.textContent = "⏳ Wysłano zaproszenie";
-                                    btnDodaj.className = "btn-wyslano-zaproszenie";
+                            if (relacja) {
+                                if (relacja.status === "zaakceptowane") {
+                                    btnDodaj.textContent = "✓ Twój znajomy";
+                                    btnDodaj.className = "btn-zaakceptowane-zaproszenie";
                                     btnDodaj.disabled = true;
-                                } else {
-                                    btnDodaj.textContent = "Oczekuje! Akceptuj";
-                                    btnDodaj.className = "btn-primary";
-                                    btnDodaj.setAttribute("data-relacja-id", relacja.id);
+                                } else if (relacja.status === "oczekujace") {
+                                    if (relacja.zapraszajacy_id === aktualnyUser.id) {
+                                        btnDodaj.textContent = "⏳ Wysłano zaproszenie";
+                                        btnDodaj.className = "btn-wyslano-zaproszenie";
+                                        btnDodaj.disabled = true;
+                                    } else {
+                                        btnDodaj.textContent = "Oczekuje! Akceptuj";
+                                        btnDodaj.className = "btn-primary";
+                                        btnDodaj.setAttribute("data-relacja-id", relacja.id);
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Wypełnienie podstawowego widoku
-                document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
-                document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
+                    // Wypełnienie UI (Nagłówek)
+                    document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
+                    document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
 
-                // Dynamiczna ranga
-                const sr = parseFloat(profil?.srednia || 0);
-                const tagRanga = document.getElementById("tag-ranga");
-                if (tagRanga) {
-                    let ranga = { nazwa: "Amator", ikona: "🌱", color: "#a3e635", border: "rgba(163, 230, 53, 0.3)" };
-                    if (sr >= 70) ranga = { nazwa: "Mistrz", ikona: "💎", color: "#60a5fa", border: "rgba(96, 165, 250, 0.4)" };
-                    else if (sr >= 55) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
-                    else if (sr >= 45) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
-                    else if (sr >= 35) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
+                    const sr = parseFloat(profil?.srednia || 0);
+                    const tagRanga = document.getElementById("tag-ranga");
+                    if (tagRanga) {
+                        let ranga = { nazwa: "Amator", ikona: "🌱", color: "#a3e635", border: "rgba(163, 230, 53, 0.3)" };
+                        if (sr >= 70) ranga = { nazwa: "Mistrz", ikona: "💎", color: "#60a5fa", border: "rgba(96, 165, 250, 0.4)" };
+                        else if (sr >= 55) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
+                        else if (sr >= 45) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
+                        else if (sr >= 35) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
 
-                    tagRanga.innerHTML = `${ranga.ikona} ${ranga.nazwa}`;
-                    tagRanga.style.color = ranga.color;
-                    tagRanga.style.backgroundColor = ranga.border.replace("0.3)", "0.1)").replace("0.4)", "0.15)");
-                    tagRanga.style.border = `1px solid ${ranga.border}`;
-                    tagRanga.style.display = "inline-flex";
-
-                    const btnInfo = document.getElementById("btn-info-rangi");
-                    if (btnInfo) btnInfo.style.display = "inline-flex";
-                }
-
-                if (profil?.utworzono) {
-                    try {
-                        const bezpiecznaData = profil.utworzono.replace(" ", "T");
-                        const dataDolaczenia = new Date(bezpiecznaData).toLocaleDateString("pl-PL", { year: "numeric", month: "long" });
-                        document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
-                    } catch (e) {
-                        console.warn("Błąd parsowania daty");
+                        tagRanga.innerHTML = `${ranga.ikona} ${ranga.nazwa}`;
+                        tagRanga.style.color = ranga.color;
+                        tagRanga.style.backgroundColor = ranga.border.replace("0.3)", "0.1)").replace("0.4)", "0.15)");
+                        tagRanga.style.border = `1px solid ${ranga.border}`;
+                        tagRanga.style.display = "inline-flex";
+                        const btnInfo = document.getElementById("btn-info-rangi");
+                        if (btnInfo) btnInfo.style.display = "inline-flex";
                     }
-                }
 
-                // Win Rate i Statystyki
-                const rozegrane = profil?.rozegrane_mecze || 0;
-                const wygrane = profil?.wygrane_mecze || 0;
-                const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
-                const headerWinrate = document.getElementById("header-winrate");
-                if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
+                    if (profil?.utworzono) {
+                        try {
+                            const bezpiecznaData = profil.utworzono.replace(" ", "T");
+                            const dataDolaczenia = new Date(bezpiecznaData).toLocaleDateString("pl-PL", { year: "numeric", month: "long" });
+                            document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
+                        } catch (e) {}
+                    }
 
-                document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
-                document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
-                document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
-                document.getElementById("stat-mecze").textContent = rozegrane;
-                document.getElementById("stat-wygrane").textContent = wygrane;
-                document.getElementById("stat-porazki").textContent = Math.max(0, rozegrane - wygrane);
+                    // Statystyki
+                    const rozegrane = profil?.rozegrane_mecze || 0;
+                    const wygrane = profil?.wygrane_mecze || 0;
+                    const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
+                    
+                    const headerWinrate = document.getElementById("header-winrate");
+                    if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
 
-                // Sprzęt gracza
-                document.getElementById("barele-gracza").textContent = profil?.barele || "-";
-                document.getElementById("shafty-gracza").textContent = profil?.shafty || "-";
-                document.getElementById("groty-gracza").textContent = profil?.groty || "-";
-                document.getElementById("tarcza-gracza").textContent = profil?.tarcza || "-";
-                document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
-                document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
+                    document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
+                    document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
+                    document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
+                    document.getElementById("stat-mecze").textContent = rozegrane;
+                    document.getElementById("stat-wygrane").textContent = wygrane;
+                    document.getElementById("stat-porazki").textContent = Math.max(0, rozegrane - wygrane);
 
-                // 2. Pobranie historii gier dla wyświetlanego profilu (profilId)
-                const { data: mecze, error: meczeErr } = await client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(5);
+                    // Sprzęt
+                    document.getElementById("barele-gracza").textContent = profil?.barele || "-";
+                    document.getElementById("shafty-gracza").textContent = profil?.shafty || "-";
+                    document.getElementById("groty-gracza").textContent = profil?.groty || "-";
+                    document.getElementById("tarcza-gracza").textContent = profil?.tarcza || "-";
+                    document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
+                    document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
 
-                if (meczeErr) {
-                    console.error("Błąd pobierania meczów:", meczeErr);
-                }
+                    // 5. Pobranie historii gier
+                    const { data: mecze } = await client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(5);
 
-                const listaMeczy = document.getElementById("lista-ostatnich-meczy");
-                ostatnieMeczeCache = mecze || [];
+                    const listaMeczy = document.getElementById("lista-ostatnich-meczy");
+                    ostatnieMeczeCache = mecze || [];
 
-                if (!mecze || mecze.length === 0) {
-                    listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
-                } else {
-                    listaMeczy.innerHTML = mecze
-                        .map((m, idx) => {
-                            const czyHost = m.host_id === profilId;
-                            const czyWygrana = m.zwyciezca_id === profilId;
-                            const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
-                            let dataMeczu = "-";
-                            if (m.utworzono) {
-                                try {
-                                    const bezpiecznaDataM = m.utworzono.replace(" ", "T");
-                                    dataMeczu = new Date(bezpiecznaDataM).toLocaleDateString("pl-PL");
-                                } catch (e) {}
-                            }
+                    if (!mecze || mecze.length === 0) {
+                        listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
+                    } else {
+                        listaMeczy.innerHTML = mecze.map((m, idx) => {
+                                const czyHost = m.host_id === profilId;
+                                const czyWygrana = m.zwyciezca_id === profilId;
+                                const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
+                                let dataMeczu = "-";
+                                if (m.utworzono) {
+                                    try {
+                                        dataMeczu = new Date(m.utworzono.replace(" ", "T")).toLocaleDateString("pl-PL");
+                                    } catch (e) {}
+                                }
 
-                            let przeciwnikNazwa = "Przeciwnik";
-                            if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
-                                const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
-                                przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
-                            } else if (m.format_gry) {
-                                przeciwnikNazwa = m.format_gry;
-                            }
+                                let przeciwnikNazwa = "Przeciwnik";
+                                if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
+                                    const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
+                                    przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
+                                } else if (m.format_gry) {
+                                    przeciwnikNazwa = m.format_gry;
+                                }
 
-                            return `
-<div class="mecz ${czyWygrana ? "wygrana" : "porazka"}">
-    <p class="przeciwnik">Przeciwnik: <strong>${przeciwnikNazwa}</strong></p>
-    <p class="wynik">Wynik: <strong>${wynik}</strong></p>
-    <p class="data">Data: ${dataMeczu}</p>
-    <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
-</div>
-`;
-                        })
-                        .join("");
+                                return `
+                                    <div class="mecz ${czyWygrana ? "wygrana" : "porazka"}">
+                                        <p class="przeciwnik">Przeciwnik: <strong>${przeciwnikNazwa}</strong></p>
+                                        <p class="wynik">Wynik: <strong>${wynik}</strong></p>
+                                        <p class="data">Data: ${dataMeczu}</p>
+                                        <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
+                                    </div>`;
+                            }).join("");
+                    }
+                } catch (error) {
+                    // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE
+                    console.error("Błąd krytyczny ładowania profilu:", error);
+                    document.getElementById("nazwa-uzytkownika").textContent = "Błąd: " + (error.message || "Skrypt przerwany");
+                    document.getElementById("tag-data").textContent = "Odśwież stronę.";
                 }
             }
 
