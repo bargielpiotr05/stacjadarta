@@ -160,6 +160,41 @@
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
             }
 
+            function zbudujZapytanieSupabase(tabela, parametry) {
+                const query = client.from(tabela).select(parametry.select || "*");
+
+                Object.entries(parametry).forEach(([nazwa, wartosc]) => {
+                    if (nazwa === "select" || nazwa === "limit") return;
+
+                    if (typeof wartosc === "string" && wartosc.startsWith("eq.")) {
+                        query.eq(nazwa, wartosc.slice(3));
+                        return;
+                    }
+
+                    if (typeof wartosc === "string" && wartosc.startsWith("in.")) {
+                        const zakres = wartosc.slice(3).replace(/^\(/, "").replace(/\)$/, "").split(",").map((val) => val.trim()).filter(Boolean);
+                        if (zakres.length > 0) {
+                            query.in(nazwa, zakres);
+                        }
+                        return;
+                    }
+
+                    if (typeof wartosc === "string" && wartosc.startsWith("or.")) {
+                        query.or(wartosc.slice(3));
+                        return;
+                    }
+
+                    query.eq(nazwa, wartosc);
+                });
+
+                if (parametry.limit !== undefined) {
+                    const limitValue = Number(parametry.limit);
+                    if (!Number.isNaN(limitValue)) query.limit(limitValue);
+                }
+
+                return query;
+            }
+
             async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
                 const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
                 Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
@@ -170,14 +205,24 @@
                     headers.Authorization = `Bearer ${aktualnaSesja.access_token}`;
                 }
 
-                return zLimitemCzasu(
-                    fetch(url, { headers, cache: "no-store", credentials: "same-origin" }).then(async (response) => {
-                        const wynik = await response.json();
-                        if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
-                        return wynik;
-                    }),
-                    etap,
-                );
+                try {
+                    return await zLimitemCzasu(
+                        fetch(url, { headers, cache: "no-store", credentials: "same-origin" }).then(async (response) => {
+                            const wynik = await response.json();
+                            if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
+                            return wynik;
+                        }),
+                        etap,
+                    );
+                } catch (blad) {
+                    if (!client || !client.from) throw blad;
+
+                    console.warn(`Proxy Supabase nie odpowiada dla ${tabela}. Używam natywnego klienta Safari-safe.`, blad);
+                    const query = zbudujZapytanieSupabase(tabela, parametry);
+                    const { data, error } = await zLimitemCzasu(query, `${etap} (fallback native)`);
+                    if (error) throw new Error(error.message || "Błąd pobierania danych z bazy.");
+                    return data || [];
+                }
             }
 
             async function autoryzacja() {
