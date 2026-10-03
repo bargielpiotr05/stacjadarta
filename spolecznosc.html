@@ -139,12 +139,13 @@
             let client = null;
             let aktualnyUser = null;
             let aktualnaSesja = null;
+            let ostatniTokenWyszukiwania = 0;
 
-            async function oczekajNaSupabaseClient(maksProby = 30, opoznienieMs = 100) {
+            async function oczekajNaSupabaseClient(maksProby = 40, opoznienieMs = 100) {
                 let proby = 0;
                 while (!window.supabaseKlient && proby < maksProby) {
                     await new Promise((resolve) => setTimeout(resolve, opoznienieMs));
-                    proby++;
+                    proby += 1;
                 }
 
                 client = window.supabaseKlient || null;
@@ -160,52 +161,16 @@
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
             }
 
-            function zbudujZapytanieSupabase(tabela, parametry) {
-                const query = client.from(tabela).select(parametry.select || "*");
-
-                Object.entries(parametry).forEach(([nazwa, wartosc]) => {
-                    if (nazwa === "select" || nazwa === "limit") return;
-
-                    if (typeof wartosc === "string" && wartosc.startsWith("eq.")) {
-                        query.eq(nazwa, wartosc.slice(3));
-                        return;
-                    }
-
-                    if (typeof wartosc === "string" && wartosc.startsWith("in.")) {
-                        const zakres = wartosc.slice(3).replace(/^\(/, "").replace(/\)$/, "").split(",").map((val) => val.trim()).filter(Boolean);
-                        if (zakres.length > 0) {
-                            query.in(nazwa, zakres);
-                        }
-                        return;
-                    }
-
-                    if (typeof wartosc === "string" && wartosc.startsWith("or.")) {
-                        query.or(wartosc.slice(3));
-                        return;
-                    }
-
-                    query.eq(nazwa, wartosc);
-                });
-
-                if (parametry.limit !== undefined) {
-                    const limitValue = Number(parametry.limit);
-                    if (!Number.isNaN(limitValue)) query.limit(limitValue);
-                }
-
-                return query;
-            }
-
             async function aktywujSesjeSupabase() {
                 if (!client || !client.auth) return null;
 
                 let { data: { session }, error } = await zLimitemCzasu(client.auth.getSession(), "sprawdzanie sesji");
-                if (error) {
-                    console.warn("Supabase getSession error:", error);
-                }
+                if (error) console.warn("Supabase getSession error:", error);
 
                 if (!session?.user) {
-                    const { data: userData, error: userError } = await zLimitemCzasu(client.auth.getUser(), "odświeżanie użytkownika");
+                    const { data: userData, error: userError } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
                     if (userError) console.warn("Supabase getUser error:", userError);
+
                     if (userData?.user) {
                         const refreshed = await zLimitemCzasu(client.auth.refreshSession(), "odświeżanie sesji");
                         if (refreshed?.data?.session) {
@@ -217,49 +182,6 @@
                 }
 
                 return session;
-            }
-
-            async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
-                const isSafariIphone = /iPhone|iPad|iPod/i.test(window.navigator.userAgent) || (/Safari/i.test(window.navigator.userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(window.navigator.userAgent));
-                const baseUrl = isSafariIphone ? "https://mjebhhagwxtvhggyjwue.supabase.co" : window.location.origin;
-                const path = isSafariIphone ? `/rest/v1/${tabela}` : `/api/supabase/rest/v1/${tabela}`;
-                const url = new URL(path, baseUrl);
-
-                Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
-
-                const headers = {
-                    apikey: client.supabaseKey,
-                    Accept: "application/json",
-                };
-
-                if (zSesja) {
-                    const sesja = await aktywujSesjeSupabase();
-                    if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
-                    aktualnaSesja = sesja;
-                    headers.Authorization = `Bearer ${sesja.access_token}`;
-                }
-
-                try {
-                    return await zLimitemCzasu(
-                        fetch(url, { headers, cache: "no-store", credentials: isSafariIphone ? "omit" : "same-origin" }).then(async (response) => {
-                            const wynik = await response.json();
-                            if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
-                            return wynik;
-                        }),
-                        etap,
-                    );
-                } catch (blad) {
-                    if (!client || !client.from) throw blad;
-
-                    console.warn(`Supabase REST dla ${tabela} nie odpowiada. Używam natywnego klienta Safari-safe.`, blad);
-                    const sesja = await aktywujSesjeSupabase();
-                    if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
-                    aktualnaSesja = sesja;
-                    const query = zbudujZapytanieSupabase(tabela, parametry);
-                    const { data, error } = await zLimitemCzasu(query, `${etap} (fallback native)`);
-                    if (error) throw new Error(error.message || "Błąd pobierania danych z bazy.");
-                    return data || [];
-                }
             }
 
             async function autoryzacja() {
@@ -277,14 +199,14 @@
                 return true;
             }
 
-            // --- PRZEŁĄCZANIE ZAKŁADEK (Dostosowane do nowych klas) ---
             document.querySelectorAll(".tab-btn").forEach((btn) => {
                 btn.addEventListener("click", () => {
                     document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("aktywna-zakladka"));
-                    document.querySelectorAll(".lobby-sekcja").forEach((z) => (z.style.display = "none"));
+                    document.querySelectorAll(".lobby-sekcja").forEach((sekcja) => (sekcja.style.display = "none"));
 
                     btn.classList.add("aktywna-zakladka");
-                    document.getElementById(btn.getAttribute("data-cel")).style.display = "block";
+                    const cel = document.getElementById(btn.getAttribute("data-cel"));
+                    if (cel) cel.style.display = "block";
                 });
             });
 
@@ -293,13 +215,13 @@
                 window.location.href = `./profil.html?id=${encodeURIComponent(id)}`;
             };
 
-            // --- GENEROWANIE KARTY GRACZA ---
             function generujKarteGracza(gracz, akcjaHtml) {
-                const avatar = gracz.avatar_url || "./loga/logo.png";
-                const sr = Number(gracz.srednia || 0).toFixed(2);
+                const avatar = gracz?.avatar_url || "./loga/logo.png";
+                const sr = Number(gracz?.srednia || 0).toFixed(2);
 
                 let rangaStyl = "color: #e2e8f0; background: rgba(226, 232, 240, 0.15); border: 1px solid rgba(226, 232, 240, 0.3);";
                 let rangaNazwa = "🎯 Klubowy";
+
                 if (sr >= 70) {
                     rangaStyl = "color: #60a5fa; background: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);";
                     rangaNazwa = "💎 Mistrz";
@@ -318,7 +240,7 @@
                 <div class="karta-gracza">
                     <img src="${avatar}" alt="Avatar" class="karta-avatar">
                     <div class="karta-info">
-                        <h3>${gracz.nazwa_gracza}</h3>
+                        <h3>${gracz?.nazwa_gracza || "Gracz"}</h3>
                         <span class="karta-ranga" style="${rangaStyl}">${rangaNazwa}</span>
                         <div class="karta-staty">
                             <span>Śr: <strong>${sr}</strong></span>
@@ -331,137 +253,38 @@
             }
 
             async function pobierzWynikiWyszukiwania(fraza) {
-                const kontener = document.getElementById("wyniki-wyszukiwania");
-                if (!kontener || !aktualnyUser) return [];
+                if (!client || !aktualnyUser) return [];
 
-                let data = [];
-                try {
-                    const wynik = await client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").ilike("nazwa_gracza", `%${fraza}%`).neq("id", aktualnyUser.id).limit(20);
-                    data = wynik.data || [];
-                    if (wynik.error) throw wynik.error;
-                } catch (error) {
-                    console.warn("Wyszukiwanie przez client.from() nie działa, próbuję fallback REST:", error);
-                    try {
-                        const url = new URL("https://mjebhhagwxtvhggyjwue.supabase.co/rest/v1/profiles");
-                        url.searchParams.set("select", "id,nazwa_gracza,avatar_url,srednia");
-                        url.searchParams.set("nazwa_gracza", `ilike.%${fraza}%`);
-                        url.searchParams.set("id", `neq.${aktualnyUser.id}`);
-                        url.searchParams.set("limit", "20");
+                const { data, error } = await zLimitemCzasu(
+                    client
+                        .from("profiles")
+                        .select("id, nazwa_gracza, avatar_url, srednia")
+                        .ilike("nazwa_gracza", `%${fraza}%`)
+                        .neq("id", aktualnyUser.id)
+                        .limit(20),
+                    "wyszukiwanie graczy",
+                );
 
-                        const response = await fetch(url, {
-                            headers: {
-                                apikey: client.supabaseKey,
-                                Authorization: `Bearer ${aktualnaSesja?.access_token || ""}`,
-                                Accept: "application/json",
-                            },
-                            cache: "no-store",
-                        });
-
-                        const wynik = await response.json();
-                        if (!response.ok) throw new Error(wynik.message || "Błąd wyszukiwania REST");
-                        data = Array.isArray(wynik) ? wynik : [];
-                    } catch (fallbackError) {
-                        throw fallbackError;
-                    }
-                }
-
-                return data;
+                if (error) throw error;
+                return data || [];
             }
 
-            // --- 1. WYSZUKIWARKA ---
-            document.getElementById("btn-szukaj").addEventListener("click", async () => {
-                const fraza = document.getElementById("input-szukaj").value.trim();
-                const kontener = document.getElementById("wyniki-wyszukiwania");
-                if (fraza.length < 3) {
-                    alert("Wpisz minimum 3 znaki.");
-                    return;
-                }
-                kontener.innerHTML = `<div class="pusty-stan">Szukanie...</div>`;
-
-                try {
-                    const data = await pobierzWynikiWyszukiwania(fraza);
-
-                    if (!data || data.length === 0) {
-                        kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
-                        return;
-                    }
-
-                    const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
-                    const relMap = {};
-                    if (relacje) {
-                        relacje.forEach((r) => {
-                            const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
-                            relMap[innyId] = r;
-                        });
-                    }
-
-                    kontener.innerHTML = data
-                        .map((gracz) => {
-                            const rel = relMap[gracz.id];
-                            let przyciskZapros = "";
-
-                            if (!rel) {
-                                przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
-                            } else if (rel.status === "zaakceptowane") {
-                                przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
-                            } else if (rel.status === "oczekujace") {
-                                if (rel.zapraszajacy_id === aktualnyUser.id) {
-                                    przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
-                                } else {
-                                    przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
-                                }
-                            }
-
-                            return generujKarteGracza(
-                                gracz,
-                                `<button type="button" class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Odwiedź Profil</button>
-                                 ${przyciskZapros}`,
-                            );
-                        })
-                        .join("");
-                } catch (error) {
-                    console.error("Błąd wyszukiwania graczy:", error);
-                    kontener.innerHTML = `<div class="pusty-stan">Błąd wyszukiwania graczy: ${error.message || "spróbuj ponownie"}</div>`;
-                }
-            });
-
-            document.getElementById("input-szukaj").addEventListener("input", async (event) => {
-                const fraza = event.target.value.trim();
-                const kontener = document.getElementById("wyniki-wyszukiwania");
-
-                if (!fraza) {
-                    kontener.innerHTML = `<div class="pusty-stan">Wpisz nick powyżej, aby znaleźć graczy.</div>`;
-                    return;
-                }
-
-                if (fraza.length >= 3) {
-                    document.getElementById("btn-szukaj").click();
-                } else {
-                    kontener.innerHTML = `<div class="pusty-stan">Wpisz minimum 3 znaki.</div>`;
-                }
-            });
-
-            // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
                 const kontener = document.getElementById("lista-znajomych");
-                if (!kontener || !aktualnyUser) return;
+                if (!kontener || !client || !aktualnyUser) return;
 
                 try {
-                    const { data: wyslane = [], error: errorWyslane } = await client
-                        .from("znajomi")
-                        .select("id, zapraszajacy_id, zapraszany_id, status")
-                        .eq("status", "zaakceptowane")
-                        .eq("zapraszajacy_id", aktualnyUser.id);
+                    const { data: wyslane = [], error: errWyslane } = await zLimitemCzasu(
+                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "zaakceptowane").eq("zapraszajacy_id", aktualnyUser.id),
+                        "pobieranie wysłanych relacji",
+                    );
+                    if (errWyslane) throw errWyslane;
 
-                    if (errorWyslane) throw errorWyslane;
-
-                    const { data: otrzymane = [], error: errorOtrzymane } = await client
-                        .from("znajomi")
-                        .select("id, zapraszajacy_id, zapraszany_id, status")
-                        .eq("status", "zaakceptowane")
-                        .eq("zapraszany_id", aktualnyUser.id);
-
-                    if (errorOtrzymane) throw errorOtrzymane;
+                    const { data: otrzymane = [], error: errOtrzymane } = await zLimitemCzasu(
+                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "zaakceptowane").eq("zapraszany_id", aktualnyUser.id),
+                        "pobieranie otrzymanych relacji",
+                    );
+                    if (errOtrzymane) throw errOtrzymane;
 
                     const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
@@ -470,18 +293,16 @@
                     }
 
                     const idsZnajomych = [...new Set(relacje.map((relacja) => (relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id)))].filter(Boolean);
-
                     if (!idsZnajomych.length) {
                         kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
                         return;
                     }
 
-                    const { data: profilData = [], error: errorProfili } = await client
-                        .from("profiles")
-                        .select("id, nazwa_gracza, avatar_url, srednia")
-                        .in("id", idsZnajomych);
-
-                    if (errorProfili) throw errorProfili;
+                    const { data: profilData = [], error: errProfili } = await zLimitemCzasu(
+                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZnajomych),
+                        "pobieranie profili znajomych",
+                    );
+                    if (errProfili) throw errProfili;
 
                     const profilePoId = new Map((profilData || []).map((profil) => [profil.id, profil]));
                     const znajomi = relacje
@@ -497,14 +318,16 @@
                     }
 
                     kontener.innerHTML = znajomi
-                        .map(({ relacja, gracz }) => generujKarteGracza(
-                            gracz,
-                            `
-                             <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
-                             <button class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Profil</button>
-                             <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
-                            `,
-                        ))
+                        .map(({ relacja, gracz }) =>
+                            generujKarteGracza(
+                                gracz,
+                                `
+                                 <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
+                                 <button class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Profil</button>
+                                 <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
+                                `,
+                            ),
+                        )
                         .join("");
                 } catch (error) {
                     console.error("Błąd pobierania znajomych:", error);
@@ -512,19 +335,16 @@
                 }
             }
 
-            // --- 3. ZAPROSZENIA ---
             async function pobierzZaproszenia() {
                 const kontener = document.getElementById("lista-zaproszen");
                 const badge = document.getElementById("badge-zaproszenia");
-                if (!kontener || !badge || !aktualnyUser) return;
+                if (!kontener || !badge || !client || !aktualnyUser) return;
 
                 try {
-                    const { data: relacje = [], error } = await client
-                        .from("znajomi")
-                        .select("id, zapraszajacy_id, zapraszany_id, status")
-                        .eq("status", "oczekujace")
-                        .eq("zapraszany_id", aktualnyUser.id);
-
+                    const { data: relacje = [], error } = await zLimitemCzasu(
+                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "oczekujace").eq("zapraszany_id", aktualnyUser.id),
+                        "pobieranie zaproszeń",
+                    );
                     if (error) throw error;
 
                     if (!relacje.length) {
@@ -534,11 +354,10 @@
                     }
 
                     const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))].filter(Boolean);
-                    const { data: profileData = [], error: profileError } = await client
-                        .from("profiles")
-                        .select("id, nazwa_gracza, avatar_url, srednia")
-                        .in("id", idsZapraszajacych);
-
+                    const { data: profileData = [], error: profileError } = await zLimitemCzasu(
+                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZapraszajacych),
+                        "pobieranie profili zapraszających",
+                    );
                     if (profileError) throw profileError;
 
                     const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
@@ -559,8 +378,8 @@
                             generujKarteGracza(
                                 rel.zapraszajacy,
                                 `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
-                         <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>
-                         <button class="btn-secondary" onclick="otworzProfil('${rel.zapraszajacy.id}')">Profil</button>`,
+                                 <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>
+                                 <button class="btn-secondary" onclick="otworzProfil('${rel.zapraszajacy.id}')">Profil</button>`,
                             ),
                         )
                         .join("");
@@ -571,10 +390,8 @@
                 }
             }
 
-            // --- AKCJE ZNAJOMYCH ---
-
-            // NOWA FUNKCJA: Zapraszanie bezpośrednio z karty wyszukiwania
             window.zaprosZSzukajki = async (rywalId, btnElement) => {
+                if (!btnElement || !client || !aktualnyUser) return;
                 btnElement.disabled = true;
                 btnElement.textContent = "Wysyłanie...";
 
@@ -587,25 +404,24 @@
                         btnElement.textContent = "Błąd";
                         btnElement.disabled = false;
                     }
-                } else {
-                    btnElement.textContent = "⏳ Wysłano zaproszenie";
-                    btnElement.className = "btn-secondary"; // Zmienia kolor na zgaszony
-
-                    // Odświeżamy listę zaproszeń "w tle", gdyby rywal jakimś cudem wysłał je równocześnie
-                    pobierzZaproszenia();
+                    return;
                 }
+
+                btnElement.textContent = "⏳ Wysłano zaproszenie";
+                btnElement.className = "btn-secondary";
+                await pobierzZaproszenia();
             };
 
             window.akceptuj = async (relacjaId) => {
+                if (!relacjaId) return;
                 await client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId);
-                pobierzZaproszenia();
-                pobierzZnajomych();
+                await pobierzZaproszenia();
+                await pobierzZnajomych();
             };
 
             window.usunZnajomego = async (relacjaId) => {
                 if (!relacjaId) return;
-
-                const potwierdzenie = window.confirm("Czy na pewno chcesz usunąć tę relację? Nie będzie już widoczna na liście znajomych ani zaproszeń.");
+                const potwierdzenie = window.confirm("Czy na pewno chcesz usunąć tę relację?");
                 if (!potwierdzenie) return;
 
                 try {
@@ -618,19 +434,22 @@
                     alert(`Nie udało się usunąć: ${error.message || "błąd bazy"}`);
                 }
             };
-            // --- KONFIGURACJA GRY Z ZNAJOMYM ---
+
             let tempZnajomyId = null;
             let tempZnajomyNick = null;
 
             window.otworzKonfiguracjeGry = function (znajomyId, znajomyNick) {
                 tempZnajomyId = znajomyId;
                 tempZnajomyNick = znajomyNick;
-                document.getElementById("konfiguracja-nick-znajomego").textContent = znajomyNick;
-                document.getElementById("modal-konfiguracja-gry").style.display = "flex";
+                const el = document.getElementById("konfiguracja-nick-znajomego");
+                if (el) el.textContent = znajomyNick;
+                const modal = document.getElementById("modal-konfiguracja-gry");
+                if (modal) modal.style.display = "flex";
             };
 
             window.zamknijKonfiguracjeGry = function () {
-                document.getElementById("modal-konfiguracja-gry").style.display = "none";
+                const modal = document.getElementById("modal-konfiguracja-gry");
+                if (modal) modal.style.display = "none";
                 tempZnajomyId = null;
                 tempZnajomyNick = null;
             };
@@ -639,20 +458,19 @@
                 if (!tempZnajomyId || !aktualnyUser) return;
 
                 const btnSubmit = document.getElementById("btn-wyslij-konf");
-                btnSubmit.disabled = true;
-                btnSubmit.textContent = "Wysyłanie...";
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.textContent = "Wysyłanie...";
+                }
 
-                // Pobieramy dane z formularza
-                const punktyStartowe = parseInt(document.getElementById("konf-punkty").value);
-                const doceloweLegi = parseInt(document.getElementById("konf-legi").value);
+                const punktyStartowe = parseInt(document.getElementById("konf-punkty").value, 10);
+                const doceloweLegi = parseInt(document.getElementById("konf-legi").value, 10);
                 const zasadyIn = document.getElementById("konf-in").value;
                 const zasadyOut = document.getElementById("konf-out").value;
                 const formatGry = `${punktyStartowe} ${zasadyOut.toUpperCase()}`;
-
                 const kodPokoju = Math.random().toString(36).substring(2, 8).toUpperCase();
-                const mojNick = aktualnyUser.user_metadata?.username || aktualnyUser.email.split("@")[0];
+                const mojNick = aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz");
 
-                // --- 1. TWORZENIE STOŁU W BAZIE ONLINE Z PARAMETRAMI ---
                 const { error: errorStolu } = await client.from("rooms").insert([
                     {
                         kod_pokoju: kodPokoju,
@@ -670,13 +488,14 @@
 
                 if (errorStolu) {
                     alert("Błąd podczas tworzenia stołu.");
-                    console.error("Błąd tworzenia stołu:", errorStolu);
-                    btnSubmit.disabled = false;
-                    btnSubmit.textContent = "Wyślij zaproszenie";
+                    console.error(errorStolu);
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = "Wyślij zaproszenie";
+                    }
                     return;
                 }
 
-                // --- 2. WYSYŁANIE ZAPROSZENIA ---
                 const { error: errorZaproszenia } = await client.from("game_invites").insert([
                     {
                         od_kogo_id: aktualnyUser.id,
@@ -689,36 +508,116 @@
                 if (errorZaproszenia) {
                     alert("Błąd podczas wysyłania zaproszenia.");
                     console.error(errorZaproszenia);
-                    btnSubmit.disabled = false;
-                    btnSubmit.textContent = "Wyślij zaproszenie";
-                } else {
-                    // Sukces - Przenosimy do gry!
-                    window.location.href = `./klasyczna.html?pokoj=${kodPokoju}`;
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = "Wyślij zaproszenie";
+                    }
+                    return;
                 }
+
+                window.location.href = `./klasyczna.html?pokoj=${kodPokoju}`;
             };
 
-// Start
             document.addEventListener("DOMContentLoaded", async () => {
                 client = await oczekajNaSupabaseClient();
 
                 if (!client) {
-                    console.error("Błąd ładowania Supabase.");
                     const listaZnajomych = document.getElementById("lista-znajomych");
                     if (listaZnajomych) listaZnajomych.textContent = "Błąd: brak klienta Supabase.";
                     return;
                 }
 
-                // Wyzwolenie szukania na Enter w polu tekstowym
                 const inputSzukaj = document.getElementById("input-szukaj");
+                const btnSzukaj = document.getElementById("btn-szukaj");
+
+                if (btnSzukaj) {
+                    btnSzukaj.addEventListener("click", async () => {
+                        const fraza = document.getElementById("input-szukaj")?.value.trim() || "";
+                        const kontener = document.getElementById("wyniki-wyszukiwania");
+                        if (!kontener) return;
+
+                        if (fraza.length < 3) {
+                            kontener.innerHTML = `<div class="pusty-stan">Wpisz minimum 3 znaki.</div>`;
+                            return;
+                        }
+
+                        const token = ++ostatniTokenWyszukiwania;
+                        kontener.innerHTML = `<div class="pusty-stan">Szukanie...</div>`;
+
+                        try {
+                            const data = await pobierzWynikiWyszukiwania(fraza);
+                            if (token !== ostatniTokenWyszukiwania) return;
+
+                            if (!data || data.length === 0) {
+                                kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
+                                return;
+                            }
+
+                            const { data: relacje = [] } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                            const relMap = {};
+                            relacje.forEach((r) => {
+                                const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
+                                relMap[innyId] = r;
+                            });
+
+                            kontener.innerHTML = data
+                                .map((gracz) => {
+                                    const rel = relMap[gracz.id];
+                                    let przyciskZapros = "";
+
+                                    if (!rel) {
+                                        przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
+                                    } else if (rel.status === "zaakceptowane") {
+                                        przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
+                                    } else if (rel.status === "oczekujace") {
+                                        if (rel.zapraszajacy_id === aktualnyUser.id) {
+                                            przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
+                                        } else {
+                                            przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
+                                        }
+                                    }
+
+                                    return generujKarteGracza(
+                                        gracz,
+                                        `<button type="button" class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Odwiedź Profil</button>
+                                         ${przyciskZapros}`,
+                                    );
+                                })
+                                .join("");
+                        } catch (error) {
+                            if (token !== ostatniTokenWyszukiwania) return;
+                            console.error("Błąd wyszukiwania graczy:", error);
+                            kontener.innerHTML = `<div class="pusty-stan">Błąd wyszukiwania graczy: ${error.message || "spróbuj ponownie"}</div>`;
+                        }
+                    });
+                }
+
                 if (inputSzukaj) {
-                    inputSzukaj.addEventListener("keypress", (e) => {
-                        if (e.key === "Enter") document.getElementById("btn-szukaj")?.click();
+                    inputSzukaj.addEventListener("keypress", (event) => {
+                        if (event.key === "Enter" && btnSzukaj) btnSzukaj.click();
+                    });
+
+                    inputSzukaj.addEventListener("input", () => {
+                        const fraza = inputSzukaj.value.trim();
+                        const kontener = document.getElementById("wyniki-wyszukiwania");
+                        if (!kontener) return;
+
+                        if (!fraza) {
+                            kontener.innerHTML = `<div class="pusty-stan">Wpisz nick powyżej, aby znaleźć graczy.</div>`;
+                            return;
+                        }
+
+                        if (fraza.length >= 3 && btnSzukaj) {
+                            btnSzukaj.click();
+                        } else {
+                            kontener.innerHTML = `<div class="pusty-stan">Wpisz minimum 3 znaki.</div>`;
+                        }
                     });
                 }
 
                 try {
                     if (await autoryzacja()) {
-                        await Promise.all([pobierzZnajomych(), pobierzZaproszenia()]);
+                        await Promise.allSettled([pobierzZnajomych(), pobierzZaproszenia()]);
                     }
                 } catch (error) {
                     console.error("Błąd inicjalizacji społeczności:", error);
