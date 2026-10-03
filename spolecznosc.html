@@ -391,19 +391,19 @@
             // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
                 const kontener = document.getElementById("lista-znajomych");
-                let relacje;
+                let relacje = [];
                 try {
                     const warunki = {
-                        select: "id,zapraszajacy_id,zapraszany_id",
+                        select: "id,zapraszajacy_id,zapraszany_id,status",
                         status: "eq.zaakceptowane",
                         limit: "100",
                     };
-                    const [wyslane, otrzymane] = await Promise.all([
-                        pobierzWierszeApi("znajomi", { ...warunki, zapraszajacy_id: `eq.${aktualnyUser.id}` }, "pobieranie wysłanych relacji"),
-                        pobierzWierszeApi("znajomi", { ...warunki, zapraszany_id: `eq.${aktualnyUser.id}` }, "pobieranie otrzymanych relacji"),
-                    ]);
-                    relacje = [...wyslane, ...otrzymane];
+
+                    const wyslane = await pobierzWierszeApi("znajomi", { ...warunki, zapraszajacy_id: `eq.${aktualnyUser.id}` }, "pobieranie wysłanych relacji");
+                    const otrzymane = await pobierzWierszeApi("znajomi", { ...warunki, zapraszany_id: `eq.${aktualnyUser.id}` }, "pobieranie otrzymanych relacji");
+                    relacje = [...(wyslane || []), ...(otrzymane || [])];
                 } catch (error) {
+                    console.error("Błąd pobierania znajomych:", error);
                     kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
                     return;
                 }
