@@ -195,14 +195,40 @@
                 return query;
             }
 
+            async function aktywujSesjeSupabase() {
+                if (!client || !client.auth) return null;
+
+                let { data: { session }, error } = await zLimitemCzasu(client.auth.getSession(), "sprawdzanie sesji");
+                if (error) {
+                    console.warn("Supabase getSession error:", error);
+                }
+
+                if (!session?.user) {
+                    const { data: userData, error: userError } = await zLimitemCzasu(client.auth.getUser(), "odświeżanie użytkownika");
+                    if (userError) console.warn("Supabase getUser error:", userError);
+                    if (userData?.user) {
+                        const refreshed = await zLimitemCzasu(client.auth.refreshSession(), "odświeżanie sesji");
+                        if (refreshed?.data?.session) {
+                            session = refreshed.data.session;
+                        } else {
+                            session = { user: userData.user };
+                        }
+                    }
+                }
+
+                return session;
+            }
+
             async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
                 const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
                 Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
 
                 const headers = { apikey: client.supabaseKey };
                 if (zSesja) {
-                    if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
-                    headers.Authorization = `Bearer ${aktualnaSesja.access_token}`;
+                    const sesja = await aktywujSesjeSupabase();
+                    if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
+                    aktualnaSesja = sesja;
+                    headers.Authorization = `Bearer ${sesja.access_token}`;
                 }
 
                 try {
@@ -218,6 +244,9 @@
                     if (!client || !client.from) throw blad;
 
                     console.warn(`Proxy Supabase nie odpowiada dla ${tabela}. Używam natywnego klienta Safari-safe.`, blad);
+                    const sesja = await aktywujSesjeSupabase();
+                    if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
+                    aktualnaSesja = sesja;
                     const query = zbudujZapytanieSupabase(tabela, parametry);
                     const { data, error } = await zLimitemCzasu(query, `${etap} (fallback native)`);
                     if (error) throw new Error(error.message || "Błąd pobierania danych z bazy.");
@@ -228,13 +257,13 @@
             async function autoryzacja() {
                 client = client || (await oczekajNaSupabaseClient());
                 if (!client) return false;
-                const {
-                    data: { session },
-                } = await zLimitemCzasu(client.auth.getSession(), "sprawdzanie sesji");
+
+                const session = await aktywujSesjeSupabase();
                 if (!session?.user) {
                     window.location.href = "./logowanie.html";
                     return false;
                 }
+
                 aktualnaSesja = session;
                 aktualnyUser = session.user;
                 return true;
