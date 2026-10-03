@@ -288,6 +288,11 @@
                 });
             });
 
+            window.otworzProfil = function (id) {
+                if (!id) return;
+                window.location.href = `./profil.html?id=${encodeURIComponent(id)}`;
+            };
+
             // --- GENEROWANIE KARTY GRACZA ---
             function generujKarteGracza(gracz, akcjaHtml) {
                 const avatar = gracz.avatar_url || "./loga/logo.png";
@@ -325,6 +330,44 @@
                 </div>`;
             }
 
+            async function pobierzWynikiWyszukiwania(fraza) {
+                const kontener = document.getElementById("wyniki-wyszukiwania");
+                if (!kontener || !aktualnyUser) return [];
+
+                let data = [];
+                try {
+                    const wynik = await client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").ilike("nazwa_gracza", `%${fraza}%`).neq("id", aktualnyUser.id).limit(20);
+                    data = wynik.data || [];
+                    if (wynik.error) throw wynik.error;
+                } catch (error) {
+                    console.warn("Wyszukiwanie przez client.from() nie działa, próbuję fallback REST:", error);
+                    try {
+                        const url = new URL("https://mjebhhagwxtvhggyjwue.supabase.co/rest/v1/profiles");
+                        url.searchParams.set("select", "id,nazwa_gracza,avatar_url,srednia");
+                        url.searchParams.set("nazwa_gracza", `ilike.%${fraza}%`);
+                        url.searchParams.set("id", `neq.${aktualnyUser.id}`);
+                        url.searchParams.set("limit", "20");
+
+                        const response = await fetch(url, {
+                            headers: {
+                                apikey: client.supabaseKey,
+                                Authorization: `Bearer ${aktualnaSesja?.access_token || ""}`,
+                                Accept: "application/json",
+                            },
+                            cache: "no-store",
+                        });
+
+                        const wynik = await response.json();
+                        if (!response.ok) throw new Error(wynik.message || "Błąd wyszukiwania REST");
+                        data = Array.isArray(wynik) ? wynik : [];
+                    } catch (fallbackError) {
+                        throw fallbackError;
+                    }
+                }
+
+                return data;
+            }
+
             // --- 1. WYSZUKIWARKA ---
             document.getElementById("btn-szukaj").addEventListener("click", async () => {
                 const fraza = document.getElementById("input-szukaj").value.trim();
@@ -335,57 +378,58 @@
                 }
                 kontener.innerHTML = `<div class="pusty-stan">Szukanie...</div>`;
 
-                // 1. Pobieramy graczy pasujących do wyszukiwania
-                const { data, error } = await client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").ilike("nazwa_gracza", `%${fraza}%`).neq("id", aktualnyUser.id).limit(20);
+                try {
+                    const data = await pobierzWynikiWyszukiwania(fraza);
 
-                if (error) {
-                    kontener.textContent = `Błąd wyszukiwania graczy: ${error.message}`;
-                    return;
-                }
+                    if (!data || data.length === 0) {
+                        kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
+                        return;
+                    }
 
-                if (!data || data.length === 0) {
-                    kontener.innerHTML = `<div class="pusty-stan">Nie znaleziono graczy.</div>`;
-                    return;
-                }
+                    const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                    const relMap = {};
+                    if (relacje) {
+                        relacje.forEach((r) => {
+                            const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
+                            relMap[innyId] = r;
+                        });
+                    }
 
-                // 2. Pobieramy NASZE relacje z bazy (aby wiedzieć, kogo już zaprosiliśmy)
-                const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                    kontener.innerHTML = data
+                        .map((gracz) => {
+                            const rel = relMap[gracz.id];
+                            let przyciskZapros = "";
 
-                // Tworzymy słownik relacji (szybsze sprawdzanie)
-                const relMap = {};
-                if (relacje) {
-                    relacje.forEach((r) => {
-                        const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
-                        relMap[innyId] = r;
-                    });
-                }
-
-                // 3. Budujemy HTML kart
-                kontener.innerHTML = data
-                    .map((gracz) => {
-                        const rel = relMap[gracz.id];
-                        let przyciskZapros = "";
-
-                        // Logika wyboru przycisku
-                        if (!rel) {
-                            przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
-                        } else if (rel.status === "zaakceptowane") {
-                            przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
-                        } else if (rel.status === "oczekujace") {
-                            if (rel.zapraszajacy_id === aktualnyUser.id) {
-                                przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
-                            } else {
-                                przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
+                            if (!rel) {
+                                przyciskZapros = `<button type="button" class="btn-primary" onclick="zaprosZSzukajki('${gracz.id}', this)">Zaproś do znajomych</button>`;
+                            } else if (rel.status === "zaakceptowane") {
+                                przyciskZapros = `<button type="button" class="btn-secondary" disabled>✓ Twój znajomy</button>`;
+                            } else if (rel.status === "oczekujace") {
+                                if (rel.zapraszajacy_id === aktualnyUser.id) {
+                                    przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
+                                } else {
+                                    przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
+                                }
                             }
-                        }
 
-                        return generujKarteGracza(
-                            gracz,
-                            `<button type="button" class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Odwiedź Profil</button>
-                         ${przyciskZapros}`,
-                        );
-                    })
-                    .join("");
+                            return generujKarteGracza(
+                                gracz,
+                                `<button type="button" class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Odwiedź Profil</button>
+                                 ${przyciskZapros}`,
+                            );
+                        })
+                        .join("");
+                } catch (error) {
+                    console.error("Błąd wyszukiwania graczy:", error);
+                    kontener.innerHTML = `<div class="pusty-stan">Błąd wyszukiwania graczy: ${error.message || "spróbuj ponownie"}</div>`;
+                }
+            });
+
+            document.getElementById("input-szukaj").addEventListener("input", async (event) => {
+                const fraza = event.target.value.trim();
+                if (fraza.length >= 3) {
+                    document.getElementById("btn-szukaj").click();
+                }
             });
 
             // --- 2. MOI ZNAJOMI ---
@@ -446,7 +490,7 @@
                             gracz,
                             `
                          <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
-                         <button class="btn-secondary" onclick="window.location.href='./profil.html?id=${gracz.id}'">Profil</button>
+                         <button class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Profil</button>
                          <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
                         `,
                         );
@@ -497,14 +541,20 @@
                 const zaproszenia = relacje.map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) })).filter((relacja) => relacja.zapraszajacy);
 
                 badge.textContent = zaproszenia.length;
-                badge.style.display = "inline-flex";
+                badge.style.display = zaproszenia.length > 0 ? "inline-flex" : "none";
+
+                if (!zaproszenia.length) {
+                    kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
+                    return;
+                }
 
                 kontener.innerHTML = zaproszenia
                     .map((rel) =>
                         generujKarteGracza(
                             rel.zapraszajacy,
                             `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
-                     <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>`,
+                     <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>
+                     <button class="btn-secondary" onclick="otworzProfil('${rel.zapraszajacy.id}')">Profil</button>`,
                         ),
                     )
                     .join("");
@@ -539,6 +589,23 @@
                 await client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId);
                 pobierzZaproszenia();
                 pobierzZnajomych();
+            };
+
+            window.usunZnajomego = async (relacjaId) => {
+                if (!relacjaId) return;
+
+                const potwierdzenie = window.confirm("Czy na pewno chcesz usunąć tę relację? Nie będzie już widoczna na liście znajomych ani zaproszeń.");
+                if (!potwierdzenie) return;
+
+                try {
+                    const { error } = await client.from("znajomi").delete().eq("id", relacjaId);
+                    if (error) throw error;
+                    await pobierzZnajomych();
+                    await pobierzZaproszenia();
+                } catch (error) {
+                    console.error("Błąd usuwania relacji:", error);
+                    alert(`Nie udało się usunąć: ${error.message || "błąd bazy"}`);
+                }
             };
             // --- KONFIGURACJA GRY Z ZNAJOMYM ---
             let tempZnajomyId = null;
