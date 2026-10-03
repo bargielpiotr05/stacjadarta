@@ -635,6 +635,35 @@
                 }
             }
 
+            async function pobierzAktywnaSesjeSupabase() {
+                const klient = window.supabaseClient || window.supabaseKlient;
+                if (!klient?.auth) return null;
+
+                try {
+                    let { data: { session }, error } = await klient.auth.getSession();
+                    if (error) console.warn("Supabase getSession error:", error);
+
+                    if (!session?.user) {
+                        const { data: userData, error: userError } = await klient.auth.getUser();
+                        if (userError) console.warn("Supabase getUser error:", userError);
+
+                        if (userData?.user) {
+                            const refreshed = await klient.auth.refreshSession();
+                            if (refreshed?.data?.session) {
+                                session = refreshed.data.session;
+                            } else {
+                                session = { user: userData.user };
+                            }
+                        }
+                    }
+
+                    return session || null;
+                } catch (error) {
+                    console.warn("Błąd aktywacji sesji w klasie:", error);
+                    return null;
+                }
+            }
+
             // 2. OBSŁUGA POPUPU DODAWANIA GRACZA
             window.otworzPopupDodajGracza = function (domyslnaZakladka = "gracz-znajomi") {
                 const popup = document.getElementById("popup-dodaj-gracza");
@@ -753,8 +782,8 @@
                     return;
                 }
 
-                const { data: sessionData } = await klient.auth.getSession();
-                const userId = sessionData?.session?.user?.id;
+                const session = await pobierzAktywnaSesjeSupabase();
+                const userId = session?.user?.id;
                 if (!userId) {
                     kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Zaloguj się, aby zobaczyć znajomych.</p>`;
                     return;
@@ -894,17 +923,15 @@
             // 5. INICJALIZACJA PRZY WEJŚCIU NA STRONĘ
             document.addEventListener("DOMContentLoaded", async () => {
                 try {
-                    const klient = window.supabaseClient || window.supabaseKlient;
-                    if (klient) {
-                        const {
-                            data: { session },
-                        } = await klient.auth.getSession();
-                        if (session?.user) {
-                            zalogowanyNickGlobalny = session.user.user_metadata?.username || session.user.email?.split("@")[0] || "";
-                            if (zalogowanyNickGlobalny) graczeUczestnicy[0] = zalogowanyNickGlobalny;
-                        }
+                    const session = await pobierzAktywnaSesjeSupabase();
+                    const user = session?.user;
+                    if (user) {
+                        zalogowanyNickGlobalny = user.user_metadata?.username || user.email?.split("@")[0] || "";
+                        if (zalogowanyNickGlobalny) graczeUczestnicy[0] = zalogowanyNickGlobalny;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.warn("Nie udało się pobrać sesji zalogowanego użytkownika:", e);
+                }
                 renderujPolaUczestnikow();
             });
             
