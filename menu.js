@@ -1,9 +1,18 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
+function czySafariIOS() {
+    const userAgent = window.navigator?.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(userAgent) || (/Safari/i.test(userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(userAgent));
+}
+
 function supabaseProxyFetch(input, init) {
     const request = input instanceof Request ? input : new Request(input, init);
     const url = new URL(request.url);
+
+    if (czySafariIOS()) {
+        return fetch(request);
+    }
 
     if (url.origin !== SUPABASE_URL || !url.pathname.startsWith("/rest/v1/")) {
         return fetch(request);
