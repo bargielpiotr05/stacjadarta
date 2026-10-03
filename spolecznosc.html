@@ -220,10 +220,18 @@
             }
 
             async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
-                const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
+                const isSafariIphone = /iPhone|iPad|iPod/i.test(window.navigator.userAgent) || (/Safari/i.test(window.navigator.userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(window.navigator.userAgent));
+                const baseUrl = isSafariIphone ? "https://mjebhhagwxtvhggyjwue.supabase.co" : window.location.origin;
+                const path = isSafariIphone ? `/rest/v1/${tabela}` : `/api/supabase/rest/v1/${tabela}`;
+                const url = new URL(path, baseUrl);
+
                 Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
 
-                const headers = { apikey: client.supabaseKey };
+                const headers = {
+                    apikey: client.supabaseKey,
+                    Accept: "application/json",
+                };
+
                 if (zSesja) {
                     const sesja = await aktywujSesjeSupabase();
                     if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
@@ -233,7 +241,7 @@
 
                 try {
                     return await zLimitemCzasu(
-                        fetch(url, { headers, cache: "no-store", credentials: "same-origin" }).then(async (response) => {
+                        fetch(url, { headers, cache: "no-store", credentials: isSafariIphone ? "omit" : "same-origin" }).then(async (response) => {
                             const wynik = await response.json();
                             if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
                             return wynik;
@@ -243,7 +251,7 @@
                 } catch (blad) {
                     if (!client || !client.from) throw blad;
 
-                    console.warn(`Proxy Supabase nie odpowiada dla ${tabela}. Używam natywnego klienta Safari-safe.`, blad);
+                    console.warn(`Supabase REST dla ${tabela} nie odpowiada. Używam natywnego klienta Safari-safe.`, blad);
                     const sesja = await aktywujSesjeSupabase();
                     if (!sesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
                     aktualnaSesja = sesja;
