@@ -718,43 +718,81 @@
                 if (!kontener) return;
 
                 const klient = window.supabaseClient || window.supabaseKlient;
-                const { data: sessionData } = await klient.auth.getSession();
-                const userId = sessionData?.session?.user?.id;
-                if (!userId) return;
-
-                const { data, error } = await klient
-                    .from("znajomi")
-                    .select("id, zapraszajacy_id, zapraszany_id, zapraszajacy:profiles!znajomi_zapraszajacy_fkey(id, nazwa_gracza, avatar_url, srednia), zapraszany:profiles!znajomi_zapraszany_fkey(id, nazwa_gracza, avatar_url, srednia)")
-                    .eq("status", "zaakceptowane")
-                    .or(`zapraszajacy_id.eq.${userId},zapraszany_id.eq.${userId}`);
-
-                if (error || !data || data.length === 0) {
-                    kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                if (!klient?.auth) {
+                    kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Brak połączenia z kontem.</p>`;
                     return;
                 }
 
-                let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:5px;">';
-                data.forEach((rel) => {
-                    const znajomy = rel.zapraszajacy_id === userId ? rel.zapraszany : rel.zapraszajacy;
-                    if (!znajomy) return;
+                const { data: sessionData } = await klient.auth.getSession();
+                const userId = sessionData?.session?.user?.id;
+                if (!userId) {
+                    kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Zaloguj się, aby zobaczyć znajomych.</p>`;
+                    return;
+                }
 
-                    const juzDodan = graczeUczestnicy.includes(znajomy.nazwa_gracza);
+                try {
+                    const { data: relacje = [], error: relError } = await klient
+                        .from("znajomi")
+                        .select("id, zapraszajacy_id, zapraszany_id, status")
+                        .eq("status", "zaakceptowane")
+                        .or(`zapraszajacy_id.eq.${userId},zapraszany_id.eq.${userId}`);
 
-                    html += `
-                        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--primary-color-lighter); padding:10px; border-radius:8px; border:1px solid var(--primary-color-border);">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${znajomy.avatar_url || "./loga/logo.png"}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
-                                <strong style="color:white; font-size:14px;">${znajomy.nazwa_gracza}</strong>
+                    if (relError) throw relError;
+                    if (!relacje.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    const idsZnajomych = [...new Set(relacje.map((rel) => (rel.zapraszajacy_id === userId ? rel.zapraszany_id : rel.zapraszajacy_id)))].filter(Boolean);
+                    if (!idsZnajomych.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    const { data: profileData = [], error: profileError } = await klient
+                        .from("profiles")
+                        .select("id, nazwa_gracza, avatar_url, srednia")
+                        .in("id", idsZnajomych);
+
+                    if (profileError) throw profileError;
+
+                    const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
+                    const znajomi = relacje
+                        .map((rel) => {
+                            const idZnajomego = rel.zapraszajacy_id === userId ? rel.zapraszany_id : rel.zapraszajacy_id;
+                            return profilePoId.get(idZnajomego);
+                        })
+                        .filter(Boolean);
+
+                    if (!znajomi.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:5px;">';
+                    znajomi.forEach((znajomy) => {
+                        const nickEscaped = String(znajomy.nazwa_gracza || "Gracz").replace(/'/g, "\\'");
+                        const juzDodan = graczeUczestnicy.includes(znajomy.nazwa_gracza);
+
+                        html += `
+                            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--primary-color-lighter); padding:10px; border-radius:8px; border:1px solid var(--primary-color-border);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <img src="${znajomy.avatar_url || "./loga/logo.png"}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                                    <strong style="color:white; font-size:14px;">${znajomy.nazwa_gracza}</strong>
+                                </div>
+                                <button type="button" class="popup-btn popup-btn-yes" style="padding:10px; max-width:30%; opacity:${juzDodan ? "0.4" : "1"}; cursor:${juzDodan ? "not-allowed" : "pointer"}" 
+                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${nickEscaped}', '${znajomy.id}')`}">
+                                    ${juzDodan ? "Dodano" : "Dodaj"}
+                                </button>
                             </div>
-                            <button type="button" class="popup-btn popup-btn-yes" style="padding:10px; max-width:30%; opacity:${juzDodan ? "0.4" : "1"}; cursor:${juzDodan ? "not-allowed" : "pointer"}" 
-                                    onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${znajomy.nazwa_gracza}', '${znajomy.id}')`}">
-                                ${juzDodan ? "Dodano" : "Dodaj"}
-                            </button>
-                        </div>
-                    `;
-                });
-                html += "</div>";
-                kontener.innerHTML = html;
+                        `;
+                    });
+                    html += "</div>";
+                    kontener.innerHTML = html;
+                } catch (error) {
+                    console.error("Błąd pobierania znajomych do popupu:", error);
+                    kontener.innerHTML = `<p style="color:#fca5a5; font-size: 14px; text-align: center;">Błąd pobierania znajomych: ${error.message || "spróbuj ponownie"}</p>`;
+                }
             };
 
             // NOWA FUNKCJA: Wstawianie znajomego z przypisaniem jego ID
