@@ -141,14 +141,39 @@
             let aktualnaSesja = null;
             let ostatniTokenWyszukiwania = 0;
 
-            async function oczekajNaSupabaseClient(maksProby = 40, opoznienieMs = 100) {
+            async function oczekajNaSupabaseClient(maksProby = 80, opoznienieMs = 100) {
                 let proby = 0;
-                while (!window.supabaseKlient && proby < maksProby) {
+
+                while (proby < maksProby) {
+                    if (window.supabaseClient || window.supabaseKlient) {
+                        client = window.supabaseClient || window.supabaseKlient;
+                        return client;
+                    }
+
+                    if (window.supabase && !window.supabaseClient) {
+                        window.supabaseClient = window.supabase.createClient(
+                            "https://mjebhhagwxtvhggyjwue.supabase.co",
+                            "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
+                            {
+                                global: { fetch: (...args) => fetch(...args) },
+                                auth: {
+                                    persistSession: true,
+                                    autoRefreshToken: true,
+                                    detectSessionInUrl: true,
+                                    lock: async (name, acquireTimeout, fn) => await fn(),
+                                },
+                            },
+                        );
+                        window.supabaseKlient = window.supabaseClient;
+                        client = window.supabaseClient;
+                        return client;
+                    }
+
                     await new Promise((resolve) => setTimeout(resolve, opoznienieMs));
                     proby += 1;
                 }
 
-                client = window.supabaseKlient || null;
+                client = window.supabaseClient || window.supabaseKlient || null;
                 return client;
             }
 
@@ -162,26 +187,33 @@
             }
 
             async function aktywujSesjeSupabase() {
-                if (!client || !client.auth) return null;
+                const klient = client || (await oczekajNaSupabaseClient());
+                if (!klient || !klient.auth) return null;
 
-                let { data: { session }, error } = await zLimitemCzasu(client.auth.getSession(), "sprawdzanie sesji");
-                if (error) console.warn("Supabase getSession error:", error);
+                try {
+                    let { data: { session }, error } = await zLimitemCzasu(klient.auth.getSession(), "sprawdzanie sesji");
+                    if (error) console.warn("Supabase getSession error:", error);
 
-                if (!session?.user) {
-                    const { data: userData, error: userError } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
-                    if (userError) console.warn("Supabase getUser error:", userError);
+                    if (!session?.user) {
+                        const { data: userData, error: userError } = await zLimitemCzasu(klient.auth.getUser(), "weryfikacja użytkownika");
+                        if (userError) console.warn("Supabase getUser error:", userError);
 
-                    if (userData?.user) {
-                        const refreshed = await zLimitemCzasu(client.auth.refreshSession(), "odświeżanie sesji");
-                        if (refreshed?.data?.session) {
-                            session = refreshed.data.session;
-                        } else {
-                            session = { user: userData.user };
+                        if (userData?.user) {
+                            const refreshed = await zLimitemCzasu(klient.auth.refreshSession(), "odświeżanie sesji");
+                            if (refreshed?.data?.session) {
+                                session = refreshed.data.session;
+                            } else {
+                                session = { user: userData.user };
+                            }
                         }
                     }
-                }
 
-                return session;
+                    client = klient;
+                    return session || null;
+                } catch (err) {
+                    console.warn("Błąd aktywacji sesji Supabase:", err);
+                    return null;
+                }
             }
 
             async function autoryzacja() {

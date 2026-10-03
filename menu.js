@@ -22,25 +22,71 @@ function supabaseProxyFetch(input, init) {
     return fetch(new Request(proxyUrl, request));
 }
 
-if (!window.supabaseClient) {
-    if (window.supabase) {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            global: { fetch: supabaseProxyFetch },
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                // KRYTYCZNA ŁATKA DLA IOS / SAFARI - BEZ NIEJ BAZA UMIERA:
-                lock: async (name, acquireTimeout, fn) => await fn()
-            }
-        });
-    } else {
-        console.error("Biblioteka Supabase nie została załadowana przed menu.js!");
+async function inicjalizujSupabaseGlobalnie() {
+    if (window.supabaseClient) {
+        window.supabaseKlient = window.supabaseClient;
+        return window.supabaseClient;
     }
+
+    const maksProby = 50;
+    for (let i = 0; i < maksProby; i += 1) {
+        if (window.supabase) {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                global: { fetch: supabaseProxyFetch },
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    lock: async (name, acquireTimeout, fn) => await fn()
+                }
+            });
+            window.supabaseKlient = window.supabaseClient;
+            return window.supabaseClient;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    console.error("Biblioteka Supabase nie została załadowana przed menu.js!");
+    return null;
 }
+
+window.inicjalizujSupabaseGlobalnie = inicjalizujSupabaseGlobalnie;
+
+(async () => {
+    await inicjalizujSupabaseGlobalnie();
+})();
 
 window.supabaseKlient = window.supabaseClient;
 const supabaseKlient = window.supabaseClient;
+
+window.pobierzAktywnaSesjeSupabase = async function () {
+    const klient = window.supabaseClient || window.supabaseKlient;
+    if (!klient?.auth) return null;
+
+    try {
+        let { data: { session }, error } = await klient.auth.getSession();
+        if (error) console.warn("Supabase getSession error:", error);
+
+        if (!session?.user) {
+            const { data: userData, error: userError } = await klient.auth.getUser();
+            if (userError) console.warn("Supabase getUser error:", userError);
+
+            if (userData?.user) {
+                const refreshed = await klient.auth.refreshSession();
+                if (refreshed?.data?.session) {
+                    session = refreshed.data.session;
+                } else {
+                    session = { user: userData.user };
+                }
+            }
+        }
+
+        return session || null;
+    } catch (err) {
+        console.warn("Błąd pobierania aktywnej sesji:", err);
+        return null;
+    }
+};
 
 async function wczytajFragment(sciezka, selektor, element) {
     // Cache-busting dla iOS Safari (zapobiega serwowaniu starego nagłówka z pamięci)
