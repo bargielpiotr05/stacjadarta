@@ -427,8 +427,17 @@
 
             document.getElementById("input-szukaj").addEventListener("input", async (event) => {
                 const fraza = event.target.value.trim();
+                const kontener = document.getElementById("wyniki-wyszukiwania");
+
+                if (!fraza) {
+                    kontener.innerHTML = `<div class="pusty-stan">Wpisz nick powyżej, aby znaleźć graczy.</div>`;
+                    return;
+                }
+
                 if (fraza.length >= 3) {
                     document.getElementById("btn-szukaj").click();
+                } else {
+                    kontener.innerHTML = `<div class="pusty-stan">Wpisz minimum 3 znaki.</div>`;
                 }
             });
 
