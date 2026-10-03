@@ -31,10 +31,40 @@
         <script src="./menu.js" defer></script>
 
         <script>
-            // Inicjalizacja klienta omijająca konflikt nazw z menu.js
             const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-            window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+            function czySafariIOS() {
+                const userAgent = window.navigator?.userAgent || "";
+                return /iPhone|iPad|iPod/i.test(userAgent) || (/Safari/i.test(userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(userAgent));
+            }
+
+            function supabaseProxyFetch(input, init) {
+                const request = input instanceof Request ? input : new Request(input, init);
+                const url = new URL(request.url);
+
+                if (czySafariIOS()) return fetch(request);
+                if (url.origin !== SUPA_URL || !url.pathname.startsWith("/rest/v1/")) return fetch(request);
+
+                const proxyUrl = new URL(`/api/supabase${url.pathname}${url.search}`, window.location.origin);
+                return fetch(new Request(proxyUrl, request));
+            }
+
+            if (!window.supabaseClient && window.supabase) {
+                window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+                    global: {
+                        fetch: supabaseProxyFetch,
+                    },
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true,
+                        lock: async (name, acquireTimeout, fn) => await fn(),
+                    },
+                });
+            }
+
+            window.supabaseKlient = window.supabaseClient;
         </script>
 
         <!-- Dodane automatyczne poprawki UI -->
