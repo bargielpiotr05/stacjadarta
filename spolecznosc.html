@@ -444,129 +444,131 @@
             // --- 2. MOI ZNAJOMI ---
             async function pobierzZnajomych() {
                 const kontener = document.getElementById("lista-znajomych");
-                let relacje = [];
+                if (!kontener || !aktualnyUser) return;
+
                 try {
-                    const warunki = {
-                        select: "id,zapraszajacy_id,zapraszany_id,status",
-                        status: "eq.zaakceptowane",
-                        limit: "100",
-                    };
+                    const { data: wyslane = [], error: errorWyslane } = await client
+                        .from("znajomi")
+                        .select("id, zapraszajacy_id, zapraszany_id, status")
+                        .eq("status", "zaakceptowane")
+                        .eq("zapraszajacy_id", aktualnyUser.id);
 
-                    const wyslane = await pobierzWierszeApi("znajomi", { ...warunki, zapraszajacy_id: `eq.${aktualnyUser.id}` }, "pobieranie wysłanych relacji");
-                    const otrzymane = await pobierzWierszeApi("znajomi", { ...warunki, zapraszany_id: `eq.${aktualnyUser.id}` }, "pobieranie otrzymanych relacji");
-                    relacje = [...(wyslane || []), ...(otrzymane || [])];
-                } catch (error) {
-                    console.error("Błąd pobierania znajomych:", error);
-                    kontener.textContent = `Błąd pobierania znajomych: ${error.message}`;
-                    return;
-                }
+                    if (errorWyslane) throw errorWyslane;
 
-                if (relacje.length === 0) {
-                    kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
-                    return;
-                }
+                    const { data: otrzymane = [], error: errorOtrzymane } = await client
+                        .from("znajomi")
+                        .select("id, zapraszajacy_id, zapraszany_id, status")
+                        .eq("status", "zaakceptowane")
+                        .eq("zapraszany_id", aktualnyUser.id);
 
-                const idsZnajomych = [...new Set(relacje.map((relacja) => (relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id)))];
-                let wynikProfili;
-                try {
-                    wynikProfili = await pobierzWierszeApi(
-                        "profiles",
-                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
-                        "pobieranie profili znajomych",
-                        false,
-                    );
-                } catch (error) {
-                    kontener.textContent = `Błąd pobierania profili znajomych: ${error.message}`;
-                    return;
-                }
+                    if (errorOtrzymane) throw errorOtrzymane;
 
-                const profilePoId = new Map(wynikProfili.map((profil) => [profil.id, profil]));
-                const znajomi = relacje
-                    .map((relacja) => {
-                        const idZnajomego = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id;
-                        return { relacja, gracz: profilePoId.get(idZnajomego) };
-                    })
-                    .filter((wynikZnajomego) => wynikZnajomego.gracz);
+                    const relacje = [...wyslane, ...otrzymane];
+                    if (!relacje.length) {
+                        kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
+                        return;
+                    }
 
-                if (znajomi.length === 0) {
-                    kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
-                    return;
-                }
+                    const idsZnajomych = [...new Set(relacje.map((relacja) => (relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id)))].filter(Boolean);
 
-                kontener.innerHTML = znajomi
-                    .map(({ relacja, gracz }) => {
-                        return generujKarteGracza(
+                    if (!idsZnajomych.length) {
+                        kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
+                        return;
+                    }
+
+                    const { data: profilData = [], error: errorProfili } = await client
+                        .from("profiles")
+                        .select("id, nazwa_gracza, avatar_url, srednia")
+                        .in("id", idsZnajomych);
+
+                    if (errorProfili) throw errorProfili;
+
+                    const profilePoId = new Map((profilData || []).map((profil) => [profil.id, profil]));
+                    const znajomi = relacje
+                        .map((relacja) => {
+                            const idZnajomego = relacja.zapraszajacy_id === aktualnyUser.id ? relacja.zapraszany_id : relacja.zapraszajacy_id;
+                            return { relacja, gracz: profilePoId.get(idZnajomego) };
+                        })
+                        .filter((wynik) => wynik.gracz);
+
+                    if (!znajomi.length) {
+                        kontener.innerHTML = `<div class="pusty-stan">Nie masz jeszcze dodanych żadnych znajomych.</div>`;
+                        return;
+                    }
+
+                    kontener.innerHTML = znajomi
+                        .map(({ relacja, gracz }) => generujKarteGracza(
                             gracz,
                             `
-                         <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
-                         <button class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Profil</button>
-                         <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
-                        `,
-                        );
-                    })
-                    .join("");
+                             <button class="btn-primary" style="background-color: var(--secondary-color); color: var(--primary-color); font-weight: bold;" onclick="otworzKonfiguracjeGry('${gracz.id}', '${gracz.nazwa_gracza}')">Zagraj</button>
+                             <button class="btn-secondary" onclick="otworzProfil('${gracz.id}')">Profil</button>
+                             <button class="btn-usun" onclick="usunZnajomego('${relacja.id}')">Usuń</button>
+                            `,
+                        ))
+                        .join("");
+                } catch (error) {
+                    console.error("Błąd pobierania znajomych:", error);
+                    kontener.innerHTML = `<div class="pusty-stan">Błąd pobierania znajomych: ${error.message || "spróbuj ponownie"}</div>`;
+                }
             }
 
             // --- 3. ZAPROSZENIA ---
             async function pobierzZaproszenia() {
                 const kontener = document.getElementById("lista-zaproszen");
                 const badge = document.getElementById("badge-zaproszenia");
-                let wynik;
+                if (!kontener || !badge || !aktualnyUser) return;
+
                 try {
-                    wynik = await pobierzWierszeApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id", zapraszany_id: `eq.${aktualnyUser.id}`, status: "eq.oczekujace" },
-                        "pobieranie zaproszeń",
-                    );
+                    const { data: relacje = [], error } = await client
+                        .from("znajomi")
+                        .select("id, zapraszajacy_id, zapraszany_id, status")
+                        .eq("status", "oczekujace")
+                        .eq("zapraszany_id", aktualnyUser.id);
+
+                    if (error) throw error;
+
+                    if (!relacje.length) {
+                        kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
+                        badge.style.display = "none";
+                        return;
+                    }
+
+                    const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))].filter(Boolean);
+                    const { data: profileData = [], error: profileError } = await client
+                        .from("profiles")
+                        .select("id, nazwa_gracza, avatar_url, srednia")
+                        .in("id", idsZapraszajacych);
+
+                    if (profileError) throw profileError;
+
+                    const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
+                    const zaproszenia = relacje
+                        .map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) }))
+                        .filter((relacja) => relacja.zapraszajacy);
+
+                    badge.textContent = zaproszenia.length;
+                    badge.style.display = zaproszenia.length > 0 ? "inline-flex" : "none";
+
+                    if (!zaproszenia.length) {
+                        kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
+                        return;
+                    }
+
+                    kontener.innerHTML = zaproszenia
+                        .map((rel) =>
+                            generujKarteGracza(
+                                rel.zapraszajacy,
+                                `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
+                         <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>
+                         <button class="btn-secondary" onclick="otworzProfil('${rel.zapraszajacy.id}')">Profil</button>`,
+                            ),
+                        )
+                        .join("");
                 } catch (error) {
-                    kontener.textContent = `Błąd pobierania zaproszeń: ${error.message}`;
+                    console.error("Błąd pobierania zaproszeń:", error);
+                    kontener.innerHTML = `<div class="pusty-stan">Błąd pobierania zaproszeń: ${error.message || "spróbuj ponownie"}</div>`;
                     badge.style.display = "none";
-                    return;
                 }
-
-                const relacje = wynik;
-                if (relacje.length === 0) {
-                    kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
-                    badge.style.display = "none";
-                    return;
-                }
-
-                const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))];
-                let wynikProfili;
-                try {
-                    wynikProfili = await pobierzWierszeApi(
-                        "profiles",
-                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZapraszajacych.join(",")})` },
-                        "pobieranie profili zapraszających",
-                        false,
-                    );
-                } catch (error) {
-                    kontener.textContent = `Błąd pobierania profili zapraszających: ${error.message}`;
-                    badge.style.display = "none";
-                    return;
-                }
-
-                const profilePoId = new Map(wynikProfili.map((profil) => [profil.id, profil]));
-                const zaproszenia = relacje.map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) })).filter((relacja) => relacja.zapraszajacy);
-
-                badge.textContent = zaproszenia.length;
-                badge.style.display = zaproszenia.length > 0 ? "inline-flex" : "none";
-
-                if (!zaproszenia.length) {
-                    kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
-                    return;
-                }
-
-                kontener.innerHTML = zaproszenia
-                    .map((rel) =>
-                        generujKarteGracza(
-                            rel.zapraszajacy,
-                            `<button class="btn-primary" onclick="akceptuj('${rel.id}')">Akceptuj</button>
-                     <button class="btn-usun" onclick="usunZnajomego('${rel.id}')">Odrzuć</button>
-                     <button class="btn-secondary" onclick="otworzProfil('${rel.zapraszajacy.id}')">Profil</button>`,
-                        ),
-                    )
-                    .join("");
             }
 
             // --- AKCJE ZNAJOMYCH ---
