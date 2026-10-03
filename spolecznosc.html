@@ -140,6 +140,17 @@
             let aktualnyUser = null;
             let aktualnaSesja = null;
 
+            async function oczekajNaSupabaseClient(maksProby = 30, opoznienieMs = 100) {
+                let proby = 0;
+                while (!window.supabaseKlient && proby < maksProby) {
+                    await new Promise((resolve) => setTimeout(resolve, opoznienieMs));
+                    proby++;
+                }
+
+                client = window.supabaseKlient || null;
+                return client;
+            }
+
             function zLimitemCzasu(obietnica, etap) {
                 let timerId;
                 const timeout = new Promise((resolve, reject) => {
@@ -160,7 +171,7 @@
                 }
 
                 return zLimitemCzasu(
-                    fetch(url, { headers, cache: "no-store" }).then(async (response) => {
+                    fetch(url, { headers, cache: "no-store", credentials: "same-origin" }).then(async (response) => {
                         const wynik = await response.json();
                         if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
                         return wynik;
@@ -170,6 +181,7 @@
             }
 
             async function autoryzacja() {
+                client = client || (await oczekajNaSupabaseClient());
                 if (!client) return false;
                 const {
                     data: { session },
@@ -527,18 +539,22 @@
 
 // Start
             document.addEventListener("DOMContentLoaded", async () => {
-                client = window.supabaseKlient;
+                client = await oczekajNaSupabaseClient();
 
                 if (!client) {
                     console.error("Błąd ładowania Supabase.");
-                    document.getElementById("lista-znajomych").textContent = "Błąd: brak klienta Supabase.";
+                    const listaZnajomych = document.getElementById("lista-znajomych");
+                    if (listaZnajomych) listaZnajomych.textContent = "Błąd: brak klienta Supabase.";
                     return;
                 }
 
                 // Wyzwolenie szukania na Enter w polu tekstowym
-                document.getElementById("input-szukaj").addEventListener("keypress", (e) => {
-                    if (e.key === "Enter") document.getElementById("btn-szukaj").click();
-                });
+                const inputSzukaj = document.getElementById("input-szukaj");
+                if (inputSzukaj) {
+                    inputSzukaj.addEventListener("keypress", (e) => {
+                        if (e.key === "Enter") document.getElementById("btn-szukaj")?.click();
+                    });
+                }
 
                 try {
                     if (await autoryzacja()) {
@@ -546,7 +562,8 @@
                     }
                 } catch (error) {
                     console.error("Błąd inicjalizacji społeczności:", error);
-                    document.getElementById("lista-znajomych").textContent = `Błąd inicjalizacji: ${error.message}`;
+                    const listaZnajomych = document.getElementById("lista-znajomych");
+                    if (listaZnajomych) listaZnajomych.textContent = `Błąd inicjalizacji: ${error.message}`;
                 }
             });
         </script>
