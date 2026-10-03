@@ -776,6 +776,8 @@
                 const kontener = document.getElementById("lista-znajomych-popup");
                 if (!kontener) return;
 
+                kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Sprawdzam znajomych...</p>`;
+
                 const klient = window.supabaseClient || window.supabaseKlient;
                 if (!klient?.auth) {
                     kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Brak połączenia z kontem.</p>`;
@@ -790,13 +792,23 @@
                 }
 
                 try {
-                    const { data: relacje = [], error: relError } = await klient
+                    const { data: wyslane = [], error: errWyslane } = await klient
                         .from("znajomi")
                         .select("id, zapraszajacy_id, zapraszany_id, status")
                         .eq("status", "zaakceptowane")
-                        .or(`zapraszajacy_id.eq.${userId},zapraszany_id.eq.${userId}`);
+                        .eq("zapraszajacy_id", userId);
 
-                    if (relError) throw relError;
+                    if (errWyslane) throw errWyslane;
+
+                    const { data: otrzymane = [], error: errOtrzymane } = await klient
+                        .from("znajomi")
+                        .select("id, zapraszajacy_id, zapraszany_id, status")
+                        .eq("status", "zaakceptowane")
+                        .eq("zapraszany_id", userId);
+
+                    if (errOtrzymane) throw errOtrzymane;
+
+                    const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
                         kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
                         return;
