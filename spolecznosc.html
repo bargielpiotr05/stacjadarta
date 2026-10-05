@@ -187,24 +187,19 @@
             }
 
             async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
-                const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
-                Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
-
                 const probeUrl = new URL("/api/health", window.location.origin);
                 probeUrl.searchParams.set("stage", etap);
-                const probeHeaders = {};
-                if (zSesja && aktualnaSesja?.access_token) probeHeaders.Authorization = `Bearer ${aktualnaSesja.access_token}`;
-                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { headers: probeHeaders, cache: "no-store" }), `ping: ${etap}`);
+                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { cache: "no-store" }), `ping: ${etap}`);
                 if (!probeResponse.ok) throw new Error(`Worker HTTP ${probeResponse.status}`);
 
-                const headers = { apikey: client.supabaseKey };
-                if (zSesja) {
-                    if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
-                    headers.Authorization = `Bearer ${aktualnaSesja.access_token}`;
-                }
-
+                if (zSesja && !aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
                 return zLimitemCzasu(
-                    fetch(url, { headers, cache: "no-store" }).then(async (response) => {
+                    fetch("/api/supabase-read", {
+                        method: "POST",
+                        headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
+                        body: JSON.stringify({ table: tabela, params: parametry, accessToken: zSesja ? aktualnaSesja.access_token : null }),
+                        cache: "no-store",
+                    }).then(async (response) => {
                         const wynik = await response.json();
                         if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
                         return wynik;
