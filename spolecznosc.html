@@ -192,7 +192,9 @@
 
                 const probeUrl = new URL("/api/health", window.location.origin);
                 probeUrl.searchParams.set("stage", etap);
-                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { cache: "no-store" }), `ping: ${etap}`);
+                const probeHeaders = {};
+                if (zSesja && aktualnaSesja?.access_token) probeHeaders.Authorization = `Bearer ${aktualnaSesja.access_token}`;
+                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { headers: probeHeaders, cache: "no-store" }), `ping: ${etap}`);
                 if (!probeResponse.ok) throw new Error(`Worker HTTP ${probeResponse.status}`);
 
                 const headers = { apikey: client.supabaseKey };
