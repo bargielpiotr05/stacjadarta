@@ -186,6 +186,26 @@
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
             }
 
+            async function pobierzWierszeApi(tabela, parametry, etap, zSesja = true) {
+                const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
+                Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
+
+                const headers = { apikey: client.supabaseKey };
+                if (zSesja) {
+                    if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
+                    headers.Authorization = `Bearer ${aktualnaSesja.access_token}`;
+                }
+
+                return zLimitemCzasu(
+                    fetch(url, { headers, cache: "no-store" }).then(async (response) => {
+                        const wynik = await response.json();
+                        if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
+                        return wynik;
+                    }),
+                    etap,
+                );
+            }
+
             async function aktywujSesjeSupabase() {
                 const klient = client || (await oczekajNaSupabaseClient());
                 if (!klient || !klient.auth) return null;
@@ -306,17 +326,17 @@
                 if (!kontener || !client || !aktualnyUser) return;
 
                 try {
-                    const { data: wyslane = [], error: errWyslane } = await zLimitemCzasu(
-                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "zaakceptowane").eq("zapraszajacy_id", aktualnyUser.id),
+                    const wyslane = await pobierzWierszeApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" },
                         "pobieranie wysłanych relacji",
                     );
-                    if (errWyslane) throw errWyslane;
 
-                    const { data: otrzymane = [], error: errOtrzymane } = await zLimitemCzasu(
-                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "zaakceptowane").eq("zapraszany_id", aktualnyUser.id),
+                    const otrzymane = await pobierzWierszeApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" },
                         "pobieranie otrzymanych relacji",
                     );
-                    if (errOtrzymane) throw errOtrzymane;
 
                     const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
@@ -330,11 +350,12 @@
                         return;
                     }
 
-                    const { data: profilData = [], error: errProfili } = await zLimitemCzasu(
-                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZnajomych),
+                    const profilData = await pobierzWierszeApi(
+                        "profiles",
+                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
                         "pobieranie profili znajomych",
+                        false,
                     );
-                    if (errProfili) throw errProfili;
 
                     const profilePoId = new Map((profilData || []).map((profil) => [profil.id, profil]));
                     const znajomi = relacje
@@ -373,11 +394,11 @@
                 if (!kontener || !badge || !client || !aktualnyUser) return;
 
                 try {
-                    const { data: relacje = [], error } = await zLimitemCzasu(
-                        client.from("znajomi").select("id, zapraszajacy_id, zapraszany_id, status").eq("status", "oczekujace").eq("zapraszany_id", aktualnyUser.id),
+                    const relacje = await pobierzWierszeApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.oczekujace", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" },
                         "pobieranie zaproszeń",
                     );
-                    if (error) throw error;
 
                     if (!relacje.length) {
                         kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
@@ -386,11 +407,12 @@
                     }
 
                     const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))].filter(Boolean);
-                    const { data: profileData = [], error: profileError } = await zLimitemCzasu(
-                        client.from("profiles").select("id, nazwa_gracza, avatar_url, srednia").in("id", idsZapraszajacych),
+                    const profileData = await pobierzWierszeApi(
+                        "profiles",
+                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZapraszajacych.join(",")})` },
                         "pobieranie profili zapraszających",
+                        false,
                     );
-                    if (profileError) throw profileError;
 
                     const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
                     const zaproszenia = relacje
