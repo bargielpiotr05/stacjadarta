@@ -308,6 +308,10 @@ async function stworzStolZKonfiguracji() {
     const formatTekst = `${punkty} ${wyjscie.toUpperCase()}`;
     const kodPokoju = "SD-" + Math.floor(1000 + Math.random() * 9000);
 
+    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+    if (sessionError) throw sessionError;
+    const hostUserId = sessionData.session?.user?.id || null;
+
     const hostToken = "usr_" + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem(`sd_token_${kodPokoju}`, hostToken);
 
@@ -316,6 +320,7 @@ async function stworzStolZKonfiguracji() {
       .insert([
         {
           kod_pokoju: kodPokoju,
+          host_id: hostUserId,
           host_ip: mojeIP,
           host_nazwa: nick,
           host_token: hostToken,
