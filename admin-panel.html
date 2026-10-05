@@ -280,8 +280,17 @@
             });
             const ADMIN_EMAIL = "bargielpiotr05@gmail.com";
 
+            function adminZLimitemCzasu(obietnica, etap) {
+                let timerId;
+                const timeout = new Promise((resolve, reject) => {
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 12000);
+                });
+                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
             async function autoryzujAdmina() {
-                const { data: { session } } = await adminSupabase.auth.getSession();
+                const { data: { session }, error } = await adminZLimitemCzasu(adminSupabase.auth.getSession(), "weryfikacja sesji administratora");
+                if (error) throw error;
                 const user = session?.user;
 
                 // Odkomentuj poniższą linię, jeśli testujesz lokalnie i nie chcesz blokady logowania:
@@ -306,26 +315,32 @@
 
             async function zaladujKafelki() {
                 // 1. Liczba profili
-                const { count: countProfiles } = await adminSupabase
-                    .from("profiles")
-                    .select("*", { count: "exact", head: true });
+                const { count: countProfiles, error: profilesError } = await adminZLimitemCzasu(
+                    adminSupabase.from("profiles").select("*", { count: "exact", head: true }),
+                    "liczenie profili",
+                );
+                if (profilesError) throw profilesError;
 
                 // 2. Liczba zakończonych meczów
-                const { count: countMatches } = await adminSupabase
-                    .from("matches")
-                    .select("*", { count: "exact", head: true });
+                const { count: countMatches, error: matchesError } = await adminZLimitemCzasu(
+                    adminSupabase.from("matches").select("*", { count: "exact", head: true }),
+                    "liczenie meczów",
+                );
+                if (matchesError) throw matchesError;
 
                 // 3. Pokoje Live
-                const { count: countLive } = await adminSupabase
-                    .from("rooms")
-                    .select("*", { count: "exact", head: true })
-                    .eq("status", "in_progress");
+                const { count: countLive, error: liveError } = await adminZLimitemCzasu(
+                    adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
+                    "liczenie aktywnych pokoi",
+                );
+                if (liveError) throw liveError;
 
                 // 4. Pokoje Waiting
-                const { count: countWaiting } = await adminSupabase
-                    .from("rooms")
-                    .select("*", { count: "exact", head: true })
-                    .eq("status", "waiting");
+                const { count: countWaiting, error: waitingError } = await adminZLimitemCzasu(
+                    adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "waiting"),
+                    "liczenie oczekujących pokoi",
+                );
+                if (waitingError) throw waitingError;
 
                 document.getElementById("stat-profiles-count").innerText = countProfiles || 0;
                 document.getElementById("stat-matches-count").innerText = countMatches || 0;
@@ -335,9 +350,10 @@
 
             async function zaladujMecze() {
                 // Pobieramy mecze wraz z relacjami do tabeli profiles dla czytelnych nazw graczy
-                const { data: matches, error } = await adminSupabase
-                    .from("matches")
-                    .select(`
+                const { data: matches, error } = await adminZLimitemCzasu(
+                    adminSupabase
+                        .from("matches")
+                        .select(`
                         id,
                         utworzono,
                         wynik_host,
@@ -346,9 +362,11 @@
                         host:host_id(nazwa_gracza),
                         gosc:gosc_id(nazwa_gracza),
                         zwyciezca:zwyciezca_id(nazwa_gracza)
-                    `)
-                    .order("utworzono", { ascending: false })
-                    .limit(50);
+                        `)
+                        .order("utworzono", { ascending: false })
+                        .limit(50),
+                    "pobieranie listy meczów",
+                );
 
                 const tbody = document.getElementById("matches-tbody");
                 tbody.innerHTML = "";
@@ -381,11 +399,10 @@
             }
 
             async function zaladujPokoje() {
-                const { data: rooms, error } = await adminSupabase
-                    .from("rooms")
-                    .select("*")
-                    .order("utworzono", { ascending: false })
-                    .limit(30);
+                const { data: rooms, error } = await adminZLimitemCzasu(
+                    adminSupabase.from("rooms").select("*").order("utworzono", { ascending: false }).limit(30),
+                    "pobieranie listy pokoi",
+                );
 
                 const tbody = document.getElementById("rooms-tbody");
                 tbody.innerHTML = "";
@@ -421,11 +438,10 @@
             }
 
             async function zaladujProfile() {
-                const { data: profiles, error } = await adminSupabase
-                    .from("profiles")
-                    .select("*")
-                    .order("utworzono", { ascending: false })
-                    .limit(50);
+                const { data: profiles, error } = await adminZLimitemCzasu(
+                    adminSupabase.from("profiles").select("*").order("utworzono", { ascending: false }).limit(50),
+                    "pobieranie listy profili",
+                );
 
                 const tbody = document.getElementById("profiles-tbody");
                 tbody.innerHTML = "";
@@ -472,16 +488,33 @@
             }
 
             async function odswiezWszystko() {
-                await zaladujKafelki();
-                await zaladujMecze();
-                await zaladujPokoje();
-                await zaladujProfile();
+                const status = document.getElementById("admin-auth-info");
+                try {
+                    if (status) status.textContent = "Pobieranie liczników...";
+                    await zaladujKafelki();
+                    if (status) status.textContent = "Pobieranie meczów...";
+                    await zaladujMecze();
+                    if (status) status.textContent = "Pobieranie pokoi...";
+                    await zaladujPokoje();
+                    if (status) status.textContent = "Pobieranie profili...";
+                    await zaladujProfile();
+                    if (status) status.textContent = "Dane odświeżone.";
+                } catch (error) {
+                    console.error("Błąd odświeżania panelu:", error);
+                    if (status) status.textContent = `Błąd panelu: ${error.message || "nieznany błąd"}`;
+                    throw error;
+                }
             }
 
             document.addEventListener("DOMContentLoaded", async () => {
-                const ok = await autoryzujAdmina();
-                if (ok) {
-                    await odswiezWszystko();
+                const status = document.getElementById("admin-auth-info");
+                try {
+                    if (status) status.textContent = "Weryfikacja sesji administratora...";
+                    const ok = await autoryzujAdmina();
+                    if (ok) await odswiezWszystko();
+                } catch (error) {
+                    console.error("Błąd inicjalizacji panelu:", error);
+                    if (status) status.textContent = `Błąd panelu: ${error.message || "nieznany błąd"}`;
                 }
             });
         </script>
