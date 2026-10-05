@@ -1967,7 +1967,10 @@
 
                 // 2. Zapis do Supabase
                 const klientBazy = window.supabaseClient || window.supabaseKlient;
-                if (!klientBazy) return;
+                if (!klientBazy) {
+                    alert("Mecz rozegrany, ale brak klienta Supabase — statystyki nie zostały zapisane.");
+                    return;
+                }
 
                 // ================================================================
                 // BLOKADA ANTY-DUPLIKATOWA: Tylko Host zapisuje mecz do chmury!
@@ -1985,6 +1988,7 @@
                     const user = sessionData?.session?.user;
                     if (!user) {
                         console.warn("Brak aktywnej sesji – mecz zapisany tylko lokalnie.");
+                        alert("Mecz zapisany lokalnie, ale nie znaleziono sesji konta. Zaloguj się ponownie, aby zapisać statystyki online.");
                         return;
                     }
 
@@ -2021,6 +2025,7 @@
 
                     if (!mojGracz) {
                         console.log("Pominięto zapis – zalogowany użytkownik nie brał udziału w meczu turniejowym.");
+                        alert("Nie zapisano statystyk: nie udało się dopasować Twojego konta do gracza w meczu.");
                         return;
                     }
 
@@ -2031,7 +2036,9 @@
                     const moje180 = statyMojGracz?.liczba180 || 0;
 
                     // KROK A: Aktualizacja Hosta
-                    const { data: obecnyProfil } = await klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle();
+                    const { data: obecnyProfil, error: bladOdczytuProfilu } = await klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle();
+                    if (bladOdczytuProfilu) throw bladOdczytuProfilu;
+                    if (!obecnyProfil) throw new Error("Nie znaleziono profilu zalogowanego gracza.");
 
                     if (obecnyProfil) {
                         const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
@@ -2059,7 +2066,8 @@
                     // KROK B: Identyfikacja UUID Gościa (naprawia "DartBot")
                     let gosc_id_db = null;
                     if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined") {
-                        const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
+                        const { data: pok, error: bladOdczytuPokoju } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
+                        if (bladOdczytuPokoju) throw bladOdczytuPokoju;
                         if (pok && pok.gosc_id) {
                             gosc_id_db = pok.gosc_id;
                         }
@@ -2067,6 +2075,10 @@
                         if (rywalGracz && window.idZnajomychWGrze && window.idZnajomychWGrze[rywalGracz.nazwa]) {
                             gosc_id_db = window.idZnajomychWGrze[rywalGracz.nazwa];
                         }
+                    }
+
+                    if (rywalGracz && !rywalGracz.czyBot && !gosc_id_db && Object.keys(window.idZnajomychWGrze || {}).length > 0) {
+                        throw new Error(`Nie znaleziono UUID profilu rywala „${rywalGracz.nazwa}”. Usuń go z uczestników i dodaj ponownie z listy znajomych.`);
                     }
 
                     let idZwyciezcy = null;
@@ -2093,8 +2105,11 @@
                     // KROK D: Zaktualizuj profil rywala
                     if (gosc_id_db && rywalGracz) {
                         const statyRywal = podsumowanieMeczu.gracze.find((g) => g.id === rywalGracz.id);
+                        if (!statyRywal) throw new Error(`Brak podsumowania statystyk gracza „${rywalGracz.nazwa}”.`);
                         if (statyRywal) {
-                            const { data: profRywal } = await klientBazy.from("profiles").select("*").eq("id", gosc_id_db).maybeSingle();
+                            const { data: profRywal, error: bladOdczytuRywale } = await klientBazy.from("profiles").select("*").eq("id", gosc_id_db).maybeSingle();
+                            if (bladOdczytuRywale) throw bladOdczytuRywale;
+                            if (!profRywal) throw new Error(`Nie znaleziono profilu rywala „${rywalGracz.nazwa}”.`);
                             if (profRywal) {
                                 const dotychczasMeczeR = parseInt(profRywal.rozegrane_mecze) || 0;
                                 const dotychczasWygraneR = parseInt(profRywal.wygrane_mecze) || 0;
