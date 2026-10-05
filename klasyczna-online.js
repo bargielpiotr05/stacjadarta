@@ -37,6 +37,52 @@ async function pobierzWierszeOnline(tabela, params, accessToken, etap) {
   return result;
 }
 
+async function przypiszGosciaDoPokoju(kod, user, nick, hostId, accessToken) {
+  const klient = window.supabaseClient || window.supabaseKlient;
+  const wyslij = async (token) => {
+    const response = await onlineZLimitemCzasu(fetch("/api/supabase-write", {
+      method: "POST",
+      headers: { apikey: klient.supabaseKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        table: "rooms",
+        operation: "update",
+        filters: { kod_pokoju: kod, status: "waiting", gosc_id: null },
+        values: {
+          gosc_id: user.id,
+          gosc_nazwa: nick,
+          status: "in_progress",
+          aktualny_gracz_id: hostId,
+          stan_meczu: { tura: 1, pozostale_rzuty: 3 },
+        },
+        accessToken: token,
+      }),
+      cache: "no-store",
+    }), "zapisywanie gościa w pokoju");
+
+    const text = await response.text();
+    const rows = text ? JSON.parse(text) : [];
+    if (!response.ok) {
+      const error = new Error(rows.message || rows.details || `Błąd HTTP ${response.status}`);
+      error.code = rows.code;
+      throw error;
+    }
+    if (!Array.isArray(rows) || !rows[0]) {
+      throw new Error("Pokój nie został zaktualizowany. Sprawdź, czy nadal czeka na gościa i politykę UPDATE tabeli rooms.");
+    }
+    return rows[0];
+  };
+
+  try {
+    return await wyslij(accessToken);
+  } catch (error) {
+    if (!/JWT issued at future/i.test(error.message)) throw error;
+    const refreshed = await onlineZLimitemCzasu(klient.auth.refreshSession(), "odświeżanie sesji gościa");
+    const freshToken = refreshed.data?.session?.access_token;
+    if (refreshed.error || !freshToken) throw new Error(refreshed.error?.message || error.message);
+    return wyslij(freshToken);
+  }
+}
+
 const parametryURL = new URLSearchParams(window.location.search);
 const onlineKodPokoju = parametryURL.get("pokoj");
 const onlineTryb = parametryURL.get("tryb");
@@ -245,16 +291,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
       const mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
       
       // Claim the empty room and start it in one guarded update; the host observes this state change.
-      const { data: pokojPoDolaczeniu, error: bladDolaczenia } = await supabaseClient.from('rooms').update({
-         gosc_id: user.id,
-        gosc_nazwa: mojNick,
-        status: "in_progress",
-        aktualny_gracz_id: pokoj.host_id,
-        stan_meczu: { tura: 1, pozostale_rzuty: 3 }
-      }).eq('kod_pokoju', kod).eq("status", "waiting").is("gosc_id", null).select("kod_pokoju,gosc_id,gosc_nazwa,status,aktualny_gracz_id,stan_meczu").maybeSingle();
-      if (bladDolaczenia) throw bladDolaczenia;
-      if (!pokojPoDolaczeniu) throw new Error("Nie udało się przypisać Cię do stołu. Może dołączył już inny gracz.");
-      
+      const pokojPoDolaczeniu = await przypiszGosciaDoPokoju(kod, user, mojNick, pokoj.host_id, session.access_token);
       Object.assign(pokoj, pokojPoDolaczeniu);
     } 
     // 4. Stół pełny - mogę być tylko widzem
@@ -371,6 +408,48 @@ async function inicjalizujPoczekalnieOnline(kod) {
         .maybeSingle();
 
       if (bladPobierania || !aktualnyPokoj) return;
+
+      if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting") {
+        try {
+          const zaproszenia = await pobierzWierszeOnline("game_invites", {
+            select: "status,kod_pokoju",
+            kod_pokoju: `eq.${kod}`,
+            od_kogo_id: `eq.${aktualnyPokoj.host_id}`,
+            limit: "1",
+          }, session?.access_token || null, "sprawdzanie odpowiedzi na zaproszenie");
+
+          if (zaproszenia[0]?.status === "odrzucone") {
+            if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
+            timerSprawdzaniaPoczekalni = null;
+            if (kanalCzekaniaPoczekalni) {
+              supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+              kanalCzekaniaPoczekalni = null;
+            }
+
+            const statusBox = document.getElementById("status-oczekiwania");
+            if (statusBox) {
+              statusBox.innerHTML = "";
+              const komunikat = document.createElement("span");
+              komunikat.textContent = "Znajomy odrzucił zaproszenie do gry.";
+              komunikat.style.color = "#fca5a5";
+              statusBox.appendChild(komunikat);
+
+              const przyciskPowrotu = document.createElement("button");
+              przyciskPowrotu.type = "button";
+              przyciskPowrotu.textContent = "Wróć do lobby";
+              przyciskPowrotu.style.cssText = "display:block;margin:16px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700";
+              przyciskPowrotu.onclick = async () => {
+                await usunAktualnyPokoj();
+                window.location.href = "./online.html";
+              };
+              statusBox.appendChild(przyciskPowrotu);
+            }
+            return;
+          }
+        } catch (error) {
+          console.warn("Błąd sprawdzania statusu zaproszenia:", error);
+        }
+      }
 
       if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting" && aktualnyPokoj.gosc_id) {
         const { error: bladStartu } = await supabaseClient

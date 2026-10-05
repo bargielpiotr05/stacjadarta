@@ -98,15 +98,18 @@ export default {
       }
 
       const { table, params, accessToken } = payload || {};
-      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "kod_pokoju", "id", "limit", "nazwa_gracza", "or"]);
-      if (!new Set(["znajomi", "profiles", "rooms"]).has(table) || !params || typeof params !== "object") {
+      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "kod_pokoju", "od_kogo_id", "do_kogo_id", "id", "limit", "nazwa_gracza", "or"]);
+      if (!new Set(["znajomi", "profiles", "rooms", "game_invites"]).has(table) || !params || typeof params !== "object") {
         return Response.json({ message: "Nieprawidłowa tabela lub parametry." }, { status: 400 });
       }
-      if (table === "znajomi" && (typeof accessToken !== "string" || !accessToken)) {
+      if ((table === "znajomi" || table === "game_invites") && (typeof accessToken !== "string" || !accessToken)) {
         return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
       }
       if (table === "rooms" && params.select !== "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc") {
         return Response.json({ message: "Niedozwolony zakres odczytu pokoju." }, { status: 400 });
+      }
+      if (table === "game_invites" && params.select !== "status,kod_pokoju") {
+        return Response.json({ message: "Niedozwolony zakres odczytu zaproszenia." }, { status: 400 });
       }
 
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
@@ -200,12 +203,35 @@ export default {
         body = JSON.stringify(records);
         returnRepresentation = table === "rooms";
       } else if (operation === "update") {
-        if (table !== "znajomi" || !filters.id || !values || values.status !== "zaakceptowane" || Object.keys(values).some((key) => key !== "status")) {
-          return Response.json({ message: "Nieprawidłowa aktualizacja relacji." }, { status: 400 });
+        if (table === "znajomi") {
+          if (!filters.id || !values || values.status !== "zaakceptowane" || Object.keys(values).some((key) => key !== "status")) {
+            return Response.json({ message: "Nieprawidłowa aktualizacja relacji." }, { status: 400 });
+          }
+          upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
+          method = "PATCH";
+          body = JSON.stringify(values);
+        } else if (table === "rooms") {
+          const allowedFields = new Set(["gosc_id", "gosc_nazwa", "status", "aktualny_gracz_id", "stan_meczu"]);
+          if (
+            !filters.kod_pokoju ||
+            filters.status !== "waiting" ||
+            filters.gosc_id !== null ||
+            !values?.gosc_id ||
+            values.status !== "in_progress" ||
+            values.aktualny_gracz_id === undefined ||
+            Object.keys(values).some((key) => !allowedFields.has(key))
+          ) {
+            return Response.json({ message: "Nieprawidłowe przypisanie gościa do pokoju." }, { status: 400 });
+          }
+          upstreamUrl.searchParams.set("kod_pokoju", `eq.${filters.kod_pokoju}`);
+          upstreamUrl.searchParams.set("status", "eq.waiting");
+          upstreamUrl.searchParams.set("gosc_id", "is.null");
+          method = "PATCH";
+          body = JSON.stringify(values);
+          returnRepresentation = true;
+        } else {
+          return Response.json({ message: "Nieprawidłowa aktualizacja." }, { status: 400 });
         }
-        upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
-        method = "PATCH";
-        body = JSON.stringify(values);
       } else if (operation === "delete") {
         if (table === "znajomi" && filters.id) {
           upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
