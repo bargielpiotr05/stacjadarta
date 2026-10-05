@@ -613,7 +613,9 @@
                 const zasadyIn = document.getElementById("konf-in").value;
                 const zasadyOut = document.getElementById("konf-out").value;
                 const formatGry = `${punktyStartowe} ${zasadyOut.toUpperCase()}`;
-                const kodPokoju = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const alfabetKodu = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                const losoweBajty = crypto.getRandomValues(new Uint8Array(6));
+                const kodPokoju = `SD-${Array.from(losoweBajty, (bajt) => alfabetKodu[bajt % alfabetKodu.length]).join("")}`;
                 const mojNick = aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz");
 
                 let pokoje;
