@@ -654,6 +654,39 @@
                 }
             }
 
+            function zLimitemCzasu(obietnica, etap) {
+                let timerId;
+                const timeout = new Promise((resolve, reject) => {
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 12000);
+                });
+                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
+            async function pobierzWierszeZnajomychApi(tabela, parametry, etap, accessToken = null) {
+                const klient = window.supabaseClient || window.supabaseKlient;
+                const wyslij = async (token) => {
+                    const response = await fetch("/api/supabase-read", {
+                        method: "POST",
+                        headers: { apikey: klient.supabaseKey, "Content-Type": "application/json" },
+                        body: JSON.stringify({ table: tabela, params: parametry, accessToken: token }),
+                        cache: "no-store",
+                    });
+                    const wynik = await response.json();
+                    if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
+                    return wynik;
+                };
+
+                try {
+                    return await zLimitemCzasu(wyslij(accessToken), etap);
+                } catch (error) {
+                    if (!accessToken || !/JWT issued at future/i.test(error.message)) throw error;
+                    const refreshed = await zLimitemCzasu(klient.auth.refreshSession(), "odświeżanie sesji znajomych");
+                    const freshToken = refreshed.data?.session?.access_token;
+                    if (refreshed.error || !freshToken) throw new Error(refreshed.error?.message || error.message);
+                    return zLimitemCzasu(wyslij(freshToken), etap);
+                }
+            }
+
             // 2. OBSŁUGA POPUPU DODAWANIA GRACZA
             window.otworzPopupDodajGracza = function (domyslnaZakladka = "gracz-znajomi") {
                 const popup = document.getElementById("popup-dodaj-gracza");
@@ -774,29 +807,27 @@
                     return;
                 }
 
-                const session = await pobierzAktywnaSesjeSupabase();
-                const userId = session?.user?.id;
-                if (!userId) {
-                    kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Zaloguj się, aby zobaczyć znajomych.</p>`;
-                    return;
-                }
-
                 try {
-                    const { data: wyslane = [], error: errWyslane } = await klient
-                        .from("znajomi")
-                        .select("id, zapraszajacy_id, zapraszany_id, status")
-                        .eq("status", "zaakceptowane")
-                        .eq("zapraszajacy_id", userId);
+                    const session = await zLimitemCzasu(pobierzAktywnaSesjeSupabase(), "odczyt sesji znajomych");
+                    const userId = session?.user?.id;
+                    if (!userId) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Zaloguj się, aby zobaczyć znajomych.</p>`;
+                        return;
+                    }
 
-                    if (errWyslane) throw errWyslane;
+                    const wyslane = await pobierzWierszeZnajomychApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${userId}` },
+                        "pobieranie wysłanych relacji znajomych",
+                        session.access_token,
+                    );
 
-                    const { data: otrzymane = [], error: errOtrzymane } = await klient
-                        .from("znajomi")
-                        .select("id, zapraszajacy_id, zapraszany_id, status")
-                        .eq("status", "zaakceptowane")
-                        .eq("zapraszany_id", userId);
-
-                    if (errOtrzymane) throw errOtrzymane;
+                    const otrzymane = await pobierzWierszeZnajomychApi(
+                        "znajomi",
+                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${userId}` },
+                        "pobieranie otrzymanych relacji znajomych",
+                        session.access_token,
+                    );
 
                     const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
@@ -810,12 +841,11 @@
                         return;
                     }
 
-                    const { data: profileData = [], error: profileError } = await klient
-                        .from("profiles")
-                        .select("id, nazwa_gracza, avatar_url, srednia")
-                        .in("id", idsZnajomych);
-
-                    if (profileError) throw profileError;
+                    const profileData = await pobierzWierszeZnajomychApi(
+                        "profiles",
+                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
+                        "pobieranie profili znajomych",
+                    );
 
                     const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
                     const znajomi = relacje
