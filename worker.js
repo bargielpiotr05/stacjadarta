@@ -4,6 +4,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/health" && request.method === "GET") {
+      return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+    }
+
     if (url.pathname === "/api/profiles") {
       if (request.method !== "GET") {
         return new Response("Method not allowed", { status: 405, headers: { Allow: "GET" } });

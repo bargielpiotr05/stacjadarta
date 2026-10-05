@@ -551,6 +551,18 @@
             };
 
             document.addEventListener("DOMContentLoaded", async () => {
+                const listaZnajomych = document.getElementById("lista-znajomych");
+                if (listaZnajomych) listaZnajomych.textContent = "Skrypt społeczności działa. Sprawdzam Worker...";
+
+                try {
+                    const healthResponse = await zLimitemCzasu(fetch("./api/health", { cache: "no-store" }), "kontakt z Workerem");
+                    if (!healthResponse.ok) throw new Error(`Worker HTTP ${healthResponse.status}`);
+                    if (listaZnajomych) listaZnajomych.textContent = "Worker odpowiada. Sprawdzam klienta Supabase...";
+                } catch (error) {
+                    if (listaZnajomych) listaZnajomych.textContent = `Błąd kontaktu z Workerem: ${error.message}`;
+                    return;
+                }
+
                 client = await oczekajNaSupabaseClient();
 
                 if (!client) {
@@ -558,6 +570,8 @@
                     if (listaZnajomych) listaZnajomych.textContent = "Błąd: brak klienta Supabase.";
                     return;
                 }
+
+                if (listaZnajomych) listaZnajomych.textContent = "Klient Supabase gotowy. Sprawdzam sesję...";
 
                 const inputSzukaj = document.getElementById("input-szukaj");
                 const btnSzukaj = document.getElementById("btn-szukaj");
@@ -649,11 +663,11 @@
 
                 try {
                     if (await autoryzacja()) {
+                        if (listaZnajomych) listaZnajomych.textContent = "Sesja potwierdzona. Pobieram relacje...";
                         await Promise.allSettled([pobierzZnajomych(), pobierzZaproszenia()]);
                     }
                 } catch (error) {
                     console.error("Błąd inicjalizacji społeczności:", error);
-                    const listaZnajomych = document.getElementById("lista-znajomych");
                     if (listaZnajomych) listaZnajomych.textContent = `Błąd inicjalizacji: ${error.message}`;
                 }
             });
