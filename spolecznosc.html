@@ -194,16 +194,36 @@
 
                 if (zSesja && !aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
                 return zLimitemCzasu(
-                    fetch("/api/supabase-read", {
-                        method: "POST",
-                        headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
-                        body: JSON.stringify({ table: tabela, params: parametry, accessToken: zSesja ? aktualnaSesja.access_token : null }),
-                        cache: "no-store",
-                    }).then(async (response) => {
-                        const wynik = await response.json();
+                    (async () => {
+                        const wyslij = async (accessToken) => {
+                            const response = await fetch("/api/supabase-read", {
+                                method: "POST",
+                                headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
+                                body: JSON.stringify({ table: tabela, params: parametry, accessToken }),
+                                cache: "no-store",
+                            });
+                            return { response, wynik: await response.json() };
+                        };
+
+                        let accessToken = zSesja ? aktualnaSesja.access_token : null;
+                        let { response, wynik } = await wyslij(accessToken);
+                        const message = wynik.message || wynik.details || "";
+
+                        if (response.status === 401 && zSesja && /JWT issued at future/i.test(message)) {
+                            const refreshed = await client.auth.refreshSession();
+                            if (refreshed.error || !refreshed.data.session?.access_token) {
+                                throw new Error(refreshed.error?.message || message);
+                            }
+
+                            aktualnaSesja = refreshed.data.session;
+                            aktualnyUser = refreshed.data.session.user;
+                            accessToken = refreshed.data.session.access_token;
+                            ({ response, wynik } = await wyslij(accessToken));
+                        }
+
                         if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
                         return wynik;
-                    }),
+                    })(),
                     etap,
                 );
             }
