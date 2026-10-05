@@ -2014,6 +2014,8 @@
                         }
                         if (mojGracz) {
                             rywalGracz = gracze.find((g) => g.id !== mojGracz.id) || null;
+                            const dodanyZnajomy = gracze.find((g) => g.id !== mojGracz.id && window.idZnajomychWGrze?.[g.nazwa]);
+                            if (dodanyZnajomy) rywalGracz = dodanyZnajomy;
                         }
                     }
 
@@ -2085,7 +2087,8 @@
                         statystyki_graczy: podsumowanieMeczu.gracze,
                     };
 
-                    await klientBazy.from("matches").insert([payloadMeczu]);
+                    const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
+                    if (bladZapisuMeczu) throw bladZapisuMeczu;
 
                     // KROK D: Zaktualizuj profil rywala
                     if (gosc_id_db && rywalGracz) {
@@ -2107,7 +2110,7 @@
                                 const nowaSrednia9OgolnaR = dotychczasMeczeR === 0 ? nowaSrednia9Rywal.toFixed(2) : ((dotychczasSrednia9R * dotychczasMeczeR + nowaSrednia9Rywal) / noweMeczeR).toFixed(2);
                                 const czyRywalWygral = idZwyciezcy === gosc_id_db;
 
-                                await klientBazy
+                                const { data: zaktualizowanyProfilRywala, error: bladAktualizacjiRywala } = await klientBazy
                                     .from("profiles")
                                     .update({
                                         rozegrane_mecze: noweMeczeR,
@@ -2116,12 +2119,20 @@
                                         srednia_9_lotek: nowaSrednia9OgolnaR,
                                         ilosc_180: dotychczas180R + (statyRywal.liczba180 || 0),
                                     })
-                                    .eq("id", gosc_id_db);
+                                    .eq("id", gosc_id_db)
+                                    .select("id")
+                                    .maybeSingle();
+
+                                if (bladAktualizacjiRywala) throw bladAktualizacjiRywala;
+                                if (!zaktualizowanyProfilRywala) {
+                                    alert("Mecz zapisano, ale statystyki znajomego nie zostały zmienione. Sprawdź politykę UPDATE tabeli profiles.");
+                                }
                             }
                         }
                     }
                 } catch (error) {
                     console.error("Błąd zapisu meczu do Supabase:", error);
+                    alert(`Błąd zapisu meczu lub statystyk: ${error.message || "nieznany błąd"}`);
                 }
             }
 
