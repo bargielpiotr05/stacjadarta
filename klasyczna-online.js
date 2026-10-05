@@ -8,6 +8,8 @@ let mojIndeksOnline = -1; // 0 = Host, 1 = Gość, -1 = Widz
 let kanalMeczuRealtime = null;
 let kanalCzekaniaPoczekalni = null;
 let czyMeczJuzWystartowal = false;
+let timerSprawdzaniaPoczekalni = null;
+let sprawdzaniePoczekalni = false;
 let odbieranieRzutuZSieci = false;
 let lokalnaWersjaStanu = 0;
 let czyMeczZakonczonyOnline = false;
@@ -302,6 +304,58 @@ async function inicjalizujPoczekalnieOnline(kod) {
       }
     )
     .subscribe();
+
+  timerSprawdzaniaPoczekalni = window.setInterval(async () => {
+    if (czyMeczJuzWystartowal) {
+      clearInterval(timerSprawdzaniaPoczekalni);
+      timerSprawdzaniaPoczekalni = null;
+      return;
+    }
+    if (sprawdzaniePoczekalni) return;
+
+    sprawdzaniePoczekalni = true;
+    try {
+      const { data: aktualnyPokoj, error: bladPobierania } = await supabaseClient
+        .from("rooms")
+        .select("*")
+        .eq("kod_pokoju", kod)
+        .maybeSingle();
+
+      if (bladPobierania || !aktualnyPokoj) return;
+
+      if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting" && aktualnyPokoj.gosc_id) {
+        const { error: bladStartu } = await supabaseClient
+          .from("rooms")
+          .update({
+            status: "in_progress",
+            aktualny_gracz_id: aktualnyPokoj.host_id,
+            stan_meczu: { tura: 1, pozostale_rzuty: 3 },
+          })
+          .eq("kod_pokoju", kod)
+          .eq("status", "waiting");
+
+        if (bladStartu) return;
+        aktualnyPokoj.status = "in_progress";
+        aktualnyPokoj.aktualny_gracz_id = aktualnyPokoj.host_id;
+        aktualnyPokoj.stan_meczu = { tura: 1, pozostale_rzuty: 3 };
+      }
+
+      if (aktualnyPokoj.status === "in_progress" || aktualnyPokoj.status === "finished") {
+        if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
+        timerSprawdzaniaPoczekalni = null;
+        if (kanalCzekaniaPoczekalni) {
+          supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+          kanalCzekaniaPoczekalni = null;
+        }
+        document.getElementById("poczekalnia-online")?.remove();
+        startMeczuOnline(aktualnyPokoj);
+      }
+    } catch (blad) {
+      console.warn("Błąd sprawdzania statusu stołu:", blad);
+    } finally {
+      sprawdzaniePoczekalni = false;
+    }
+  }, 3000);
 }
 
 // ============================================================
@@ -310,6 +364,8 @@ async function inicjalizujPoczekalnieOnline(kod) {
 function startMeczuOnline(pokoj) {
   if (czyMeczJuzWystartowal) return;
   czyMeczJuzWystartowal = true;
+  if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
+  timerSprawdzaniaPoczekalni = null;
 
   if (kanalCzekaniaPoczekalni) {
     supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
@@ -800,7 +856,8 @@ function podepnijNasluchSilnika() {
           const sUrl = window.SUPABASE_URL || "https://mjebhhagwxtvhggyjwue.supabase.co";
           const sKey = window.SUPABASE_ANON_KEY || "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-          fetch(`${sUrl}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
+          const fetchPostgrest = window.supabaseProxyFetch || fetch;
+          fetchPostgrest(`${sUrl}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
             method: "DELETE",
             headers: {
               apikey: sKey,

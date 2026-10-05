@@ -1,26 +1,55 @@
 const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-function czySafariIOS() {
-    const userAgent = window.navigator?.userAgent || "";
-    return /iPhone|iPad|iPod/i.test(userAgent) || (/Safari/i.test(userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(userAgent));
-}
-
-function supabaseProxyFetch(input, init) {
+async function supabaseProxyFetch(input, init) {
     const request = input instanceof Request ? input : new Request(input, init);
     const url = new URL(request.url);
-
-    if (czySafariIOS()) {
-        return fetch(request);
-    }
 
     if (url.origin !== SUPABASE_URL || !url.pathname.startsWith("/rest/v1/")) {
         return fetch(request);
     }
 
-    const proxyUrl = new URL(`/api/supabase${url.pathname}${url.search}`, window.location.origin);
-    return fetch(new Request(proxyUrl, request));
+    const forwardedHeaders = {};
+    for (const name of ["accept", "accept-profile", "content-type", "content-profile", "prefer", "range", "range-unit", "if-match", "if-none-match", "x-client-info"]) {
+        const value = request.headers.get(name);
+        if (value) forwardedHeaders[name] = value;
+    }
+
+    const authorization = request.headers.get("authorization") || "";
+    const accessToken = authorization.replace(/^Bearer\s+/i, "") || null;
+    const body = ["GET", "HEAD"].includes(request.method) ? null : await request.clone().text();
+    const payload = { path: `${url.pathname}${url.search}`, method: request.method, headers: forwardedHeaders, body, accessToken };
+
+    const wyslij = (token) => fetch("/api/supabase-request", {
+        method: "POST",
+        headers: {
+            apikey: request.headers.get("apikey") || SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...payload, accessToken: token }),
+        cache: "no-store",
+        keepalive: request.keepalive,
+    });
+
+    let response = await wyslij(accessToken);
+    if (response.status === 401) {
+        let errorBody = {};
+        try {
+            errorBody = await response.clone().json();
+        } catch {}
+
+        if (/JWT issued at future/i.test(errorBody.message || "")) {
+            const klient = window.supabaseClient || window.supabaseKlient;
+            const refreshed = await klient?.auth?.refreshSession();
+            const freshToken = refreshed?.data?.session?.access_token;
+            if (!refreshed?.error && freshToken) response = await wyslij(freshToken);
+        }
+    }
+
+    return response;
 }
+
+window.supabaseProxyFetch = supabaseProxyFetch;
 
 async function inicjalizujSupabaseGlobalnie() {
     if (window.supabaseClient) {
@@ -257,12 +286,16 @@ function uruchomMenuMobilne() {
 // 2. KLUCZOWE DLA SAFARI NA iOS:
 // Obsługa powrotu na stronę z pamięci podręcznej (bfcache)
 window.addEventListener("pageshow", async (event) => {
+    if (window.SUPABASE_CLIENT_ONLY) return;
     if (event.persisted || performance?.getEntriesByType("navigation")[0]?.type === "back_forward") {
         await sprawdzStanLogowania();
     }
 });
 
-document.addEventListener("DOMContentLoaded", wczytajWspolneElementy);
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.SUPABASE_CLIENT_ONLY) return;
+    wczytajWspolneElementy();
+});
 // ==========================================
 // GLOBALNY SYSTEM ZAPROSZEŃ DO GRY (REALTIME)
 // ==========================================
@@ -334,5 +367,6 @@ async function inicjalizujGlobalneZaproszenia() {
 
 // Uruchamiamy system zaproszeń zaraz po załadowaniu DOM (razem z resztą menu)
 document.addEventListener("DOMContentLoaded", () => {
+    if (window.SUPABASE_CLIENT_ONLY) return;
     inicjalizujGlobalneZaproszenia();
 });

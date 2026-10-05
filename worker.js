@@ -8,6 +8,80 @@ export default {
       return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     }
 
+    if (url.pathname === "/api/supabase-request") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
+      }
+
+      const apiKey = request.headers.get("apikey");
+      if (!apiKey) return Response.json({ message: "Brak klucza API." }, { status: 401 });
+
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return Response.json({ message: "Nieprawidłowe body żądania." }, { status: 400 });
+      }
+
+      const { path, method, headers: clientHeaders = {}, body, accessToken } = payload || {};
+      if (typeof path !== "string" || !["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE"].includes(method)) {
+        return Response.json({ message: "Nieprawidłowa ścieżka lub metoda REST." }, { status: 400 });
+      }
+
+      let upstreamUrl;
+      try {
+        upstreamUrl = new URL(path, SUPABASE_URL);
+      } catch {
+        return Response.json({ message: "Nieprawidłowa ścieżka REST." }, { status: 400 });
+      }
+      if (upstreamUrl.origin !== SUPABASE_URL || !upstreamUrl.pathname.startsWith("/rest/v1/")) {
+        return Response.json({ message: "Dozwolone są wyłącznie ścieżki PostgREST." }, { status: 400 });
+      }
+
+      const allowedHeaders = new Set(["accept", "accept-profile", "content-type", "content-profile", "prefer", "range", "range-unit", "if-match", "if-none-match", "x-client-info"]);
+      const upstreamHeaders = new Headers({ apikey: apiKey });
+      for (const [name, value] of Object.entries(clientHeaders)) {
+        const normalizedName = name.toLowerCase();
+        if (allowedHeaders.has(normalizedName) && typeof value === "string") upstreamHeaders.set(normalizedName, value);
+      }
+      if (typeof accessToken === "string" && accessToken) upstreamHeaders.set("Authorization", `Bearer ${accessToken}`);
+
+      const hasBody = !["GET", "HEAD"].includes(method) && typeof body === "string";
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const startedAt = Date.now();
+      const route = upstreamUrl.pathname;
+      console.log("Supabase SDK proxy start", method, route);
+
+      try {
+        const upstreamResponse = await fetch(upstreamUrl, {
+          method,
+          headers: upstreamHeaders,
+          ...(hasBody ? { body } : {}),
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const noBody = ["HEAD"].includes(method) || [204, 205, 304].includes(upstreamResponse.status);
+        const responseBody = noBody ? null : await upstreamResponse.arrayBuffer();
+        const responseHeaders = new Headers();
+
+        for (const name of ["content-type", "content-range", "content-profile", "content-location", "preference-applied", "location", "etag", "last-modified", "vary"]) {
+          const value = upstreamResponse.headers.get(name);
+          if (value) responseHeaders.set(name, value);
+        }
+        responseHeaders.set("Cache-Control", "no-store");
+
+        console.log("Supabase SDK proxy response", method, route, upstreamResponse.status, Date.now() - startedAt);
+        return new Response(responseBody, { status: upstreamResponse.status, headers: responseHeaders });
+      } catch (error) {
+        const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
+        console.error("Supabase SDK proxy failure", method, route, error.name, Date.now() - startedAt);
+        return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     if (url.pathname === "/api/supabase-read") {
       if (request.method !== "POST") {
         return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
@@ -55,7 +129,7 @@ export default {
           cache: "no-store",
           signal: controller.signal,
         });
-        const responseBody = await upstreamResponse.arrayBuffer();
+        const responseBody = [204, 205, 304].includes(upstreamResponse.status) ? null : await upstreamResponse.arrayBuffer();
         const responseHeaders = new Headers({
           "Content-Type": upstreamResponse.headers.get("Content-Type") || "application/json",
           "Cache-Control": "no-store",
@@ -157,7 +231,7 @@ export default {
           cache: "no-store",
           signal: controller.signal,
         });
-        const responseBody = await upstreamResponse.arrayBuffer();
+        const responseBody = [204, 205, 304].includes(upstreamResponse.status) ? null : await upstreamResponse.arrayBuffer();
         const headers = new Headers({ "Cache-Control": "no-store" });
         const contentType = upstreamResponse.headers.get("Content-Type");
         if (contentType) headers.set("Content-Type", contentType);
@@ -244,7 +318,8 @@ export default {
         const forwardedRequest = new Request(upstreamRequest, { headers: upstreamHeaders, signal: controller.signal });
         const upstreamResponse = await fetch(forwardedRequest);
         const buffersSmallResult = ["/rest/v1/znajomi", "/rest/v1/profiles", "/rest/v1/rooms"].includes(route);
-        const responseBody = buffersSmallResult ? await upstreamResponse.arrayBuffer() : upstreamResponse.body;
+        const noBody = request.method === "HEAD" || [204, 205, 304].includes(upstreamResponse.status);
+        const responseBody = noBody ? null : buffersSmallResult ? await upstreamResponse.arrayBuffer() : upstreamResponse.body;
         const headers = new Headers();
 
         for (const name of ["content-type", "content-range", "content-profile", "content-location", "preference-applied", "location", "etag"]) {

@@ -34,7 +34,11 @@
             // Inicjalizacja klienta omijająca konflikt nazw z menu.js
             const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-            window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+            window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+                global: {
+                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
+                },
+            });
         </script>
 
         <!-- Dodane automatyczne poprawki UI -->

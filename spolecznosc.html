@@ -155,7 +155,9 @@
                             "https://mjebhhagwxtvhggyjwue.supabase.co",
                             "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
                             {
-                                global: { fetch: (...args) => fetch(...args) },
+                                global: {
+                                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
+                                },
                                 auth: {
                                     persistSession: true,
                                     autoRefreshToken: true,
@@ -666,6 +668,15 @@
 
                 window.location.href = `./klasyczna.html?pokoj=${kodPokoju}`;
             };
+
+            window.addEventListener("pageshow", (event) => {
+                if (!event.persisted) return;
+                const btnSubmit = document.getElementById("btn-wyslij-konf");
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = "Wyślij";
+                }
+            });
 
             document.addEventListener("DOMContentLoaded", async () => {
                 const listaZnajomych = document.getElementById("lista-znajomych");

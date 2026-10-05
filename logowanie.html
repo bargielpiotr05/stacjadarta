@@ -56,7 +56,8 @@
             // Korzystamy z klienta utworzonego w menu.js lub tworzymy go, jeśli jeszcze go nie ma
             const client = window.supabaseKlient || window.supabase.createClient(
                 "https://mjebhhagwxtvhggyjwue.supabase.co",
-                "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R"
+                "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
+                { global: { fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init) } },
             );
 
             const form = document.getElementById("formularz-logowania");

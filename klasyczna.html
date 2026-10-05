@@ -34,20 +34,10 @@
             const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-            function czySafariIOS() {
-                const userAgent = window.navigator?.userAgent || "";
-                return /iPhone|iPad|iPod/i.test(userAgent) || (/Safari/i.test(userAgent) && !/Chrome|CriOS|OPiOS|EdgiOS|FxiOS/i.test(userAgent));
-            }
-
             function supabaseProxyFetch(input, init) {
-                const request = input instanceof Request ? input : new Request(input, init);
-                const url = new URL(request.url);
-
-                if (czySafariIOS()) return fetch(request);
-                if (url.origin !== SUPA_URL || !url.pathname.startsWith("/rest/v1/")) return fetch(request);
-
-                const proxyUrl = new URL(`/api/supabase${url.pathname}${url.search}`, window.location.origin);
-                return fetch(new Request(proxyUrl, request));
+                const sharedProxy = window.supabaseProxyFetch;
+                if (sharedProxy && sharedProxy !== supabaseProxyFetch) return sharedProxy(input, init);
+                return fetch(input, init);
             }
 
             if (!window.supabaseClient && window.supabase) {

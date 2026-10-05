@@ -267,11 +267,17 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>window.SUPABASE_CLIENT_ONLY = true;</script>
+        <script src="./menu.js"></script>
         <script>
             const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
             const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-            const adminSupabase = window.supabaseClient || window.supabaseKlient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const adminSupabase = window.supabaseClient || window.supabaseKlient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                global: {
+                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
+                },
+            });
             const ADMIN_EMAIL = "bargielpiotr05@gmail.com";
 
             async function autoryzujAdmina() {
