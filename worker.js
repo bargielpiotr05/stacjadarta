@@ -24,7 +24,7 @@ export default {
       }
 
       const { table, params, accessToken } = payload || {};
-      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "id", "limit"]);
+      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "id", "limit", "nazwa_gracza", "or"]);
       if (!new Set(["znajomi", "profiles"]).has(table) || !params || typeof params !== "object") {
         return Response.json({ message: "Nieprawidłowa tabela lub parametry." }, { status: 400 });
       }
@@ -68,6 +68,88 @@ export default {
       } catch (error) {
         const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
         console.error("Supabase REST proxy failure", request.method, route, error.name, Date.now() - startedAt);
+        return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    if (url.pathname === "/api/supabase-write") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
+      }
+
+      const apiKey = request.headers.get("apikey");
+      if (!apiKey) return Response.json({ message: "Brak klucza API." }, { status: 401 });
+
+      let payload;
+      try {
+        payload = await request.json();
+      } catch {
+        return Response.json({ message: "Nieprawidłowe body żądania." }, { status: 400 });
+      }
+
+      const { operation, filters = {}, values, accessToken } = payload || {};
+      if (typeof accessToken !== "string" || !accessToken) {
+        return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
+      }
+
+      const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/znajomi`);
+      let method;
+      let body;
+
+      if (operation === "insert") {
+        const records = Array.isArray(values) ? values : [values];
+        const allowedFields = new Set(["zapraszajacy_id", "zapraszany_id"]);
+        if (!records.length || records.some((record) => !record || Object.keys(record).some((key) => !allowedFields.has(key)))) {
+          return Response.json({ message: "Nieprawidłowe dane zaproszenia." }, { status: 400 });
+        }
+        method = "POST";
+        body = JSON.stringify(records);
+      } else if (operation === "update") {
+        if (!filters.id || !values || values.status !== "zaakceptowane" || Object.keys(values).some((key) => key !== "status")) {
+          return Response.json({ message: "Nieprawidłowa aktualizacja relacji." }, { status: 400 });
+        }
+        upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
+        method = "PATCH";
+        body = JSON.stringify(values);
+      } else if (operation === "delete") {
+        if (!filters.id) return Response.json({ message: "Brak ID relacji." }, { status: 400 });
+        upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
+        method = "DELETE";
+      } else {
+        return Response.json({ message: "Nieobsługiwana operacja." }, { status: 400 });
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const startedAt = Date.now();
+      console.log("Supabase REST write start", method, "/rest/v1/znajomi");
+
+      try {
+        const upstreamResponse = await fetch(upstreamUrl, {
+          method,
+          headers: {
+            apikey: apiKey,
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "application/json",
+            ...(body ? { "Content-Type": "application/json" } : {}),
+            Prefer: "return=minimal",
+          },
+          body,
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const responseBody = await upstreamResponse.arrayBuffer();
+        const headers = new Headers({ "Cache-Control": "no-store" });
+        const contentType = upstreamResponse.headers.get("Content-Type");
+        if (contentType) headers.set("Content-Type", contentType);
+
+        console.log("Supabase REST write response", method, "/rest/v1/znajomi", upstreamResponse.status, Date.now() - startedAt);
+        return new Response(responseBody, { status: upstreamResponse.status, headers });
+      } catch (error) {
+        const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
+        console.error("Supabase REST write failure", method, "/rest/v1/znajomi", error.name, Date.now() - startedAt);
         return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
       } finally {
         clearTimeout(timeoutId);

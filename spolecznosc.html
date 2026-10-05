@@ -228,6 +228,43 @@
                 );
             }
 
+            async function zapiszRelacjeApi(operation, filters, values, etap) {
+                if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
+
+                const probeUrl = new URL("/api/health", window.location.origin);
+                probeUrl.searchParams.set("stage", etap);
+                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { cache: "no-store" }), `ping: ${etap}`);
+                if (!probeResponse.ok) throw new Error(`Worker HTTP ${probeResponse.status}`);
+
+                return zLimitemCzasu(
+                    (async () => {
+                        const response = await fetch("/api/supabase-write", {
+                            method: "POST",
+                            headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
+                            body: JSON.stringify({ operation, filters, values, accessToken: aktualnaSesja.access_token }),
+                            cache: "no-store",
+                        });
+                        const text = await response.text();
+                        let wynik = {};
+                        if (text) {
+                            try {
+                                wynik = JSON.parse(text);
+                            } catch {
+                                wynik = { message: text };
+                            }
+                        }
+
+                        if (!response.ok) {
+                            const error = new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
+                            error.code = wynik.code;
+                            throw error;
+                        }
+                        return wynik;
+                    })(),
+                    etap,
+                );
+            }
+
             async function aktywujSesjeSupabase() {
                 const klient = client || (await oczekajNaSupabaseClient());
                 if (!klient || !klient.auth) return null;
@@ -329,18 +366,12 @@
             async function pobierzWynikiWyszukiwania(fraza) {
                 if (!client || !aktualnyUser) return [];
 
-                const { data, error } = await zLimitemCzasu(
-                    client
-                        .from("profiles")
-                        .select("id, nazwa_gracza, avatar_url, srednia")
-                        .ilike("nazwa_gracza", `%${fraza}%`)
-                        .neq("id", aktualnyUser.id)
-                        .limit(20),
+                return pobierzWierszeApi(
+                    "profiles",
+                    { select: "id,nazwa_gracza,avatar_url,srednia", nazwa_gracza: `ilike.%${fraza}%`, id: `neq.${aktualnyUser.id}`, limit: "20" },
                     "wyszukiwanie graczy",
+                    false,
                 );
-
-                if (error) throw error;
-                return data || [];
             }
 
             async function pobierzZnajomych() {
@@ -471,28 +502,45 @@
                 btnElement.disabled = true;
                 btnElement.textContent = "Wysyłanie...";
 
-                const { error } = await client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]);
-
-                if (error) {
+                try {
+                    await zapiszRelacjeApi(
+                        "insert",
+                        {},
+                        { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId },
+                        "wysyłanie zaproszenia",
+                    );
+                    btnElement.textContent = "⏳ Wysłano zaproszenie";
+                    btnElement.className = "btn-secondary";
+                    await pobierzZaproszenia();
+                } catch (error) {
                     if (error.code === "23505") {
                         btnElement.textContent = "Już wysłano!";
                     } else {
-                        btnElement.textContent = "Błąd";
+                        btnElement.textContent = `Błąd: ${error.message}`;
                         btnElement.disabled = false;
                     }
-                    return;
                 }
-
-                btnElement.textContent = "⏳ Wysłano zaproszenie";
-                btnElement.className = "btn-secondary";
-                await pobierzZaproszenia();
             };
 
-            window.akceptuj = async (relacjaId) => {
+            window.akceptuj = async (relacjaId, btnElement) => {
                 if (!relacjaId) return;
-                await client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId);
-                await pobierzZaproszenia();
-                await pobierzZnajomych();
+                if (btnElement) {
+                    btnElement.disabled = true;
+                    btnElement.textContent = "Akceptowanie...";
+                }
+
+                try {
+                    await zapiszRelacjeApi("update", { id: relacjaId }, { status: "zaakceptowane" }, "akceptowanie zaproszenia");
+                    await pobierzZaproszenia();
+                    await pobierzZnajomych();
+                } catch (error) {
+                    console.error("Błąd akceptowania zaproszenia:", error);
+                    alert(`Nie udało się zaakceptować zaproszenia: ${error.message}`);
+                    if (btnElement) {
+                        btnElement.disabled = false;
+                        btnElement.textContent = "Akceptuj";
+                    }
+                }
             };
 
             window.usunZnajomego = async (relacjaId) => {
@@ -501,8 +549,7 @@
                 if (!potwierdzenie) return;
 
                 try {
-                    const { error } = await client.from("znajomi").delete().eq("id", relacjaId);
-                    if (error) throw error;
+                    await zapiszRelacjeApi("delete", { id: relacjaId }, null, "usuwanie relacji");
                     await pobierzZnajomych();
                     await pobierzZaproszenia();
                 } catch (error) {
@@ -643,7 +690,11 @@
                                 return;
                             }
 
-                            const { data: relacje = [] } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
+                            const [wyslane, otrzymane] = await Promise.all([
+                                pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status wysłanych zaproszeń"),
+                                pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status otrzymanych zaproszeń"),
+                            ]);
+                            const relacje = [...wyslane, ...otrzymane];
                             const relMap = {};
                             relacje.forEach((r) => {
                                 const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
@@ -663,7 +714,7 @@
                                         if (rel.zapraszajacy_id === aktualnyUser.id) {
                                             przyciskZapros = `<button type="button" class="btn-secondary" disabled>⏳ Wysłano zaproszenie</button>`;
                                         } else {
-                                            przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}'); this.textContent='✓ Zaakceptowano'; this.disabled=true;">Oczekuje! Akceptuj</button>`;
+                                            przyciskZapros = `<button type="button" class="btn-primary" onclick="akceptuj('${rel.id}', this)">Oczekuje! Akceptuj</button>`;
                                         }
                                     }
 
