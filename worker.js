@@ -98,12 +98,15 @@ export default {
       }
 
       const { table, params, accessToken } = payload || {};
-      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "id", "limit", "nazwa_gracza", "or"]);
-      if (!new Set(["znajomi", "profiles"]).has(table) || !params || typeof params !== "object") {
+      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "kod_pokoju", "id", "limit", "nazwa_gracza", "or"]);
+      if (!new Set(["znajomi", "profiles", "rooms"]).has(table) || !params || typeof params !== "object") {
         return Response.json({ message: "Nieprawidłowa tabela lub parametry." }, { status: 400 });
       }
       if (table === "znajomi" && (typeof accessToken !== "string" || !accessToken)) {
         return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
+      }
+      if (table === "rooms" && params.select !== "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc") {
+        return Response.json({ message: "Niedozwolony zakres odczytu pokoju." }, { status: 400 });
       }
 
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/${table}`);

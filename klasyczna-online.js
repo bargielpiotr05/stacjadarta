@@ -14,6 +14,29 @@ let odbieranieRzutuZSieci = false;
 let lokalnaWersjaStanu = 0;
 let czyMeczZakonczonyOnline = false;
 
+function onlineZLimitemCzasu(obietnica, etap, timeoutMs = 12000) {
+  let timerId;
+  const timeout = new Promise((resolve, reject) => {
+    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), timeoutMs);
+  });
+  return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+}
+
+async function pobierzWierszeOnline(tabela, params, accessToken, etap) {
+  const apiKey = supabaseClient.supabaseKey;
+  if (!apiKey) throw new Error("Brak klucza API klienta Supabase.");
+
+  const response = await onlineZLimitemCzasu(fetch("/api/supabase-read", {
+    method: "POST",
+    headers: { apikey: apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ table: tabela, params, accessToken }),
+    cache: "no-store",
+  }), etap);
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.message || result.details || `Błąd HTTP ${response.status}`);
+  return result;
+}
+
 const parametryURL = new URLSearchParams(window.location.search);
 const onlineKodPokoju = parametryURL.get("pokoj");
 const onlineTryb = parametryURL.get("tryb");
@@ -172,14 +195,20 @@ async function inicjalizujPoczekalnieOnline(kod) {
   if (menuBelka) menuBelka.style.display = "none";
   if (btnPowrot) btnPowrot.style.display = "none";
 
-  ustawStatusStartu("Pobieranie danych stołu...");
-  const { data: pokoj, error } = await supabaseClient
-    .from("rooms")
-    .select("*")
-    .eq("kod_pokoju", kod)
-    .maybeSingle();
+  ustawStatusStartu("Sprawdzanie sesji gracza...");
+  const { data: { session }, error: sessionError } = await onlineZLimitemCzasu(supabaseClient.auth.getSession(), "odczyt sesji");
+  if (sessionError) throw sessionError;
+  const user = session?.user;
 
-  if (error || !pokoj) {
+  ustawStatusStartu("Pobieranie danych stołu...");
+  const pokoje = await pobierzWierszeOnline("rooms", {
+    select: "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
+    kod_pokoju: `eq.${kod}`,
+    limit: "1",
+  }, session?.access_token || null, "pobieranie danych stołu");
+  const pokoj = pokoje[0] || null;
+
+  if (!pokoj) {
     statusStartu.remove();
     pokazModalSystemowyOnline("Błąd stołu", "Ten stół nie istnieje lub został już usunięty.", "alert", () => {
       window.location.href = "./online.html";
@@ -188,10 +217,6 @@ async function inicjalizujPoczekalnieOnline(kod) {
   }
 
   // --- KRYTYCZNA ZMIANA: ROZPOZNAWANIE GRACZA (ZAMIAST TOKENÓW) ---
-  ustawStatusStartu("Sprawdzanie sesji gracza...");
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  const user = session?.user;
-
   if (onlineTryb === "widz" || !user) {
     czyWidz = true;
     mojIndeksOnline = -1;
@@ -212,8 +237,12 @@ async function inicjalizujPoczekalnieOnline(kod) {
       czyWidz = false;
       
       ustawStatusStartu("Dołączanie do stołu...");
-      const { data: mojProfil } = await supabaseClient.from("profiles").select("nazwa_gracza").eq("id", user.id).maybeSingle();
-      const mojNick = mojProfil?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
+      const profileData = await pobierzWierszeOnline("profiles", {
+        select: "id,nazwa_gracza",
+        id: `eq.${user.id}`,
+        limit: "1",
+      }, null, "pobieranie profilu gościa");
+      const mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
       
       // Zapisujemy się w bazie, żeby Host dostał powiadomienie
       const { data: pokojPoDolaczeniu, error: bladDolaczenia } = await supabaseClient.from('rooms').update({
