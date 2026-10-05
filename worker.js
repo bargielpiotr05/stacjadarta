@@ -180,7 +180,7 @@ export default {
         const records = Array.isArray(values) ? values : [values];
         const allowedFieldsByTable = {
           znajomi: new Set(["zapraszajacy_id", "zapraszany_id"]),
-          rooms: new Set(["kod_pokoju", "host_id", "host_nazwa", "punkty_startowe", "docelowe_legi", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
+          rooms: new Set(["kod_pokoju", "host_id", "host_nazwa", "punkty_startowe", "docelowe_legi", "dystans", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
           game_invites: new Set(["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"]),
         };
         const allowedFields = allowedFieldsByTable[table];

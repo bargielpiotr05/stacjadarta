@@ -830,7 +830,7 @@
                         return;
                     }
 
-                    let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:5px;">';
+                    let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:min(55vh, 460px); overflow-y:auto; padding-right:5px;">';
                     znajomi.forEach((znajomy) => {
                         const nickEscaped = String(znajomy.nazwa_gracza || "Gracz").replace(/'/g, "\\'");
                         const juzDodan = graczeUczestnicy.includes(znajomy.nazwa_gracza);
