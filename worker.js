@@ -207,8 +207,15 @@ export default {
         method = "PATCH";
         body = JSON.stringify(values);
       } else if (operation === "delete") {
-        if (table !== "znajomi" || !filters.id) return Response.json({ message: "Brak ID relacji." }, { status: 400 });
-        upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
+        if (table === "znajomi" && filters.id) {
+          upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
+        } else if (table === "rooms" && filters.kod_pokoju) {
+          upstreamUrl.searchParams.set("kod_pokoju", `eq.${filters.kod_pokoju}`);
+          if (filters.status === "neq.finished") upstreamUrl.searchParams.set("status", filters.status);
+          else if (filters.status !== undefined) return Response.json({ message: "Nieprawidłowy filtr statusu pokoju." }, { status: 400 });
+        } else {
+          return Response.json({ message: "Brak filtra usuwania." }, { status: 400 });
+        }
         method = "DELETE";
       } else {
         return Response.json({ message: "Nieobsługiwana operacja." }, { status: 400 });

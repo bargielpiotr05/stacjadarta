@@ -244,11 +244,14 @@ async function inicjalizujPoczekalnieOnline(kod) {
       }, null, "pobieranie profilu gościa");
       const mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
       
-      // Zapisujemy się w bazie, żeby Host dostał powiadomienie
+      // Claim the empty room and start it in one guarded update; the host observes this state change.
       const { data: pokojPoDolaczeniu, error: bladDolaczenia } = await supabaseClient.from('rooms').update({
          gosc_id: user.id,
-         gosc_nazwa: mojNick
-      }).eq('kod_pokoju', kod).eq("status", "waiting").is("gosc_id", null).select("kod_pokoju,gosc_id,gosc_nazwa,status").maybeSingle();
+        gosc_nazwa: mojNick,
+        status: "in_progress",
+        aktualny_gracz_id: pokoj.host_id,
+        stan_meczu: { tura: 1, pozostale_rzuty: 3 }
+      }).eq('kod_pokoju', kod).eq("status", "waiting").is("gosc_id", null).select("kod_pokoju,gosc_id,gosc_nazwa,status,aktualny_gracz_id,stan_meczu").maybeSingle();
       if (bladDolaczenia) throw bladDolaczenia;
       if (!pokojPoDolaczeniu) throw new Error("Nie udało się przypisać Cię do stołu. Może dołączył już inny gracz.");
       
@@ -310,7 +313,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
   document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
     e.preventDefault();
-    if (mojIndeksOnline === 0) await usunAktualnyPokoj();
+    if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
     window.location.href = "./online.html";
   });
 
@@ -896,7 +899,7 @@ function podepnijNasluchSilnika() {
           async (potwierdzono) => {
             if (potwierdzono) {
               kanalMeczuRealtime?.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
-              if (mojIndeksOnline === 0) await usunAktualnyPokoj();
+              if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
               window.location.href = "./online.html";
             }
           }
@@ -905,37 +908,47 @@ function podepnijNasluchSilnika() {
     }
   });
 
-  window.addEventListener("pagehide", () => {
-    if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
-      window.addEventListener("pagehide", () => {
-        if (czyTrybOnline && mojIndeksOnline === 0 && onlineKodPokoju) {
-          const sUrl = window.SUPABASE_URL || "https://mjebhhagwxtvhggyjwue.supabase.co";
-          const sKey = window.SUPABASE_ANON_KEY || "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-
-          const fetchPostgrest = window.supabaseProxyFetch || fetch;
-          fetchPostgrest(`${sUrl}/rest/v1/rooms?kod_pokoju=eq.${onlineKodPokoju}&status=neq.finished`, {
-            method: "DELETE",
-            headers: {
-              apikey: sKey,
-              Authorization: `Bearer ${sKey}`
-            },
-            keepalive: true
-          });
-        }
-      });
-    }
-  });
 }
 
 async function usunAktualnyPokoj() {
   if (!onlineKodPokoju) return;
   try {
-    await supabaseClient
-      .from("rooms")
-      .delete()
-      .eq("kod_pokoju", onlineKodPokoju);
+    const { data: { session }, error: sessionError } = await onlineZLimitemCzasu(supabaseClient.auth.getSession(), "odczyt sesji przed usunięciem stołu");
+    if (sessionError) throw sessionError;
+    if (!session?.access_token) throw new Error("Nie znaleziono aktywnej sesji użytkownika.");
+
+    const wyslijUsuniecie = (accessToken) => fetch("/api/supabase-write", {
+      method: "POST",
+      headers: {
+        apikey: supabaseClient.supabaseKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        table: "rooms",
+        operation: "delete",
+        filters: { kod_pokoju: onlineKodPokoju },
+        accessToken,
+      }),
+      cache: "no-store",
+    });
+
+    let response = await onlineZLimitemCzasu(wyslijUsuniecie(session.access_token), "usuwanie stołu");
+    let responseText = await response.text();
+    let result = responseText ? JSON.parse(responseText) : {};
+    if (response.status === 401 && /JWT issued at future/i.test(result.message || "")) {
+      const refreshed = await onlineZLimitemCzasu(supabaseClient.auth.refreshSession(), "odświeżanie sesji przy usuwaniu stołu");
+      const freshToken = refreshed.data?.session?.access_token;
+      if (refreshed.error || !freshToken) throw new Error(refreshed.error?.message || result.message);
+      response = await onlineZLimitemCzasu(wyslijUsuniecie(freshToken), "ponowne usuwanie stołu");
+      responseText = await response.text();
+      result = responseText ? JSON.parse(responseText) : {};
+    }
+    if (!response.ok) throw new Error(result.message || result.details || `Błąd HTTP ${response.status}`);
+    return true;
   } catch (err) {
     console.warn("Błąd usuwania stołu:", err);
+    pokazModalSystemowyOnline("Nie udało się opuścić stołu", err.message || "Błąd usuwania pokoju.");
+    return false;
   }
 }
 document.addEventListener("visibilitychange", async () => {
