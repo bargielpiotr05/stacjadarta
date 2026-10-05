@@ -190,6 +190,11 @@
                 const url = new URL(`/api/supabase/rest/v1/${tabela}`, window.location.origin);
                 Object.entries(parametry).forEach(([nazwa, wartosc]) => url.searchParams.set(nazwa, wartosc));
 
+                const probeUrl = new URL("/api/health", window.location.origin);
+                probeUrl.searchParams.set("stage", etap);
+                const probeResponse = await zLimitemCzasu(fetch(probeUrl, { cache: "no-store" }), `ping: ${etap}`);
+                if (!probeResponse.ok) throw new Error(`Worker HTTP ${probeResponse.status}`);
+
                 const headers = { apikey: client.supabaseKey };
                 if (zSesja) {
                     if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
