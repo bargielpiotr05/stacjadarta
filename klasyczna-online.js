@@ -156,12 +156,23 @@ async function inicjalizujPoczekalnieOnline(kod) {
   const tytul = document.getElementById("tytul-strony");
   const menuBelka = document.querySelector(".menu");
   const btnPowrot = document.getElementById("powrot-do-gier");
+  const statusStartu = document.createElement("div");
+  statusStartu.id = "status-startu-online";
+  statusStartu.setAttribute("role", "status");
+  statusStartu.style.cssText = "position:fixed;z-index:9998;left:50%;top:50%;transform:translate(-50%,-50%);width:min(90vw,440px);padding:24px;border:1px solid #22c55e;border-radius:12px;background:rgba(17,24,39,.97);color:#fff;text-align:center;font:600 16px/1.5 sans-serif;box-shadow:0 20px 40px rgba(0,0,0,.5)";
+  statusStartu.textContent = "Uruchamianie stołu online...";
+  document.body.appendChild(statusStartu);
+  const ustawStatusStartu = (tekst) => {
+    statusStartu.textContent = tekst;
+  };
 
+  try {
   if (formOffline) formOffline.style.display = "none";
   if (tytul) tytul.style.display = "none";
   if (menuBelka) menuBelka.style.display = "none";
   if (btnPowrot) btnPowrot.style.display = "none";
 
+  ustawStatusStartu("Pobieranie danych stołu...");
   const { data: pokoj, error } = await supabaseClient
     .from("rooms")
     .select("*")
@@ -169,6 +180,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
     .maybeSingle();
 
   if (error || !pokoj) {
+    statusStartu.remove();
     pokazModalSystemowyOnline("Błąd stołu", "Ten stół nie istnieje lub został już usunięty.", "alert", () => {
       window.location.href = "./online.html";
     });
@@ -176,6 +188,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
   }
 
   // --- KRYTYCZNA ZMIANA: ROZPOZNAWANIE GRACZA (ZAMIAST TOKENÓW) ---
+  ustawStatusStartu("Sprawdzanie sesji gracza...");
   const { data: { session } } = await supabaseClient.auth.getSession();
   const user = session?.user;
 
@@ -198,17 +211,19 @@ async function inicjalizujPoczekalnieOnline(kod) {
       mojIndeksOnline = 1;
       czyWidz = false;
       
+      ustawStatusStartu("Dołączanie do stołu...");
       const { data: mojProfil } = await supabaseClient.from("profiles").select("nazwa_gracza").eq("id", user.id).maybeSingle();
       const mojNick = mojProfil?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
       
       // Zapisujemy się w bazie, żeby Host dostał powiadomienie
-      await supabaseClient.from('rooms').update({
+      const { data: pokojPoDolaczeniu, error: bladDolaczenia } = await supabaseClient.from('rooms').update({
          gosc_id: user.id,
          gosc_nazwa: mojNick
-      }).eq('kod_pokoju', kod);
+      }).eq('kod_pokoju', kod).eq("status", "waiting").is("gosc_id", null).select("kod_pokoju,gosc_id,gosc_nazwa,status").maybeSingle();
+      if (bladDolaczenia) throw bladDolaczenia;
+      if (!pokojPoDolaczeniu) throw new Error("Nie udało się przypisać Cię do stołu. Może dołączył już inny gracz.");
       
-      pokoj.gosc_id = user.id;
-      pokoj.gosc_nazwa = mojNick;
+      Object.assign(pokoj, pokojPoDolaczeniu);
     } 
     // 4. Stół pełny - mogę być tylko widzem
     else {
@@ -218,6 +233,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
   }
 
   if (pokoj.status === "in_progress" || pokoj.status === "finished") {
+    statusStartu.remove();
     startMeczuOnline(pokoj);
     return;
   }
@@ -252,6 +268,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
   const kontenerMain = document.querySelector("main") || document.body;
   kontenerMain.prepend(poczekalnia);
+  statusStartu.remove();
 
   document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
     navigator.clipboard.writeText(kod);
@@ -356,6 +373,16 @@ async function inicjalizujPoczekalnieOnline(kod) {
       sprawdzaniePoczekalni = false;
     }
   }, 3000);
+  } catch (error) {
+    console.error("Błąd uruchamiania stołu online:", error);
+    ustawStatusStartu(`Nie udało się uruchomić stołu: ${error.message || "nieznany błąd"}`);
+    const btnPowrotu = document.createElement("button");
+    btnPowrotu.type = "button";
+    btnPowrotu.textContent = "Wróć do lobby";
+    btnPowrotu.style.cssText = "display:block;margin:18px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700";
+    btnPowrotu.onclick = () => { window.location.href = "./online.html"; };
+    statusStartu.appendChild(btnPowrotu);
+  }
 }
 
 // ============================================================
