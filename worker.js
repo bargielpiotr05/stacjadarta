@@ -89,32 +89,48 @@ export default {
         return Response.json({ message: "Nieprawidłowe body żądania." }, { status: 400 });
       }
 
-      const { operation, filters = {}, values, accessToken } = payload || {};
+      const { table, operation, filters = {}, values, accessToken } = payload || {};
       if (typeof accessToken !== "string" || !accessToken) {
         return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
       }
 
-      const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/znajomi`);
+      const allowedTables = new Set(["znajomi", "rooms", "game_invites"]);
+      if (!allowedTables.has(table)) return Response.json({ message: "Nieobsługiwana tabela." }, { status: 400 });
+
+      const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
       let method;
       let body;
+      let returnRepresentation = false;
 
       if (operation === "insert") {
         const records = Array.isArray(values) ? values : [values];
-        const allowedFields = new Set(["zapraszajacy_id", "zapraszany_id"]);
+        const allowedFieldsByTable = {
+          znajomi: new Set(["zapraszajacy_id", "zapraszany_id"]),
+          rooms: new Set(["kod_pokoju", "host_id", "host_nazwa", "punkty_startowe", "docelowe_legi", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
+          game_invites: new Set(["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"]),
+        };
+        const allowedFields = allowedFieldsByTable[table];
         if (!records.length || records.some((record) => !record || Object.keys(record).some((key) => !allowedFields.has(key)))) {
           return Response.json({ message: "Nieprawidłowe dane zaproszenia." }, { status: 400 });
         }
+        if (table === "rooms" || table === "game_invites") {
+          const requiredFields = table === "rooms" ? ["kod_pokoju", "host_id", "host_nazwa", "format_gry", "status"] : ["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"];
+          if (records.some((record) => requiredFields.some((field) => record[field] === undefined || record[field] === null))) {
+            return Response.json({ message: "Brak wymaganych pól zapisu." }, { status: 400 });
+          }
+        }
         method = "POST";
         body = JSON.stringify(records);
+        returnRepresentation = table === "rooms";
       } else if (operation === "update") {
-        if (!filters.id || !values || values.status !== "zaakceptowane" || Object.keys(values).some((key) => key !== "status")) {
+        if (table !== "znajomi" || !filters.id || !values || values.status !== "zaakceptowane" || Object.keys(values).some((key) => key !== "status")) {
           return Response.json({ message: "Nieprawidłowa aktualizacja relacji." }, { status: 400 });
         }
         upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
         method = "PATCH";
         body = JSON.stringify(values);
       } else if (operation === "delete") {
-        if (!filters.id) return Response.json({ message: "Brak ID relacji." }, { status: 400 });
+        if (table !== "znajomi" || !filters.id) return Response.json({ message: "Brak ID relacji." }, { status: 400 });
         upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
         method = "DELETE";
       } else {
@@ -124,7 +140,8 @@ export default {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const startedAt = Date.now();
-      console.log("Supabase REST write start", method, "/rest/v1/znajomi");
+      const route = `/rest/v1/${table}`;
+      console.log("Supabase REST write start", method, route);
 
       try {
         const upstreamResponse = await fetch(upstreamUrl, {
@@ -134,7 +151,7 @@ export default {
             Authorization: `Bearer ${accessToken}`,
             Accept: "application/json",
             ...(body ? { "Content-Type": "application/json" } : {}),
-            Prefer: "return=minimal",
+            Prefer: returnRepresentation ? "return=representation" : "return=minimal",
           },
           body,
           cache: "no-store",
@@ -145,11 +162,11 @@ export default {
         const contentType = upstreamResponse.headers.get("Content-Type");
         if (contentType) headers.set("Content-Type", contentType);
 
-        console.log("Supabase REST write response", method, "/rest/v1/znajomi", upstreamResponse.status, Date.now() - startedAt);
+        console.log("Supabase REST write response", method, route, upstreamResponse.status, Date.now() - startedAt);
         return new Response(responseBody, { status: upstreamResponse.status, headers });
       } catch (error) {
         const message = error.name === "AbortError" ? "Przekroczono limit czasu połączenia z bazą." : "Worker nie połączył się z bazą danych.";
-        console.error("Supabase REST write failure", method, "/rest/v1/znajomi", error.name, Date.now() - startedAt);
+        console.error("Supabase REST write failure", method, route, error.name, Date.now() - startedAt);
         return Response.json({ message }, { status: 502, headers: { "Cache-Control": "no-store" } });
       } finally {
         clearTimeout(timeoutId);

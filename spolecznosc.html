@@ -228,7 +228,7 @@
                 );
             }
 
-            async function zapiszRelacjeApi(operation, filters, values, etap) {
+            async function zapiszSupabaseApi(table, operation, filters, values, etap) {
                 if (!aktualnaSesja?.access_token) throw new Error("Brak aktywnego tokenu sesji.");
 
                 const probeUrl = new URL("/api/health", window.location.origin);
@@ -238,20 +238,39 @@
 
                 return zLimitemCzasu(
                     (async () => {
-                        const response = await fetch("/api/supabase-write", {
+                        const wyslij = async (accessToken) => {
+                            const response = await fetch("/api/supabase-write", {
                             method: "POST",
                             headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
-                            body: JSON.stringify({ operation, filters, values, accessToken: aktualnaSesja.access_token }),
+                            body: JSON.stringify({ table, operation, filters, values, accessToken }),
                             cache: "no-store",
-                        });
-                        const text = await response.text();
-                        let wynik = {};
-                        if (text) {
-                            try {
-                                wynik = JSON.parse(text);
-                            } catch {
-                                wynik = { message: text };
+                            });
+                            const text = await response.text();
+                            let wynik = {};
+                            if (text) {
+                                try {
+                                    wynik = JSON.parse(text);
+                                } catch {
+                                    wynik = { message: text };
+                                }
                             }
+                            return { response, wynik };
+                        };
+
+                        let accessToken = aktualnaSesja.access_token;
+                        let { response, wynik } = await wyslij(accessToken);
+                        const message = wynik.message || wynik.details || "";
+
+                        if (response.status === 401 && /JWT issued at future/i.test(message)) {
+                            const refreshed = await client.auth.refreshSession();
+                            if (refreshed.error || !refreshed.data.session?.access_token) {
+                                throw new Error(refreshed.error?.message || message);
+                            }
+
+                            aktualnaSesja = refreshed.data.session;
+                            aktualnyUser = refreshed.data.session.user;
+                            accessToken = refreshed.data.session.access_token;
+                            ({ response, wynik } = await wyslij(accessToken));
                         }
 
                         if (!response.ok) {
@@ -503,7 +522,8 @@
                 btnElement.textContent = "Wysyłanie...";
 
                 try {
-                    await zapiszRelacjeApi(
+                        await zapiszSupabaseApi(
+                        "znajomi",
                         "insert",
                         {},
                         { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId },
@@ -530,7 +550,7 @@
                 }
 
                 try {
-                    await zapiszRelacjeApi("update", { id: relacjaId }, { status: "zaakceptowane" }, "akceptowanie zaproszenia");
+                    await zapiszSupabaseApi("znajomi", "update", { id: relacjaId }, { status: "zaakceptowane" }, "akceptowanie zaproszenia");
                     await pobierzZaproszenia();
                     await pobierzZnajomych();
                 } catch (error) {
@@ -549,7 +569,7 @@
                 if (!potwierdzenie) return;
 
                 try {
-                    await zapiszRelacjeApi("delete", { id: relacjaId }, null, "usuwanie relacji");
+                    await zapiszSupabaseApi("znajomi", "delete", { id: relacjaId }, null, "usuwanie relacji");
                     await pobierzZnajomych();
                     await pobierzZaproszenia();
                 } catch (error) {
@@ -594,8 +614,9 @@
                 const kodPokoju = Math.random().toString(36).substring(2, 8).toUpperCase();
                 const mojNick = aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz");
 
-                const { error: errorStolu } = await client.from("rooms").insert([
-                    {
+                let pokoje;
+                try {
+                    pokoje = await zapiszSupabaseApi("rooms", "insert", {}, {
                         kod_pokoju: kodPokoju,
                         host_id: aktualnyUser.id,
                         host_nazwa: mojNick,
@@ -606,11 +627,9 @@
                         format_gry: formatGry,
                         status: "waiting",
                         czy_prywatny: true,
-                    },
-                ]);
-
-                if (errorStolu) {
-                    alert("Błąd podczas tworzenia stołu.");
+                    }, "tworzenie stołu");
+                } catch (errorStolu) {
+                    alert(`Błąd podczas tworzenia stołu: ${errorStolu.message}`);
                     console.error(errorStolu);
                     if (btnSubmit) {
                         btnSubmit.disabled = false;
@@ -619,17 +638,24 @@
                     return;
                 }
 
-                const { error: errorZaproszenia } = await client.from("game_invites").insert([
-                    {
+                if (!Array.isArray(pokoje) || !pokoje[0]?.kod_pokoju) {
+                    alert("Stół został utworzony, ale nie zwrócił kodu pokoju.");
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = "Wyślij zaproszenie";
+                    }
+                    return;
+                }
+
+                try {
+                    await zapiszSupabaseApi("game_invites", "insert", {}, {
                         od_kogo_id: aktualnyUser.id,
                         od_kogo_nick: mojNick,
                         do_kogo_id: tempZnajomyId,
                         kod_pokoju: kodPokoju,
-                    },
-                ]);
-
-                if (errorZaproszenia) {
-                    alert("Błąd podczas wysyłania zaproszenia.");
+                    }, "wysyłanie zaproszenia do gry");
+                } catch (errorZaproszenia) {
+                    alert(`Błąd podczas wysyłania zaproszenia: ${errorZaproszenia.message}`);
                     console.error(errorZaproszenia);
                     if (btnSubmit) {
                         btnSubmit.disabled = false;
