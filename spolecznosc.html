@@ -151,21 +151,17 @@
                     }
 
                     if (window.supabase && !window.supabaseClient) {
-                        window.supabaseClient = window.supabase.createClient(
-                            "https://mjebhhagwxtvhggyjwue.supabase.co",
-                            "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
-                            {
-                                global: {
-                                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
-                                },
-                                auth: {
-                                    persistSession: true,
-                                    autoRefreshToken: true,
-                                    detectSessionInUrl: true,
-                                    lock: async (name, acquireTimeout, fn) => await fn(),
-                                },
+                        window.supabaseClient = window.supabase.createClient("https://mjebhhagwxtvhggyjwue.supabase.co", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R", {
+                            global: {
+                                fetch: (input, init) => (window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init)),
                             },
-                        );
+                            auth: {
+                                persistSession: true,
+                                autoRefreshToken: true,
+                                detectSessionInUrl: true,
+                                lock: async (name, acquireTimeout, fn) => await fn(),
+                            },
+                        });
                         window.supabaseKlient = window.supabaseClient;
                         client = window.supabaseClient;
                         return client;
@@ -242,10 +238,10 @@
                     (async () => {
                         const wyslij = async (accessToken) => {
                             const response = await fetch("/api/supabase-write", {
-                            method: "POST",
-                            headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
-                            body: JSON.stringify({ table, operation, filters, values, accessToken }),
-                            cache: "no-store",
+                                method: "POST",
+                                headers: { apikey: client.supabaseKey, "Content-Type": "application/json" },
+                                body: JSON.stringify({ table, operation, filters, values, accessToken }),
+                                cache: "no-store",
                             });
                             const text = await response.text();
                             let wynik = {};
@@ -291,7 +287,10 @@
                 if (!klient || !klient.auth) return null;
 
                 try {
-                    let { data: { session }, error } = await zLimitemCzasu(klient.auth.getSession(), "sprawdzanie sesji");
+                    let {
+                        data: { session },
+                        error,
+                    } = await zLimitemCzasu(klient.auth.getSession(), "sprawdzanie sesji");
                     if (error) console.warn("Supabase getSession error:", error);
 
                     if (!session?.user) {
@@ -387,12 +386,7 @@
             async function pobierzWynikiWyszukiwania(fraza) {
                 if (!client || !aktualnyUser) return [];
 
-                return pobierzWierszeApi(
-                    "profiles",
-                    { select: "id,nazwa_gracza,avatar_url,srednia", nazwa_gracza: `ilike.%${fraza}%`, id: `neq.${aktualnyUser.id}`, limit: "20" },
-                    "wyszukiwanie graczy",
-                    false,
-                );
+                return pobierzWierszeApi("profiles", { select: "id,nazwa_gracza,avatar_url,srednia", nazwa_gracza: `ilike.%${fraza}%`, id: `neq.${aktualnyUser.id}`, limit: "20" }, "wyszukiwanie graczy", false);
             }
 
             async function pobierzZnajomych() {
@@ -400,17 +394,9 @@
                 if (!kontener || !client || !aktualnyUser) return;
 
                 try {
-                    const wyslane = await pobierzWierszeApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" },
-                        "pobieranie wysłanych relacji",
-                    );
+                    const wyslane = await pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" }, "pobieranie wysłanych relacji");
 
-                    const otrzymane = await pobierzWierszeApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" },
-                        "pobieranie otrzymanych relacji",
-                    );
+                    const otrzymane = await pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" }, "pobieranie otrzymanych relacji");
 
                     const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
@@ -424,12 +410,7 @@
                         return;
                     }
 
-                    const profilData = await pobierzWierszeApi(
-                        "profiles",
-                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
-                        "pobieranie profili znajomych",
-                        false,
-                    );
+                    const profilData = await pobierzWierszeApi("profiles", { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` }, "pobieranie profili znajomych", false);
 
                     const profilePoId = new Map((profilData || []).map((profil) => [profil.id, profil]));
                     const znajomi = relacje
@@ -468,11 +449,7 @@
                 if (!kontener || !badge || !client || !aktualnyUser) return;
 
                 try {
-                    const relacje = await pobierzWierszeApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.oczekujace", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" },
-                        "pobieranie zaproszeń",
-                    );
+                    const relacje = await pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.oczekujace", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" }, "pobieranie zaproszeń");
 
                     if (!relacje.length) {
                         kontener.innerHTML = `<div class="pusty-stan">Brak nowych zaproszeń.</div>`;
@@ -481,17 +458,10 @@
                     }
 
                     const idsZapraszajacych = [...new Set(relacje.map((relacja) => relacja.zapraszajacy_id))].filter(Boolean);
-                    const profileData = await pobierzWierszeApi(
-                        "profiles",
-                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZapraszajacych.join(",")})` },
-                        "pobieranie profili zapraszających",
-                        false,
-                    );
+                    const profileData = await pobierzWierszeApi("profiles", { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZapraszajacych.join(",")})` }, "pobieranie profili zapraszających", false);
 
                     const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
-                    const zaproszenia = relacje
-                        .map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) }))
-                        .filter((relacja) => relacja.zapraszajacy);
+                    const zaproszenia = relacje.map((relacja) => ({ ...relacja, zapraszajacy: profilePoId.get(relacja.zapraszajacy_id) })).filter((relacja) => relacja.zapraszajacy);
 
                     badge.textContent = zaproszenia.length;
                     badge.style.display = zaproszenia.length > 0 ? "inline-flex" : "none";
@@ -524,13 +494,7 @@
                 btnElement.textContent = "Wysyłanie...";
 
                 try {
-                        await zapiszSupabaseApi(
-                        "znajomi",
-                        "insert",
-                        {},
-                        { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId },
-                        "wysyłanie zaproszenia",
-                    );
+                    await zapiszSupabaseApi("znajomi", "insert", {}, { zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }, "wysyłanie zaproszenia");
                     btnElement.textContent = "⏳ Wysłano zaproszenie";
                     btnElement.className = "btn-secondary";
                     await pobierzZaproszenia();
@@ -620,19 +584,25 @@
 
                 let pokoje;
                 try {
-                    pokoje = await zapiszSupabaseApi("rooms", "insert", {}, {
-                        kod_pokoju: kodPokoju,
-                        host_id: aktualnyUser.id,
-                        host_nazwa: mojNick,
-                        punkty_startowe: punktyStartowe,
-                        docelowe_legi: doceloweLegi,
-                        dystans: doceloweLegi,
-                        zasady_wejscia: zasadyIn,
-                        zasady_wyjscia: zasadyOut,
-                        format_gry: formatGry,
-                        status: "waiting",
-                        czy_prywatny: true,
-                    }, "tworzenie stołu");
+                    pokoje = await zapiszSupabaseApi(
+                        "rooms",
+                        "insert",
+                        {},
+                        {
+                            kod_pokoju: kodPokoju,
+                            host_id: aktualnyUser.id,
+                            host_nazwa: mojNick,
+                            punkty_startowe: punktyStartowe,
+                            docelowe_legi: doceloweLegi,
+                            dystans: doceloweLegi,
+                            zasady_wejscia: zasadyIn,
+                            zasady_wyjscia: zasadyOut,
+                            format_gry: formatGry,
+                            status: "waiting",
+                            czy_prywatny: true,
+                        },
+                        "tworzenie stołu",
+                    );
                 } catch (errorStolu) {
                     alert(`Błąd podczas tworzenia stołu: ${errorStolu.message}`);
                     console.error(errorStolu);
@@ -653,20 +623,29 @@
                 }
 
                 try {
-                    await zapiszSupabaseApi("game_invites", "insert", {}, {
-                        od_kogo_id: aktualnyUser.id,
-                        od_kogo_nick: mojNick,
-                        do_kogo_id: tempZnajomyId,
-                        kod_pokoju: kodPokoju,
-                    }, "wysyłanie zaproszenia do gry");
+                    await zapiszSupabaseApi(
+                        "game_invites",
+                        "insert",
+                        {},
+                        {
+                            od_kogo_id: aktualnyUser.id,
+                            od_kogo_nick: mojNick,
+                            do_kogo_id: tempZnajomyId,
+                            kod_pokoju: kodPokoju,
+                        },
+                        "wysyłanie zaproszenia do gry",
+                    );
                 } catch (errorZaproszenia) {
                     alert(`Błąd podczas wysyłania zaproszenia: ${errorZaproszenia.message}`);
                     console.error(errorZaproszenia);
                     if (btnSubmit) {
                         btnSubmit.disabled = false;
-                        btnSubmit.textContent = "Wyślij zaproszenie";
+                        btnSubmit.textContent = "Wyślij zaproszenie"; // Poprawiono tekst na domyślny
                     }
-                    return;
+                    return; // Tu przerywamy, jeśli wystąpił błąd
+                }
+
+                // TEN KOD MUSI BYĆ POZA BLOKIEM CATCH (wykona się tylko przy sukcesie)
                 try {
                     let zn = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
                     if (tempZnajomyNick && tempZnajomyId) {
@@ -675,10 +654,15 @@
                         zn[tempZnajomyNick.trim().toLowerCase()] = tempZnajomyId;
                         localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(zn));
                     }
-                } catch (eZn) {}
+                } catch (eZn) {
+                    console.warn("Błąd zapisu do localStorage:", eZn);
+                }
 
+                // Przekierowanie do gry w przypadku sukcesu
                 window.location.href = `./klasyczna.html?pokoj=${kodPokoju}`;
-            };
+            }; // <--- TUTAJ DOMYKAMY FUNKCJĘ wyslijZaproszenieZKonfiguracja
+
+            // --- ZDARZENIA GLOBALNE (poza funkcją!) ---
 
             window.addEventListener("pageshow", (event) => {
                 if (!event.persisted) return;
