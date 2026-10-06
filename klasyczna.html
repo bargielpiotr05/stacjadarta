@@ -74,7 +74,16 @@
                     <h3 class="sekcja-tytul">Uczestnicy</h3>
 
                     <div id="kontener-nazw-graczy">
-                        <label> <button type="button" id="btn-dodaj-kolejnego-gracza" class="wspolny-input pojedynczy-gracz">+ Dodaj gracza</button> </label>
+                        <label>
+                            <h4>Gracz 1:</h4>
+                            <div id="default-dodaj-gracza">
+                                <input type="text" id="nazwa-gracza1" class="wspolny-input input-nazwa-gracza" placeholder="Gracz 1" value="Gracz 1" />
+                            </div>
+                        </label>
+                        <label style="display: flex; flex-direction: column; justify-content: flex-end;">
+                            <h4>&nbsp;</h4>
+                            <button type="button" id="btn-dodaj-kolejnego-gracza" class="wspolny-input btn-dodaj-kolejnego-gracza" onclick="otworzPopupDodajGracza('gracz-znajomi')">+ Dodaj gracza</button>
+                        </label>
                     </div>
                 </div>
 
@@ -550,11 +559,35 @@
                 }
             });
 
-            // Startujemy domyślnie (zostanie nadpisane przy pobraniu sesji)
-            let graczeUczestnicy = ["Gracz 1"];
+            // Szybki, synchroniczny odczyt danych sesji z localStorage (błyskawiczny na iOS / telefonach)
+            function odczytajZalogowanegoZStorage() {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                const u = parsed?.user;
+                                if (u) {
+                                    const meta = u.user_metadata || {};
+                                    const nick = meta.nazwa_gracza || meta.username || (u.email ? u.email.split("@")[0] : "");
+                                    return { id: u.id, nick: (nick || "").trim() };
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            const wstepnyZalogowany = odczytajZalogowanegoZStorage();
+            let zalogowanyNickGlobalny = wstepnyZalogowany?.nick || "";
+            let zalogowanyUserIdGlobalny = wstepnyZalogowany?.id || null;
+
+            // Startujemy z wykrytym kontem lub 'Gracz 1'
+            let graczeUczestnicy = [zalogowanyNickGlobalny || "Gracz 1"];
             let czyBotWlaczony = false;
-            let zalogowanyNickGlobalny = "";
-            let zalogowanyUserIdGlobalny = null;
             try {
                 window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
             } catch (e) {
@@ -630,6 +663,9 @@
                     `;
                 }
             }
+
+            // Natychmiastowe wyrenderowanie kafelków graczy (0ms opóźnienia, zabezpiecza przed znikaniem na iOS)
+            renderujPolaUczestnikow();
 
             async function pobierzAktywnaSesjeSupabase() {
                 const klient = window.supabaseClient || window.supabaseKlient;
@@ -773,9 +809,9 @@
                 });
             }
 
-            document.addEventListener("DOMContentLoaded", () => {
+            function podepnijZakladkiPopupu() {
                 document.querySelectorAll(".btn-opcja-gracza").forEach((btn) => {
-                    btn.addEventListener("click", () => {
+                    btn.onclick = () => {
                         const target = btn.getAttribute("data-target");
 
                         if (target === "gracz-dartbot" && czyBotWlaczony) {
@@ -796,9 +832,10 @@
                         }
 
                         przelaczZakladkePopupu(target);
-                    });
+                    };
                 });
-            });
+            }
+            podepnijZakladkiPopupu();
 
             // NOWA FUNKCJA: Pobieranie znajomych do popupu
             window.pobierzZnajomychDoPopupu = async function () {
@@ -990,33 +1027,74 @@
                 document.getElementById("bot-stat-checkout").textContent = `${Math.max(5, Math.round((avg / 100) * 60))}%`;
             });
 
-            // 5. INICJALIZACJA PRZY WEJŚCIU NA STRONĘ
-            document.addEventListener("DOMContentLoaded", async () => {
+            // 5. INICJALIZACJA PRZY WEJŚCIU NA STRONĘ I OBSŁUGA SESJI
+            async function sprawdzSesjeIProfilGracza() {
                 try {
-                    const session = await pobierzAktywnaSesjeSupabase();
+                    const sessionPromise = pobierzAktywnaSesjeSupabase();
+                    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
+                    const session = await Promise.race([sessionPromise, timeoutPromise]);
                     const user = session?.user;
+
                     if (user) {
                         zalogowanyUserIdGlobalny = user.id;
-                        let nick = user.user_metadata?.username || user.email?.split("@")[0] || "";
+                        let nick = user.user_metadata?.username || user.user_metadata?.nazwa_gracza || user.email?.split("@")[0] || "";
+
                         try {
-                            const { data: prof } = await (window.supabaseClient || window.supabaseKlient)
-                                .from("profiles")
-                                .select("nazwa_gracza")
-                                .eq("id", user.id)
-                                .maybeSingle();
-                            if (prof?.nazwa_gracza) {
-                                nick = prof.nazwa_gracza.trim();
+                            const klient = window.supabaseClient || window.supabaseKlient;
+                            if (klient) {
+                                const profFetch = klient.from("profiles").select("nazwa_gracza").eq("id", user.id).maybeSingle();
+                                const profTimeout = new Promise((resolve) => setTimeout(() => resolve({ data: null }), 2000));
+                                const { data: prof } = await Promise.race([profFetch, profTimeout]);
+                                if (prof?.nazwa_gracza) {
+                                    nick = prof.nazwa_gracza.trim();
+                                }
                             }
                         } catch (e) {}
 
-                        zalogowanyNickGlobalny = nick;
-                        if (zalogowanyNickGlobalny) graczeUczestnicy[0] = zalogowanyNickGlobalny;
+                        if (nick) {
+                            const staryNick = zalogowanyNickGlobalny;
+                            zalogowanyNickGlobalny = nick;
+
+                            // Jeśli pierwszy gracz to domyślny lub poprzedni nick, zaktualizuj go na oficjalny nick
+                            if (!graczeUczestnicy[0] || graczeUczestnicy[0] === "Gracz 1" || graczeUczestnicy[0] === staryNick) {
+                                graczeUczestnicy[0] = zalogowanyNickGlobalny;
+                            }
+                            renderujPolaUczestnikow();
+                        }
                     }
                 } catch (e) {
                     console.warn("Nie udało się pobrać sesji zalogowanego użytkownika:", e);
                 }
+            }
+
+            function pelnaInicjalizacjaGraczy() {
                 renderujPolaUczestnikow();
-            });
+                if (typeof podepnijZakladkiPopupu === "function") podepnijZakladkiPopupu();
+                sprawdzSesjeIProfilGracza();
+            }
+
+            // Uruchomienie od razu
+            pelnaInicjalizacjaGraczy();
+
+            // Bezpiecznik DOMContentLoaded (gdyby skrypt uruchomił się w trakcie parsowania)
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", pelnaInicjalizacjaGraczy);
+            }
+
+            // KLUCZOWE DLA iOS SAFARI: obsługa powrotu z pamięci podręcznej podróży (bfcache)
+            window.addEventListener("pageshow", pelnaInicjalizacjaGraczy);
+
+            // Nasłuchiwanie zmian sesji Supabase (np. po logowaniu lub odświeżeniu przez menu.js)
+            try {
+                const klient = window.supabaseClient || window.supabaseKlient;
+                if (klient?.auth?.onAuthStateChange) {
+                    klient.auth.onAuthStateChange((event, session) => {
+                        if (session?.user) {
+                            sprawdzSesjeIProfilGracza();
+                        }
+                    });
+                }
+            } catch (e) {}
             
 
 
