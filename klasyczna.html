@@ -2382,14 +2382,26 @@
                 }
 
                 // ================================================================
-                // BLOKADA ANTY-DUPLIKATOWA: Tylko Host zapisuje mecz do chmury!
+                // OBSŁUGA TRYBU ONLINE: Host zapisuje jako pierwszy, Gość zapasowo
                 // ================================================================
-                if (typeof czyTrybOnline !== "undefined" && czyTrybOnline) {
-                    // Jeśli jesteśmy w trybie online, a nasz indeks nie wynosi 0 (czyli jesteśmy gościem lub widzem)...
-                    if (typeof mojIndeksOnline !== "undefined" && mojIndeksOnline !== 0) {
-                        console.log("Zapis wstrzymany dla gościa - mecz zapisze Host w imieniu obu graczy.");
-                        return; // PRZERYWAMY WYKONYWANIE FUNKCJI DLA GOŚCIA
+                const pokojKod = window.onlineKodPokoju || (typeof onlineKodPokoju !== "undefined" ? onlineKodPokoju : new URLSearchParams(window.location.search).get("pokoj"));
+                const czyOnline = (typeof czyTrybOnline !== "undefined" && czyTrybOnline) || !!pokojKod;
+
+                if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline !== 0) {
+                    console.log("Oczekiwanie gościa na zapis meczu przez Hosta...");
+                    let hostZapisal = false;
+                    for (let i = 0; i < 25; i++) {
+                        if (window.meczJuzZapisanyPrzezHosta) {
+                            hostZapisal = true;
+                            break;
+                        }
+                        await new Promise((r) => setTimeout(r, 100));
                     }
+                    if (hostZapisal) {
+                        console.log("Mecz został pomyślnie zapisany w chmurze przez Hosta.");
+                        return;
+                    }
+                    console.log("Brak potwierdzenia od Hosta po 2.5s – Gość wykonuje zapasowy zapis meczu i statystyk.");
                 }
 
                 try {
@@ -2419,6 +2431,28 @@
                     const userEmail = user.email || user.user?.email || "";
                     const mojNick = (meta.nazwa_gracza || meta.username || zalogowanyNickGlobalny || (userEmail ? userEmail.split("@")[0] : "")).trim().toLowerCase();
 
+                    // Pobieramy świeży token autoryzacji do zapytań REST
+                    const token = await uzyskajSwiezyTokenAuth(klientBazy);
+
+                    // Identyfikacja pokoju i UUID graczy w trybie online
+                    let host_id_db = window.onlinePokoj?.host_id || null;
+                    let gosc_id_db = window.onlinePokoj?.gosc_id || null;
+
+                    if (czyOnline && pokojKod && (!host_id_db || !gosc_id_db)) {
+                        try {
+                            const pokData = await wyslijDoSupabase(`/rest/v1/rooms?kod_pokoju=eq.${encodeURIComponent(pokojKod)}&select=host_id,gosc_id,host_nazwa,gosc_nazwa`);
+                            if (Array.isArray(pokData) && pokData[0]) {
+                                if (pokData[0].host_id) host_id_db = pokData[0].host_id;
+                                if (pokData[0].gosc_id) gosc_id_db = pokData[0].gosc_id;
+                            }
+                        } catch (ePok) {}
+                    }
+
+                    if (czyOnline) {
+                        if (host_id_db && gracze[0]) gracze[0].profilId = host_id_db;
+                        if (gosc_id_db && gracze[1]) gracze[1].profilId = gosc_id_db;
+                    }
+
                     // Sprawdzamy czy to mecz turniejowy
                     let czyTurniej = false;
                     try {
@@ -2435,15 +2469,20 @@
 
                     for (const g of gracze) {
                         if (g.czyBot) continue;
-                        if (userId && (g.id === 0 || g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
+                        if (userId && (g.id === (typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0 ? mojIndeksOnline : 0) || g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
                             g.profilId = userId;
                             continue;
                         }
+                        if (g.profilId && /^[0-9a-f-]{36}$/i.test(g.profilId)) continue;
                         let pid = g.profilId || (window.idZnajomychWGrze && (
                             window.idZnajomychWGrze[g.nazwa] || 
                             window.idZnajomychWGrze[g.nazwa.trim()] || 
                             window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]
                         ));
+                        if (!pid && czyOnline) {
+                            if (g.id === 1 && gosc_id_db) pid = gosc_id_db;
+                            else if (g.id === 0 && host_id_db) pid = host_id_db;
+                        }
                         if (!pid || !/^[0-9a-f-]{36}$/i.test(pid)) {
                             try {
                                 const rows = await wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`);
@@ -2464,7 +2503,7 @@
                     let mojGracz = null;
                     let rywalGracz = null;
 
-                    if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0) {
+                    if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0) {
                         mojGracz = gracze[mojIndeksOnline];
                         rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
                     } else {
@@ -2495,28 +2534,27 @@
                         return;
                     }
 
-                    // Identyfikacja UUID Gościa (znajomego lub pokoju online)
-                    let gosc_id_db = null;
-                    if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined" && klientBazy) {
-                        try {
-                            const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
-                            if (pok && pok.gosc_id) {
-                                gosc_id_db = pok.gosc_id;
-                            }
-                        } catch (ePok) {}
+                    if (czyOnline && rywalGracz && !rywalGracz.profilId) {
+                        rywalGracz.profilId = (mojIndeksOnline === 0 ? gosc_id_db : host_id_db);
                     }
-                    if (!gosc_id_db && rywalGracz && rywalGracz.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
-                        gosc_id_db = rywalGracz.profilId;
+                    if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
+                        gosc_id_db = (mojIndeksOnline === 0 ? rywalGracz.profilId : userId);
                     }
 
                     let idZwyciezcy = null;
                     if (zwyciezca) {
-                        if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
-                            idZwyciezcy = userId;
-                        } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
-                            idZwyciezcy = gosc_id_db;
-                        } else if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
+                        if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
                             idZwyciezcy = zwyciezca.profilId;
+                        } else if (czyOnline) {
+                            if (zwyciezca.id === 0) idZwyciezcy = host_id_db || gracze[0]?.profilId || null;
+                            else if (zwyciezca.id === 1) idZwyciezcy = gosc_id_db || gracze[1]?.profilId || null;
+                        }
+                        if (!idZwyciezcy) {
+                            if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
+                                idZwyciezcy = userId;
+                            } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
+                                idZwyciezcy = gosc_id_db;
+                            }
                         }
                     }
 

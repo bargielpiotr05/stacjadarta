@@ -111,7 +111,7 @@ export default {
       if (table === "rooms" && params.select !== "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc") {
         return Response.json({ message: "Niedozwolony zakres odczytu pokoju." }, { status: 400 });
       }
-      if (table === "game_invites" && params.select !== "status,kod_pokoju") {
+      if (table === "game_invites" && !["status,kod_pokoju", "id,status,kod_pokoju", "status,kod_pokoju,od_kogo_id"].includes(params.select)) {
         return Response.json({ message: "Niedozwolony zakres odczytu zaproszenia." }, { status: 400 });
       }
 
@@ -234,9 +234,20 @@ export default {
           upstreamUrl.searchParams.set("kod_pokoju", `eq.${filters.kod_pokoju}`);
           upstreamUrl.searchParams.set("status", "eq.waiting");
           upstreamUrl.searchParams.set("gosc_id", "is.null");
+        } else if (table === "game_invites") {
+          const allowedFields = new Set(["status"]);
+          if (
+            (!filters.kod_pokoju && !filters.id) ||
+            !values ||
+            (values.status !== "odrzucone" && values.status !== "zaakceptowane") ||
+            Object.keys(values).some((key) => !allowedFields.has(key))
+          ) {
+            return Response.json({ message: "Nieprawidłowa aktualizacja statusu zaproszenia." }, { status: 400 });
+          }
+          if (filters.kod_pokoju) upstreamUrl.searchParams.set("kod_pokoju", `eq.${filters.kod_pokoju}`);
+          if (filters.id) upstreamUrl.searchParams.set("id", `eq.${filters.id}`);
           method = "PATCH";
           body = JSON.stringify(values);
-          returnRepresentation = true;
         } else {
           return Response.json({ message: "Nieprawidłowa aktualizacja." }, { status: 400 });
         }

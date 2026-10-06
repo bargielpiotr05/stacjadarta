@@ -431,8 +431,68 @@ async function inicjalizujGlobalneZaproszenia() {
 
         // Co się stanie po kliknięciu Odrzuć
         document.getElementById("btn-odrzuc-zaproszenie").onclick = async () => {
-            await klient.from('game_invites').update({ status: 'odrzucone' }).eq('id', invite.id);
+            const btnOdrzuc = document.getElementById("btn-odrzuc-zaproszenie");
+            if (btnOdrzuc) {
+                btnOdrzuc.disabled = true;
+                btnOdrzuc.textContent = "Odrzucanie...";
+            }
+
+            // 1. Natychmiastowy broadcast przez Realtime do Hosta oczekującego w poczekalni (0ms zwłoki)
+            if (invite.kod_pokoju) {
+                try {
+                    const sendOnChan = (chanName) => {
+                        const waitChan = klient.channel(chanName);
+                        waitChan.subscribe((status) => {
+                            if (status === "SUBSCRIBED") {
+                                waitChan.send({
+                                    type: "broadcast",
+                                    event: "odrzucono-zaproszenie",
+                                    payload: { kod_pokoju: invite.kod_pokoju, od_kogo_id: invite.od_kogo_id }
+                                }).finally(() => {
+                                    setTimeout(() => {
+                                        try { klient.removeChannel(waitChan); } catch (_) {}
+                                    }, 1500);
+                                });
+                            }
+                        });
+                    };
+                    sendOnChan(`room-wait-${invite.kod_pokoju}`);
+                    sendOnChan(`poczekalnia-${invite.kod_pokoju}`);
+                } catch (eBroad) {
+                    console.warn("Błąd wysyłania broadcastu odrzucenia:", eBroad);
+                }
+            }
+
+            // 2. Aktualizacja statusu zaproszenia w Supabase (Direct/Proxy + Worker)
+            try {
+                const token = (await klient?.auth?.getSession())?.data?.session?.access_token || null;
+                const updatePromise = invite.id
+                    ? klient.from('game_invites').update({ status: 'odrzucone' }).eq('id', invite.id)
+                    : klient.from('game_invites').update({ status: 'odrzucone' }).eq('kod_pokoju', invite.kod_pokoju);
+                await Promise.race([updatePromise, new Promise((r) => setTimeout(r, 2000))]);
+
+                if (token && invite.kod_pokoju) {
+                    fetch("/api/supabase-write", {
+                        method: "POST",
+                        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            table: "game_invites",
+                            operation: "update",
+                            filters: invite.id ? { id: invite.id } : { kod_pokoju: invite.kod_pokoju },
+                            values: { status: "odrzucone" },
+                            accessToken: token
+                        })
+                    }).catch(() => {});
+                }
+            } catch (eUpd) {
+                console.warn("Błąd aktualizacji statusu zaproszenia:", eUpd);
+            }
+
             popup.style.display = "none";
+            if (btnOdrzuc) {
+                btnOdrzuc.disabled = false;
+                btnOdrzuc.textContent = "Odrzuć";
+            }
         };
     }
 }

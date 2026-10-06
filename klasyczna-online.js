@@ -86,10 +86,12 @@ async function przypiszGosciaDoPokoju(kod, user, nick, hostId, accessToken) {
 const parametryURL = new URLSearchParams(window.location.search);
 const onlineKodPokoju = parametryURL.get("pokoj");
 const onlineTryb = parametryURL.get("tryb");
+window.onlineKodPokoju = onlineKodPokoju;
 
 function uruchomModulOnline() {
   if (!onlineKodPokoju) return;
   czyTrybOnline = true;
+  window.czyTrybOnline = true;
   inicjalizujPoczekalnieOnline(onlineKodPokoju);
   podepnijNasluchSilnika();
 }
@@ -354,8 +356,70 @@ async function inicjalizujPoczekalnieOnline(kod) {
     window.location.href = "./online.html";
   });
 
+  function pokazOdrzucenieZaproszenia() {
+    if (czyMeczJuzWystartowal) return;
+    if (timerSprawdzaniaPoczekalni) {
+      clearInterval(timerSprawdzaniaPoczekalni);
+      timerSprawdzaniaPoczekalni = null;
+    }
+    if (kanalCzekaniaPoczekalni) {
+      supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+      kanalCzekaniaPoczekalni = null;
+    }
+    if (window.kanalOdrzuceniaPoczekalni) {
+      supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+      window.kanalOdrzuceniaPoczekalni = null;
+    }
+
+    const statusBox = document.getElementById("status-oczekiwania");
+    if (statusBox) {
+      statusBox.innerHTML = "";
+      const komunikat = document.createElement("span");
+      komunikat.textContent = "Znajomy odrzucił zaproszenie do gry.";
+      komunikat.style.color = "#fca5a5";
+      komunikat.style.fontWeight = "bold";
+      komunikat.style.fontSize = "16px";
+      statusBox.appendChild(komunikat);
+
+      const przyciskPowrotu = document.createElement("button");
+      przyciskPowrotu.type = "button";
+      przyciskPowrotu.textContent = "Wróć do lobby";
+      przyciskPowrotu.style.cssText = "display:block;margin:16px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700;cursor:pointer";
+      przyciskPowrotu.onclick = async () => {
+        await usunAktualnyPokoj();
+        window.location.href = "./online.html";
+      };
+      statusBox.appendChild(przyciskPowrotu);
+    }
+  }
+
+  // Drugi kanał broadcastowy poczekalni (gwarantuje odbiór broadcastu z menu.js)
+  window.kanalOdrzuceniaPoczekalni = supabaseClient
+    .channel(`poczekalnia-${kod}`)
+    .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
+      pokazOdrzucenieZaproszenia();
+    })
+    .subscribe();
+
   kanalCzekaniaPoczekalni = supabaseClient
     .channel(`room-wait-${kod}`)
+    .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
+      pokazOdrzucenieZaproszenia();
+    })
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "game_invites",
+        filter: `kod_pokoju=eq.${kod}`,
+      },
+      (payload) => {
+        if (payload.new?.status === "odrzucone") {
+          pokazOdrzucenieZaproszenia();
+        }
+      }
+    )
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
@@ -376,6 +440,10 @@ async function inicjalizujPoczekalnieOnline(kod) {
           if (kanalCzekaniaPoczekalni) {
             supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
             kanalCzekaniaPoczekalni = null;
+          }
+          if (window.kanalOdrzuceniaPoczekalni) {
+            supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+            window.kanalOdrzuceniaPoczekalni = null;
           }
 
           const statusBox = document.getElementById("status-oczekiwania");
@@ -411,39 +479,23 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
       if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting") {
         try {
+          let token = session?.access_token || null;
+          if (!token) {
+            try {
+              const fresh = await supabaseClient.auth.getSession();
+              token = fresh?.data?.session?.access_token || null;
+            } catch (_) {}
+          }
+
           const zaproszenia = await pobierzWierszeOnline("game_invites", {
             select: "status,kod_pokoju",
             kod_pokoju: `eq.${kod}`,
             od_kogo_id: `eq.${aktualnyPokoj.host_id}`,
             limit: "1",
-          }, session?.access_token || null, "sprawdzanie odpowiedzi na zaproszenie");
+          }, token, "sprawdzanie odpowiedzi na zaproszenie");
 
           if (zaproszenia[0]?.status === "odrzucone") {
-            if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
-            timerSprawdzaniaPoczekalni = null;
-            if (kanalCzekaniaPoczekalni) {
-              supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
-              kanalCzekaniaPoczekalni = null;
-            }
-
-            const statusBox = document.getElementById("status-oczekiwania");
-            if (statusBox) {
-              statusBox.innerHTML = "";
-              const komunikat = document.createElement("span");
-              komunikat.textContent = "Znajomy odrzucił zaproszenie do gry.";
-              komunikat.style.color = "#fca5a5";
-              statusBox.appendChild(komunikat);
-
-              const przyciskPowrotu = document.createElement("button");
-              przyciskPowrotu.type = "button";
-              przyciskPowrotu.textContent = "Wróć do lobby";
-              przyciskPowrotu.style.cssText = "display:block;margin:16px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700";
-              przyciskPowrotu.onclick = async () => {
-                await usunAktualnyPokoj();
-                window.location.href = "./online.html";
-              };
-              statusBox.appendChild(przyciskPowrotu);
-            }
+            pokazOdrzucenieZaproszenia();
             return;
           }
         } catch (error) {
@@ -532,6 +584,11 @@ function startMeczuOnline(pokoj) {
   if (typeof doceloweLegi !== "undefined") doceloweLegi = window.doceloweLegi;
   if (typeof liczbaGraczy !== "undefined") liczbaGraczy = 2;
 
+  window.onlinePokoj = pokoj;
+  window.onlineKodPokoju = pokoj.kod_pokoju;
+  window.czyTrybOnline = true;
+  czyTrybOnline = true;
+
   const hostNazwa = (!pokoj.host_nazwa || pokoj.host_nazwa === "Gracz") ? "Gospodarz" : pokoj.host_nazwa;
   const goscNazwa = (!pokoj.gosc_nazwa || pokoj.gosc_nazwa === "Gracz") ? "Gość" : pokoj.gosc_nazwa;
 
@@ -539,6 +596,7 @@ function startMeczuOnline(pokoj) {
     {
       id: 0,
       nazwa: hostNazwa,
+      profilId: pokoj.host_id || null,
       punkty: window.punktyStartowe,
       wygraneLegi: 0,
       rzuty: [],
@@ -550,6 +608,7 @@ function startMeczuOnline(pokoj) {
     {
       id: 1,
       nazwa: goscNazwa,
+      profilId: pokoj.gosc_id || null,
       punkty: window.punktyStartowe,
       wygraneLegi: 0,
       rzuty: [],
@@ -630,6 +689,7 @@ function zainicjalizujKanalMeczu(kod) {
   kanalMeczuRealtime = supabaseClient.channel(`game-${kod}`, {
     config: { broadcast: { self: false } }
   });
+  window.kanalMeczuRealtime = kanalMeczuRealtime;
 
   kanalMeczuRealtime
     .on(
@@ -641,7 +701,7 @@ function zainicjalizujKanalMeczu(kod) {
         }
         if (payload.new && payload.new.status === "finished" && !czyMeczZakonczonyOnline) {
           setTimeout(() => {
-            pokazEkranKoncaMeczu(payload.new.stan_gry?.zwyciezca, payload.new.stan_gry?.historiaMeczuLegi);
+            pokazEkranKoncaMeczu(payload.new.stan_gry?.zwyciezca, payload.new.stan_gry?.historiaMeczuLegi, payload.new.stan_gry?.gracze);
           }, 250);
         }
       }
@@ -652,9 +712,12 @@ function zainicjalizujKanalMeczu(kod) {
     .on("broadcast", { event: "koniec-meczu" }, ({ payload }) => {
       if (!czyMeczZakonczonyOnline) {
         setTimeout(() => {
-          pokazEkranKoncaMeczu(payload.zwyciezca, payload.historiaMeczuLegi);
+          pokazEkranKoncaMeczu(payload.zwyciezca, payload.historiaMeczuLegi, payload.gracze);
         }, 250);
       }
+    })
+    .on("broadcast", { event: "mecz-zapisany-w-chmurze" }, () => {
+      window.meczJuzZapisanyPrzezHosta = true;
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
       if (!czyWidz) {
@@ -838,18 +901,32 @@ function zastosujStanGry(dane) {
 
   if (dane.czyKoniec && dane.zwyciezca && !czyMeczZakonczonyOnline) {
     setTimeout(() => {
-      pokazEkranKoncaMeczu(dane.zwyciezca, dane.historiaMeczuLegi);
+      pokazEkranKoncaMeczu(dane.zwyciezca, dane.historiaMeczuLegi, dane.gracze);
     }, 250);
   }
 }
 
-function pokazEkranKoncaMeczu(zwyciezca, historiaLegow) {
+function pokazEkranKoncaMeczu(zwyciezca, historiaLegow, zdalniGracze) {
   if (czyMeczZakonczonyOnline) return;
   czyMeczZakonczonyOnline = true; // Zabezpieczenie przed podwójnym wyświetleniem
 
   if (historiaLegow) {
     if (typeof historiaMeczuLegi !== "undefined") historiaMeczuLegi = historiaLegow;
     window.historiaMeczuLegi = historiaLegow;
+  }
+
+  if (zdalniGracze && Array.isArray(zdalniGracze)) {
+    const listaGraczy = (typeof gracze !== "undefined") ? gracze : (window.gracze || []);
+    zdalniGracze.forEach((zg, idx) => {
+      if (listaGraczy && listaGraczy[idx]) {
+        if (typeof zg.wygraneLegi === "number") listaGraczy[idx].wygraneLegi = zg.wygraneLegi;
+        if (typeof zg.punkty === "number") listaGraczy[idx].punkty = zg.punkty;
+        if (Array.isArray(zg.rzuty)) listaGraczy[idx].rzuty = zg.rzuty;
+        if (zg.lotkiNaDoubla !== undefined) listaGraczy[idx].lotkiNaDoubla = zg.lotkiNaDoubla;
+        if (zg.trafioneDouble !== undefined) listaGraczy[idx].trafioneDouble = zg.trafioneDouble;
+        if (zg.profilId && !listaGraczy[idx].profilId) listaGraczy[idx].profilId = zg.profilId;
+      }
+    });
   }
 
   if (typeof zakonczMecz === "function") {
@@ -936,13 +1013,14 @@ function podepnijNasluchSilnika() {
 
     if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci && !bylJuzKoniec) {
       const historiaLegow = (typeof historiaMeczuLegi !== "undefined") ? historiaMeczuLegi : (window.historiaMeczuLegi || []);
+      const graczeAktualni = (typeof gracze !== "undefined" ? gracze : window.gracze) || [];
 
       kanalMeczuRealtime?.send({
         type: "broadcast",
         event: "koniec-meczu",
-        payload: { zwyciezca, historiaMeczuLegi: historiaLegow }
+        payload: { zwyciezca, historiaMeczuLegi: historiaLegow, gracze: graczeAktualni }
       });
-      wyslijAktualnyStanGry({ czyKoniec: true, zwyciezca, historiaMeczuLegi: historiaLegow });
+      wyslijAktualnyStanGry({ czyKoniec: true, zwyciezca, historiaMeczuLegi: historiaLegow, gracze: graczeAktualni });
     }
   };
 
