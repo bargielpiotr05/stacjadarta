@@ -719,25 +719,48 @@
 
             async function pobierzWierszeZnajomychApi(tabela, parametry, etap, accessToken = null) {
                 const klient = window.supabaseClient || window.supabaseKlient;
+                const apiKey = klient?.supabaseKey || SUPA_KEY;
+
                 const wyslij = async (token) => {
-                    const response = await fetch("/api/supabase-read", {
-                        method: "POST",
-                        headers: { apikey: klient.supabaseKey, "Content-Type": "application/json" },
-                        body: JSON.stringify({ table: tabela, params: parametry, accessToken: token }),
-                        cache: "no-store",
-                    });
-                    const wynik = await response.json();
-                    if (!response.ok) throw new Error(wynik.message || wynik.details || `Błąd HTTP ${response.status}`);
-                    return wynik;
+                    // 1. Próba przez Cloudflare Worker endpoint /api/supabase-read
+                    try {
+                        const response = await fetch("/api/supabase-read", {
+                            method: "POST",
+                            headers: { apikey: apiKey, "Content-Type": "application/json" },
+                            body: JSON.stringify({ table: tabela, params: parametry, accessToken: token }),
+                            cache: "no-store",
+                        });
+                        if (response.ok) {
+                            return await response.json();
+                        }
+                    } catch (eProxy) {}
+
+                    // 2. Bezpośredni REST fetch z Supabase (niezawodny fallback na iOS i lokalnie)
+                    try {
+                        const qs = new URLSearchParams(parametry || {}).toString();
+                        const headers = {
+                            apikey: apiKey,
+                            ...(token ? { Authorization: `Bearer ${token}` } : {})
+                        };
+                        const directRes = await fetch(`${SUPA_URL}/rest/v1/${tabela}?${qs}`, {
+                            headers,
+                            cache: "no-store"
+                        });
+                        if (directRes.ok) {
+                            return await directRes.json();
+                        }
+                    } catch (eDirect) {}
+
+                    throw new Error(`Nie udało się pobrać danych z tabeli ${tabela}`);
                 };
 
                 try {
                     return await zLimitemCzasu(wyslij(accessToken), etap);
                 } catch (error) {
                     if (!accessToken || !/JWT issued at future/i.test(error.message)) throw error;
-                    const refreshed = await zLimitemCzasu(klient.auth.refreshSession(), "odświeżanie sesji znajomych");
-                    const freshToken = refreshed.data?.session?.access_token;
-                    if (refreshed.error || !freshToken) throw new Error(refreshed.error?.message || error.message);
+                    const refreshed = await zLimitemCzasu(klient?.auth?.refreshSession(), "odświeżanie sesji znajomych");
+                    const freshToken = refreshed?.data?.session?.access_token;
+                    if (!freshToken) throw error;
                     return zLimitemCzasu(wyslij(freshToken), etap);
                 }
             }
@@ -972,6 +995,25 @@
                 try {
                     localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
                 } catch (e) {}
+
+                // Jeśli id nie jest poprawnym UUID, spróbuj pobrać UUID w tle z bazy profiles
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+                if (!isUUID) {
+                    fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`, {
+                        headers: { apikey: SUPA_KEY }
+                    })
+                    .then((r) => r.json())
+                    .then((rows) => {
+                        if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                            window.idZnajomychWGrze[nick] = rows[0].id;
+                            window.idZnajomychWGrze[nick.toLowerCase()] = rows[0].id;
+                            try {
+                                localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                            } catch (e) {}
+                        }
+                    })
+                    .catch(() => {});
+                }
 
                 zamknijPopupDodajGracza();
                 renderujPolaUczestnikow();
@@ -2140,12 +2182,14 @@
 
                 try {
                     let user = null;
+                    let session = null;
                     try {
-                        const { data: sessionData } = await Promise.race([
-                            klientBazy.auth.getSession(),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 2000))
+                        const sessionData = await Promise.race([
+                            pobierzAktywnaSesjeSupabase(),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 3000))
                         ]);
-                        user = sessionData?.session?.user;
+                        session = sessionData;
+                        user = session?.user;
                     } catch (eSess) {}
 
                     if (!user) {
@@ -2168,6 +2212,41 @@
                         const conf = JSON.parse(localStorage.getItem("sd_konfiguracja_gry") || "{}");
                         if (conf.tryb === "turniej") czyTurniej = true;
                     } catch (e) {}
+
+                    // Automatyczne wykrycie i uzupełnienie UUID wszystkich uczestników (znajomych)
+                    for (const g of gracze) {
+                        if (g.czyBot) continue;
+                        if (userId && (g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick))) {
+                            g.profilId = userId;
+                            continue;
+                        }
+                        let pid = g.profilId || (window.idZnajomychWGrze && (
+                            window.idZnajomychWGrze[g.nazwa] || 
+                            window.idZnajomychWGrze[g.nazwa.trim()] || 
+                            window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]
+                        ));
+                        if (!pid || !/^[0-9a-f-]{36}$/i.test(pid)) {
+                            try {
+                                const resLook = await fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`, {
+                                    headers: { apikey: SUPA_KEY },
+                                    cache: "no-store"
+                                });
+                                if (resLook.ok) {
+                                    const rows = await resLook.json();
+                                    if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                        pid = rows[0].id;
+                                    }
+                                }
+                            } catch (eLook) {}
+                        }
+                        if (pid && /^[0-9a-f-]{36}$/i.test(pid)) {
+                            g.profilId = pid;
+                            if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
+                            window.idZnajomychWGrze[g.nazwa] = pid;
+                            window.idZnajomychWGrze[g.nazwa.trim()] = pid;
+                            window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()] = pid;
+                        }
+                    }
 
                     let mojGracz = null;
                     let rywalGracz = null;
@@ -2192,13 +2271,8 @@
                             mojGracz = gracze[0];
                         }
                         if (mojGracz) {
-                            // Szukamy rywala: preferujemy gracza ze znanym UUID znajomego
-                            const dodanyZnajomy = gracze.find((g) => g.id !== mojGracz.id && (g.profilId || (window.idZnajomychWGrze && (window.idZnajomychWGrze[g.nazwa] || window.idZnajomychWGrze[g.nazwa.trim()] || window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]))));
-                            if (dodanyZnajomy) {
-                                rywalGracz = dodanyZnajomy;
-                            } else {
-                                rywalGracz = gracze.find((g) => g.id !== mojGracz.id) || null;
-                            }
+                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id && g.profilId && g.profilId !== userId) ||
+                                         gracze.find((g) => g.id !== mojGracz.id) || null;
                         }
                     }
 
@@ -2215,48 +2289,95 @@
                     const moje180 = statyMojGracz?.liczba180 || 0;
 
                     // KROK A: Aktualizacja Hosta
-                    const { data: obecnyProfil, error: bladOdczytuProfilu } = await klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle();
-                    if (bladOdczytuProfilu) throw bladOdczytuProfilu;
+                    let obecnyProfil = null;
+                    try {
+                        const controller = new AbortController();
+                        const tid = setTimeout(() => controller.abort(), 4000);
+                        const resP = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`, {
+                            headers: { apikey: SUPA_KEY },
+                            cache: "no-store",
+                            signal: controller.signal
+                        }).finally(() => clearTimeout(tid));
+                        if (resP.ok) {
+                            const rows = await resP.json();
+                            if (Array.isArray(rows) && rows.length > 0) obecnyProfil = rows[0];
+                        }
+                    } catch (eHostFetch) {}
+
+                    if (!obecnyProfil && klientBazy) {
+                        try {
+                            const { data: pData } = await zLimitemCzasu(
+                                klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle(),
+                                "odczyt profilu hosta",
+                                3500
+                            );
+                            obecnyProfil = pData;
+                        } catch (eSdkP) {}
+                    }
+
                     if (!obecnyProfil) throw new Error("Nie znaleziono profilu zalogowanego gracza.");
 
-                    if (obecnyProfil) {
-                        const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
-                        const dotychczasWygrane = parseInt(obecnyProfil.wygrane_mecze) || 0;
-                        const dotychczasSrednia = parseFloat(obecnyProfil.srednia) || 0;
-                        const dotychczasSrednia9 = parseFloat(obecnyProfil.srednia_9_lotek) || 0;
-                        const dotychczas180 = parseInt(obecnyProfil.ilosc_180) || 0;
+                    const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
+                    const dotychczasWygrane = parseInt(obecnyProfil.wygrane_mecze) || 0;
+                    const dotychczasSrednia = parseFloat(obecnyProfil.srednia) || 0;
+                    const dotychczasSrednia9 = parseFloat(obecnyProfil.srednia_9_lotek) || 0;
+                    const dotychczas180 = parseInt(obecnyProfil.ilosc_180) || 0;
 
-                        const noweMecze = dotychczasMecze + 1;
-                        const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
-                        const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
+                    const noweMecze = dotychczasMecze + 1;
+                    const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
+                    const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
+                    const noweWygrane = czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane;
+                    const nowe180 = dotychczas180 + moje180;
 
-                        await klientBazy
-                            .from("profiles")
-                            .update({
-                                rozegrane_mecze: noweMecze,
-                                wygrane_mecze: czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane,
-                                srednia: nowaSredniaOgolna,
-                                srednia_9_lotek: nowaSrednia9Ogolna,
-                                ilosc_180: dotychczas180 + moje180,
-                            })
-                            .eq("id", userId);
+                    // Aktualizacja statystyk Hosta (RPC SECURITY DEFINER przez REST POST)
+                    let zapisanoHosta = false;
+                    try {
+                        const controller = new AbortController();
+                        const tid = setTimeout(() => controller.abort(), 4000);
+                        const resRpcHost = await fetch(`${SUPA_URL}/rest/v1/rpc/zaktualizuj_statystyki_po_meczu`, {
+                            method: "POST",
+                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                p_gracz_id: userId,
+                                p_nowe_mecze: noweMecze,
+                                p_nowe_wygrane: noweWygrane,
+                                p_nowa_srednia: parseFloat(nowaSredniaOgolna),
+                                p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
+                                p_nowe_180: nowe180
+                            }),
+                            signal: controller.signal
+                        }).finally(() => clearTimeout(tid));
+                        if (resRpcHost.ok) zapisanoHosta = true;
+                    } catch (eRpcHost) {}
+
+                    if (!zapisanoHosta && klientBazy) {
+                        try {
+                            await klientBazy
+                                .from("profiles")
+                                .update({
+                                    rozegrane_mecze: noweMecze,
+                                    wygrane_mecze: noweWygrane,
+                                    srednia: nowaSredniaOgolna,
+                                    srednia_9_lotek: nowaSrednia9Ogolna,
+                                    ilosc_180: nowe180,
+                                })
+                                .eq("id", userId);
+                            zapisanoHosta = true;
+                        } catch (eUpdateHost) {}
                     }
 
                     // KROK B: Identyfikacja UUID Gościa (znajomego lub pokoju online)
                     let gosc_id_db = null;
                     if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined") {
-                        const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
-                        if (pok && pok.gosc_id) {
-                            gosc_id_db = pok.gosc_id;
-                        }
+                        try {
+                            const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
+                            if (pok && pok.gosc_id) {
+                                gosc_id_db = pok.gosc_id;
+                            }
+                        } catch (ePok) {}
                     } else {
-                        if (rywalGracz) {
-                            gosc_id_db = rywalGracz.profilId || 
-                                         (window.idZnajomychWGrze && (
-                                             window.idZnajomychWGrze[rywalGracz.nazwa] || 
-                                             window.idZnajomychWGrze[rywalGracz.nazwa.trim()] || 
-                                             window.idZnajomychWGrze[rywalGracz.nazwa.trim().toLowerCase()]
-                                         )) || null;
+                        if (rywalGracz && rywalGracz.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
+                            gosc_id_db = rywalGracz.profilId;
                         }
                     }
 
@@ -2266,7 +2387,7 @@
                             idZwyciezcy = userId;
                         } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
                             idZwyciezcy = gosc_id_db;
-                        } else if (zwyciezca.profilId) {
+                        } else if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
                             idZwyciezcy = zwyciezca.profilId;
                         }
                     }
@@ -2283,32 +2404,99 @@
                         statystyki_graczy: podsumowanieMeczu.gracze,
                     };
 
-                    const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
-                    if (bladZapisuMeczu) throw bladZapisuMeczu;
+                    let token = session?.access_token;
+                    if (!token && klientBazy?.auth) {
+                        try {
+                            const { data: sData } = await klientBazy.auth.getSession();
+                            token = sData?.session?.access_token;
+                        } catch (eToken) {}
+                    }
+
+                    let zapisanoMecz = false;
+
+                    // 1. Bezpośredni REST fetch z autoryzacją
+                    if (token) {
+                        try {
+                            const controller = new AbortController();
+                            const tid = setTimeout(() => controller.abort(), 4000);
+                            const resMatch = await fetch(`${SUPA_URL}/rest/v1/matches`, {
+                                method: "POST",
+                                headers: {
+                                    apikey: SUPA_KEY,
+                                    Authorization: `Bearer ${token}`,
+                                    "Content-Type": "application/json",
+                                    Prefer: "return=minimal"
+                                },
+                                body: JSON.stringify(payloadMeczu),
+                                signal: controller.signal
+                            }).finally(() => clearTimeout(tid));
+                            if (resMatch.ok) zapisanoMecz = true;
+                        } catch (eRestMatch) {}
+                    }
+
+                    // 2. Fallback na Worker /api/supabase-request
+                    if (!zapisanoMecz && token) {
+                        try {
+                            const resProxyMatch = await fetch("/api/supabase-request", {
+                                method: "POST",
+                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    path: "/rest/v1/matches",
+                                    method: "POST",
+                                    headers: { "content-type": "application/json", prefer: "return=minimal" },
+                                    body: JSON.stringify(payloadMeczu),
+                                    accessToken: token
+                                })
+                            });
+                            if (resProxyMatch.ok) zapisanoMecz = true;
+                        } catch (eProxyMatch) {}
+                    }
+
+                    // 3. Fallback na Supabase SDK
+                    if (!zapisanoMecz && klientBazy) {
+                        const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
+                        if (bladZapisuMeczu) throw bladZapisuMeczu;
+                        zapisanoMecz = true;
+                    }
 
                     // KROK D: Zaktualizuj profile rywali posiadających zarejestrowane konto (znajomi)
                     let ostrzezenieRLS = false;
                     for (const graczUczestnik of gracze) {
                         if (graczUczestnik.id === mojGracz.id || graczUczestnik.czyBot) continue;
 
-                        const idProfiluRywala = graczUczestnik.profilId || 
-                            (window.idZnajomychWGrze && (
-                                window.idZnajomychWGrze[graczUczestnik.nazwa] || 
-                                window.idZnajomychWGrze[graczUczestnik.nazwa.trim()] || 
-                                window.idZnajomychWGrze[graczUczestnik.nazwa.trim().toLowerCase()]
-                            ));
-
-                        if (!idProfiluRywala) continue;
+                        const idProfiluRywala = graczUczestnik.profilId;
+                        if (!idProfiluRywala || !/^[0-9a-f-]{36}$/i.test(idProfiluRywala)) continue;
 
                         const statyRywal = podsumowanieMeczu.gracze.find((g) => g.id === graczUczestnik.id);
                         if (!statyRywal) continue;
 
                         try {
-                            const { data: profRywal } = await klientBazy
-                                .from("profiles")
-                                .select("*")
-                                .eq("id", idProfiluRywala)
-                                .maybeSingle();
+                            let profRywal = null;
+                            // Bezpośredni REST fetch z Supabase (anon key może czytać tabelę profiles)
+                            try {
+                                const controller = new AbortController();
+                                const tid = setTimeout(() => controller.abort(), 4000);
+                                const resR = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(idProfiluRywala)}&select=*`, {
+                                    headers: { apikey: SUPA_KEY },
+                                    cache: "no-store",
+                                    signal: controller.signal
+                                }).finally(() => clearTimeout(tid));
+                                if (resR.ok) {
+                                    const rows = await resR.json();
+                                    if (Array.isArray(rows) && rows.length > 0) profRywal = rows[0];
+                                }
+                            } catch (eFetchR) {}
+
+                            if (!profRywal && klientBazy) {
+                                try {
+                                    const { data: pData } = await klientBazy
+                                        .from("profiles")
+                                        .select("*")
+                                        .eq("id", idProfiluRywala)
+                                        .maybeSingle();
+                                    profRywal = pData;
+                                } catch (eSdkR) {}
+                            }
 
                             if (profRywal) {
                                 const dotychczasMeczeR = parseInt(profRywal.rozegrane_mecze) || 0;
@@ -2329,41 +2517,71 @@
 
                                 let zaktualizowanoRywala = false;
 
-                                // Metoda 1: Bezpieczna funkcja RPC w Supabase (SECURITY DEFINER)
+                                // Metoda 1: Bezpośrednie wywołanie funkcji RPC w Supabase przez REST POST (SECURITY DEFINER)
                                 try {
-                                    const { error: rpcErr } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
-                                        p_gracz_id: idProfiluRywala,
-                                        p_nowe_mecze: noweMeczeR,
-                                        p_nowe_wygrane: noweWygraneR,
-                                        p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
-                                        p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
-                                        p_nowe_180: nowe180R,
-                                    });
-                                    if (!rpcErr) zaktualizowanoRywala = true;
-                                } catch (eRpc) {}
+                                    const controller = new AbortController();
+                                    const tid = setTimeout(() => controller.abort(), 4000);
+                                    const resRpc = await fetch(`${SUPA_URL}/rest/v1/rpc/zaktualizuj_statystyki_po_meczu`, {
+                                        method: "POST",
+                                        headers: {
+                                            apikey: SUPA_KEY,
+                                            "Content-Type": "application/json"
+                                        },
+                                        body: JSON.stringify({
+                                            p_gracz_id: idProfiluRywala,
+                                            p_nowe_mecze: noweMeczeR,
+                                            p_nowe_wygrane: noweWygraneR,
+                                            p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                            p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                            p_nowe_180: nowe180R
+                                        }),
+                                        signal: controller.signal
+                                    }).finally(() => clearTimeout(tid));
 
-                                // Metoda 2: Bezpośrednia aktualizacja w tabeli profiles (jeśli polityka RLS zezwala)
-                                if (!zaktualizowanoRywala) {
-                                    const { data: updateRes, error: updateErr } = await klientBazy
-                                        .from("profiles")
-                                        .update({
-                                            rozegrane_mecze: noweMeczeR,
-                                            wygrane_mecze: noweWygraneR,
-                                            srednia: nowaSredniaOgolnaR,
-                                            srednia_9_lotek: nowaSrednia9OgolnaR,
-                                            ilosc_180: nowe180R,
-                                        })
-                                        .eq("id", idProfiluRywala)
-                                        .select("id");
-
-                                    if (!updateErr && updateRes && updateRes.length > 0) {
+                                    if (resRpc.ok) {
                                         zaktualizowanoRywala = true;
                                     }
+                                } catch (eRpcDirect) {}
+
+                                // Metoda 2: SDK RPC
+                                if (!zaktualizowanoRywala && klientBazy) {
+                                    try {
+                                        const { error: rpcErr } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
+                                            p_gracz_id: idProfiluRywala,
+                                            p_nowe_mecze: noweMeczeR,
+                                            p_nowe_wygrane: noweWygraneR,
+                                            p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                            p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                            p_nowe_180: nowe180R,
+                                        });
+                                        if (!rpcErr) zaktualizowanoRywala = true;
+                                    } catch (eRpc) {}
+                                }
+
+                                // Metoda 3: Bezpośrednia aktualizacja w tabeli profiles
+                                if (!zaktualizowanoRywala && klientBazy) {
+                                    try {
+                                        const { data: updateRes, error: updateErr } = await klientBazy
+                                            .from("profiles")
+                                            .update({
+                                                rozegrane_mecze: noweMeczeR,
+                                                wygrane_mecze: noweWygraneR,
+                                                srednia: nowaSredniaOgolnaR,
+                                                srednia_9_lotek: nowaSrednia9OgolnaR,
+                                                ilosc_180: nowe180R,
+                                            })
+                                            .eq("id", idProfiluRywala)
+                                            .select("id");
+
+                                        if (!updateErr && updateRes && updateRes.length > 0) {
+                                            zaktualizowanoRywala = true;
+                                        }
+                                    } catch (eUpd) {}
                                 }
 
                                 if (!zaktualizowanoRywala) {
                                     ostrzezenieRLS = true;
-                                    console.warn(`Mecz zapisany, ale statystyki w profilu znajomego (${graczUczestnik.nazwa}) nie zostały zmodyfikowane z powodu polityki RLS w Supabase.`);
+                                    console.warn(`Mecz zapisany, ale statystyki w profilu znajomego (${graczUczestnik.nazwa}) nie zostały zmodyfikowane.`);
                                 }
                             }
                         } catch (errRywal) {
@@ -2372,7 +2590,7 @@
                     }
 
                     if (ostrzezenieRLS) {
-                        alert("Mecz został zapisany pomyślnie w historii pojedynków! Aby statystyki ogólne w profilu znajomego również się zaktualizowały, wykonaj w Supabase SQL skrypt z pliku supabase_aktualizacja_statystyk.sql.");
+                        alert("Mecz został zapisany w historii! Aby statystyki ogólne w profilu znajomego również się zaktualizowały, wykonaj w Supabase SQL skrypt z pliku supabase_aktualizacja_statystyk.sql.");
                     }
                 } catch (error) {
                     console.error("Błąd zapisu meczu do Supabase:", error);

@@ -295,13 +295,19 @@ export default {
         return Response.json({ message: "Brak klucza API." }, { status: 401 });
       }
 
-      if (!profileId || !/^[0-9a-f-]{36}$/i.test(profileId)) {
-        return Response.json({ message: "Nieprawidłowe ID profilu." }, { status: 400 });
+      if (!profileId || !profileId.trim()) {
+        return Response.json({ message: "Brak ID lub nazwy gracza." }, { status: 400 });
       }
 
+      const cleanProfileId = profileId.trim();
+      const isUuid = /^[0-9a-f-]{36}$/i.test(cleanProfileId);
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
       upstreamUrl.searchParams.set("select", "id,nazwa_gracza,avatar_url,utworzono,srednia,srednia_9_lotek,ilosc_180,rozegrane_mecze,wygrane_mecze,barele,shafty,groty,tarcza,auto_score,druzyna");
-      upstreamUrl.searchParams.set("id", `eq.${profileId}`);
+      if (isUuid) {
+        upstreamUrl.searchParams.set("id", `eq.${cleanProfileId}`);
+      } else {
+        upstreamUrl.searchParams.set("nazwa_gracza", `eq.${cleanProfileId}`);
+      }
       upstreamUrl.searchParams.set("limit", "1");
 
       const controller = new AbortController();

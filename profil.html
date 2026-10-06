@@ -616,6 +616,64 @@
                 strefaSprzetu.classList.toggle("otwarta");
             });
 
+            // Asynchroniczne sprawdzenie statusu relacji w tle (nigdy nie blokuje ładowania strony profilu)
+            async function sprawdzRelacjeZnajomego(mojId, celId, token = null) {
+                if (!mojId || !celId || mojId === celId) return;
+                const btnDodaj = document.getElementById("btn-dodaj-znajomego");
+                if (!btnDodaj) return;
+
+                try {
+                    let relacje = null;
+                    // 1. Bezpośredni REST fetch z krótkim timeoutem (nie wiesza się na iOS)
+                    try {
+                        const controller = new AbortController();
+                        const tid = setTimeout(() => controller.abort(), 3500);
+                        const headers = {
+                            apikey: SUPA_KEY,
+                            ...(token ? { Authorization: `Bearer ${token}` } : {})
+                        };
+                        const url = `${SUPA_URL}/rest/v1/znajomi?or=(and(zapraszajacy_id.eq.${encodeURIComponent(mojId)},zapraszany_id.eq.${encodeURIComponent(celId)}),and(zapraszajacy_id.eq.${encodeURIComponent(celId)},zapraszany_id.eq.${encodeURIComponent(mojId)}))&select=*`;
+                        const res = await fetch(url, { headers, signal: controller.signal, cache: "no-store" }).finally(() => clearTimeout(tid));
+                        if (res.ok) {
+                            relacje = await res.json();
+                        }
+                    } catch (eRest) {}
+
+                    // 2. Supabase SDK fallback
+                    if ((!relacje || !relacje.length) && client) {
+                        try {
+                            const { data } = await zLimitemCzasu(
+                                client.from("znajomi").select("*").or(`and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId})`),
+                                "sprawdzanie relacji",
+                                3500
+                            );
+                            if (data) relacje = data;
+                        } catch (eSdk) {}
+                    }
+
+                    const relacja = Array.isArray(relacje) && relacje.length > 0 ? relacje[0] : null;
+                    if (relacja) {
+                        if (relacja.status === "zaakceptowane") {
+                            btnDodaj.textContent = "✓ Twój znajomy";
+                            btnDodaj.className = "btn-zaakceptowane-zaproszenie";
+                            btnDodaj.disabled = true;
+                        } else if (relacja.status === "oczekujace") {
+                            if (relacja.zapraszajacy_id === mojId) {
+                                btnDodaj.textContent = "⏳ Wysłano zaproszenie";
+                                btnDodaj.className = "btn-wyslano-zaproszenie";
+                                btnDodaj.disabled = true;
+                            } else {
+                                btnDodaj.textContent = "Oczekuje! Akceptuj";
+                                btnDodaj.className = "btn-primary";
+                                btnDodaj.setAttribute("data-relacja-id", relacja.id);
+                            }
+                        }
+                    }
+                } catch (eRel) {
+                    console.warn("Sprawdzanie relacji znajomego pominięte:", eRel);
+                }
+            }
+
             async function zaladujProfil() {
                 try {
                     // 1. NIEZAWODNE CZEKANIE NA BAZĘ (Safari często odpala skrypty za wcześnie)
@@ -632,19 +690,18 @@
                         return;
                     }
 
-                    // Użyj sesji zarządzanej przez Supabase Auth, aby uwzględnić jej odświeżenie.
+                    // 2. Ustalenie zalogowanego użytkownika (szybko, bez długich zawieszeń na iOS)
                     let session = null;
                     try {
-                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji", 4000);
+                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji", 2500);
                         session = data?.session;
                     } catch (eSess) {}
 
                     if (!session) {
                         try {
-                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika", 4000);
+                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika", 2500);
                             if (userData?.user) {
-                                const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji", 4000);
-                                session = refreshed.data?.session || { user: userData.user };
+                                session = { user: userData.user };
                             }
                         } catch (eUsr) {}
                     }
@@ -653,18 +710,23 @@
                         const localUser = odczytajZalogowanegoZStorage();
                         if (localUser) {
                             session = { user: localUser };
-                        } else {
-                            window.location.href = "./logowanie.html";
-                            return;
                         }
                     }
 
-                    aktualnyUser = session.user;
+                    aktualnyUser = session?.user || null;
 
                     // 3. DETEKCJA PROFILU
-                    const paramId = new URLSearchParams(window.location.search).get("id");
-                    const profilId = paramId || aktualnyUser.id;
-                    const czyMojProfil = profilId === aktualnyUser.id;
+                    const paramIdRaw = new URLSearchParams(window.location.search).get("id");
+                    const paramId = paramIdRaw ? decodeURIComponent(paramIdRaw).trim() : null;
+
+                    // Jeśli brak parametru w URL i brak zalogowanego usera -> przekierowanie do logowania
+                    if (!paramId && !aktualnyUser) {
+                        window.location.href = "./logowanie.html";
+                        return;
+                    }
+
+                    const targetIdent = paramId || aktualnyUser?.id;
+                    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetIdent);
 
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (odporne na uśpione sockety i zawieszenia iOS Safari)
                     let profil = null;
@@ -673,7 +735,7 @@
                     try {
                         const controller = new AbortController();
                         const timer = setTimeout(() => controller.abort(), 3000);
-                        const resProxy = await fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
+                        const resProxy = await fetch(`./api/profiles?id=${encodeURIComponent(targetIdent)}`, {
                             headers: { apikey: SUPA_KEY },
                             cache: "no-store",
                             signal: controller.signal
@@ -690,7 +752,8 @@
                         try {
                             const controller = new AbortController();
                             const timerId = setTimeout(() => controller.abort(), 4000);
-                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profilId)}&select=*`, {
+                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=eq.${encodeURIComponent(targetIdent)}`;
+                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?${filterParam}&select=*`, {
                                 headers: {
                                     apikey: SUPA_KEY,
                                 },
@@ -709,13 +772,38 @@
                         }
                     }
 
+                    // B2. Fallback na dopasowanie case-insensitive (ilike) po nicku, jeśli to nie UUID
+                    if (!profil && !isUUID) {
+                        try {
+                            const controller = new AbortController();
+                            const timerId = setTimeout(() => controller.abort(), 4000);
+                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}&select=*`, {
+                                headers: {
+                                    apikey: SUPA_KEY,
+                                },
+                                cache: "no-store",
+                                signal: controller.signal,
+                            }).finally(() => clearTimeout(timerId));
+
+                            if (resDirect.ok) {
+                                const rows = await resDirect.json();
+                                if (Array.isArray(rows) && rows.length > 0) {
+                                    profil = rows[0];
+                                }
+                            }
+                        } catch (eDirectIlike) {}
+                    }
+
                     // C. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
                     if (!profil && client) {
                         try {
+                            const query = isUUID
+                                ? client.from("profiles").select("*").eq("id", targetIdent).maybeSingle()
+                                : client.from("profiles").select("*").ilike("nazwa_gracza", targetIdent).maybeSingle();
                             const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
-                                client.from("profiles").select("*").eq("id", profilId).maybeSingle(),
+                                query,
                                 "bezpośredni odczyt profilu z bazy",
-                                4000
+                                3500
                             );
                             if (!dbErr && dbProfil) {
                                 profil = dbProfil;
@@ -726,7 +814,8 @@
                     }
 
                     // D. Awaryjny profil dla zalogowanego gracza (gdy baza jest chwilowo nieosiągalna)
-                    if (!profil && czyMojProfil && aktualnyUser) {
+                    const czyMojProfilWstepny = !paramId || (aktualnyUser && targetIdent === aktualnyUser.id);
+                    if (!profil && czyMojProfilWstepny && aktualnyUser) {
                         profil = {
                             id: aktualnyUser.id,
                             nazwa_gracza: aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz"),
@@ -750,57 +839,19 @@
                         return;
                     }
 
+                    const finalProfilId = profil.id;
+                    const czyMojProfil = Boolean(aktualnyUser && finalProfilId === aktualnyUser.id);
                     aktualnyProfil = profil;
 
                     // Ustalanie Nicku
-                    const emailUsera = czyMojProfil ? aktualnyUser.email || "" : "";
-                    const domyslnyNick = emailUsera.includes("@") ? emailUsera.split("@")[0] : "Gracz";
-                    const metaNick = czyMojProfil ? aktualnyUser.user_metadata?.username : null;
-                    const nazwaGracza = czyMojProfil ? metaNick || profil?.nazwa_gracza || domyslnyNick : profil?.nazwa_gracza;
+                    const metaNick = czyMojProfil ? aktualnyUser?.user_metadata?.username : null;
+                    const nazwaGracza = profil?.nazwa_gracza || metaNick || (czyMojProfil && aktualnyUser?.email ? aktualnyUser.email.split("@")[0] : "Gracz");
 
-                    if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick) {
+                    if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick && client) {
                         client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
                     }
 
-                    // Obsługa UI obcego profilu
-                    if (!czyMojProfil) {
-                        const btnEdycja = document.getElementById("btn-edycja-profilu");
-                        if (btnEdycja) btnEdycja.style.display = "none";
-
-                        const avatarOverlay = document.querySelector(".avatar-overlay");
-                        if (avatarOverlay) avatarOverlay.style.display = "none";
-                        document.getElementById("avatar-container").style.pointerEvents = "none";
-
-                        document.getElementById("akcje-wlasciciela").style.display = "none";
-                        document.getElementById("akcje-goscia").style.display = "flex";
-
-                        const btnDodaj = document.getElementById("btn-dodaj-znajomego");
-                        if (btnDodaj) {
-                            btnDodaj.setAttribute("data-rywal-id", profilId);
-                            const { data: relacje } = await client.from("znajomi").select("*").or(`zapraszajacy_id.eq.${aktualnyUser.id},zapraszany_id.eq.${aktualnyUser.id}`);
-                            const relacja = relacje?.find((r) => r.zapraszajacy_id === profilId || r.zapraszany_id === profilId);
-
-                            if (relacja) {
-                                if (relacja.status === "zaakceptowane") {
-                                    btnDodaj.textContent = "✓ Twój znajomy";
-                                    btnDodaj.className = "btn-zaakceptowane-zaproszenie";
-                                    btnDodaj.disabled = true;
-                                } else if (relacja.status === "oczekujace") {
-                                    if (relacja.zapraszajacy_id === aktualnyUser.id) {
-                                        btnDodaj.textContent = "⏳ Wysłano zaproszenie";
-                                        btnDodaj.className = "btn-wyslano-zaproszenie";
-                                        btnDodaj.disabled = true;
-                                    } else {
-                                        btnDodaj.textContent = "Oczekuje! Akceptuj";
-                                        btnDodaj.className = "btn-primary";
-                                        btnDodaj.setAttribute("data-relacja-id", relacja.id);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Wypełnienie UI (Nagłówek)
+                    // WYPEŁNIENIE CAŁEGO UI NATYCHMIAST (Nagłówek, Ranga, Statystyki, Sprzęt)
                     document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
                     document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
 
@@ -853,8 +904,44 @@
                     document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
                     document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
 
+                    // Obsługa UI obcego profilu vs profilu właściciela
+                    if (!czyMojProfil) {
+                        const btnEdycja = document.getElementById("btn-edycja-profilu");
+                        if (btnEdycja) btnEdycja.style.display = "none";
+
+                        const avatarOverlay = document.querySelector(".avatar-overlay");
+                        if (avatarOverlay) avatarOverlay.style.display = "none";
+                        document.getElementById("avatar-container").style.pointerEvents = "none";
+
+                        document.getElementById("akcje-wlasciciela").style.display = "none";
+                        document.getElementById("akcje-goscia").style.display = "flex";
+
+                        const btnDodaj = document.getElementById("btn-dodaj-znajomego");
+                        if (btnDodaj) {
+                            btnDodaj.setAttribute("data-rywal-id", finalProfilId);
+                            if (aktualnyUser && aktualnyUser.id) {
+                                // Sprawdzenie relacji w tle bez blokowania widoku strony!
+                                sprawczRelacjeWtle(aktualnyUser.id, finalProfilId, session?.access_token);
+                            } else {
+                                btnDodaj.textContent = "Zaloguj się";
+                                btnDodaj.onclick = () => window.location.href = "./logowanie.html";
+                            }
+                        }
+                    } else {
+                        const btnEdycja = document.getElementById("btn-edycja-profilu");
+                        if (btnEdycja) btnEdycja.style.display = "inline-flex";
+
+                        document.getElementById("akcje-wlasciciela").style.display = "flex";
+                        document.getElementById("akcje-goscia").style.display = "none";
+                    }
+
+                    // Pomocnicza funkcja wywołująca sprawdzanie relacji w tle
+                    function sprawczRelacjeWtle(mId, cId, tok) {
+                        sprawdzRelacjeZnajomego(mId, cId, tok).catch((err) => console.warn(err));
+                    }
+
                     // 5. Pobranie historii gier (odporne na zawieszenia iOS Safari, chmura + pamięć lokalna)
-                    const mecze = await pobierzHistorieMeczow(profilId, nazwaGracza);
+                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza);
 
                     const listaMeczy = document.getElementById("lista-ostatnich-meczy");
                     ostatnieMeczeCache = mecze || [];
@@ -1441,9 +1528,17 @@
                     if (relacjaId) {
                         // Ktoś nas zaprosił, więc akceptujemy
                         this.textContent = "Akceptowanie...";
-                        const { error } = await client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId);
+                        let sukces = false;
+                        try {
+                            const { error } = await zLimitemCzasu(
+                                client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId),
+                                "akceptacja zaproszenia",
+                                4000
+                            );
+                            if (!error) sukces = true;
+                        } catch (e) {}
 
-                        if (!error) {
+                        if (sukces) {
                             this.textContent = "✓ Twój znajomy";
                             this.className = "btn-secondary";
                         } else {
@@ -1453,19 +1548,28 @@
                     } else if (rywalId) {
                         // Wysyłamy nowe zaproszenie
                         this.textContent = "Wysyłanie...";
-                        const { error } = await client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]);
+                        let sukces = false;
+                        let kodBledu = null;
+                        try {
+                            const { error } = await zLimitemCzasu(
+                                client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]),
+                                "wysyłanie zaproszenia",
+                                4000
+                            );
+                            if (!error) sukces = true;
+                            else kodBledu = error.code;
+                        } catch (e) {}
 
-                        if (error) {
-                            if (error.code === "23505") {
+                        if (sukces) {
+                            this.textContent = "⏳ Wysłano zaproszenie";
+                            this.className = "btn-wyslane-zaproszenie";
+                        } else {
+                            if (kodBledu === "23505") {
                                 this.textContent = "Zaproszenie już istnieje";
                             } else {
-                                console.error("Błąd wysyłania zaproszenia:", error);
                                 this.textContent = "Błąd wysyłania";
                                 this.disabled = false;
                             }
-                        } else {
-                            this.textContent = "⏳ Wysłano zaproszenie";
-                            this.className = "btn-wyslane-zaproszenie";
                         }
                     }
                 });
