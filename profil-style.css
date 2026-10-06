@@ -394,6 +394,9 @@ main {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
 }
 
 .modal-zawartosc {
@@ -402,8 +405,13 @@ main {
   border-radius: 14px;
   width: 90%;
   max-width: 440px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 26px;
   box-sizing: border-box;
+  margin: auto;
 }
 
 .modal-header {

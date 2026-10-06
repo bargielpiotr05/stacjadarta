@@ -26,6 +26,32 @@
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="./menu.js" defer></script>
+        <script>
+            const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
+            const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+
+            function supabaseProxyFetch(input, init) {
+                const sharedProxy = window.supabaseProxyFetch;
+                if (sharedProxy && sharedProxy !== supabaseProxyFetch) return sharedProxy(input, init);
+                return fetch(input, init);
+            }
+
+            if (!window.supabaseClient && window.supabase) {
+                window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+                    global: {
+                        fetch: supabaseProxyFetch,
+                    },
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true,
+                        lock: async (name, acquireTimeout, fn) => await fn(),
+                    },
+                });
+            }
+
+            window.supabaseKlient = window.supabaseClient;
+        </script>
     </head>
     <body>
         <header id="wspolny-header"></header>
@@ -277,7 +303,27 @@
         <footer id="wspolny-footer"></footer>
 
         <script>
-            let client = null;
+            // Szybki, synchroniczny odczyt zalogowanego użytkownika z localStorage
+            function odczytajZalogowanegoZStorage() {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                if (parsed?.user) return parsed.user;
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            let client = window.supabaseKlient || window.supabaseClient || null;
+            let aktualnyUser = odczytajZalogowanegoZStorage();
+            let aktualnyProfil = null;
+            let ostatnieMeczeCache = [];
 
             function zLimitemCzasu(obietnica, etap) {
                 let timerId;
@@ -297,19 +343,16 @@
                 strefaSprzetu.classList.toggle("otwarta");
             });
 
-            let aktualnyUser = null;
-            let aktualnyProfil = null;
-            let ostatnieMeczeCache = [];
-
             async function zaladujProfil() {
                 try {
                     // 1. NIEZAWODNE CZEKANIE NA BAZĘ (Safari często odpala skrypty za wcześnie)
                     let proby = 0;
-                    while (!window.supabaseKlient && proby < 20) {
+                    while (!client && proby < 30) {
+                        client = window.supabaseKlient || window.supabaseClient;
+                        if (client) break;
                         await new Promise((r) => setTimeout(r, 50));
                         proby++;
                     }
-                    client = window.supabaseKlient;
 
                     if (!client) {
                         document.getElementById("nazwa-uzytkownika").textContent = "Błąd: Brak połączenia z bazą";
@@ -317,19 +360,30 @@
                     }
 
                     // Użyj sesji zarządzanej przez Supabase Auth, aby uwzględnić jej odświeżenie.
-                    let { data: { session } } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji");
+                    let session = null;
+                    try {
+                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji");
+                        session = data?.session;
+                    } catch (eSess) {}
 
                     if (!session) {
-                        const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
-                        if (userData?.user) {
-                            const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji");
-                            session = refreshed.data?.session || { user: userData.user };
-                        }
+                        try {
+                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
+                            if (userData?.user) {
+                                const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji");
+                                session = refreshed.data?.session || { user: userData.user };
+                            }
+                        } catch (eUsr) {}
                     }
 
                     if (!session?.user) {
-                        window.location.href = "./logowanie.html";
-                        return;
+                        const localUser = odczytajZalogowanegoZStorage();
+                        if (localUser) {
+                            session = { user: localUser };
+                        } else {
+                            window.location.href = "./logowanie.html";
+                            return;
+                        }
                     }
 
                     aktualnyUser = session.user;
@@ -830,9 +884,19 @@
             btnZamknijModal?.addEventListener("click", zamknijWszystkieSekcjeModala);
             przyciskiAnuluj.forEach((btn) => btn.addEventListener("click", zamknijWszystkieSekcjeModala));
 
+            modal?.addEventListener("click", (e) => {
+                if (e.target === modal) zamknijWszystkieSekcjeModala();
+            });
+
             // 1. Otwieranie edycji profilu
             document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
-                if (!aktualnyUser) return;
+                if (!aktualnyUser) {
+                    aktualnyUser = odczytajZalogowanegoZStorage();
+                }
+                if (!aktualnyUser) {
+                    alert("Zaloguj się, aby edytować profil.");
+                    return;
+                }
                 const obecnyNick = aktualnyProfil?.nazwa_gracza || aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
 
                 document.getElementById("edycja-nick").value = obecnyNick;
@@ -846,7 +910,8 @@
                 document.getElementById("edycja-auto-score").value = aktualnyProfil?.auto_score || "";
                 document.getElementById("edycja-druzyny").value = aktualnyProfil?.druzyna || "";
 
-                document.getElementById("edycja-status").style.display = "none";
+                const statusDiv = document.getElementById("edycja-status");
+                if (statusDiv) statusDiv.style.display = "none";
 
                 modalTytul.textContent = "Edytuj profil";
                 blokUsunKonto.style.display = "none";
@@ -871,71 +936,98 @@
                 const btnZapisz = document.getElementById("btn-zapisz-edycje");
                 const statusDiv = document.getElementById("edycja-status");
 
-                btnZapisz.disabled = true;
-
-                // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles
-                const { error: profileErr } = await client
-                    .from("profiles")
-                    .update({
-                        nazwa_gracza: nowyNick,
-                        barele: noweBarele,
-                        shafty: noweShafty,
-                        groty: noweGroty,
-                        tarcza: nowaTarcza,
-                        auto_score: nowyAutoScore,
-                        druzyna: nowaDruzyna,
-                    })
-                    .eq("id", aktualnyUser.id);
-
-                if (profileErr) {
-                    btnZapisz.disabled = false;
-                    statusDiv.textContent = profileErr.message;
-                    statusDiv.style.display = "block";
+                if (!nowyNick) {
+                    if (statusDiv) {
+                        statusDiv.textContent = "Nick nie może być pusty.";
+                        statusDiv.style.color = "#f87171";
+                        statusDiv.style.display = "block";
+                    }
                     return;
                 }
 
-                // 2. Jeśli podano hasło, aktualizacja w Auth
-                if (noweHaslo) {
-                    const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
-                    if (passErr) {
-                        btnZapisz.disabled = false;
-                        statusDiv.textContent = passErr.message;
-                        statusDiv.style.display = "block";
-                        return;
+                btnZapisz.disabled = true;
+                btnZapisz.textContent = "Zapisywanie...";
+                if (statusDiv) statusDiv.style.display = "none";
+
+                try {
+                    if (!client) client = window.supabaseKlient || window.supabaseClient;
+                    if (!client) throw new Error("Brak połączenia z bazą danych.");
+                    if (!aktualnyUser) aktualnyUser = odczytajZalogowanegoZStorage();
+                    if (!aktualnyUser) throw new Error("Musisz być zalogowany.");
+
+                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles
+                    const { error: profileErr } = await client
+                        .from("profiles")
+                        .update({
+                            nazwa_gracza: nowyNick,
+                            barele: noweBarele,
+                            shafty: noweShafty,
+                            groty: noweGroty,
+                            tarcza: nowaTarcza,
+                            auto_score: nowyAutoScore,
+                            druzyna: nowaDruzyna,
+                        })
+                        .eq("id", aktualnyUser.id);
+
+                    if (profileErr) {
+                        throw profileErr;
                     }
+
+                    // 2. Jeśli podano hasło, aktualizacja w Auth
+                    if (noweHaslo) {
+                        const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
+                        if (passErr) throw passErr;
+                    }
+
+                    // 3. Kopia zapasowa w metadanych sesji (bezpiecznie w try/catch, by ewentualny błąd auth nie zepsuł zapisu profilu)
+                    try {
+                        await client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } });
+                    } catch (eMeta) {
+                        console.warn("Aktualizacja user_metadata pominięta:", eMeta);
+                    }
+
+                    try {
+                        await client.auth.refreshSession();
+                    } catch (eRef) {}
+
+                    // Aktualizacja UI bez odświeżania strony
+                    document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
+
+                    document.getElementById("barele-gracza").textContent = noweBarele || "-";
+                    document.getElementById("shafty-gracza").textContent = noweShafty || "-";
+                    document.getElementById("groty-gracza").textContent = noweGroty || "-";
+                    document.getElementById("tarcza-gracza").textContent = nowaTarcza || "-";
+                    document.getElementById("autoscore-gracza").textContent = nowyAutoScore || "-";
+                    document.getElementById("druzyna-gracza").textContent = nowaDruzyna || "-";
+
+                    // Aktualizacja lokalnego obiektu pamięci
+                    if (aktualnyProfil) {
+                        aktualnyProfil.nazwa_gracza = nowyNick;
+                        aktualnyProfil.barele = noweBarele;
+                        aktualnyProfil.shafty = noweShafty;
+                        aktualnyProfil.groty = noweGroty;
+                        aktualnyProfil.tarcza = nowaTarcza;
+                        aktualnyProfil.auto_score = nowyAutoScore;
+                        aktualnyProfil.druzyna = nowaDruzyna;
+                    }
+
+                    const headerNick = document.querySelector(".user-name");
+                    if (headerNick) headerNick.textContent = nowyNick;
+
+                    zamknijWszystkieSekcjeModala();
+                } catch (err) {
+                    console.error("Błąd zapisu profilu:", err);
+                    if (statusDiv) {
+                        statusDiv.textContent = err.message || "Błąd zapisu zmian.";
+                        statusDiv.style.color = "#f87171";
+                        statusDiv.style.display = "block";
+                    } else {
+                        alert(`Błąd zapisu: ${err.message || "Spróbuj ponownie"}`);
+                    }
+                } finally {
+                    btnZapisz.disabled = false;
+                    btnZapisz.textContent = "Zapisz zmiany";
                 }
-
-                // 3. Kopia zapasowa w metadanych sesji
-                await client.auth.updateUser({ data: { username: nowyNick } });
-                await client.auth.refreshSession();
-
-                btnZapisz.disabled = false;
-
-                // Aktualizacja UI bez odświeżania strony
-                document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
-
-                document.getElementById("barele-gracza").textContent = noweBarele || "-";
-                document.getElementById("shafty-gracza").textContent = noweShafty || "-";
-                document.getElementById("groty-gracza").textContent = noweGroty || "-";
-                document.getElementById("tarcza-gracza").textContent = nowaTarcza || "-";
-                document.getElementById("autoscore-gracza").textContent = nowyAutoScore || "-";
-                document.getElementById("druzyna-gracza").textContent = nowaDruzyna || "-";
-
-                // Aktualizacja lokalnego obiektu pamięci
-                if (aktualnyProfil) {
-                    aktualnyProfil.nazwa_gracza = nowyNick;
-                    aktualnyProfil.barele = noweBarele;
-                    aktualnyProfil.shafty = noweShafty;
-                    aktualnyProfil.groty = noweGroty;
-                    aktualnyProfil.tarcza = nowaTarcza;
-                    aktualnyProfil.auto_score = nowyAutoScore;
-                    aktualnyProfil.druzyna = nowaDruzyna;
-                }
-
-                const headerNick = document.querySelector(".user-name");
-                if (headerNick) headerNick.textContent = nowyNick;
-
-                zamknijWszystkieSekcjeModala();
             });
 
             // 2. Otwieranie okna wylogowania
@@ -1042,16 +1134,29 @@
                     }
                 });
             }
-            window.addEventListener("pageshow", (event) => {
-                if (event.persisted) {
-                    setTimeout(zaladujProfil, 1000);
-                }
+            // Uruchomienie ładowania profilu od razu
+            zaladujProfil();
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", zaladujProfil);
+            }
+
+            // KLUCZOWE DLA iOS SAFARI: obsługa powrotu z bfcache
+            window.addEventListener("pageshow", () => {
+                zaladujProfil();
             });
 
-            document.addEventListener("DOMContentLoaded", () => {
-                // Twój pomysł: Czekamy równą sekundę, aż menu.js skończy pracę
-                setTimeout(zaladujProfil, 1000);
-            });
+            // Nasłuchiwanie na zmiany sesji (np. logowanie/odświeżenie z menu.js)
+            try {
+                const k = window.supabaseKlient || window.supabaseClient;
+                if (k?.auth?.onAuthStateChange) {
+                    k.auth.onAuthStateChange((event, session) => {
+                        if (session?.user && (!aktualnyUser || aktualnyUser.id !== session.user.id)) {
+                            zaladujProfil();
+                        }
+                    });
+                }
+            } catch (e) {}
         </script>
     </body>
 </html>
