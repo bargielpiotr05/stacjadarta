@@ -554,7 +554,12 @@
             let graczeUczestnicy = ["Gracz 1"];
             let czyBotWlaczony = false;
             let zalogowanyNickGlobalny = "";
-            window.idZnajomychWGrze = {};
+            let zalogowanyUserIdGlobalny = null;
+            try {
+                window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+            } catch (e) {
+                window.idZnajomychWGrze = {};
+            }
 
             function renderujPolaUczestnikow() {
                 const kontener = document.getElementById("kontener-nazw-graczy");
@@ -572,7 +577,8 @@
 
                     // Wykrywamy, czy ten slot to zalogowany użytkownik LUB dodany znajomy
                     const czyToMojeKonto = zalogowanyNickGlobalny !== "" && nazwa === zalogowanyNickGlobalny;
-                    const czyToKontoZnajomego = nickiZnajomychWGrze.includes(nazwa);
+                    const czyToKontoZnajomego = nickiZnajomychWGrze.includes(nazwa) || 
+                                               nickiZnajomychWGrze.some((n) => n.toLowerCase() === (nazwa || "").toLowerCase());
                     const czyZablokowaneEdycja = czyToMojeKonto || czyToKontoZnajomego;
 
                     // DODANE: pointer-events: none całkowicie blokuje dotyk na telefonie
@@ -860,10 +866,11 @@
                         return;
                     }
 
+                    window.znajomiPopupMap = {};
                     let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:min(55vh, 460px); overflow-y:auto; padding-right:5px;">';
                     znajomi.forEach((znajomy) => {
-                        const nickEscaped = String(znajomy.nazwa_gracza || "Gracz").replace(/'/g, "\\'");
-                        const juzDodan = graczeUczestnicy.includes(znajomy.nazwa_gracza);
+                        window.znajomiPopupMap[znajomy.id] = znajomy;
+                        const juzDodan = graczeUczestnicy.some((g) => (g || "").toLowerCase() === (znajomy.nazwa_gracza || "").toLowerCase());
 
                         html += `
                             <div style="display:flex; align-items:center; justify-content:space-between; background:var(--primary-color-lighter); padding:10px; border-radius:8px; border:1px solid var(--primary-color-border);">
@@ -872,7 +879,7 @@
                                     <strong style="color:white; font-size:14px;">${znajomy.nazwa_gracza}</strong>
                                 </div>
                                 <button type="button" class="popup-btn popup-btn-yes" style="padding:10px; max-width:30%; opacity:${juzDodan ? "0.4" : "1"}; cursor:${juzDodan ? "not-allowed" : "pointer"}" 
-                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${nickEscaped}', '${znajomy.id}')`}">
+                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${znajomy.id}')`}">
                                     ${juzDodan ? "Dodano" : "Dodaj"}
                                 </button>
                             </div>
@@ -887,12 +894,34 @@
             };
 
             // NOWA FUNKCJA: Wstawianie znajomego z przypisaniem jego ID
-            window.zatwierdzDodanieZnajomego = function (nick, id) {
+            window.zatwierdzDodanieZnajomego = function (idLubNick, opcjonalneId) {
                 if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
-                if (graczeUczestnicy.includes(nick)) return;
+
+                let id = opcjonalneId || idLubNick;
+                let nick = "";
+
+                if (window.znajomiPopupMap && window.znajomiPopupMap[idLubNick]) {
+                    const znajomy = window.znajomiPopupMap[idLubNick];
+                    id = znajomy.id;
+                    nick = (znajomy.nazwa_gracza || "Gracz").trim();
+                } else if (opcjonalneId) {
+                    nick = String(idLubNick || "").trim();
+                    id = opcjonalneId;
+                } else {
+                    nick = String(idLubNick || "").trim();
+                }
+
+                if (!nick) return;
+                if (graczeUczestnicy.some((g) => (g || "").toLowerCase() === nick.toLowerCase())) return;
 
                 graczeUczestnicy.push(nick);
-                window.idZnajomychWGrze[nick] = id; // Zapisanie UUID znajomego do użycia po meczu
+
+                if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
+                window.idZnajomychWGrze[nick] = id;
+                window.idZnajomychWGrze[nick.toLowerCase()] = id;
+                try {
+                    localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                } catch (e) {}
 
                 zamknijPopupDodajGracza();
                 renderujPolaUczestnikow();
@@ -912,7 +941,7 @@
                 const nick = zalogowanyNickGlobalny || "Ja";
 
                 // Żelazna blokada przed duplikatem
-                if (graczeUczestnicy.includes(nick)) {
+                if (graczeUczestnicy.some((g) => (g || "").toLowerCase() === nick.toLowerCase())) {
                     pokazCustomowyAlert("Jesteś już dodany do tej gry!");
                     return;
                 }
@@ -933,6 +962,15 @@
 
             window.usunGraczaZeSlotu = function (index) {
                 if (graczeUczestnicy.length <= 1 && !czyBotWlaczony) return;
+                const usunietyNick = graczeUczestnicy[index];
+                if (usunietyNick && window.idZnajomychWGrze) {
+                    delete window.idZnajomychWGrze[usunietyNick];
+                    delete window.idZnajomychWGrze[usunietyNick.trim()];
+                    delete window.idZnajomychWGrze[usunietyNick.trim().toLowerCase()];
+                    try {
+                        localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                    } catch (e) {}
+                }
                 graczeUczestnicy.splice(index, 1);
                 renderujPolaUczestnikow();
             };
@@ -958,7 +996,20 @@
                     const session = await pobierzAktywnaSesjeSupabase();
                     const user = session?.user;
                     if (user) {
-                        zalogowanyNickGlobalny = user.user_metadata?.username || user.email?.split("@")[0] || "";
+                        zalogowanyUserIdGlobalny = user.id;
+                        let nick = user.user_metadata?.username || user.email?.split("@")[0] || "";
+                        try {
+                            const { data: prof } = await (window.supabaseClient || window.supabaseKlient)
+                                .from("profiles")
+                                .select("nazwa_gracza")
+                                .eq("id", user.id)
+                                .maybeSingle();
+                            if (prof?.nazwa_gracza) {
+                                nick = prof.nazwa_gracza.trim();
+                            }
+                        } catch (e) {}
+
+                        zalogowanyNickGlobalny = nick;
                         if (zalogowanyNickGlobalny) graczeUczestnicy[0] = zalogowanyNickGlobalny;
                     }
                 } catch (e) {
@@ -1362,9 +1413,21 @@
                         if (nazwa === "") nazwa = `Gracz ${i + 1}`;
                     }
 
+                    let profilIdGracza = null;
+                    if (!czyTenToBot) {
+                        if (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) {
+                            profilIdGracza = zalogowanyUserIdGlobalny;
+                        } else if (window.idZnajomychWGrze) {
+                            profilIdGracza = window.idZnajomychWGrze[nazwa] || 
+                                             window.idZnajomychWGrze[nazwa.toLowerCase()] || 
+                                             window.idZnajomychWGrze[nazwa.trim()] || null;
+                        }
+                    }
+
                     gracze.push({
                         id: i,
                         nazwa: nazwa,
+                        profilId: profilIdGracza,
                         punkty: punktyStartowe,
                         wygraneLegi: 0,
                         rzuty: [],
@@ -2010,16 +2073,29 @@
                         mojGracz = gracze[mojIndeksOnline];
                         rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
                     } else {
-                        if (mojNick) {
+                        // 1. Dopasowanie po profilId (jeśli przypisane)
+                        if (userId) {
+                            mojGracz = gracze.find((g) => g.profilId === userId);
+                        }
+                        // 2. Dopasowanie po nazwie gracza
+                        if (!mojGracz && mojNick) {
                             mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === mojNick);
                         }
+                        if (!mojGracz && zalogowanyNickGlobalny) {
+                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase());
+                        }
+                        // 3. Fallback: gracz 0 (o ile to nie turniej)
                         if (!mojGracz && !czyTurniej) {
                             mojGracz = gracze[0];
                         }
                         if (mojGracz) {
-                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id) || null;
-                            const dodanyZnajomy = gracze.find((g) => g.id !== mojGracz.id && window.idZnajomychWGrze?.[g.nazwa]);
-                            if (dodanyZnajomy) rywalGracz = dodanyZnajomy;
+                            // Szukamy rywala: preferujemy gracza ze znanym UUID znajomego
+                            const dodanyZnajomy = gracze.find((g) => g.id !== mojGracz.id && (g.profilId || (window.idZnajomychWGrze && (window.idZnajomychWGrze[g.nazwa] || window.idZnajomychWGrze[g.nazwa.trim()] || window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]))));
+                            if (dodanyZnajomy) {
+                                rywalGracz = dodanyZnajomy;
+                            } else {
+                                rywalGracz = gracze.find((g) => g.id !== mojGracz.id) || null;
+                            }
                         }
                     }
 
@@ -2063,31 +2139,36 @@
                             .eq("id", userId);
                     }
 
-                    // KROK B: Identyfikacja UUID Gościa (naprawia "DartBot")
+                    // KROK B: Identyfikacja UUID Gościa (znajomego lub pokoju online)
                     let gosc_id_db = null;
                     if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined") {
-                        const { data: pok, error: bladOdczytuPokoju } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
-                        if (bladOdczytuPokoju) throw bladOdczytuPokoju;
+                        const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
                         if (pok && pok.gosc_id) {
                             gosc_id_db = pok.gosc_id;
                         }
                     } else {
-                        if (rywalGracz && window.idZnajomychWGrze && window.idZnajomychWGrze[rywalGracz.nazwa]) {
-                            gosc_id_db = window.idZnajomychWGrze[rywalGracz.nazwa];
+                        if (rywalGracz) {
+                            gosc_id_db = rywalGracz.profilId || 
+                                         (window.idZnajomychWGrze && (
+                                             window.idZnajomychWGrze[rywalGracz.nazwa] || 
+                                             window.idZnajomychWGrze[rywalGracz.nazwa.trim()] || 
+                                             window.idZnajomychWGrze[rywalGracz.nazwa.trim().toLowerCase()]
+                                         )) || null;
                         }
-                    }
-
-                    if (rywalGracz && !rywalGracz.czyBot && !gosc_id_db && Object.keys(window.idZnajomychWGrze || {}).length > 0) {
-                        throw new Error(`Nie znaleziono UUID profilu rywala „${rywalGracz.nazwa}”. Usuń go z uczestników i dodaj ponownie z listy znajomych.`);
                     }
 
                     let idZwyciezcy = null;
                     if (zwyciezca) {
-                        if (mojGracz && zwyciezca.nazwa === mojGracz.nazwa) idZwyciezcy = userId;
-                        else if (gosc_id_db && zwyciezca.nazwa === rywalGracz.nazwa) idZwyciezcy = gosc_id_db;
+                        if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
+                            idZwyciezcy = userId;
+                        } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
+                            idZwyciezcy = gosc_id_db;
+                        } else if (zwyciezca.profilId) {
+                            idZwyciezcy = zwyciezca.profilId;
+                        }
                     }
 
-                    // KROK C: Zapisanie pojedynku
+                    // KROK C: Zapisanie pojedynku do tabeli matches
                     const payloadMeczu = {
                         host_id: userId,
                         gosc_id: gosc_id_db, 
@@ -2102,14 +2183,30 @@
                     const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
                     if (bladZapisuMeczu) throw bladZapisuMeczu;
 
-                    // KROK D: Zaktualizuj profil rywala
-                    if (gosc_id_db && rywalGracz) {
-                        const statyRywal = podsumowanieMeczu.gracze.find((g) => g.id === rywalGracz.id);
-                        if (!statyRywal) throw new Error(`Brak podsumowania statystyk gracza „${rywalGracz.nazwa}”.`);
-                        if (statyRywal) {
-                            const { data: profRywal, error: bladOdczytuRywale } = await klientBazy.from("profiles").select("*").eq("id", gosc_id_db).maybeSingle();
-                            if (bladOdczytuRywale) throw bladOdczytuRywale;
-                            if (!profRywal) throw new Error(`Nie znaleziono profilu rywala „${rywalGracz.nazwa}”.`);
+                    // KROK D: Zaktualizuj profile rywali posiadających zarejestrowane konto (znajomi)
+                    let ostrzezenieRLS = false;
+                    for (const graczUczestnik of gracze) {
+                        if (graczUczestnik.id === mojGracz.id || graczUczestnik.czyBot) continue;
+
+                        const idProfiluRywala = graczUczestnik.profilId || 
+                            (window.idZnajomychWGrze && (
+                                window.idZnajomychWGrze[graczUczestnik.nazwa] || 
+                                window.idZnajomychWGrze[graczUczestnik.nazwa.trim()] || 
+                                window.idZnajomychWGrze[graczUczestnik.nazwa.trim().toLowerCase()]
+                            ));
+
+                        if (!idProfiluRywala) continue;
+
+                        const statyRywal = podsumowanieMeczu.gracze.find((g) => g.id === graczUczestnik.id);
+                        if (!statyRywal) continue;
+
+                        try {
+                            const { data: profRywal } = await klientBazy
+                                .from("profiles")
+                                .select("*")
+                                .eq("id", idProfiluRywala)
+                                .maybeSingle();
+
                             if (profRywal) {
                                 const dotychczasMeczeR = parseInt(profRywal.rozegrane_mecze) || 0;
                                 const dotychczasWygraneR = parseInt(profRywal.wygrane_mecze) || 0;
@@ -2123,27 +2220,56 @@
 
                                 const nowaSredniaOgolnaR = dotychczasMeczeR === 0 ? nowaSredniaRywal.toFixed(2) : ((dotychczasSredniaR * dotychczasMeczeR + nowaSredniaRywal) / noweMeczeR).toFixed(2);
                                 const nowaSrednia9OgolnaR = dotychczasMeczeR === 0 ? nowaSrednia9Rywal.toFixed(2) : ((dotychczasSrednia9R * dotychczasMeczeR + nowaSrednia9Rywal) / noweMeczeR).toFixed(2);
-                                const czyRywalWygral = idZwyciezcy === gosc_id_db;
+                                const czyTenRywalWygral = idZwyciezcy === idProfiluRywala;
+                                const noweWygraneR = czyTenRywalWygral ? dotychczasWygraneR + 1 : dotychczasWygraneR;
+                                const nowe180R = dotychczas180R + (statyRywal.liczba180 || 0);
 
-                                const { data: zaktualizowanyProfilRywala, error: bladAktualizacjiRywala } = await klientBazy
-                                    .from("profiles")
-                                    .update({
-                                        rozegrane_mecze: noweMeczeR,
-                                        wygrane_mecze: czyRywalWygral ? dotychczasWygraneR + 1 : dotychczasWygraneR,
-                                        srednia: nowaSredniaOgolnaR,
-                                        srednia_9_lotek: nowaSrednia9OgolnaR,
-                                        ilosc_180: dotychczas180R + (statyRywal.liczba180 || 0),
-                                    })
-                                    .eq("id", gosc_id_db)
-                                    .select("id")
-                                    .maybeSingle();
+                                let zaktualizowanoRywala = false;
 
-                                if (bladAktualizacjiRywala) throw bladAktualizacjiRywala;
-                                if (!zaktualizowanyProfilRywala) {
-                                    alert("Mecz zapisano, ale statystyki znajomego nie zostały zmienione. Sprawdź politykę UPDATE tabeli profiles.");
+                                // Metoda 1: Bezpieczna funkcja RPC w Supabase (SECURITY DEFINER)
+                                try {
+                                    const { error: rpcErr } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
+                                        p_gracz_id: idProfiluRywala,
+                                        p_nowe_mecze: noweMeczeR,
+                                        p_nowe_wygrane: noweWygraneR,
+                                        p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                        p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                        p_nowe_180: nowe180R,
+                                    });
+                                    if (!rpcErr) zaktualizowanoRywala = true;
+                                } catch (eRpc) {}
+
+                                // Metoda 2: Bezpośrednia aktualizacja w tabeli profiles (jeśli polityka RLS zezwala)
+                                if (!zaktualizowanoRywala) {
+                                    const { data: updateRes, error: updateErr } = await klientBazy
+                                        .from("profiles")
+                                        .update({
+                                            rozegrane_mecze: noweMeczeR,
+                                            wygrane_mecze: noweWygraneR,
+                                            srednia: nowaSredniaOgolnaR,
+                                            srednia_9_lotek: nowaSrednia9OgolnaR,
+                                            ilosc_180: nowe180R,
+                                        })
+                                        .eq("id", idProfiluRywala)
+                                        .select("id");
+
+                                    if (!updateErr && updateRes && updateRes.length > 0) {
+                                        zaktualizowanoRywala = true;
+                                    }
+                                }
+
+                                if (!zaktualizowanoRywala) {
+                                    ostrzezenieRLS = true;
+                                    console.warn(`Mecz zapisany, ale statystyki w profilu znajomego (${graczUczestnik.nazwa}) nie zostały zmodyfikowane z powodu polityki RLS w Supabase.`);
                                 }
                             }
+                        } catch (errRywal) {
+                            console.warn("Błąd podczas próby aktualizacji profilu rywala:", errRywal);
                         }
+                    }
+
+                    if (ostrzezenieRLS) {
+                        alert("Mecz został zapisany pomyślnie w historii pojedynków! Aby statystyki ogólne w profilu znajomego również się zaktualizowały, wykonaj w Supabase SQL skrypt z pliku supabase_aktualizacja_statystyk.sql.");
                     }
                 } catch (error) {
                     console.error("Błąd zapisu meczu do Supabase:", error);
@@ -2454,6 +2580,7 @@
                     historiaMeczuLegi,
                     historiaAktualnegoLegu,
                     historiaStanuGry, // Zapisujemy pełną historię cofnięć
+                    idZnajomychWGrze: window.idZnajomychWGrze || {},
                 };
 
                 localStorage.setItem("sd_trwajacy_mecz", JSON.stringify(daneMeczu));
@@ -2485,6 +2612,10 @@
                     historiaMeczuLegi = stan.historiaMeczuLegi || [];
                     historiaAktualnegoLegu = stan.historiaAktualnegoLegu || [];
                     historiaStanuGry = stan.historiaStanuGry || []; // Przywracamy historię cofnięć
+
+                    if (stan.idZnajomychWGrze) {
+                        window.idZnajomychWGrze = Object.assign({}, window.idZnajomychWGrze || {}, stan.idZnajomychWGrze);
+                    }
 
                     // Przełącz widok
                     formularzUstawien.style.display = "none";
