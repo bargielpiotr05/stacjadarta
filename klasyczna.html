@@ -35,6 +35,19 @@
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
             function supabaseProxyFetch(input, init) {
+                const isLocal =
+                    window.location.hostname === "localhost" ||
+                    window.location.hostname === "127.0.0.1" ||
+                    window.location.hostname.startsWith("192.168.") ||
+                    window.location.hostname.startsWith("10.") ||
+                    window.location.hostname.endsWith(".local") ||
+                    window.location.port !== "" ||
+                    window.location.protocol === "file:";
+
+                if (isLocal) {
+                    return fetch(input, init);
+                }
+
                 const sharedProxy = window.supabaseProxyFetch;
                 if (sharedProxy && sharedProxy !== supabaseProxyFetch) return sharedProxy(input, init);
                 return fetch(input, init);

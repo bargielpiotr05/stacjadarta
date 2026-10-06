@@ -2,6 +2,22 @@ const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
 async function supabaseProxyFetch(input, init) {
+    // 1. W środowisku lokalnym (Live Server, LAN np. 192.168.x.x, localhost) endpoint proxy nie istnieje.
+    // Natychmiast wykonujemy bezpośrednie połączenie z Supabase bez opóźnień i prób proxy.
+    const isLocal =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+         window.location.hostname === "127.0.0.1" ||
+         window.location.hostname.startsWith("192.168.") ||
+         window.location.hostname.startsWith("10.") ||
+         window.location.hostname.endsWith(".local") ||
+         window.location.port !== "" ||
+         window.location.protocol === "file:");
+
+    if (isLocal) {
+        return fetch(input, init);
+    }
+
     const request = input instanceof Request ? input : new Request(input, init);
     let url;
     try {
@@ -46,7 +62,7 @@ async function supabaseProxyFetch(input, init) {
 
     const wyslijZLimitem = (token) => {
         const controller = new AbortController();
-        const timerId = setTimeout(() => controller.abort(), 6000);
+        const timerId = setTimeout(() => controller.abort(), 2500);
         return fetch("/api/supabase-request", {
             method: "POST",
             headers: {
