@@ -234,6 +234,9 @@ export default {
           upstreamUrl.searchParams.set("kod_pokoju", `eq.${filters.kod_pokoju}`);
           upstreamUrl.searchParams.set("status", "eq.waiting");
           upstreamUrl.searchParams.set("gosc_id", "is.null");
+          method = "PATCH";
+          body = JSON.stringify(values);
+          returnRepresentation = true;
         } else if (table === "game_invites") {
           const allowedFields = new Set(["status"]);
           if (
