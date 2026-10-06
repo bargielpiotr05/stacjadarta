@@ -325,10 +325,10 @@
             let aktualnyProfil = null;
             let ostatnieMeczeCache = [];
 
-            function zLimitemCzasu(obietnica, etap) {
+            function zLimitemCzasu(obietnica, etap, czasMs = 8000) {
                 let timerId;
                 const timeout = new Promise((resolve, reject) => {
-                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 15000);
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), czasMs);
                 });
 
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
@@ -362,15 +362,15 @@
                     // Użyj sesji zarządzanej przez Supabase Auth, aby uwzględnić jej odświeżenie.
                     let session = null;
                     try {
-                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji");
+                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji", 4000);
                         session = data?.session;
                     } catch (eSess) {}
 
                     if (!session) {
                         try {
-                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika");
+                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika", 4000);
                             if (userData?.user) {
-                                const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji");
+                                const refreshed = await zLimitemCzasu(client.auth.getSession(), "ponowny odczyt sesji", 4000);
                                 session = refreshed.data?.session || { user: userData.user };
                             }
                         } catch (eUsr) {}
@@ -393,19 +393,36 @@
                     const profilId = paramId || aktualnyUser.id;
                     const czyMojProfil = profilId === aktualnyUser.id;
 
-                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH
-                    const response = await zLimitemCzasu(
-                        fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
-                            headers: {
-                                apikey: client.supabaseKey,
-                            },
-                            cache: "no-store",
-                        }),
-                        "pobieranie profilu przez serwer strony",
-                    );
-                    const profiles = await response.json();
-                    if (!response.ok) throw new Error(profiles.message || `Błąd pobierania profilu (HTTP ${response.status})`);
-                    const profil = profiles[0] || null;
+                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (z obsługą serwera deweloperskiego / bezpośredniego Supabase)
+                    let profil = null;
+                    try {
+                        const response = await zLimitemCzasu(
+                            fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
+                                headers: {
+                                    apikey: client.supabaseKey || SUPA_KEY,
+                                },
+                                cache: "no-store",
+                            }),
+                            "pobieranie profilu przez serwer strony",
+                            4000
+                        );
+                        if (response.ok) {
+                            const profiles = await response.json();
+                            profil = Array.isArray(profiles) ? profiles[0] : profiles;
+                        }
+                    } catch (eProxy) {
+                        console.warn("Proxy ./api/profiles niedostępne:", eProxy);
+                    }
+
+                    if (!profil) {
+                        const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
+                            client.from("profiles").select("*").eq("id", profilId).maybeSingle(),
+                            "bezpośredni odczyt profilu z bazy",
+                            6000
+                        );
+                        if (dbErr) throw dbErr;
+                        profil = dbProfil;
+                    }
 
                     if (!profil) {
                         document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono gracza.</h2>`;
@@ -819,15 +836,25 @@
                     } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
 
                     // 3. Aktualizacja tabeli public.profiles
-                    const { error: dbErr } = await client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
+                    const { error: dbErr } = await zLimitemCzasu(
+                        client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId),
+                        "zapis avatara w bazie",
+                        8000
+                    );
 
                     if (dbErr) throw dbErr;
 
-                    // 4. Kopia zapasowa w sesji użytkownika
-                    await client.auth.updateUser({
-                        data: { avatar_url: publicUrl },
-                    });
-                    await client.auth.refreshSession();
+                    // 4. Kopia zapasowa w sesji użytkownika (w tle)
+                    try {
+                        await Promise.race([
+                            client.auth.updateUser({ data: { avatar_url: publicUrl } }),
+                            new Promise((r) => setTimeout(r, 2000))
+                        ]);
+                        await Promise.race([
+                            client.auth.refreshSession(),
+                            new Promise((r) => setTimeout(r, 2000))
+                        ]);
+                    } catch (eAuth) {}
 
                     // 5. Aktualizacja UI
                     imgAvatar.src = publicUrl;
@@ -947,27 +974,34 @@
 
                 btnZapisz.disabled = true;
                 btnZapisz.textContent = "Zapisywanie...";
-                if (statusDiv) statusDiv.style.display = "none";
+                if (statusDiv) {
+                    statusDiv.textContent = "";
+                    statusDiv.style.display = "none";
+                }
 
                 try {
                     if (!client) client = window.supabaseKlient || window.supabaseClient;
                     if (!client) throw new Error("Brak połączenia z bazą danych.");
                     if (!aktualnyUser) aktualnyUser = odczytajZalogowanegoZStorage();
-                    if (!aktualnyUser) throw new Error("Musisz być zalogowany.");
+                    if (!aktualnyUser) throw new Error("Musisz być zalogowany, aby zapisać profil.");
 
-                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles
-                    const { error: profileErr } = await client
-                        .from("profiles")
-                        .update({
-                            nazwa_gracza: nowyNick,
-                            barele: noweBarele,
-                            shafty: noweShafty,
-                            groty: noweGroty,
-                            tarcza: nowaTarcza,
-                            auto_score: nowyAutoScore,
-                            druzyna: nowaDruzyna,
-                        })
-                        .eq("id", aktualnyUser.id);
+                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles (z limitem czasu)
+                    const { error: profileErr } = await zLimitemCzasu(
+                        client
+                            .from("profiles")
+                            .update({
+                                nazwa_gracza: nowyNick,
+                                barele: noweBarele,
+                                shafty: noweShafty,
+                                groty: noweGroty,
+                                tarcza: nowaTarcza,
+                                auto_score: nowyAutoScore,
+                                druzyna: nowaDruzyna,
+                            })
+                            .eq("id", aktualnyUser.id),
+                        "zapis profilu w bazie",
+                        8000
+                    );
 
                     if (profileErr) {
                         throw profileErr;
@@ -975,30 +1009,45 @@
 
                     // 2. Jeśli podano hasło, aktualizacja w Auth
                     if (noweHaslo) {
-                        const { error: passErr } = await client.auth.updateUser({ password: noweHaslo });
+                        const { error: passErr } = await zLimitemCzasu(
+                            client.auth.updateUser({ password: noweHaslo }),
+                            "aktualizacja hasła",
+                            8000
+                        );
                         if (passErr) throw passErr;
                     }
 
-                    // 3. Kopia zapasowa w metadanych sesji (bezpiecznie w try/catch, by ewentualny błąd auth nie zepsuł zapisu profilu)
+                    // 3. Kopia zapasowa w metadanych sesji (w tle z limitem 2s, by ewentualne opóźnienia Auth nie blokowały profilu)
                     try {
-                        await client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } });
+                        await Promise.race([
+                            client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }),
+                            new Promise((r) => setTimeout(r, 2000))
+                        ]);
                     } catch (eMeta) {
                         console.warn("Aktualizacja user_metadata pominięta:", eMeta);
                     }
 
                     try {
-                        await client.auth.refreshSession();
+                        await Promise.race([
+                            client.auth.refreshSession(),
+                            new Promise((r) => setTimeout(r, 2000))
+                        ]);
                     } catch (eRef) {}
 
                     // Aktualizacja UI bez odświeżania strony
-                    document.getElementById("nazwa-uzytkownika").textContent = nowyNick;
+                    const elNick = document.getElementById("nazwa-uzytkownika");
+                    if (elNick) elNick.textContent = nowyNick;
 
-                    document.getElementById("barele-gracza").textContent = noweBarele || "-";
-                    document.getElementById("shafty-gracza").textContent = noweShafty || "-";
-                    document.getElementById("groty-gracza").textContent = noweGroty || "-";
-                    document.getElementById("tarcza-gracza").textContent = nowaTarcza || "-";
-                    document.getElementById("autoscore-gracza").textContent = nowyAutoScore || "-";
-                    document.getElementById("druzyna-gracza").textContent = nowaDruzyna || "-";
+                    const setEl = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = val || "-";
+                    };
+                    setEl("barele-gracza", noweBarele);
+                    setEl("shafty-gracza", noweShafty);
+                    setEl("groty-gracza", noweGroty);
+                    setEl("tarcza-gracza", nowaTarcza);
+                    setEl("autoscore-gracza", nowyAutoScore);
+                    setEl("druzyna-gracza", nowaDruzyna);
 
                     // Aktualizacja lokalnego obiektu pamięci
                     if (aktualnyProfil) {
@@ -1009,6 +1058,11 @@
                         aktualnyProfil.tarcza = nowaTarcza;
                         aktualnyProfil.auto_score = nowyAutoScore;
                         aktualnyProfil.druzyna = nowaDruzyna;
+                    }
+
+                    if (aktualnyUser?.user_metadata) {
+                        aktualnyUser.user_metadata.username = nowyNick;
+                        aktualnyUser.user_metadata.nazwa_gracza = nowyNick;
                     }
 
                     const headerNick = document.querySelector(".user-name");

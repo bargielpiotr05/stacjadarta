@@ -3,10 +3,15 @@ const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
 async function supabaseProxyFetch(input, init) {
     const request = input instanceof Request ? input : new Request(input, init);
-    const url = new URL(request.url);
+    let url;
+    try {
+        url = new URL(request.url);
+    } catch {
+        return fetch(input, init);
+    }
 
     if (url.origin !== SUPABASE_URL || !url.pathname.startsWith("/rest/v1/")) {
-        return fetch(request);
+        return fetch(input, init);
     }
 
     const forwardedHeaders = {};
@@ -17,21 +22,56 @@ async function supabaseProxyFetch(input, init) {
 
     const authorization = request.headers.get("authorization") || "";
     const accessToken = authorization.replace(/^Bearer\s+/i, "") || null;
-    const body = ["GET", "HEAD"].includes(request.method) ? null : await request.clone().text();
+
+    let body = null;
+    if (!["GET", "HEAD"].includes(request.method)) {
+        if (init && typeof init.body === "string") {
+            body = init.body;
+        } else if (typeof input === "object" && input && typeof input.body === "string") {
+            body = input.body;
+        } else {
+            try {
+                // Zabezpieczenie przed zawieszaniem WebKit / Safari na request.clone().text()
+                body = await Promise.race([
+                    request.clone().text(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout clone")), 1000))
+                ]);
+            } catch {
+                return fetch(input, init);
+            }
+        }
+    }
+
     const payload = { path: `${url.pathname}${url.search}`, method: request.method, headers: forwardedHeaders, body, accessToken };
 
-    const wyslij = (token) => fetch("/api/supabase-request", {
-        method: "POST",
-        headers: {
-            apikey: request.headers.get("apikey") || SUPABASE_ANON_KEY,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...payload, accessToken: token }),
-        cache: "no-store",
-        keepalive: request.keepalive,
-    });
+    const wyslijZLimitem = (token) => {
+        const controller = new AbortController();
+        const timerId = setTimeout(() => controller.abort(), 6000);
+        return fetch("/api/supabase-request", {
+            method: "POST",
+            headers: {
+                apikey: request.headers.get("apikey") || SUPABASE_ANON_KEY,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ...payload, accessToken: token }),
+            cache: "no-store",
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timerId));
+    };
 
-    let response = await wyslij(accessToken);
+    let response;
+    try {
+        response = await wyslijZLimitem(accessToken);
+    } catch (err) {
+        // Serwer lokalny / błąd sieciowy / timeout proxy – fallback do bezpośredniego połączenia
+        return fetch(input, init);
+    }
+
+    // Jeśli endpoint nie istnieje (np. Live Server zwraca 404 lub 405 Method Not Allowed)
+    if (response.status === 404 || response.status === 405) {
+        return fetch(input, init);
+    }
+
     if (response.status === 401) {
         let errorBody = {};
         try {
@@ -40,9 +80,22 @@ async function supabaseProxyFetch(input, init) {
 
         if (/JWT issued at future/i.test(errorBody.message || "")) {
             const klient = window.supabaseClient || window.supabaseKlient;
-            const refreshed = await klient?.auth?.refreshSession();
-            const freshToken = refreshed?.data?.session?.access_token;
-            if (!refreshed?.error && freshToken) response = await wyslij(freshToken);
+            try {
+                const refreshed = await Promise.race([
+                    klient?.auth?.refreshSession(),
+                    new Promise((r) => setTimeout(() => r(null), 3000))
+                ]);
+                const freshToken = refreshed?.data?.session?.access_token;
+                if (!refreshed?.error && freshToken) {
+                    try {
+                        response = await wyslijZLimitem(freshToken);
+                    } catch {
+                        return fetch(input, init);
+                    }
+                }
+            } catch {
+                return fetch(input, init);
+            }
         }
     }
 
