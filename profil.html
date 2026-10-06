@@ -14,7 +14,7 @@
         </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Mój Profil | Stacja Dart</title>
+        <title>Profil | Stacja Dart</title>
         <meta name="description" content="Profil gracza na platformie Stacja Dart." />
         <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -518,7 +518,7 @@
                 };
             }
 
-            async function pobierzHistorieMeczow(profilId, nazwaGracza = "") {
+            async function pobierzHistorieMeczow(profilId, nazwaGracza = "", czyMojProfil = false) {
                 let meczeZdalne = [];
                 const naglowki = {
                     apikey: SUPA_KEY,
@@ -606,18 +606,20 @@
                     }
                 }
 
-                // 3. Odczyt z pamięci lokalnej urządzenia (sd_historia_meczow)
+                // 3. Odczyt z pamięci lokalnej urządzenia (sd_historia_meczow) — TYLKO własny profil
                 let meczeLokalne = [];
-                try {
-                    const rawLocal = localStorage.getItem("sd_historia_meczow");
-                    if (rawLocal) {
-                        const parsed = JSON.parse(rawLocal);
-                        if (Array.isArray(parsed)) {
-                            meczeLokalne = parsed;
+                if (czyMojProfil) {
+                    try {
+                        const rawLocal = localStorage.getItem("sd_historia_meczow");
+                        if (rawLocal) {
+                            const parsed = JSON.parse(rawLocal);
+                            if (Array.isArray(parsed)) {
+                                meczeLokalne = parsed;
+                            }
                         }
+                    } catch (eLoc) {
+                        console.warn("Lokalna historia meczy błąd:", eLoc);
                     }
-                } catch (eLoc) {
-                    console.warn("Lokalna historia meczy błąd:", eLoc);
                 }
 
                 // 4. Normalizacja danych
@@ -1003,7 +1005,7 @@
                     }
 
                     // 5. Pobranie historii gier (odporne na zawieszenia iOS Safari, chmura + pamięć lokalna)
-                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza);
+                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil);
 
                     const listaMeczy = document.getElementById("lista-ostatnich-meczy");
                     ostatnieMeczeCache = mecze || [];
@@ -1023,7 +1025,7 @@
                     }
                 } catch (error) {
                     // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE
-                    console.error("Błąd krytyczny ładowania profilu:", error);
+                    console.error("Błąd krytyczny ładowania profilu:", er   ror);
                     document.getElementById("nazwa-uzytkownika").textContent = "Błąd: " + (error.message || "Skrypt przerwany");
                     document.getElementById("tag-data").textContent = "Odśwież stronę.";
                 }
