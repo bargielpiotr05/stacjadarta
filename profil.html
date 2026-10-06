@@ -1025,7 +1025,7 @@
                     }
                 } catch (error) {
                     // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE
-                    console.error("Błąd krytyczny ładowania profilu:", er   ror);
+                    console.error("Błąd krytyczny ładowania profilu:", error);
                     document.getElementById("nazwa-uzytkownika").textContent = "Błąd: " + (error.message || "Skrypt przerwany");
                     document.getElementById("tag-data").textContent = "Odśwież stronę.";
                 }
