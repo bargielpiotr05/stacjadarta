@@ -520,11 +520,8 @@
 
             async function pobierzHistorieMeczow(profilId, nazwaGracza = "") {
                 let meczeZdalne = [];
-                const sesja = pobierzSesjeZStorage();
-                const token = sesja?.token || SUPA_KEY;
                 const naglowki = {
                     apikey: SUPA_KEY,
-                    Authorization: `Bearer ${token}`,
                 };
 
                 // 1. BEZPOŚREDNI REST FETCH DO SUPABASE (Omija martwe połączenia w WebKit/Safari na iOS)
@@ -672,32 +669,47 @@
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (odporne na uśpione sockety i zawieszenia iOS Safari)
                     let profil = null;
 
-                    // A. Bezpośredni REST fetch do Supabase (błyskawiczny ~100ms, zero locków)
+                    // A. Serwer strony / Cloudflare Worker ./api/profiles (najszybszy na stacjadarta.pl)
                     try {
                         const controller = new AbortController();
-                        const timerId = setTimeout(() => controller.abort(), 4000);
-                        const sesja = pobierzSesjeZStorage();
-                        const token = sesja?.token || SUPA_KEY;
-                        const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profilId)}&select=*`, {
-                            headers: {
-                                apikey: SUPA_KEY,
-                                Authorization: `Bearer ${token}`,
-                            },
+                        const timer = setTimeout(() => controller.abort(), 3000);
+                        const resProxy = await fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
+                            headers: { apikey: SUPA_KEY },
                             cache: "no-store",
-                            signal: controller.signal,
-                        }).finally(() => clearTimeout(timerId));
-
-                        if (resDirect.ok) {
-                            const rows = await resDirect.json();
-                            if (Array.isArray(rows) && rows.length > 0) {
-                                profil = rows[0];
-                            }
+                            signal: controller.signal
+                        }).finally(() => clearTimeout(timer));
+                        if (resProxy.ok) {
+                            const profiles = await resProxy.json();
+                            const p = Array.isArray(profiles) ? profiles[0] : profiles;
+                            if (p && p.id) profil = p;
                         }
-                    } catch (eDirect) {
-                        console.warn("Direct fetch profilu pominięty:", eDirect);
+                    } catch (eProxy) {}
+
+                    // B. Bezpośredni REST fetch do Supabase (anonimowy apikey – bez ryzyka 401 przez przedawniony token)
+                    if (!profil) {
+                        try {
+                            const controller = new AbortController();
+                            const timerId = setTimeout(() => controller.abort(), 4000);
+                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profilId)}&select=*`, {
+                                headers: {
+                                    apikey: SUPA_KEY,
+                                },
+                                cache: "no-store",
+                                signal: controller.signal,
+                            }).finally(() => clearTimeout(timerId));
+
+                            if (resDirect.ok) {
+                                const rows = await resDirect.json();
+                                if (Array.isArray(rows) && rows.length > 0) {
+                                    profil = rows[0];
+                                }
+                            }
+                        } catch (eDirect) {
+                            console.warn("Direct fetch profilu pominięty:", eDirect);
+                        }
                     }
 
-                    // B. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
+                    // C. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
                     if (!profil && client) {
                         try {
                             const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
@@ -711,6 +723,26 @@
                         } catch (eDb) {
                             console.warn("Supabase SDK odczyt profilu pominięty:", eDb);
                         }
+                    }
+
+                    // D. Awaryjny profil dla zalogowanego gracza (gdy baza jest chwilowo nieosiągalna)
+                    if (!profil && czyMojProfil && aktualnyUser) {
+                        profil = {
+                            id: aktualnyUser.id,
+                            nazwa_gracza: aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz"),
+                            srednia: 0,
+                            srednia_9_lotek: 0,
+                            ilosc_180: 0,
+                            rozegrane_mecze: 0,
+                            wygrane_mecze: 0,
+                            barele: "-",
+                            shafty: "-",
+                            groty: "-",
+                            tarcza: "-",
+                            auto_score: "-",
+                            druzyna: "-",
+                            avatar_url: aktualnyUser.user_metadata?.avatar_url || "./loga/logo.png"
+                        };
                     }
 
                     if (!profil) {
