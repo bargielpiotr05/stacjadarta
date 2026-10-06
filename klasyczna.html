@@ -34,29 +34,100 @@
             const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
 
-            function supabaseProxyFetch(input, init) {
+            async function wyslijDoSupabase(pathWithQuery, { method = "GET", body = null, headers = {}, accessToken = null, timeoutMs = 8000 } = {}) {
                 const isLocal =
-                    window.location.hostname === "localhost" ||
-                    window.location.hostname === "127.0.0.1" ||
-                    window.location.hostname.startsWith("192.168.") ||
-                    window.location.hostname.startsWith("10.") ||
-                    window.location.hostname.endsWith(".local") ||
-                    window.location.port !== "" ||
-                    window.location.protocol === "file:";
+                    typeof window !== "undefined" &&
+                    (window.location.hostname === "localhost" ||
+                     window.location.hostname === "127.0.0.1" ||
+                     window.location.hostname.startsWith("192.168.") ||
+                     window.location.hostname.startsWith("10.") ||
+                     window.location.hostname.endsWith(".local") ||
+                     window.location.port !== "" ||
+                     window.location.protocol === "file:");
 
-                if (isLocal) {
-                    return fetch(input, init);
+                const normalizedPath = pathWithQuery.startsWith("/") ? pathWithQuery : `/${pathWithQuery}`;
+                const fullSupabaseUrl = `${SUPA_URL}${normalizedPath}`;
+                const stringBody = body && typeof body === "object" ? JSON.stringify(body) : (typeof body === "string" ? body : null);
+
+                // 1. Same-origin proxy przez Cloudflare Worker na produkcji (omija blokady cross-origin i ITP na iOS)
+                if (!isLocal) {
+                    try {
+                        const controller = new AbortController();
+                        const tid = setTimeout(() => controller.abort(), timeoutMs);
+                        const proxyPayload = {
+                            path: normalizedPath,
+                            method: method.toUpperCase(),
+                            headers: {
+                                "accept": "application/json",
+                                ...(stringBody ? { "content-type": "application/json" } : {}),
+                                ...headers
+                            },
+                            body: stringBody,
+                            accessToken: accessToken || null
+                        };
+
+                        const proxyRes = await fetch("/api/supabase-request", {
+                            method: "POST",
+                            headers: {
+                                "apikey": SUPA_KEY,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(proxyPayload),
+                            cache: "no-store",
+                            signal: controller.signal
+                        }).finally(() => clearTimeout(tid));
+
+                        if (proxyRes.ok) {
+                            const text = await proxyRes.text();
+                            return text ? JSON.parse(text) : null;
+                        }
+                    } catch (eProxy) {
+                        console.warn(`Proxy /api/supabase-request błąd (${normalizedPath}):`, eProxy);
+                    }
                 }
 
-                const sharedProxy = window.supabaseProxyFetch;
-                if (sharedProxy && sharedProxy !== supabaseProxyFetch) return sharedProxy(input, init);
+                // 2. Bezpośrednie wywołanie REST Supabase (fallback na localhost)
+                const directHeaders = {
+                    "apikey": SUPA_KEY,
+                    ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+                    ...(stringBody ? { "Content-Type": "application/json" } : {}),
+                    ...headers
+                };
+                const controllerDirect = new AbortController();
+                const tidDirect = setTimeout(() => controllerDirect.abort(), timeoutMs);
+                const directRes = await fetch(fullSupabaseUrl, {
+                    method: method.toUpperCase(),
+                    headers: directHeaders,
+                    ...(stringBody && !["GET", "HEAD"].includes(method.toUpperCase()) ? { body: stringBody } : {}),
+                    cache: "no-store",
+                    signal: controllerDirect.signal
+                }).finally(() => clearTimeout(tidDirect));
+
+                if (!directRes.ok) {
+                    let errDetails = "";
+                    try { errDetails = await directRes.text(); } catch (_) {}
+                    throw new Error(`Błąd HTTP ${directRes.status}: ${errDetails || directRes.statusText}`);
+                }
+                const textDirect = await directRes.text();
+                return textDirect ? JSON.parse(textDirect) : null;
+            }
+
+            function supabaseProxyFetch(input, init) {
+                if (window.supabaseProxyFetch && window.supabaseProxyFetch !== supabaseProxyFetch) {
+                    return window.supabaseProxyFetch(input, init);
+                }
                 return fetch(input, init);
             }
 
             if (!window.supabaseClient && window.supabase) {
                 window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
                     global: {
-                        fetch: supabaseProxyFetch,
+                        fetch: (input, init) => {
+                            if (window.supabaseProxyFetch && window.supabaseProxyFetch !== supabaseProxyFetch) {
+                                return window.supabaseProxyFetch(input, init);
+                            }
+                            return fetch(input, init);
+                        },
                     },
                     auth: {
                         persistSession: true,
@@ -717,34 +788,30 @@
                 if (rawSession && czyWygasl && rawSession.refresh_token) {
                     console.log("Token sesji wygasa/wygasł – automatyczne odświeżanie...");
                     try {
-                        const resAuth = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+                        const newAuth = await wyslijDoSupabase("/auth/v1/token?grant_type=refresh_token", {
                             method: "POST",
-                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                            body: JSON.stringify({ refresh_token: rawSession.refresh_token })
+                            body: { refresh_token: rawSession.refresh_token }
                         });
-                        if (resAuth.ok) {
-                            const newAuth = await resAuth.json();
-                            if (newAuth.access_token) {
-                                rawSession.access_token = newAuth.access_token;
-                                rawSession.refresh_token = newAuth.refresh_token || rawSession.refresh_token;
-                                rawSession.expires_at = newAuth.expires_at || (nowSec + (newAuth.expires_in || 3600));
-                                if (newAuth.user) rawSession.user = newAuth.user;
-                                if (storageKey) {
-                                    try { localStorage.setItem(storageKey, JSON.stringify(rawSession)); } catch (e) {}
-                                }
-                                if (k?.auth?.setSession) {
-                                    try {
-                                        k.auth.setSession({
-                                            access_token: rawSession.access_token,
-                                            refresh_token: rawSession.refresh_token
-                                        }).catch(() => {});
-                                    } catch (e) {}
-                                }
-                                return rawSession.access_token;
+                        if (newAuth && newAuth.access_token) {
+                            rawSession.access_token = newAuth.access_token;
+                            rawSession.refresh_token = newAuth.refresh_token || rawSession.refresh_token;
+                            rawSession.expires_at = newAuth.expires_at || (nowSec + (newAuth.expires_in || 3600));
+                            if (newAuth.user) rawSession.user = newAuth.user;
+                            if (storageKey) {
+                                try { localStorage.setItem(storageKey, JSON.stringify(rawSession)); } catch (e) {}
                             }
+                            if (k?.auth?.setSession) {
+                                try {
+                                    k.auth.setSession({
+                                        access_token: rawSession.access_token,
+                                        refresh_token: rawSession.refresh_token
+                                    }).catch(() => {});
+                                } catch (e) {}
+                            }
+                            return rawSession.access_token;
                         }
                     } catch (eRefDirect) {
-                        console.warn("Direct REST refresh token błąd:", eRefDirect);
+                        console.warn("Refresh token błąd:", eRefDirect);
                     }
 
                     if (k?.auth?.refreshSession) {
@@ -839,7 +906,18 @@
                         }
                     } catch (eProxy) {}
 
-                    // 2. Bezpośredni REST fetch z Supabase (niezawodny fallback na iOS i lokalnie)
+                    // 2. Próba przez same-origin proxy wyslijDoSupabase
+                    try {
+                        const qs = new URLSearchParams(parametry || {}).toString();
+                        const proxyRes = await wyslijDoSupabase(`/rest/v1/${tabela}?${qs}`, {
+                            accessToken: token
+                        });
+                        if (Array.isArray(proxyRes)) {
+                            return proxyRes;
+                        }
+                    } catch (eProxyReq) {}
+
+                    // 3. Bezpośredni REST fetch z Supabase (fallback)
                     try {
                         const qs = new URLSearchParams(parametry || {}).toString();
                         const headers = {
@@ -1121,10 +1199,7 @@
                 // Jeśli id nie jest poprawnym UUID, spróbuj pobrać UUID w tle z bazy profiles
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "");
                 if (!isUUID) {
-                    fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`, {
-                        headers: { apikey: SUPA_KEY }
-                    })
-                    .then((r) => r.json())
+                    wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`)
                     .then((rows) => {
                         if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
                             window.idZnajomychWGrze[nick] = rows[0].id;
@@ -1673,8 +1748,9 @@
                     if (!czyTenToBot) {
                         const zalogowanyStorage = odczytajZalogowanegoZStorage();
                         const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) ||
-                                            (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase());
-                        if (isMojeKonto) {
+                                            (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase()) ||
+                                            (i === 0 && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id));
+                        if (isMojeKonto && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id)) {
                             profilIdGracza = zalogowanyUserIdGlobalny || zalogowanyStorage?.id;
                         } else {
                             if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
@@ -2296,10 +2372,13 @@
                 localStorage.setItem("sd_historia_meczow", JSON.stringify(historia));
 
                 // 2. Zapis do Supabase
-                const klientBazy = window.supabaseClient || window.supabaseKlient;
-                if (!klientBazy) {
-                    alert("Mecz rozegrany, ale brak klienta Supabase — statystyki nie zostały zapisane.");
-                    return;
+                let klientBazy = window.supabaseClient || window.supabaseKlient;
+                if (!klientBazy && window.supabase) {
+                    try {
+                        klientBazy = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+                        window.supabaseClient = klientBazy;
+                        window.supabaseKlient = klientBazy;
+                    } catch (eInit) {}
                 }
 
                 // ================================================================
@@ -2337,7 +2416,8 @@
 
                     const userId = user.id;
                     const meta = user.user_metadata || {};
-                    const mojNick = (meta.nazwa_gracza || meta.username || zalogowanyNickGlobalny || (user.email ? user.email.split("@")[0] : "")).trim().toLowerCase();
+                    const userEmail = user.email || user.user?.email || "";
+                    const mojNick = (meta.nazwa_gracza || meta.username || zalogowanyNickGlobalny || (userEmail ? userEmail.split("@")[0] : "")).trim().toLowerCase();
 
                     // Sprawdzamy czy to mecz turniejowy
                     let czyTurniej = false;
@@ -2355,7 +2435,7 @@
 
                     for (const g of gracze) {
                         if (g.czyBot) continue;
-                        if (userId && (g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
+                        if (userId && (g.id === 0 || g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
                             g.profilId = userId;
                             continue;
                         }
@@ -2366,15 +2446,9 @@
                         ));
                         if (!pid || !/^[0-9a-f-]{36}$/i.test(pid)) {
                             try {
-                                const resLook = await fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`, {
-                                    headers: { apikey: SUPA_KEY },
-                                    cache: "no-store"
-                                });
-                                if (resLook.ok) {
-                                    const rows = await resLook.json();
-                                    if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
-                                        pid = rows[0].id;
-                                    }
+                                const rows = await wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`);
+                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                    pid = rows[0].id;
                                 }
                             } catch (eLook) {}
                         }
@@ -2457,18 +2531,16 @@
                     // ================================================================
                     let obecnyProfil = null;
                     try {
-                        const controller = new AbortController();
-                        const tid = setTimeout(() => controller.abort(), 4000);
-                        const resP = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`, {
-                            headers: { apikey: SUPA_KEY },
-                            cache: "no-store",
-                            signal: controller.signal
-                        }).finally(() => clearTimeout(tid));
-                        if (resP.ok) {
-                            const rows = await resP.json();
-                            if (Array.isArray(rows) && rows.length > 0) obecnyProfil = rows[0];
-                        }
+                        const rowsP = await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`);
+                        if (Array.isArray(rowsP) && rowsP.length > 0) obecnyProfil = rowsP[0];
                     } catch (eHostFetch) {}
+
+                    if (!obecnyProfil) {
+                        try {
+                            const rowsWorker = await pobierzWierszeZnajomychApi("profiles", { id: `eq.${userId}` }, "odczyt profilu hosta");
+                            if (Array.isArray(rowsWorker) && rowsWorker.length > 0) obecnyProfil = rowsWorker[0];
+                        } catch (eWork) {}
+                    }
 
                     if (!obecnyProfil && klientBazy) {
                         try {
@@ -2481,7 +2553,17 @@
                         } catch (eSdkP) {}
                     }
 
-                    if (!obecnyProfil) throw new Error("Nie znaleziono profilu zalogowanego gracza.");
+                    if (!obecnyProfil) {
+                        console.warn("Nie udało się pobrać profilu hosta z bazy, użyto wartości domyślnych.");
+                        obecnyProfil = {
+                            id: userId,
+                            rozegrane_mecze: 0,
+                            wygrane_mecze: 0,
+                            srednia: 0,
+                            srednia_9_lotek: 0,
+                            ilosc_180: 0
+                        };
+                    }
 
                     const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
                     const dotychczasWygrane = parseInt(obecnyProfil.wygrane_mecze) || 0;
@@ -2497,23 +2579,35 @@
 
                     let zapisanoHosta = false;
                     try {
-                        const controller = new AbortController();
-                        const tid = setTimeout(() => controller.abort(), 4000);
-                        const resRpcHost = await fetch(`${SUPA_URL}/rest/v1/rpc/zaktualizuj_statystyki_po_meczu`, {
+                        await wyslijDoSupabase("/rest/v1/rpc/zaktualizuj_statystyki_po_meczu", {
                             method: "POST",
-                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                            body: JSON.stringify({
+                            body: {
                                 p_gracz_id: userId,
                                 p_nowe_mecze: noweMecze,
                                 p_nowe_wygrane: noweWygrane,
                                 p_nowa_srednia: parseFloat(nowaSredniaOgolna),
                                 p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
                                 p_nowe_180: nowe180
-                            }),
-                            signal: controller.signal
-                        }).finally(() => clearTimeout(tid));
-                        if (resRpcHost.ok) zapisanoHosta = true;
-                    } catch (eRpcHost) {}
+                            }
+                        });
+                        zapisanoHosta = true;
+                    } catch (eRpcHost) {
+                        console.warn("Błąd RPC hosta przez proxy:", eRpcHost);
+                    }
+
+                    if (!zapisanoHosta && klientBazy) {
+                        try {
+                            const { error: rpcErrHost } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
+                                p_gracz_id: userId,
+                                p_nowe_mecze: noweMecze,
+                                p_nowe_wygrane: noweWygrane,
+                                p_nowa_srednia: parseFloat(nowaSredniaOgolna),
+                                p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
+                                p_nowe_180: nowe180
+                            });
+                            if (!rpcErrHost) zapisanoHosta = true;
+                        } catch (eSdkRpcHost) {}
+                    }
 
                     if (!zapisanoHosta && klientBazy) {
                         try {
@@ -2546,18 +2640,16 @@
                         try {
                             let profRywal = null;
                             try {
-                                const controller = new AbortController();
-                                const tid = setTimeout(() => controller.abort(), 4000);
-                                const resR = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(idProfiluRywala)}&select=*`, {
-                                    headers: { apikey: SUPA_KEY },
-                                    cache: "no-store",
-                                    signal: controller.signal
-                                }).finally(() => clearTimeout(tid));
-                                if (resR.ok) {
-                                    const rows = await resR.json();
-                                    if (Array.isArray(rows) && rows.length > 0) profRywal = rows[0];
-                                }
+                                const rowsR = await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${encodeURIComponent(idProfiluRywala)}&select=*`);
+                                if (Array.isArray(rowsR) && rowsR.length > 0) profRywal = rowsR[0];
                             } catch (eFetchR) {}
+
+                            if (!profRywal) {
+                                try {
+                                    const rowsWorkerR = await pobierzWierszeZnajomychApi("profiles", { id: `eq.${idProfiluRywala}` }, "odczyt profilu rywala");
+                                    if (Array.isArray(rowsWorkerR) && rowsWorkerR.length > 0) profRywal = rowsWorkerR[0];
+                                } catch (eWorkerR) {}
+                            }
 
                             if (!profRywal && klientBazy) {
                                 try {
@@ -2589,29 +2681,23 @@
 
                                 let zaktualizowanoRywala = false;
 
-                                // Wywołanie RPC SECURITY DEFINER przez bezpośredni REST
+                                // Wywołanie RPC SECURITY DEFINER przez wyslijDoSupabase (proxy)
                                 try {
-                                    const controller = new AbortController();
-                                    const tid = setTimeout(() => controller.abort(), 4000);
-                                    const resRpc = await fetch(`${SUPA_URL}/rest/v1/rpc/zaktualizuj_statystyki_po_meczu`, {
+                                    await wyslijDoSupabase("/rest/v1/rpc/zaktualizuj_statystyki_po_meczu", {
                                         method: "POST",
-                                        headers: {
-                                            apikey: SUPA_KEY,
-                                            "Content-Type": "application/json"
-                                        },
-                                        body: JSON.stringify({
+                                        body: {
                                             p_gracz_id: idProfiluRywala,
                                             p_nowe_mecze: noweMeczeR,
                                             p_nowe_wygrane: noweWygraneR,
                                             p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
                                             p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
                                             p_nowe_180: nowe180R
-                                        }),
-                                        signal: controller.signal
-                                    }).finally(() => clearTimeout(tid));
-
-                                    if (resRpc.ok) zaktualizowanoRywala = true;
-                                } catch (eRpcDirect) {}
+                                        }
+                                    });
+                                    zaktualizowanoRywala = true;
+                                } catch (eRpcDirect) {
+                                    console.warn("Błąd RPC rywala przez proxy:", eRpcDirect);
+                                }
 
                                 if (!zaktualizowanoRywala && klientBazy) {
                                     try {
@@ -2676,8 +2762,40 @@
                     try {
                         const token = await uzyskajSwiezyTokenAuth(klientBazy);
 
-                        // 1. Bezpośredni REST fetch z autoryzacją Bearer
+                        // 1. Zapis przez wyslijDoSupabase (same-origin proxy na produkcji, działa 100% na iOS)
                         if (token) {
+                            try {
+                                await wyslijDoSupabase("/rest/v1/matches", {
+                                    method: "POST",
+                                    body: payloadMeczu,
+                                    accessToken: token,
+                                    headers: { prefer: "return=minimal" }
+                                });
+                                zapisanoMecz = true;
+                            } catch (eProxyMatch) {
+                                console.warn("Proxy /rest/v1/matches błąd:", eProxyMatch);
+                            }
+                        }
+
+                        // 2. Fallback na Worker /api/supabase-write
+                        if (!zapisanoMecz && token) {
+                            try {
+                                const resWriteMatch = await fetch("/api/supabase-write", {
+                                    method: "POST",
+                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        table: "matches",
+                                        operation: "insert",
+                                        values: payloadMeczu,
+                                        accessToken: token
+                                    })
+                                });
+                                if (resWriteMatch.ok) zapisanoMecz = true;
+                            } catch (eWriteMatch) {}
+                        }
+
+                        // 3. Fallback na bezpośredni REST fetch z autoryzacją Bearer
+                        if (!zapisanoMecz && token) {
                             try {
                                 const controller = new AbortController();
                                 const tid = setTimeout(() => controller.abort(), 5000);
@@ -2693,47 +2811,7 @@
                                     signal: controller.signal
                                 }).finally(() => clearTimeout(tid));
                                 if (resMatch.ok) zapisanoMecz = true;
-                                else {
-                                    console.warn("Błąd zapisu matches REST status:", resMatch.status);
-                                }
-                            } catch (eRestMatch) {
-                                console.warn("Wyjątek REST matches:", eRestMatch);
-                            }
-                        }
-
-                        // 2. Fallback na Worker /api/supabase-request
-                        if (!zapisanoMecz && token) {
-                            try {
-                                const resProxyMatch = await fetch("/api/supabase-request", {
-                                    method: "POST",
-                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        path: "/rest/v1/matches",
-                                        method: "POST",
-                                        headers: { "content-type": "application/json", prefer: "return=minimal" },
-                                        body: JSON.stringify(payloadMeczu),
-                                        accessToken: token
-                                    })
-                                });
-                                if (resProxyMatch.ok) zapisanoMecz = true;
-                            } catch (eProxyMatch) {}
-                        }
-
-                        // 3. Fallback na Worker /api/supabase-write
-                        if (!zapisanoMecz && token) {
-                            try {
-                                const resWriteMatch = await fetch("/api/supabase-write", {
-                                    method: "POST",
-                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        table: "matches",
-                                        operation: "insert",
-                                        values: payloadMeczu,
-                                        accessToken: token
-                                    })
-                                });
-                                if (resWriteMatch.ok) zapisanoMecz = true;
-                            } catch (eWriteMatch) {}
+                            } catch (eRestMatch) {}
                         }
 
                         // 4. Fallback na Supabase SDK

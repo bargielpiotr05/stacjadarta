@@ -563,6 +563,8 @@ main {
 @media (max-width: 768px) {
   .blok-gracza {
     padding: 24px 18px;
+    margin: 0;
+    width: 90% !important;
   }
 
   #header-uzytkownika {

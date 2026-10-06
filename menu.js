@@ -26,7 +26,10 @@ async function supabaseProxyFetch(input, init) {
         return fetch(input, init);
     }
 
-    if (url.origin !== SUPABASE_URL || !url.pathname.startsWith("/rest/v1/")) {
+    if (
+        url.origin !== SUPABASE_URL ||
+        (!url.pathname.startsWith("/rest/v1/") && !url.pathname.startsWith("/auth/v1/"))
+    ) {
         return fetch(input, init);
     }
 
@@ -62,7 +65,7 @@ async function supabaseProxyFetch(input, init) {
 
     const wyslijZLimitem = (token) => {
         const controller = new AbortController();
-        const timerId = setTimeout(() => controller.abort(), 2500);
+        const timerId = setTimeout(() => controller.abort(), 8000);
         return fetch("/api/supabase-request", {
             method: "POST",
             headers: {

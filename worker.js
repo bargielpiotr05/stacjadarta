@@ -34,8 +34,11 @@ export default {
       } catch {
         return Response.json({ message: "Nieprawidłowa ścieżka REST." }, { status: 400 });
       }
-      if (upstreamUrl.origin !== SUPABASE_URL || !upstreamUrl.pathname.startsWith("/rest/v1/")) {
-        return Response.json({ message: "Dozwolone są wyłącznie ścieżki PostgREST." }, { status: 400 });
+      if (
+        upstreamUrl.origin !== SUPABASE_URL ||
+        (!upstreamUrl.pathname.startsWith("/rest/v1/") && !upstreamUrl.pathname.startsWith("/auth/v1/"))
+      ) {
+        return Response.json({ message: "Dozwolone są wyłącznie ścieżki PostgREST i Auth." }, { status: 400 });
       }
 
       const allowedHeaders = new Set(["accept", "accept-profile", "content-type", "content-profile", "prefer", "range", "range-unit", "if-match", "if-none-match", "x-client-info"]);
@@ -311,7 +314,7 @@ export default {
       if (isUuid) {
         upstreamUrl.searchParams.set("id", `eq.${cleanProfileId}`);
       } else {
-        upstreamUrl.searchParams.set("nazwa_gracza", `eq.${cleanProfileId}`);
+        upstreamUrl.searchParams.set("nazwa_gracza", `ilike.${cleanProfileId}`);
       }
       upstreamUrl.searchParams.set("limit", "1");
 

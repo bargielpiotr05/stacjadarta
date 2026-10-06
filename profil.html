@@ -524,53 +524,73 @@
                     apikey: SUPA_KEY,
                 };
 
-                // 1. BEZPOŚREDNI REST FETCH DO SUPABASE (Omija martwe połączenia w WebKit/Safari na iOS)
+                // 1. Serwer Cloudflare Worker /api/supabase-read (Niezawodny same-origin na iOS Safari)
                 try {
-                    const controller = new AbortController();
-                    const timerId = setTimeout(() => controller.abort(), 4000);
-                    const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`;
-                    const res = await fetch(url, {
-                        headers: naglowki,
-                        cache: "no-store",
-                        signal: controller.signal,
-                    }).finally(() => clearTimeout(timerId));
-
-                    if (res.ok) {
-                        const data = await res.json();
+                    const resWorker = await fetch("/api/supabase-read", {
+                        method: "POST",
+                        headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            table: "matches",
+                            params: {
+                                select: "*",
+                                or: `(host_id.eq.${profilId},gosc_id.eq.${profilId})`,
+                                order: "utworzono.desc",
+                                limit: "10"
+                            }
+                        })
+                    });
+                    if (resWorker.ok) {
+                        const data = await resWorker.json();
                         if (Array.isArray(data) && data.length > 0) {
                             meczeZdalne = data;
                         }
                     }
-                } catch (eRest) {
-                    console.warn("Direct REST fetch meczy pominięty:", eRest);
-                }
+                } catch (eWorker) {}
 
-                // 2. Jeśli direct fetch nie zwrócił danych, próba przez Worker /api/supabase-read
+                // 2. Próba przez /api/supabase-request (Proxy PostgREST)
                 if (meczeZdalne.length === 0) {
                     try {
-                        const resWorker = await fetch("/api/supabase-read", {
+                        const resProxy = await fetch("/api/supabase-request", {
                             method: "POST",
                             headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                table: "matches",
-                                params: {
-                                    select: "*",
-                                    or: `(host_id.eq.${profilId},gosc_id.eq.${profilId})`,
-                                    order: "utworzono.desc",
-                                    limit: "10"
-                                }
+                                path: `/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`,
+                                method: "GET"
                             })
                         });
-                        if (resWorker.ok) {
-                            const data = await resWorker.json();
+                        if (resProxy.ok) {
+                            const data = await resProxy.json();
                             if (Array.isArray(data) && data.length > 0) {
                                 meczeZdalne = data;
                             }
                         }
-                    } catch (eWorker) {}
+                    } catch (eProxy) {}
                 }
 
-                // 3. Próba przez klienta Supabase SDK z limitem czasu
+                // 3. BEZPOŚREDNI REST FETCH DO SUPABASE (Fallback na localhost lub bezpośrednie połączenie)
+                if (meczeZdalne.length === 0) {
+                    try {
+                        const controller = new AbortController();
+                        const timerId = setTimeout(() => controller.abort(), 4000);
+                        const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`;
+                        const res = await fetch(url, {
+                            headers: naglowki,
+                            cache: "no-store",
+                            signal: controller.signal,
+                        }).finally(() => clearTimeout(timerId));
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (Array.isArray(data) && data.length > 0) {
+                                meczeZdalne = data;
+                            }
+                        }
+                    } catch (eRest) {
+                        console.warn("Direct REST fetch meczy pominięty:", eRest);
+                    }
+                }
+
+                // 4. Próba przez klienta Supabase SDK z limitem czasu
                 if (meczeZdalne.length === 0 && client) {
                     try {
                         const { data, error } = await zLimitemCzasu(
@@ -756,11 +776,11 @@
                     // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (odporne na uśpione sockety i zawieszenia iOS Safari)
                     let profil = null;
 
-                    // A. Serwer strony / Cloudflare Worker ./api/profiles (najszybszy na stacjadarta.pl)
+                    // A. Serwer strony / Cloudflare Worker /api/profiles (najszybszy na stacjadarta.pl)
                     try {
                         const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 3000);
-                        const resProxy = await fetch(`./api/profiles?id=${encodeURIComponent(targetIdent)}`, {
+                        const timer = setTimeout(() => controller.abort(), 4000);
+                        const resProxy = await fetch(`/api/profiles?id=${encodeURIComponent(targetIdent)}`, {
                             headers: { apikey: SUPA_KEY },
                             cache: "no-store",
                             signal: controller.signal
@@ -772,12 +792,51 @@
                         }
                     } catch (eProxy) {}
 
-                    // B. Bezpośredni REST fetch do Supabase (anonimowy apikey – bez ryzyka 401 przez przedawniony token)
+                    // A2. Cloudflare Worker /api/supabase-read (same-origin, 100% bezpieczny na iOS Safari)
+                    if (!profil) {
+                        try {
+                            const params = isUUID ? { id: `eq.${targetIdent}` } : { nazwa_gracza: `ilike.${targetIdent}` };
+                            const resRead = await fetch("/api/supabase-read", {
+                                method: "POST",
+                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                body: JSON.stringify({ table: "profiles", params })
+                            });
+                            if (resRead.ok) {
+                                const rows = await resRead.json();
+                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                    profil = rows[0];
+                                }
+                            }
+                        } catch (eRead) {}
+                    }
+
+                    // A3. Cloudflare Worker /api/supabase-request (Proxy PostgREST)
+                    if (!profil) {
+                        try {
+                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}`;
+                            const resReq = await fetch("/api/supabase-request", {
+                                method: "POST",
+                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    path: `/rest/v1/profiles?${filterParam}&select=*`,
+                                    method: "GET"
+                                })
+                            });
+                            if (resReq.ok) {
+                                const rows = await resReq.json();
+                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                    profil = rows[0];
+                                }
+                            }
+                        } catch (eReq) {}
+                    }
+
+                    // B. Bezpośredni REST fetch do Supabase (anonimowy apikey – fallback na localhost)
                     if (!profil) {
                         try {
                             const controller = new AbortController();
                             const timerId = setTimeout(() => controller.abort(), 4000);
-                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=eq.${encodeURIComponent(targetIdent)}`;
+                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}`;
                             const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?${filterParam}&select=*`, {
                                 headers: {
                                     apikey: SUPA_KEY,
@@ -795,28 +854,6 @@
                         } catch (eDirect) {
                             console.warn("Direct fetch profilu pominięty:", eDirect);
                         }
-                    }
-
-                    // B2. Fallback na dopasowanie case-insensitive (ilike) po nicku, jeśli to nie UUID
-                    if (!profil && !isUUID) {
-                        try {
-                            const controller = new AbortController();
-                            const timerId = setTimeout(() => controller.abort(), 4000);
-                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}&select=*`, {
-                                headers: {
-                                    apikey: SUPA_KEY,
-                                },
-                                cache: "no-store",
-                                signal: controller.signal,
-                            }).finally(() => clearTimeout(timerId));
-
-                            if (resDirect.ok) {
-                                const rows = await resDirect.json();
-                                if (Array.isArray(rows) && rows.length > 0) {
-                                    profil = rows[0];
-                                }
-                            }
-                        } catch (eDirectIlike) {}
                     }
 
                     // C. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
