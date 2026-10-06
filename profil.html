@@ -333,6 +333,117 @@
                 return null;
             }
 
+            function pobierzSesjeZStorage() {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                if (parsed?.access_token) {
+                                    return {
+                                        token: parsed.access_token,
+                                        user: parsed.user || null,
+                                        expiresAt: parsed.expires_at || 0
+                                    };
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return { token: null, user: null, expiresAt: 0 };
+            }
+
+            async function wykonajZapisProfilu(profilData, userId) {
+                const sesja = pobierzSesjeZStorage();
+                const token = sesja.token;
+
+                // 1. Bezpośredni, świeży fetch z no-store (odporny na uśpione sockety WebKit / Safari na iOS)
+                const naglowki = {
+                    "apikey": SUPA_KEY,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                };
+                if (token) {
+                    naglowki["Authorization"] = `Bearer ${token}`;
+                }
+
+                const payloadStr = JSON.stringify(profilData);
+                const directUrl = `${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`;
+                let ostatniBlad = null;
+
+                try {
+                    const controller = new AbortController();
+                    const timerId = setTimeout(() => controller.abort(), 4000);
+                    const res = await fetch(directUrl, {
+                        method: "PATCH",
+                        headers: naglowki,
+                        body: payloadStr,
+                        cache: "no-store",
+                        signal: controller.signal
+                    }).finally(() => clearTimeout(timerId));
+
+                    if (res.ok || res.status === 204) {
+                        return true;
+                    }
+                    if (res.status !== 401) {
+                        let errJson = {};
+                        try { errJson = await res.json(); } catch (_) {}
+                        throw new Error(errJson.message || `Błąd serwera bazy (HTTP ${res.status})`);
+                    }
+                } catch (eDirect) {
+                    console.warn("Direct fetch profilu pominięty:", eDirect.message);
+                    ostatniBlad = eDirect;
+                }
+
+                // 2. Jeśli direct fetch napotkał 401 lub błąd sieci, próba przez klienta Supabase
+                try {
+                    const klient = window.supabaseKlient || window.supabaseClient;
+                    if (klient) {
+                        const { error: clientErr } = await Promise.race([
+                            klient.from("profiles").update(profilData).eq("id", userId),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("Limit czasu Supabase SDK")), 4000))
+                        ]);
+                        if (clientErr) throw clientErr;
+                        return true;
+                    }
+                } catch (eSdk) {
+                    console.warn("Supabase SDK update profilu pominięty:", eSdk.message);
+                    if (!ostatniBlad) ostatniBlad = eSdk;
+                }
+
+                // 3. Fallback dla środowiska produkcyjnego (Cloudflare Worker proxy)
+                if (window.location.hostname === "stacjadarta.pl") {
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), 4000);
+                        const resProxy = await fetch("/api/supabase-request", {
+                            method: "POST",
+                            headers: {
+                                apikey: SUPA_KEY,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                path: `/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
+                                method: "PATCH",
+                                headers: { "content-type": "application/json", "prefer": "return=minimal" },
+                                body: payloadStr,
+                                accessToken: token
+                            }),
+                            cache: "no-store",
+                            signal: controller.signal
+                        }).finally(() => clearTimeout(timer));
+
+                        if (resProxy.ok || resProxy.status === 204) {
+                            return true;
+                        }
+                    } catch (eProxy) {}
+                }
+
+                throw new Error(ostatniBlad?.message || "Nie udało się zapisać zmian w bazie danych. Spróbuj ponownie.");
+            }
+
             let client = window.supabaseKlient || window.supabaseClient || null;
             let aktualnyUser = odczytajZalogowanegoZStorage();
             let aktualnyProfil = null;
@@ -848,14 +959,8 @@
                         data: { publicUrl },
                     } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
 
-                    // 3. Aktualizacja tabeli public.profiles
-                    const { error: dbErr } = await zLimitemCzasu(
-                        client.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId),
-                        "zapis avatara w bazie",
-                        8000
-                    );
-
-                    if (dbErr) throw dbErr;
+                    // 3. Aktualizacja tabeli public.profiles (odporna na uśpione sockety i locki iOS)
+                    await wykonajZapisProfilu({ avatar_url: publicUrl }, userId);
 
                     // 4. Kopia zapasowa w sesji użytkownika (w tle)
                     try {
@@ -993,70 +1098,44 @@
                 }
 
                 try {
-                    if (!client) client = window.supabaseKlient || window.supabaseClient;
-                    if (!client) throw new Error("Brak połączenia z bazą danych.");
                     if (!aktualnyUser) aktualnyUser = odczytajZalogowanegoZStorage();
                     if (!aktualnyUser) throw new Error("Musisz być zalogowany, aby zapisać profil.");
 
-                    // Upewnij się, że sesja Auth jest załadowana do klienta
-                    try {
-                        const sessCheck = await Promise.race([
-                            client.auth.getSession(),
-                            new Promise((r) => setTimeout(() => r(null), 1500))
-                        ]);
-                        if (sessCheck?.data?.session?.user) {
-                            aktualnyUser = sessCheck.data.session.user;
-                        }
-                    } catch (eSess) {}
+                    const profilUpdate = {
+                        nazwa_gracza: nowyNick,
+                        barele: noweBarele,
+                        shafty: noweShafty,
+                        groty: noweGroty,
+                        tarcza: nowaTarcza,
+                        auto_score: nowyAutoScore,
+                        druzyna: nowaDruzyna,
+                    };
 
-                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU do tabeli profiles (z limitem czasu)
-                    const { error: profileErr } = await zLimitemCzasu(
-                        client
-                            .from("profiles")
-                            .update({
-                                nazwa_gracza: nowyNick,
-                                barele: noweBarele,
-                                shafty: noweShafty,
-                                groty: noweGroty,
-                                tarcza: nowaTarcza,
-                                auto_score: nowyAutoScore,
-                                druzyna: nowaDruzyna,
-                            })
-                            .eq("id", aktualnyUser.id),
-                        "zapis profilu w bazie",
-                        12000
-                    );
-
-                    if (profileErr) {
-                        throw profileErr;
-                    }
+                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU (odporny na uśpione sockety i locki iOS)
+                    await wykonajZapisProfilu(profilUpdate, aktualnyUser.id);
 
                     // 2. Jeśli podano hasło, aktualizacja w Auth
                     if (noweHaslo) {
-                        const { error: passErr } = await zLimitemCzasu(
-                            client.auth.updateUser({ password: noweHaslo }),
-                            "aktualizacja hasła",
-                            12000
-                        );
-                        if (passErr) throw passErr;
+                        if (!client) client = window.supabaseKlient || window.supabaseClient;
+                        if (client?.auth) {
+                            const { error: passErr } = await zLimitemCzasu(
+                                client.auth.updateUser({ password: noweHaslo }),
+                                "aktualizacja hasła",
+                                8000
+                            );
+                            if (passErr) throw passErr;
+                        }
                     }
 
-                    // 3. Kopia zapasowa w metadanych sesji (w tle z limitem 2s, by ewentualne opóźnienia Auth nie blokowały profilu)
-                    try {
-                        await Promise.race([
-                            client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }),
-                            new Promise((r) => setTimeout(r, 2000))
-                        ]);
-                    } catch (eMeta) {
-                        console.warn("Aktualizacja user_metadata pominięta:", eMeta);
+                    // 3. Kopia zapasowa w metadanych sesji (w tle, bez blokowania)
+                    if (client?.auth) {
+                        try {
+                            Promise.race([
+                                client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }),
+                                new Promise((r) => setTimeout(r, 2000))
+                            ]).catch(() => {});
+                        } catch (eMeta) {}
                     }
-
-                    try {
-                        await Promise.race([
-                            client.auth.refreshSession(),
-                            new Promise((r) => setTimeout(r, 2000))
-                        ]);
-                    } catch (eRef) {}
 
                     // Aktualizacja UI bez odświeżania strony
                     const elNick = document.getElementById("nazwa-uzytkownika");
