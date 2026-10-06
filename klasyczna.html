@@ -2112,6 +2112,7 @@
                         liczba180: g.rzuty ? g.rzuty.filter((r) => r === 180).length : 0,
                         skutecznoscDouble: g.lotkiNaDoubla > 0 ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%` : "0%",
                     })),
+                    pelny_przebieg_meczu: historiaRundDoZapisu,
                 };
 
                 const historia = JSON.parse(localStorage.getItem("sd_historia_meczow") || "[]");
@@ -2138,8 +2139,19 @@
                 }
 
                 try {
-                    const { data: sessionData } = await klientBazy.auth.getSession();
-                    const user = sessionData?.session?.user;
+                    let user = null;
+                    try {
+                        const { data: sessionData } = await Promise.race([
+                            klientBazy.auth.getSession(),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 2000))
+                        ]);
+                        user = sessionData?.session?.user;
+                    } catch (eSess) {}
+
+                    if (!user) {
+                        user = odczytajZalogowanegoZStorage();
+                    }
+
                     if (!user) {
                         console.warn("Brak aktywnej sesji – mecz zapisany tylko lokalnie.");
                         alert("Mecz zapisany lokalnie, ale nie znaleziono sesji konta. Zaloguj się ponownie, aby zapisać statystyki online.");

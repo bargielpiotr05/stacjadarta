@@ -444,6 +444,158 @@
                 throw new Error(ostatniBlad?.message || "Nie udało się zapisać zmian w bazie danych. Spróbuj ponownie.");
             }
 
+            function normalizujMecz(m, profilId, nazwaGracza = "") {
+                const statystyki = Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 0
+                    ? m.statystyki_graczy
+                    : (Array.isArray(m.gracze) && m.gracze.length > 0 ? m.gracze : []);
+
+                const legi = m.pelny_przebieg_meczu || m.historiaMeczuLegi || [];
+                const nickLower = (nazwaGracza || "").trim().toLowerCase();
+
+                let czyWygrana = false;
+                let wynik = "- : -";
+                let przeciwnikNazwa = "Przeciwnik";
+                let dataMeczu = "-";
+
+                // Formatowanie daty
+                if (m.utworzono) {
+                    try {
+                        dataMeczu = new Date(m.utworzono.replace(" ", "T")).toLocaleDateString("pl-PL");
+                    } catch (e) {
+                        dataMeczu = "-";
+                    }
+                } else if (m.data) {
+                    dataMeczu = m.data;
+                }
+
+                if (m.host_id || m.gosc_id) {
+                    // Mecz z bazy Supabase
+                    const czyHost = m.host_id === profilId;
+                    if (m.zwyciezca_id) {
+                        czyWygrana = m.zwyciezca_id === profilId;
+                    } else {
+                        czyWygrana = czyHost ? (m.wynik_host > m.wynik_gosc) : (m.wynik_gosc > m.wynik_host);
+                    }
+                    wynik = czyHost ? `${m.wynik_host ?? 0} : ${m.wynik_gosc ?? 0}` : `${m.wynik_gosc ?? 0} : ${m.wynik_host ?? 0}`;
+
+                    if (statystyki.length > 1) {
+                        const rywal = czyHost ? statystyki[1] : statystyki[0];
+                        przeciwnikNazwa = rywal?.nazwa || "Rywal";
+                    } else if (m.format_gry) {
+                        przeciwnikNazwa = m.format_gry;
+                    }
+                } else {
+                    // Mecz lokalny z sd_historia_meczow
+                    let mojIdx = 0;
+                    if (statystyki.length > 1 && nickLower) {
+                        if (statystyki[1]?.nazwa?.trim().toLowerCase() === nickLower) {
+                            mojIdx = 1;
+                        }
+                    }
+                    const rywalIdx = mojIdx === 0 ? 1 : 0;
+                    const ja = statystyki[mojIdx] || { wygraneLegi: 0, nazwa: nazwaGracza };
+                    const rywal = statystyki[rywalIdx] || null;
+
+                    przeciwnikNazwa = rywal?.nazwa || "Rywal";
+                    wynik = `${ja.wygraneLegi ?? 0} : ${rywal ? (rywal.wygraneLegi ?? 0) : 0}`;
+
+                    if (m.zwyciezca) {
+                        czyWygrana = m.zwyciezca.trim().toLowerCase() === (ja.nazwa || "").trim().toLowerCase();
+                    } else {
+                        czyWygrana = (ja.wygraneLegi || 0) > (rywal?.wygraneLegi || 0);
+                    }
+                }
+
+                return {
+                    ...m,
+                    _czyWygrana: czyWygrana,
+                    _wynik: wynik,
+                    _przeciwnikNazwa: przeciwnikNazwa,
+                    _dataMeczu: dataMeczu,
+                    statystyki_graczy: statystyki,
+                    pelny_przebieg_meczu: legi,
+                    format_gry: m.format_gry || (m.punktyStartowe ? `${m.punktyStartowe} DO` : "Klasyczny")
+                };
+            }
+
+            async function pobierzHistorieMeczow(profilId, nazwaGracza = "") {
+                let meczeZdalne = [];
+                const sesja = pobierzSesjeZStorage();
+                const token = sesja?.token || SUPA_KEY;
+                const naglowki = {
+                    apikey: SUPA_KEY,
+                    Authorization: `Bearer ${token}`,
+                };
+
+                // 1. BEZPOŚREDNI REST FETCH DO SUPABASE (Omija martwe połączenia w WebKit/Safari na iOS)
+                try {
+                    const controller = new AbortController();
+                    const timerId = setTimeout(() => controller.abort(), 4000);
+                    const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`;
+                    const res = await fetch(url, {
+                        headers: naglowki,
+                        cache: "no-store",
+                        signal: controller.signal,
+                    }).finally(() => clearTimeout(timerId));
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            meczeZdalne = data;
+                        }
+                    }
+                } catch (eRest) {
+                    console.warn("Direct REST fetch meczy pominięty:", eRest);
+                }
+
+                // 2. Jeśli direct fetch nie zwrócił danych, próba przez klienta Supabase SDK z limitem czasu
+                if (meczeZdalne.length === 0 && client) {
+                    try {
+                        const { data, error } = await zLimitemCzasu(
+                            client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(10),
+                            "odczyt meczy z Supabase SDK",
+                            4000
+                        );
+                        if (!error && Array.isArray(data) && data.length > 0) {
+                            meczeZdalne = data;
+                        }
+                    } catch (eSdk) {
+                        console.warn("Supabase SDK fetch meczy pominięty:", eSdk);
+                    }
+                }
+
+                // 3. Odczyt z pamięci lokalnej urządzenia (sd_historia_meczow)
+                let meczeLokalne = [];
+                try {
+                    const rawLocal = localStorage.getItem("sd_historia_meczow");
+                    if (rawLocal) {
+                        const parsed = JSON.parse(rawLocal);
+                        if (Array.isArray(parsed)) {
+                            meczeLokalne = parsed;
+                        }
+                    }
+                } catch (eLoc) {
+                    console.warn("Lokalna historia meczy błąd:", eLoc);
+                }
+
+                // 4. Normalizacja danych
+                const znormalizowaneZdalne = meczeZdalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
+                const znormalizowaneLokalne = meczeLokalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
+
+                // 5. Scalenie
+                if (znormalizowaneZdalne.length > 0) {
+                    const zdalneSygnatury = new Set(
+                        znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`)
+                    );
+                    const brakujaceLokalne = znormalizowaneLokalne.filter(
+                        (lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`)
+                    );
+                    return [...znormalizowaneZdalne, ...brakujaceLokalne].slice(0, 10);
+                }
+
+                return znormalizowaneLokalne.slice(0, 10);
+            }
+
             let client = window.supabaseKlient || window.supabaseClient || null;
             let aktualnyUser = odczytajZalogowanegoZStorage();
             let aktualnyProfil = null;
@@ -517,35 +669,48 @@
                     const profilId = paramId || aktualnyUser.id;
                     const czyMojProfil = profilId === aktualnyUser.id;
 
-                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (z obsługą serwera deweloperskiego / bezpośredniego Supabase)
+                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (odporne na uśpione sockety i zawieszenia iOS Safari)
                     let profil = null;
+
+                    // A. Bezpośredni REST fetch do Supabase (błyskawiczny ~100ms, zero locków)
                     try {
-                        const response = await zLimitemCzasu(
-                            fetch(`./api/profiles?id=${encodeURIComponent(profilId)}`, {
-                                headers: {
-                                    apikey: client.supabaseKey || SUPA_KEY,
-                                },
-                                cache: "no-store",
-                            }),
-                            "pobieranie profilu przez serwer strony",
-                            4000
-                        );
-                        if (response.ok) {
-                            const profiles = await response.json();
-                            profil = Array.isArray(profiles) ? profiles[0] : profiles;
+                        const controller = new AbortController();
+                        const timerId = setTimeout(() => controller.abort(), 4000);
+                        const sesja = pobierzSesjeZStorage();
+                        const token = sesja?.token || SUPA_KEY;
+                        const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profilId)}&select=*`, {
+                            headers: {
+                                apikey: SUPA_KEY,
+                                Authorization: `Bearer ${token}`,
+                            },
+                            cache: "no-store",
+                            signal: controller.signal,
+                        }).finally(() => clearTimeout(timerId));
+
+                        if (resDirect.ok) {
+                            const rows = await resDirect.json();
+                            if (Array.isArray(rows) && rows.length > 0) {
+                                profil = rows[0];
+                            }
                         }
-                    } catch (eProxy) {
-                        console.warn("Proxy ./api/profiles niedostępne:", eProxy);
+                    } catch (eDirect) {
+                        console.warn("Direct fetch profilu pominięty:", eDirect);
                     }
 
-                    if (!profil) {
-                        const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
-                            client.from("profiles").select("*").eq("id", profilId).maybeSingle(),
-                            "bezpośredni odczyt profilu z bazy",
-                            6000
-                        );
-                        if (dbErr) throw dbErr;
-                        profil = dbProfil;
+                    // B. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
+                    if (!profil && client) {
+                        try {
+                            const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
+                                client.from("profiles").select("*").eq("id", profilId).maybeSingle(),
+                                "bezpośredni odczyt profilu z bazy",
+                                4000
+                            );
+                            if (!dbErr && dbProfil) {
+                                profil = dbProfil;
+                            }
+                        } catch (eDb) {
+                            console.warn("Supabase SDK odczyt profilu pominięty:", eDb);
+                        }
                     }
 
                     if (!profil) {
@@ -656,8 +821,8 @@
                     document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
                     document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
 
-                    // 5. Pobranie historii gier
-                    const { data: mecze } = await client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(5);
+                    // 5. Pobranie historii gier (odporne na zawieszenia iOS Safari, chmura + pamięć lokalna)
+                    const mecze = await pobierzHistorieMeczow(profilId, nazwaGracza);
 
                     const listaMeczy = document.getElementById("lista-ostatnich-meczy");
                     ostatnieMeczeCache = mecze || [];
@@ -666,33 +831,13 @@
                         listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
                     } else {
                         listaMeczy.innerHTML = mecze
-                            .map((m, idx) => {
-                                const czyHost = m.host_id === profilId;
-                                const czyWygrana = m.zwyciezca_id === profilId;
-                                const wynik = czyHost ? `${m.wynik_host} : ${m.wynik_gosc}` : `${m.wynik_gosc} : ${m.wynik_host}`;
-                                let dataMeczu = "-";
-                                if (m.utworzono) {
-                                    try {
-                                        dataMeczu = new Date(m.utworzono.replace(" ", "T")).toLocaleDateString("pl-PL");
-                                    } catch (e) {}
-                                }
-
-                                let przeciwnikNazwa = "Przeciwnik";
-                                if (Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 1) {
-                                    const rywalObj = czyHost ? m.statystyki_graczy[1] : m.statystyki_graczy[0];
-                                    przeciwnikNazwa = rywalObj?.nazwa || "Rywal";
-                                } else if (m.format_gry) {
-                                    przeciwnikNazwa = m.format_gry;
-                                }
-
-                                return `
-                                    <div class="mecz ${czyWygrana ? "wygrana" : "porazka"}">
-                                        <p class="przeciwnik">Przeciwnik: <strong>${przeciwnikNazwa}</strong></p>
-                                        <p class="wynik">Wynik: <strong>${wynik}</strong></p>
-                                        <p class="data">Data: ${dataMeczu}</p>
-                                        <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
-                                    </div>`;
-                            })
+                            .map((m, idx) => `
+                                <div class="mecz ${m._czyWygrana ? "wygrana" : "porazka"}">
+                                    <p class="przeciwnik">Przeciwnik: <strong>${m._przeciwnikNazwa}</strong></p>
+                                    <p class="wynik">Wynik: <strong>${m._wynik}</strong></p>
+                                    <p class="data">Data: ${m._dataMeczu}</p>
+                                    <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
+                                </div>`)
                             .join("");
                     }
                 } catch (error) {
@@ -714,7 +859,9 @@
                 if (!mecz) return;
 
                 const legi = mecz.pelny_przebieg_meczu || mecz.historiaMeczuLegi || [];
-                const statystyki = mecz.statystyki_graczy || [];
+                const statystyki = (Array.isArray(mecz.statystyki_graczy) && mecz.statystyki_graczy.length > 0)
+                    ? mecz.statystyki_graczy
+                    : (Array.isArray(mecz.gracze) ? mecz.gracze : []);
 
                 if (legi.length === 0 && statystyki.length === 0) {
                     alert("Brak szczegółowych danych dla tego pojedynku.");
