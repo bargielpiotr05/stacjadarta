@@ -98,8 +98,8 @@ export default {
       }
 
       const { table, params, accessToken } = payload || {};
-      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "kod_pokoju", "od_kogo_id", "do_kogo_id", "id", "limit", "nazwa_gracza", "or"]);
-      if (!new Set(["znajomi", "profiles", "rooms", "game_invites"]).has(table) || !params || typeof params !== "object") {
+      const allowedParams = new Set(["select", "status", "zapraszajacy_id", "zapraszany_id", "kod_pokoju", "od_kogo_id", "do_kogo_id", "id", "limit", "nazwa_gracza", "or", "host_id", "gosc_id", "order"]);
+      if (!new Set(["znajomi", "profiles", "rooms", "game_invites", "matches"]).has(table) || !params || typeof params !== "object") {
         return Response.json({ message: "Nieprawidłowa tabela lub parametry." }, { status: 400 });
       }
       if ((table === "znajomi" || table === "game_invites") && (typeof accessToken !== "string" || !accessToken)) {
@@ -174,7 +174,7 @@ export default {
         return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
       }
 
-      const allowedTables = new Set(["znajomi", "rooms", "game_invites"]);
+      const allowedTables = new Set(["znajomi", "rooms", "game_invites", "matches"]);
       if (!allowedTables.has(table)) return Response.json({ message: "Nieobsługiwana tabela." }, { status: 400 });
 
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
@@ -188,13 +188,18 @@ export default {
           znajomi: new Set(["zapraszajacy_id", "zapraszany_id"]),
           rooms: new Set(["kod_pokoju", "host_id", "host_nazwa", "punkty_startowe", "docelowe_legi", "dystans", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
           game_invites: new Set(["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"]),
+          matches: new Set(["host_id", "gosc_id", "zwyciezca_id", "wynik_host", "wynik_gosc", "format_gry", "pelny_przebieg_meczu", "statystyki_graczy"]),
         };
         const allowedFields = allowedFieldsByTable[table];
         if (!records.length || records.some((record) => !record || Object.keys(record).some((key) => !allowedFields.has(key)))) {
-          return Response.json({ message: "Nieprawidłowe dane zaproszenia." }, { status: 400 });
+          return Response.json({ message: "Nieprawidłowe dane zapisu." }, { status: 400 });
         }
-        if (table === "rooms" || table === "game_invites") {
-          const requiredFields = table === "rooms" ? ["kod_pokoju", "host_id", "host_nazwa", "format_gry", "status"] : ["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"];
+        if (table === "rooms" || table === "game_invites" || table === "matches") {
+          const requiredFields = table === "rooms" 
+            ? ["kod_pokoju", "host_id", "host_nazwa", "format_gry", "status"] 
+            : (table === "game_invites" 
+                ? ["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"] 
+                : ["host_id", "format_gry"]);
           if (records.some((record) => requiredFields.some((field) => record[field] === undefined || record[field] === null))) {
             return Response.json({ message: "Brak wymaganych pól zapisu." }, { status: 400 });
           }

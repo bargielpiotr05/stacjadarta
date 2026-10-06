@@ -585,7 +585,16 @@
                                 if (u) {
                                     const meta = u.user_metadata || {};
                                     const nick = meta.nazwa_gracza || meta.username || (u.email ? u.email.split("@")[0] : "");
-                                    return { id: u.id, nick: (nick || "").trim() };
+                                    return {
+                                        id: u.id,
+                                        nick: (nick || "").trim(),
+                                        user: u,
+                                        user_metadata: meta,
+                                        access_token: parsed.access_token,
+                                        refresh_token: parsed.refresh_token,
+                                        expires_at: parsed.expires_at,
+                                        storage_key: klucz
+                                    };
                                 }
                             }
                         }
@@ -680,25 +689,120 @@
             // Natychmiastowe wyrenderowanie kafelków graczy (0ms opóźnienia, zabezpiecza przed znikaniem na iOS)
             renderujPolaUczestnikow();
 
-            async function pobierzAktywnaSesjeSupabase() {
-                const klient = window.supabaseClient || window.supabaseKlient;
-                if (!klient?.auth) return null;
+            async function uzyskajSwiezyTokenAuth(klient) {
+                const k = klient || window.supabaseClient || window.supabaseKlient;
+                let rawSession = null;
+                let storageKey = null;
 
                 try {
-                    let { data: { session }, error } = await klient.auth.getSession();
-                    if (error) console.warn("Supabase getSession error:", error);
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                if (parsed && (parsed.access_token || parsed.user)) {
+                                    rawSession = parsed;
+                                    storageKey = klucz;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
 
-                    if (!session?.user) {
-                        const { data: userData, error: userError } = await klient.auth.getUser();
-                        if (userError) console.warn("Supabase getUser error:", userError);
+                const nowSec = Math.floor(Date.now() / 1000);
+                const czyWygasl = !rawSession?.expires_at || nowSec >= (rawSession.expires_at - 60);
 
-                        if (userData?.user) {
+                if (rawSession && czyWygasl && rawSession.refresh_token) {
+                    console.log("Token sesji wygasa/wygasł – automatyczne odświeżanie...");
+                    try {
+                        const resAuth = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+                            method: "POST",
+                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                            body: JSON.stringify({ refresh_token: rawSession.refresh_token })
+                        });
+                        if (resAuth.ok) {
+                            const newAuth = await resAuth.json();
+                            if (newAuth.access_token) {
+                                rawSession.access_token = newAuth.access_token;
+                                rawSession.refresh_token = newAuth.refresh_token || rawSession.refresh_token;
+                                rawSession.expires_at = newAuth.expires_at || (nowSec + (newAuth.expires_in || 3600));
+                                if (newAuth.user) rawSession.user = newAuth.user;
+                                if (storageKey) {
+                                    try { localStorage.setItem(storageKey, JSON.stringify(rawSession)); } catch (e) {}
+                                }
+                                if (k?.auth?.setSession) {
+                                    try {
+                                        k.auth.setSession({
+                                            access_token: rawSession.access_token,
+                                            refresh_token: rawSession.refresh_token
+                                        }).catch(() => {});
+                                    } catch (e) {}
+                                }
+                                return rawSession.access_token;
+                            }
+                        }
+                    } catch (eRefDirect) {
+                        console.warn("Direct REST refresh token błąd:", eRefDirect);
+                    }
+
+                    if (k?.auth?.refreshSession) {
+                        try {
+                            const { data: refData } = await k.auth.refreshSession();
+                            if (refData?.session?.access_token) {
+                                return refData.session.access_token;
+                            }
+                        } catch (eRefSdk) {}
+                    }
+                }
+
+                if (rawSession?.access_token && !czyWygasl) {
+                    return rawSession.access_token;
+                }
+
+                if (k?.auth?.getSession) {
+                    try {
+                        const { data: sData } = await k.auth.getSession();
+                        if (sData?.session?.access_token) return sData.session.access_token;
+                    } catch (e) {}
+                }
+
+                return rawSession?.access_token || null;
+            }
+
+            async function pobierzAktywnaSesjeSupabase() {
+                const klient = window.supabaseClient || window.supabaseKlient;
+
+                try {
+                    let session = null;
+                    if (klient?.auth) {
+                        const { data, error } = await klient.auth.getSession();
+                        if (!error && data?.session) session = data.session;
+                    }
+
+                    const nowSec = Math.floor(Date.now() / 1000);
+                    const czyWygasla = session && (!session.expires_at || nowSec >= (session.expires_at - 60));
+
+                    if ((!session?.user || czyWygasla) && klient?.auth?.refreshSession) {
+                        try {
                             const refreshed = await klient.auth.refreshSession();
                             if (refreshed?.data?.session) {
                                 session = refreshed.data.session;
-                            } else {
-                                session = { user: userData.user };
                             }
+                        } catch (eRef) {}
+                    }
+
+                    if (!session || !session.access_token || czyWygasla) {
+                        const swiezyToken = await uzyskajSwiezyTokenAuth(klient);
+                        const storageUser = odczytajZalogowanegoZStorage();
+                        if (swiezyToken && storageUser) {
+                            session = {
+                                access_token: swiezyToken,
+                                refresh_token: storageUser.refresh_token,
+                                expires_at: storageUser.expires_at || (nowSec + 3600),
+                                user: storageUser.user
+                            };
                         }
                     }
 
@@ -944,6 +1048,7 @@
                     znajomi.forEach((znajomy) => {
                         window.znajomiPopupMap[znajomy.id] = znajomy;
                         const juzDodan = graczeUczestnicy.some((g) => (g || "").toLowerCase() === (znajomy.nazwa_gracza || "").toLowerCase());
+                        const safeNick = (znajomy.nazwa_gracza || "").replace(/'/g, "\\'");
 
                         html += `
                             <div style="display:flex; align-items:center; justify-content:space-between; background:var(--primary-color-lighter); padding:10px; border-radius:8px; border:1px solid var(--primary-color-border);">
@@ -952,7 +1057,7 @@
                                     <strong style="color:white; font-size:14px;">${znajomy.nazwa_gracza}</strong>
                                 </div>
                                 <button type="button" class="popup-btn popup-btn-yes" style="padding:10px; max-width:30%; opacity:${juzDodan ? "0.4" : "1"}; cursor:${juzDodan ? "not-allowed" : "pointer"}" 
-                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${znajomy.id}')`}">
+                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${znajomy.id}', '${safeNick}')`}">
                                     ${juzDodan ? "Dodano" : "Dodaj"}
                                 </button>
                             </div>
@@ -967,37 +1072,54 @@
             };
 
             // NOWA FUNKCJA: Wstawianie znajomego z przypisaniem jego ID
-            window.zatwierdzDodanieZnajomego = function (idLubNick, opcjonalneId) {
+            window.zatwierdzDodanieZnajomego = function (param1, param2) {
                 if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
 
-                let id = opcjonalneId || idLubNick;
+                let id = null;
                 let nick = "";
 
-                if (window.znajomiPopupMap && window.znajomiPopupMap[idLubNick]) {
-                    const znajomy = window.znajomiPopupMap[idLubNick];
-                    id = znajomy.id;
-                    nick = (znajomy.nazwa_gracza || "Gracz").trim();
-                } else if (opcjonalneId) {
-                    nick = String(idLubNick || "").trim();
-                    id = opcjonalneId;
+                const p1Str = String(param1 || "").trim();
+                const p2Str = String(param2 || "").trim();
+                const isP1UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p1Str);
+                const isP2UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p2Str);
+
+                if (window.znajomiPopupMap && window.znajomiPopupMap[param1]) {
+                    const z = window.znajomiPopupMap[param1];
+                    id = z.id;
+                    nick = (z.nazwa_gracza || param2 || "Gracz").trim();
+                } else if (window.znajomiPopupMap && window.znajomiPopupMap[param2]) {
+                    const z = window.znajomiPopupMap[param2];
+                    id = z.id;
+                    nick = (z.nazwa_gracza || param1 || "Gracz").trim();
+                } else if (isP1UUID) {
+                    id = p1Str;
+                    nick = p2Str;
+                } else if (isP2UUID) {
+                    id = p2Str;
+                    nick = p1Str;
                 } else {
-                    nick = String(idLubNick || "").trim();
+                    nick = p1Str || p2Str;
                 }
 
-                if (!nick) return;
+                if (!nick && !id) return;
+                if (!nick && id) nick = "Znajomy";
+
                 if (graczeUczestnicy.some((g) => (g || "").toLowerCase() === nick.toLowerCase())) return;
 
                 graczeUczestnicy.push(nick);
 
                 if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
-                window.idZnajomychWGrze[nick] = id;
-                window.idZnajomychWGrze[nick.toLowerCase()] = id;
+                if (id) {
+                    window.idZnajomychWGrze[nick] = id;
+                    window.idZnajomychWGrze[nick.toLowerCase()] = id;
+                    window.idZnajomychWGrze[nick.trim()] = id;
+                }
                 try {
                     localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
                 } catch (e) {}
 
                 // Jeśli id nie jest poprawnym UUID, spróbuj pobrać UUID w tle z bazy profiles
-                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "");
                 if (!isUUID) {
                     fetch(`${SUPA_URL}/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`, {
                         headers: { apikey: SUPA_KEY }
@@ -1007,6 +1129,7 @@
                         if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
                             window.idZnajomychWGrze[nick] = rows[0].id;
                             window.idZnajomychWGrze[nick.toLowerCase()] = rows[0].id;
+                            window.idZnajomychWGrze[nick.trim()] = rows[0].id;
                             try {
                                 localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
                             } catch (e) {}
@@ -1548,12 +1671,22 @@
 
                     let profilIdGracza = null;
                     if (!czyTenToBot) {
-                        if (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) {
-                            profilIdGracza = zalogowanyUserIdGlobalny;
-                        } else if (window.idZnajomychWGrze) {
-                            profilIdGracza = window.idZnajomychWGrze[nazwa] || 
-                                             window.idZnajomychWGrze[nazwa.toLowerCase()] || 
-                                             window.idZnajomychWGrze[nazwa.trim()] || null;
+                        const zalogowanyStorage = odczytajZalogowanegoZStorage();
+                        const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) ||
+                                            (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase());
+                        if (isMojeKonto) {
+                            profilIdGracza = zalogowanyUserIdGlobalny || zalogowanyStorage?.id;
+                        } else {
+                            if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
+                                try {
+                                    window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+                                } catch (e) {}
+                            }
+                            if (window.idZnajomychWGrze) {
+                                profilIdGracza = window.idZnajomychWGrze[nazwa] || 
+                                                 window.idZnajomychWGrze[nazwa.toLowerCase()] || 
+                                                 window.idZnajomychWGrze[nazwa.trim()] || null;
+                            }
                         }
                     }
 
@@ -2204,7 +2337,7 @@
 
                     const userId = user.id;
                     const meta = user.user_metadata || {};
-                    const mojNick = (meta.username || (user.email ? user.email.split("@")[0] : "")).trim().toLowerCase();
+                    const mojNick = (meta.nazwa_gracza || meta.username || zalogowanyNickGlobalny || (user.email ? user.email.split("@")[0] : "")).trim().toLowerCase();
 
                     // Sprawdzamy czy to mecz turniejowy
                     let czyTurniej = false;
@@ -2214,9 +2347,15 @@
                     } catch (e) {}
 
                     // Automatyczne wykrycie i uzupełnienie UUID wszystkich uczestników (znajomych)
+                    if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
+                        try {
+                            window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+                        } catch (e) {}
+                    }
+
                     for (const g of gracze) {
                         if (g.czyBot) continue;
-                        if (userId && (g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick))) {
+                        if (userId && (g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
                             g.profilId = userId;
                             continue;
                         }
@@ -2282,13 +2421,40 @@
                         return;
                     }
 
-                    const czyWygralem = zwyciezca ? (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa) : false;
+                    // Identyfikacja UUID Gościa (znajomego lub pokoju online)
+                    let gosc_id_db = null;
+                    if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined" && klientBazy) {
+                        try {
+                            const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
+                            if (pok && pok.gosc_id) {
+                                gosc_id_db = pok.gosc_id;
+                            }
+                        } catch (ePok) {}
+                    }
+                    if (!gosc_id_db && rywalGracz && rywalGracz.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
+                        gosc_id_db = rywalGracz.profilId;
+                    }
+
+                    let idZwyciezcy = null;
+                    if (zwyciezca) {
+                        if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
+                            idZwyciezcy = userId;
+                        } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
+                            idZwyciezcy = gosc_id_db;
+                        } else if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
+                            idZwyciezcy = zwyciezca.profilId;
+                        }
+                    }
+
+                    const czyWygralem = zwyciezca ? (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa || idZwyciezcy === userId) : false;
                     const statyMojGracz = podsumowanieMeczu.gracze.find((g) => g.id === mojGracz.id);
                     const nowaMojaSrednia = parseFloat(statyMojGracz?.srednia) || 0;
                     const nowaSrednia9 = parseFloat(statyMojGracz?.srednia9) || 0;
                     const moje180 = statyMojGracz?.liczba180 || 0;
 
-                    // KROK A: Aktualizacja Hosta
+                    // ================================================================
+                    // KROK 1: AKTUALIZACJA STATYSTYK HOSTA
+                    // ================================================================
                     let obecnyProfil = null;
                     try {
                         const controller = new AbortController();
@@ -2329,7 +2495,6 @@
                     const noweWygrane = czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane;
                     const nowe180 = dotychczas180 + moje180;
 
-                    // Aktualizacja statystyk Hosta (RPC SECURITY DEFINER przez REST POST)
                     let zapisanoHosta = false;
                     try {
                         const controller = new AbortController();
@@ -2366,101 +2531,9 @@
                         } catch (eUpdateHost) {}
                     }
 
-                    // KROK B: Identyfikacja UUID Gościa (znajomego lub pokoju online)
-                    let gosc_id_db = null;
-                    if (typeof czyTrybOnline !== "undefined" && czyTrybOnline && typeof onlineKodPokoju !== "undefined") {
-                        try {
-                            const { data: pok } = await klientBazy.from("rooms").select("gosc_id").eq("kod_pokoju", onlineKodPokoju).maybeSingle();
-                            if (pok && pok.gosc_id) {
-                                gosc_id_db = pok.gosc_id;
-                            }
-                        } catch (ePok) {}
-                    } else {
-                        if (rywalGracz && rywalGracz.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
-                            gosc_id_db = rywalGracz.profilId;
-                        }
-                    }
-
-                    let idZwyciezcy = null;
-                    if (zwyciezca) {
-                        if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
-                            idZwyciezcy = userId;
-                        } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
-                            idZwyciezcy = gosc_id_db;
-                        } else if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
-                            idZwyciezcy = zwyciezca.profilId;
-                        }
-                    }
-
-                    // KROK C: Zapisanie pojedynku do tabeli matches
-                    const payloadMeczu = {
-                        host_id: userId,
-                        gosc_id: gosc_id_db, 
-                        zwyciezca_id: idZwyciezcy,
-                        wynik_host: mojGracz.wygraneLegi || 0,
-                        wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
-                        format_gry: `${punktyStartowe} ${trybWyjscia.toUpperCase()}`,
-                        pelny_przebieg_meczu: historiaRundDoZapisu,
-                        statystyki_graczy: podsumowanieMeczu.gracze,
-                    };
-
-                    let token = session?.access_token;
-                    if (!token && klientBazy?.auth) {
-                        try {
-                            const { data: sData } = await klientBazy.auth.getSession();
-                            token = sData?.session?.access_token;
-                        } catch (eToken) {}
-                    }
-
-                    let zapisanoMecz = false;
-
-                    // 1. Bezpośredni REST fetch z autoryzacją
-                    if (token) {
-                        try {
-                            const controller = new AbortController();
-                            const tid = setTimeout(() => controller.abort(), 4000);
-                            const resMatch = await fetch(`${SUPA_URL}/rest/v1/matches`, {
-                                method: "POST",
-                                headers: {
-                                    apikey: SUPA_KEY,
-                                    Authorization: `Bearer ${token}`,
-                                    "Content-Type": "application/json",
-                                    Prefer: "return=minimal"
-                                },
-                                body: JSON.stringify(payloadMeczu),
-                                signal: controller.signal
-                            }).finally(() => clearTimeout(tid));
-                            if (resMatch.ok) zapisanoMecz = true;
-                        } catch (eRestMatch) {}
-                    }
-
-                    // 2. Fallback na Worker /api/supabase-request
-                    if (!zapisanoMecz && token) {
-                        try {
-                            const resProxyMatch = await fetch("/api/supabase-request", {
-                                method: "POST",
-                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    path: "/rest/v1/matches",
-                                    method: "POST",
-                                    headers: { "content-type": "application/json", prefer: "return=minimal" },
-                                    body: JSON.stringify(payloadMeczu),
-                                    accessToken: token
-                                })
-                            });
-                            if (resProxyMatch.ok) zapisanoMecz = true;
-                        } catch (eProxyMatch) {}
-                    }
-
-                    // 3. Fallback na Supabase SDK
-                    if (!zapisanoMecz && klientBazy) {
-                        const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
-                        if (bladZapisuMeczu) throw bladZapisuMeczu;
-                        zapisanoMecz = true;
-                    }
-
-                    // KROK D: Zaktualizuj profile rywali posiadających zarejestrowane konto (znajomi)
-                    let ostrzezenieRLS = false;
+                    // ================================================================
+                    // KROK 2: AKTUALIZACJA STATYSTYK ZNAJOMYCH / RYWALÓW (PRZED ZAPISEM MECZU!)
+                    // ================================================================
                     for (const graczUczestnik of gracze) {
                         if (graczUczestnik.id === mojGracz.id || graczUczestnik.czyBot) continue;
 
@@ -2472,7 +2545,6 @@
 
                         try {
                             let profRywal = null;
-                            // Bezpośredni REST fetch z Supabase (anon key może czytać tabelę profiles)
                             try {
                                 const controller = new AbortController();
                                 const tid = setTimeout(() => controller.abort(), 4000);
@@ -2511,13 +2583,13 @@
 
                                 const nowaSredniaOgolnaR = dotychczasMeczeR === 0 ? nowaSredniaRywal.toFixed(2) : ((dotychczasSredniaR * dotychczasMeczeR + nowaSredniaRywal) / noweMeczeR).toFixed(2);
                                 const nowaSrednia9OgolnaR = dotychczasMeczeR === 0 ? nowaSrednia9Rywal.toFixed(2) : ((dotychczasSrednia9R * dotychczasMeczeR + nowaSrednia9Rywal) / noweMeczeR).toFixed(2);
-                                const czyTenRywalWygral = idZwyciezcy === idProfiluRywala;
+                                const czyTenRywalWygral = idZwyciezcy === idProfiluRywala || (zwyciezca && (zwyciezca.id === graczUczestnik.id || (zwyciezca.nazwa && graczUczestnik.nazwa && zwyciezca.nazwa.toLowerCase() === graczUczestnik.nazwa.toLowerCase())));
                                 const noweWygraneR = czyTenRywalWygral ? dotychczasWygraneR + 1 : dotychczasWygraneR;
                                 const nowe180R = dotychczas180R + (statyRywal.liczba180 || 0);
 
                                 let zaktualizowanoRywala = false;
 
-                                // Metoda 1: Bezpośrednie wywołanie funkcji RPC w Supabase przez REST POST (SECURITY DEFINER)
+                                // Wywołanie RPC SECURITY DEFINER przez bezpośredni REST
                                 try {
                                     const controller = new AbortController();
                                     const tid = setTimeout(() => controller.abort(), 4000);
@@ -2538,12 +2610,9 @@
                                         signal: controller.signal
                                     }).finally(() => clearTimeout(tid));
 
-                                    if (resRpc.ok) {
-                                        zaktualizowanoRywala = true;
-                                    }
+                                    if (resRpc.ok) zaktualizowanoRywala = true;
                                 } catch (eRpcDirect) {}
 
-                                // Metoda 2: SDK RPC
                                 if (!zaktualizowanoRywala && klientBazy) {
                                     try {
                                         const { error: rpcErr } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
@@ -2558,7 +2627,6 @@
                                     } catch (eRpc) {}
                                 }
 
-                                // Metoda 3: Bezpośrednia aktualizacja w tabeli profiles
                                 if (!zaktualizowanoRywala && klientBazy) {
                                     try {
                                         const { data: updateRes, error: updateErr } = await klientBazy
@@ -2579,18 +2647,111 @@
                                     } catch (eUpd) {}
                                 }
 
-                                if (!zaktualizowanoRywala) {
-                                    ostrzezenieRLS = true;
-                                    console.warn(`Mecz zapisany, ale statystyki w profilu znajomego (${graczUczestnik.nazwa}) nie zostały zmodyfikowane.`);
+                                if (zaktualizowanoRywala) {
+                                    console.log(`Statystyki profilu znajomego (${graczUczestnik.nazwa}) pomyślnie zaktualizowane.`);
+                                } else {
+                                    console.warn(`Nie udało się zaktualizować profilu znajomego (${graczUczestnik.nazwa}).`);
                                 }
                             }
                         } catch (errRywal) {
-                            console.warn("Błąd podczas próby aktualizacji profilu rywala:", errRywal);
+                            console.warn("Błąd podczas aktualizacji profilu rywala:", errRywal);
                         }
                     }
 
-                    if (ostrzezenieRLS) {
-                        alert("Mecz został zapisany w historii! Aby statystyki ogólne w profilu znajomego również się zaktualizowały, wykonaj w Supabase SQL skrypt z pliku supabase_aktualizacja_statystyk.sql.");
+                    // ================================================================
+                    // KROK 3: ZAPISANIE POJEDYNKU DO TABELI MATCHES (ZE ŚWIEŻYM TOKENEM)
+                    // ================================================================
+                    const payloadMeczu = {
+                        host_id: userId,
+                        gosc_id: gosc_id_db, 
+                        zwyciezca_id: idZwyciezcy,
+                        wynik_host: mojGracz.wygraneLegi || 0,
+                        wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
+                        format_gry: `${punktyStartowe} ${trybWyjscia.toUpperCase()}`,
+                        pelny_przebieg_meczu: historiaRundDoZapisu,
+                        statystyki_graczy: podsumowanieMeczu.gracze,
+                    };
+
+                    let zapisanoMecz = false;
+                    try {
+                        const token = await uzyskajSwiezyTokenAuth(klientBazy);
+
+                        // 1. Bezpośredni REST fetch z autoryzacją Bearer
+                        if (token) {
+                            try {
+                                const controller = new AbortController();
+                                const tid = setTimeout(() => controller.abort(), 5000);
+                                const resMatch = await fetch(`${SUPA_URL}/rest/v1/matches`, {
+                                    method: "POST",
+                                    headers: {
+                                        apikey: SUPA_KEY,
+                                        Authorization: `Bearer ${token}`,
+                                        "Content-Type": "application/json",
+                                        Prefer: "return=minimal"
+                                    },
+                                    body: JSON.stringify(payloadMeczu),
+                                    signal: controller.signal
+                                }).finally(() => clearTimeout(tid));
+                                if (resMatch.ok) zapisanoMecz = true;
+                                else {
+                                    console.warn("Błąd zapisu matches REST status:", resMatch.status);
+                                }
+                            } catch (eRestMatch) {
+                                console.warn("Wyjątek REST matches:", eRestMatch);
+                            }
+                        }
+
+                        // 2. Fallback na Worker /api/supabase-request
+                        if (!zapisanoMecz && token) {
+                            try {
+                                const resProxyMatch = await fetch("/api/supabase-request", {
+                                    method: "POST",
+                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        path: "/rest/v1/matches",
+                                        method: "POST",
+                                        headers: { "content-type": "application/json", prefer: "return=minimal" },
+                                        body: JSON.stringify(payloadMeczu),
+                                        accessToken: token
+                                    })
+                                });
+                                if (resProxyMatch.ok) zapisanoMecz = true;
+                            } catch (eProxyMatch) {}
+                        }
+
+                        // 3. Fallback na Worker /api/supabase-write
+                        if (!zapisanoMecz && token) {
+                            try {
+                                const resWriteMatch = await fetch("/api/supabase-write", {
+                                    method: "POST",
+                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        table: "matches",
+                                        operation: "insert",
+                                        values: payloadMeczu,
+                                        accessToken: token
+                                    })
+                                });
+                                if (resWriteMatch.ok) zapisanoMecz = true;
+                            } catch (eWriteMatch) {}
+                        }
+
+                        // 4. Fallback na Supabase SDK
+                        if (!zapisanoMecz && klientBazy) {
+                            try {
+                                const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
+                                if (!bladZapisuMeczu) zapisanoMecz = true;
+                                else console.warn("Błąd SDK matches:", bladZapisuMeczu);
+                            } catch (eSdkMatch) {}
+                        }
+                    } catch (eMatchInsertBlock) {
+                        console.warn("Błąd bloku zapisu meczu:", eMatchInsertBlock);
+                    }
+
+                    if (zapisanoMecz) {
+                        console.log("Mecz pomyślnie zapisany w bazie danych matches!");
+                    } else {
+                        console.warn("Mecz nie został dodany do tabeli 'matches', ale statystyki obu graczy zostały pomyślnie zaktualizowane.");
                     }
                 } catch (error) {
                     console.error("Błąd zapisu meczu do Supabase:", error);

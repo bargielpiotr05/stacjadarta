@@ -545,7 +545,32 @@
                     console.warn("Direct REST fetch meczy pominięty:", eRest);
                 }
 
-                // 2. Jeśli direct fetch nie zwrócił danych, próba przez klienta Supabase SDK z limitem czasu
+                // 2. Jeśli direct fetch nie zwrócił danych, próba przez Worker /api/supabase-read
+                if (meczeZdalne.length === 0) {
+                    try {
+                        const resWorker = await fetch("/api/supabase-read", {
+                            method: "POST",
+                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                table: "matches",
+                                params: {
+                                    select: "*",
+                                    or: `(host_id.eq.${profilId},gosc_id.eq.${profilId})`,
+                                    order: "utworzono.desc",
+                                    limit: "10"
+                                }
+                            })
+                        });
+                        if (resWorker.ok) {
+                            const data = await resWorker.json();
+                            if (Array.isArray(data) && data.length > 0) {
+                                meczeZdalne = data;
+                            }
+                        }
+                    } catch (eWorker) {}
+                }
+
+                // 3. Próba przez klienta Supabase SDK z limitem czasu
                 if (meczeZdalne.length === 0 && client) {
                     try {
                         const { data, error } = await zLimitemCzasu(
