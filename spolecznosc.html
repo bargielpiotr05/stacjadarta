@@ -722,16 +722,29 @@
                                 return;
                             }
 
-                            const [wyslane, otrzymane] = await Promise.all([
-                                pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status wysłanych zaproszeń"),
-                                pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status otrzymanych zaproszeń"),
-                            ]);
-                            const relacje = [...wyslane, ...otrzymane];
-                            const relMap = {};
-                            relacje.forEach((r) => {
-                                const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
-                                relMap[innyId] = r;
-                            });
+                            // Przed pobraniem relacji znajomości — upewnij się że mamy access_token (iOS Safari może go gubić)
+                            if (!aktualnaSesja?.access_token && client?.auth) {
+                                try {
+                                    const refreshed = await client.auth.refreshSession();
+                                    if (refreshed?.data?.session) aktualnaSesja = refreshed.data.session;
+                                } catch (eRef) { console.warn("Nie udało się odświeżyć sesji przed pobieraniem relacji:", eRef); }
+                            }
+
+                            let relMap = {};
+                            try {
+                                const [wyslane, otrzymane] = await Promise.all([
+                                    pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszajacy_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status wysłanych zaproszeń"),
+                                    pobierzWierszeApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", zapraszany_id: `eq.${aktualnyUser.id}`, limit: "100" }, "status otrzymanych zaproszeń"),
+                                ]);
+                                const relacje = [...wyslane, ...otrzymane];
+                                relacje.forEach((r) => {
+                                    const innyId = r.zapraszajacy_id === aktualnyUser.id ? r.zapraszany_id : r.zapraszajacy_id;
+                                    relMap[innyId] = r;
+                                });
+                            } catch (eRel) {
+                                // Na iOS może brakować tokenu — renderuj wyniki bez statusu znajomości
+                                console.warn("Błąd pobierania relacji znajomych (statusy przycisków niedostępne):", eRel);
+                            }
 
                             kontener.innerHTML = data
                                 .map((gracz) => {
