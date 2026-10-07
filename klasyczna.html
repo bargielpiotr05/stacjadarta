@@ -2080,6 +2080,7 @@
                         let btn = document.createElement("button");
                         btn.className = "popup-btn popup-btn-yes";
                         btn.textContent = `${i}. lotka`;
+                        btn.dataset.wartosc = i.toString();
                         btn.onclick = () => {
                             pokazPytanieOProbyZamkniecia(i, punktyPrzedRzutem, callback);
                         };
@@ -2097,6 +2098,7 @@
                         btn.style.backgroundColor = i === 0 ? "#475569" : "var(--secondary-color)";
                         btn.style.color = i === 0 ? "white" : "var(--primary-color)";
                         btn.textContent = i.toString();
+                        btn.dataset.wartosc = i.toString();
                         btn.onclick = () => {
                             popup.style.display = "none";
                             callback(3, i);
@@ -2125,6 +2127,7 @@
                     let btn = document.createElement("button");
                     btn.className = "popup-btn popup-btn-yes";
                     btn.textContent = `${i}`;
+                    btn.dataset.wartosc = i.toString();
                     btn.onclick = () => {
                         popup.style.display = "none";
                         callback(lotkaKonczaca, i);
@@ -2132,6 +2135,29 @@
                     btnContainer.appendChild(btn);
                 }
             }
+
+            // Obsługa klawiatury dla popupu Doubles (zarówno klawisze główne jak i numpad)
+            window.addEventListener("keydown", (e) => {
+                const popup = document.getElementById("popup-doubles");
+                if (!popup || popup.style.display !== "flex") return;
+
+                let key = e.key;
+                if (key.startsWith("Numpad") || key.startsWith("Digit")) {
+                    key = key.replace("Numpad", "").replace("Digit", "");
+                }
+
+                if (["0", "1", "2", "3"].includes(key)) {
+                    const btnContainer = document.getElementById("popup-doubles-buttons");
+                    if (!btnContainer) return;
+
+                    const pasujacyPrzycisk = btnContainer.querySelector(`button[data-wartosc="${key}"]`);
+                    if (pasujacyPrzycisk) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        pasujacyPrzycisk.click();
+                    }
+                }
+            }, true);
 
             function cofnijRzut() {
                 if (typeof anulujTureBota === "function") {
