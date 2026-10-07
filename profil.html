@@ -682,20 +682,38 @@
 
                 try {
                     let relacje = null;
-                    // 1. Bezpośredni REST fetch z krótkim timeoutem (nie wiesza się na iOS)
+
+                    // Pobierz świeży token jeśli nie przekazano
+                    let accessToken = token;
+                    if (!accessToken && client?.auth) {
+                        try {
+                            const { data: sd } = await client.auth.getSession();
+                            accessToken = sd?.session?.access_token || null;
+                            if (!accessToken) {
+                                const { data: rd } = await client.auth.refreshSession();
+                                accessToken = rd?.session?.access_token || null;
+                            }
+                        } catch (eTok) {}
+                    }
+
+                    // 1. Worker /api/supabase-read (same-origin, iOS-safe)
                     try {
-                        const controller = new AbortController();
-                        const tid = setTimeout(() => controller.abort(), 3500);
-                        const headers = {
-                            apikey: SUPA_KEY,
-                            ...(token ? { Authorization: `Bearer ${token}` } : {})
-                        };
-                        const url = `${SUPA_URL}/rest/v1/znajomi?or=(and(zapraszajacy_id.eq.${encodeURIComponent(mojId)},zapraszany_id.eq.${encodeURIComponent(celId)}),and(zapraszajacy_id.eq.${encodeURIComponent(celId)},zapraszany_id.eq.${encodeURIComponent(mojId)}))&select=*`;
-                        const res = await fetch(url, { headers, signal: controller.signal, cache: "no-store" }).finally(() => clearTimeout(tid));
-                        if (res.ok) {
-                            relacje = await res.json();
+                        const orFilter = `or=(and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId}))`;
+                        const resWorker = await fetch("/api/supabase-read", {
+                            method: "POST",
+                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                table: "znajomi",
+                                params: { select: "id,zapraszajacy_id,zapraszany_id,status", or: `(and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId}))` },
+                                accessToken
+                            }),
+                            cache: "no-store"
+                        });
+                        if (resWorker.ok) {
+                            const data = await resWorker.json();
+                            if (Array.isArray(data)) relacje = data;
                         }
-                    } catch (eRest) {}
+                    } catch (eWorker) {}
 
                     // 2. Supabase SDK fallback
                     if ((!relacje || !relacje.length) && client) {
