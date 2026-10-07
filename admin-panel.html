@@ -270,14 +270,15 @@
         <script>window.SUPABASE_CLIENT_ONLY = true;</script>
         <script src="./menu.js"></script>
         <script>
-            const SUPABASE_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
-            const SUPABASE_ANON_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-
-            const adminSupabase = window.supabaseClient || window.supabaseKlient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                global: {
-                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
-                },
-            });
+            const adminSupabase = window.supabaseClient || window.supabaseKlient || window.supabase.createClient(
+                window.SUPABASE_URL || "https://mjebhhagwxtvhggyjwue.supabase.co",
+                window.SUPABASE_ANON_KEY || "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R",
+                {
+                    global: {
+                        fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
+                    },
+                }
+            );
             const ADMIN_EMAIL = "bargielpiotr05@gmail.com";
 
             function adminZLimitemCzasu(obietnica, etap) {
@@ -288,16 +289,55 @@
                 return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
             }
 
-            async function autoryzujAdmina() {
-                const { data: { session }, error } = await adminZLimitemCzasu(adminSupabase.auth.getSession(), "weryfikacja sesji administratora");
-                if (error) throw error;
-                const user = session?.user;
+            function odczytajZalogowanegoZStorage() {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && (klucz.startsWith("sb-") || klucz.includes("auth-token")) && klucz.endsWith("-auth-token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                if (parsed?.user) return parsed.user;
+                                if (parsed?.currentSession?.user) return parsed.currentSession.user;
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return null;
+            }
 
-                // Odkomentuj poniższą linię, jeśli testujesz lokalnie i nie chcesz blokady logowania:
-                // document.getElementById("admin-auth-info").innerText = "Lokalny podgląd"; return true;
+            async function autoryzujAdmina() {
+                const status = document.getElementById("admin-auth-info");
+                let user = null;
+
+                try {
+                    const sessionRes = await Promise.race([
+                        adminSupabase.auth.getSession(),
+                        new Promise((r) => setTimeout(() => r({ data: {} }), 2500))
+                    ]);
+                    user = sessionRes?.data?.session?.user || null;
+                } catch (e) {
+                    console.warn("getSession błąd:", e);
+                }
 
                 if (!user) {
-                    document.getElementById("admin-auth-info").innerText = "Niezalogowany";
+                    try {
+                        const userRes = await Promise.race([
+                            adminSupabase.auth.getUser(),
+                            new Promise((r) => setTimeout(() => r({ data: {} }), 2500))
+                        ]);
+                        user = userRes?.data?.user || null;
+                    } catch (e) {
+                        console.warn("getUser błąd:", e);
+                    }
+                }
+
+                if (!user) {
+                    user = odczytajZalogowanegoZStorage();
+                }
+
+                if (!user) {
+                    if (status) status.innerText = "Niezalogowany";
                     alert("Zaloguj się na konto administratora!");
                     window.location.href = "./logowanie.html";
                     return false;
@@ -309,81 +349,93 @@
                     return false;
                 }
 
-                document.getElementById("admin-auth-info").innerText = `Admin: ${user.email}`;
+                if (status) status.innerText = `Admin: ${user.email}`;
                 return true;
             }
 
             async function zaladujKafelki() {
                 // 1. Liczba profili
-                const { count: countProfiles, error: profilesError } = await adminZLimitemCzasu(
-                    adminSupabase.from("profiles").select("*", { count: "exact", head: true }),
-                    "liczenie profili",
-                );
-                if (profilesError) throw profilesError;
+                try {
+                    const res = await adminSupabase.from("profiles").select("*", { count: "exact", head: true });
+                    document.getElementById("stat-profiles-count").innerText = res.count ?? 0;
+                } catch (e) {
+                    console.warn("Błąd liczenia profili:", e);
+                }
 
                 // 2. Liczba zakończonych meczów
-                const { count: countMatches, error: matchesError } = await adminZLimitemCzasu(
-                    adminSupabase.from("matches").select("*", { count: "exact", head: true }),
-                    "liczenie meczów",
-                );
-                if (matchesError) throw matchesError;
+                try {
+                    const res = await adminSupabase.from("matches").select("*", { count: "exact", head: true });
+                    document.getElementById("stat-matches-count").innerText = res.count ?? 0;
+                } catch (e) {
+                    console.warn("Błąd liczenia meczów:", e);
+                }
 
                 // 3. Pokoje Live
-                const { count: countLive, error: liveError } = await adminZLimitemCzasu(
-                    adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "in_progress"),
-                    "liczenie aktywnych pokoi",
-                );
-                if (liveError) throw liveError;
+                try {
+                    const res = await adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "in_progress");
+                    document.getElementById("stat-live-count").innerText = res.count ?? 0;
+                } catch (e) {
+                    console.warn("Błąd liczenia live rooms:", e);
+                }
 
                 // 4. Pokoje Waiting
-                const { count: countWaiting, error: waitingError } = await adminZLimitemCzasu(
-                    adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "waiting"),
-                    "liczenie oczekujących pokoi",
-                );
-                if (waitingError) throw waitingError;
-
-                document.getElementById("stat-profiles-count").innerText = countProfiles || 0;
-                document.getElementById("stat-matches-count").innerText = countMatches || 0;
-                document.getElementById("stat-live-count").innerText = countLive || 0;
-                document.getElementById("stat-waiting-count").innerText = countWaiting || 0;
+                try {
+                    const res = await adminSupabase.from("rooms").select("*", { count: "exact", head: true }).eq("status", "waiting");
+                    document.getElementById("stat-waiting-count").innerText = res.count ?? 0;
+                } catch (e) {
+                    console.warn("Błąd liczenia waiting rooms:", e);
+                }
             }
 
             async function zaladujMecze() {
-                // Pobieramy mecze wraz z relacjami do tabeli profiles dla czytelnych nazw graczy
-                const { data: matches, error } = await adminZLimitemCzasu(
-                    adminSupabase
-                        .from("matches")
-                        .select(`
-                        id,
-                        utworzono,
-                        wynik_host,
-                        wynik_gosc,
-                        format_gry,
-                        host:host_id(nazwa_gracza),
-                        gosc:gosc_id(nazwa_gracza),
-                        zwyciezca:zwyciezca_id(nazwa_gracza)
-                        `)
-                        .order("utworzono", { ascending: false })
-                        .limit(50),
-                    "pobieranie listy meczów",
-                );
-
                 const tbody = document.getElementById("matches-tbody");
+                let matches = [];
+
+                // Próba pobrania meczów
+                try {
+                    const res = await adminSupabase
+                        .from("matches")
+                        .select("*")
+                        .order("utworzono", { ascending: false })
+                        .limit(50);
+                    matches = res.data || [];
+                } catch (e) {
+                    console.warn("Błąd pobierania meczów:", e);
+                }
+
                 tbody.innerHTML = "";
 
-                if (error || !matches || matches.length === 0) {
+                if (!matches || matches.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8;">Brak rozegranych meczów</td></tr>`;
                     return;
                 }
 
+                // Pobieramy profile graczy dla czytelnych nazw
+                const ids = new Set();
                 matches.forEach((m) => {
-                    const data = new Date(m.utworzono).toLocaleString("pl-PL", {
-                        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
-                    });
+                    if (m.host_id) ids.add(m.host_id);
+                    if (m.gosc_id) ids.add(m.gosc_id);
+                    if (m.zwyciezca_id) ids.add(m.zwyciezca_id);
+                });
 
-                    const hostNazwa = m.host?.nazwa_gracza || "Gracz / Host";
-                    const goscNazwa = m.gosc?.nazwa_gracza || "DartBot / Gość";
-                    const zwyciezcaNazwa = m.zwyciezca?.nazwa_gracza || "-";
+                let nazwyMap = {};
+                if (ids.size > 0) {
+                    try {
+                        const { data: profs } = await adminSupabase.from("profiles").select("id,nazwa_gracza").in("id", Array.from(ids));
+                        (profs || []).forEach((p) => { nazwyMap[p.id] = p.nazwa_gracza; });
+                    } catch (e) {}
+                }
+
+                matches.forEach((m) => {
+                    const data = m.utworzono ? new Date(m.utworzono).toLocaleString("pl-PL", {
+                        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+                    }) : "-";
+
+                    // Wyciągnięcie nazw ze statystyk lub mapy
+                    const stats = Array.isArray(m.statystyki_graczy) ? m.statystyki_graczy : [];
+                    const hostNazwa = nazwyMap[m.host_id] || stats[0]?.nazwa || "Gracz 1";
+                    const goscNazwa = nazwyMap[m.gosc_id] || stats[1]?.nazwa || "DartBot / Gracz 2";
+                    const zwyciezcaNazwa = nazwyMap[m.zwyciezca_id] || (m.zwyciezca_id === m.host_id ? hostNazwa : (m.zwyciezca_id === m.gosc_id ? goscNazwa : "-"));
 
                     const row = document.createElement("tr");
                     row.innerHTML = `
