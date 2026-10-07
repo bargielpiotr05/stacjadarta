@@ -479,7 +479,18 @@
                     wynik = czyHost ? `${m.wynik_host ?? 0} : ${m.wynik_gosc ?? 0}` : `${m.wynik_gosc ?? 0} : ${m.wynik_host ?? 0}`;
 
                     if (statystyki.length > 1) {
-                        const rywal = czyHost ? statystyki[1] : statystyki[0];
+                        // Szukaj gracza który NIE jest aktualnie przeglądanym profilem (po nazwie lub ID)
+                        const nickLowerDb = (nazwaGracza || "").trim().toLowerCase();
+                        let rywal = statystyki.find((s) => {
+                            const sNazwa = (s?.nazwa || "").trim().toLowerCase();
+                            if (s?.id && profilId && s.id === profilId) return false;
+                            if (nickLowerDb && sNazwa === nickLowerDb) return false;
+                            return true;
+                        });
+                        // Fallback: jeśli nie znaleziono (np. obu ma taką samą nazwę) — wybierz przeciwną stronę po indeksie
+                        if (!rywal) {
+                            rywal = czyHost ? statystyki[1] : statystyki[0];
+                        }
                         przeciwnikNazwa = rywal?.nazwa || "Rywal";
                     } else if (m.format_gry) {
                         przeciwnikNazwa = m.format_gry;
