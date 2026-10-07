@@ -36,7 +36,7 @@
             const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
             window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
                 global: {
-                    fetch: (input, init) => window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init),
+                    fetch: (input, init) => (window.supabaseProxyFetch ? window.supabaseProxyFetch(input, init) : fetch(input, init)),
                 },
             });
         </script>
@@ -47,7 +47,33 @@
         <header id="wspolny-header"></header>
         <main>
             <h1 class="header-text">Dziennik zmian i nowości!</h1>
-
+            <!-- BLOK NOWOŚCI V1.0 -->
+            <div class="blok-nowosci">
+                <div class="blok-head">
+                    <h1>Aktualizacja v1.2</h1>
+                    <p>Data: 07-10-2026</p>
+                </div>
+                <div class="blok-zmiany">
+                    <ul>
+                        <li><b>Ułatwienie w grze klasycznej:</b> dodana możliwość wpisywania lotek na double poprzez klawiature.</li>
+                    </ul>
+                </div>
+                <p>Aby zobaczyć zmiany wizualnie, odwiedź nasze profile społecznościowe:</p>
+                <div id="kontener-logotypow">
+                    <label class="instagram">
+                        <a href="www.instagram.com/stacjadarta/" target="_blank" rel="noopener noreferrer">
+                            <img src="./ikony/instagram.png" alt="Instagram" />
+                            <span>Instagram</span>
+                        </a>
+                    </label>
+                    <label class="facebook">
+                        <a href="www.facebook.com/stacjadarta/" target="_blank" rel="noopener noreferrer">
+                            <img src="./ikony/facebook.png" alt="Facebook" />
+                            <span>Facebook</span>
+                        </a>
+                    </label>
+                </div>
+            </div>
             <!-- BLOK NOWOŚCI V1.1 -->
             <div class="blok-nowosci">
                 <div class="blok-head">
@@ -101,7 +127,7 @@
                         <a href="www.instagram.com/stacjadarta/" target="_blank" rel="noopener noreferrer">
                             <img src="./ikony/instagram.png" alt="Instagram" />
                             <span>Instagram</span>
-                            </a>
+                        </a>
                     </label>
                     <label class="facebook">
                         <a href="www.facebook.com/stacjadarta/" target="_blank" rel="noopener noreferrer">

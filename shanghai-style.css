@@ -178,6 +178,7 @@ input[type="text"]:focus {
 #zacznij-grac,
 .btn-action {
   background-color: var(--secondary-color);
+  margin:0 auto !important;
   border: none;
   color: var(--primary-color);
   padding: 14px 20px;
@@ -493,6 +494,9 @@ input[type="text"]:focus {
   text-align: center;
   border-bottom: 3px solid var(--secondary-color);
   padding-bottom: 10px;
+}
+.formularz-wspolny .grid-2-col{
+  grid-template-columns: 2fr !important;
 }
 
 /* --- MEDIA QUERY DLA MOBILNEGO MENU --- */
