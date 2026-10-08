@@ -1267,6 +1267,71 @@
                 modalPrzebiegu.style.display = "none";
             });
 
+            // Usuwanie poprzednich avatarów użytkownika ze Storage
+            async function usunStareAvatary(userId, zachowajPlikNazwa = null) {
+                try {
+                    const cleanUserId = String(userId).trim();
+                    let klient = window.supabaseKlient || window.supabaseClient;
+                    let plikiDoUsuniecia = [];
+
+                    // 1. Pobranie listy plików przez SDK
+                    if (klient?.storage) {
+                        try {
+                            const { data: lista, error } = await klient.storage.from("avatary").list(cleanUserId);
+                            if (!error && Array.isArray(lista)) {
+                                plikiDoUsuniecia = lista
+                                    .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
+                                    .map(item => `${cleanUserId}/${item.name}`);
+                            }
+                        } catch (_) {}
+                    }
+
+                    // 2. Fallback przez bezpośredni REST API, jeśli SDK nie zwróciło listy
+                    if (plikiDoUsuniecia.length === 0) {
+                        const sesja = pobierzSesjeZStorage();
+                        const token = sesja?.token || SUPA_KEY;
+                        const resList = await fetch(`${SUPA_URL}/storage/v1/object/list/avatary`, {
+                            method: "POST",
+                            headers: {
+                                "apikey": SUPA_KEY,
+                                "Authorization": `Bearer ${token}`,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
+                        });
+                        if (resList.ok) {
+                            const lista = await resList.json();
+                            if (Array.isArray(lista)) {
+                                plikiDoUsuniecia = lista
+                                    .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
+                                    .map(item => `${cleanUserId}/${item.name}`);
+                            }
+                        }
+                    }
+
+                    if (plikiDoUsuniecia.length === 0) return;
+
+                    // 3. Usunięcie starych plików ze Storage
+                    if (klient?.storage) {
+                        await klient.storage.from("avatary").remove(plikiDoUsuniecia);
+                    } else {
+                        const sesja = pobierzSesjeZStorage();
+                        const token = sesja?.token || SUPA_KEY;
+                        await fetch(`${SUPA_URL}/storage/v1/object/avatary`, {
+                            method: "DELETE",
+                            headers: {
+                                "apikey": SUPA_KEY,
+                                "Authorization": `Bearer ${token}`,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ prefixes: plikiDoUsuniecia })
+                        });
+                    }
+                } catch (err) {
+                    console.warn("Nie udało się usunąć starych avatarów:", err);
+                }
+            }
+
             // --- OBSŁUGA AVATARA ---
             const avatarContainer = document.getElementById("avatar-container");
             const inputAvatar = document.getElementById("input-avatar");
@@ -1320,20 +1385,23 @@
                         } catch (_) {}
                     }
 
-                    const ext = plik.name.split(".").pop().toLowerCase() || "png";
-                    const nowaSciezka = `${userId}/avatar_${Date.now()}.${ext}`;
+                    const cleanUserId = String(userId).trim();
+                    const cleanExt = (plik.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+                    const nazwaNowegoPliku = `avatar_${Date.now()}.${cleanExt}`;
+                    const nowaSciezka = `${cleanUserId}/${nazwaNowegoPliku}`;
                     let uploadSukces = false;
                     let bladSzczegoly = "";
 
-                    // 1. Metoda główna: Direct REST upload do Supabase Storage z jawnym tokenem Bearer
-                    if (token) {
+                    // 1. Metoda główna: Direct REST upload do Supabase Storage
+                    const authToken = token || SUPA_KEY;
+                    if (authToken) {
                         try {
-                            const uploadUrl = `${SUPA_URL}/storage/v1/object/avatary/${nowaSciezka}`;
+                            const uploadUrl = `${SUPA_URL}/storage/v1/object/avatary/${encodeURI(nowaSciezka)}`;
                             const resDirect = await fetch(uploadUrl, {
                                 method: "POST",
                                 headers: {
                                     "apikey": SUPA_KEY,
-                                    "Authorization": `Bearer ${token}`,
+                                    "Authorization": `Bearer ${authToken}`,
                                     "Content-Type": plik.type || "image/png",
                                     "x-upsert": "true"
                                 },
@@ -1373,10 +1441,13 @@
                     }
 
                     // 3. Pobranie adresu publicznego
-                    const publicUrl = `${SUPA_URL}/storage/v1/object/public/avatary/${nowaSciezka}`;
+                    const publicUrl = `${SUPA_URL}/storage/v1/object/public/avatary/${encodeURI(nowaSciezka)}`;
 
                     // 4. Aktualizacja tabeli public.profiles (odporna na uśpione sockety i locki iOS)
                     await wykonajZapisProfilu({ avatar_url: publicUrl }, userId);
+
+                    // 4b. Usunięcie starych plików awatara tego użytkownika ze Storage (w tle)
+                    usunStareAvatary(cleanUserId, nazwaNowegoPliku).catch(() => {});
 
                     // 5. Kopia zapasowa w sesji użytkownika (w tle)
                     try {
