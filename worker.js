@@ -360,9 +360,9 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/supabase/rest/v1/")) {
-      if (!["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"].includes(request.method)) {
-        return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, HEAD, POST, PATCH, DELETE, OPTIONS" } });
+    if (url.pathname.startsWith("/api/supabase/rest/v1/") || url.pathname.startsWith("/api/supabase/storage/v1/")) {
+      if (!["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"].includes(request.method)) {
+        return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS" } });
       }
 
       const upstreamUrl = new URL(`${SUPABASE_URL}${url.pathname.slice("/api/supabase".length)}${url.search}`);
@@ -375,13 +375,19 @@ export default {
       try {
         const upstreamRequest = new Request(upstreamUrl, request);
         const upstreamHeaders = new Headers(upstreamRequest.headers);
+        if (!upstreamHeaders.has("apikey")) {
+          upstreamHeaders.set("apikey", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R");
+        }
+        if (!upstreamHeaders.has("authorization")) {
+          upstreamHeaders.set("authorization", `Bearer sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R`);
+        }
         if (request.method === "GET" && url.pathname === "/api/supabase/rest/v1/profiles") {
           upstreamHeaders.delete("Authorization");
         }
 
         const forwardedRequest = new Request(upstreamRequest, { headers: upstreamHeaders, signal: controller.signal });
         const upstreamResponse = await fetch(forwardedRequest);
-        const buffersSmallResult = ["/rest/v1/znajomi", "/rest/v1/profiles", "/rest/v1/rooms"].includes(route);
+        const buffersSmallResult = ["/rest/v1/znajomi", "/rest/v1/profiles", "/rest/v1/rooms"].includes(route) || route.startsWith("/storage/v1/object/list/");
         const noBody = request.method === "HEAD" || [204, 205, 304].includes(upstreamResponse.status);
         const responseBody = noBody ? null : buffersSmallResult ? await upstreamResponse.arrayBuffer() : upstreamResponse.body;
         const headers = new Headers();

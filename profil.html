@@ -1286,46 +1286,71 @@
                         } catch (_) {}
                     }
 
-                    // 2. Fallback przez bezpośredni REST API, jeśli SDK nie zwróciło listy
+                    // 2. Fallback przez REST API (przez Cloudflare Worker na produkcji lub bezpośrednio)
                     if (plikiDoUsuniecia.length === 0) {
                         const sesja = pobierzSesjeZStorage();
                         const token = sesja?.token || SUPA_KEY;
-                        const resList = await fetch(`${SUPA_URL}/storage/v1/object/list/avatary`, {
-                            method: "POST",
-                            headers: {
-                                "apikey": SUPA_KEY,
-                                "Authorization": `Bearer ${token}`,
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
-                        });
-                        if (resList.ok) {
-                            const lista = await resList.json();
-                            if (Array.isArray(lista)) {
-                                plikiDoUsuniecia = lista
-                                    .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                    .map(item => `${cleanUserId}/${item.name}`);
-                            }
+                        const isProd = window.location.hostname === "stacjadarta.pl";
+                        const listUrls = isProd
+                            ? [`/api/supabase/storage/v1/object/list/avatary`, `${SUPA_URL}/storage/v1/object/list/avatary`]
+                            : [`${SUPA_URL}/storage/v1/object/list/avatary`];
+
+                        for (const lUrl of listUrls) {
+                            try {
+                                const resList = await fetch(lUrl, {
+                                    method: "POST",
+                                    headers: {
+                                        "apikey": SUPA_KEY,
+                                        "Authorization": `Bearer ${token}`,
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
+                                });
+                                if (resList.ok) {
+                                    const lista = await resList.json();
+                                    if (Array.isArray(lista)) {
+                                        plikiDoUsuniecia = lista
+                                            .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
+                                            .map(item => `${cleanUserId}/${item.name}`);
+                                        if (plikiDoUsuniecia.length > 0) break;
+                                    }
+                                }
+                            } catch (_) {}
                         }
                     }
 
                     if (plikiDoUsuniecia.length === 0) return;
 
                     // 3. Usunięcie starych plików ze Storage
+                    let usunieto = false;
                     if (klient?.storage) {
-                        await klient.storage.from("avatary").remove(plikiDoUsuniecia);
-                    } else {
+                        try {
+                            const { error: delErr } = await klient.storage.from("avatary").remove(plikiDoUsuniecia);
+                            if (!delErr) usunieto = true;
+                        } catch (_) {}
+                    }
+                    if (!usunieto) {
                         const sesja = pobierzSesjeZStorage();
                         const token = sesja?.token || SUPA_KEY;
-                        await fetch(`${SUPA_URL}/storage/v1/object/avatary`, {
-                            method: "DELETE",
-                            headers: {
-                                "apikey": SUPA_KEY,
-                                "Authorization": `Bearer ${token}`,
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({ prefixes: plikiDoUsuniecia })
-                        });
+                        const isProd = window.location.hostname === "stacjadarta.pl";
+                        const deleteUrls = isProd
+                            ? [`/api/supabase/storage/v1/object/avatary`, `${SUPA_URL}/storage/v1/object/avatary`]
+                            : [`${SUPA_URL}/storage/v1/object/avatary`];
+
+                        for (const dUrl of deleteUrls) {
+                            try {
+                                const resDel = await fetch(dUrl, {
+                                    method: "DELETE",
+                                    headers: {
+                                        "apikey": SUPA_KEY,
+                                        "Authorization": `Bearer ${token}`,
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({ prefixes: plikiDoUsuniecia })
+                                });
+                                if (resDel.ok) break;
+                            } catch (_) {}
+                        }
                     }
                 } catch (err) {
                     console.warn("Nie udało się usunąć starych avatarów:", err);
@@ -1392,11 +1417,17 @@
                     let uploadSukces = false;
                     let bladSzczegoly = "";
 
-                    // 1. Metoda główna: Direct REST upload do Supabase Storage
+                    // 1. Metoda główna: REST upload (przez Cloudflare Worker na produkcji lub bezpośrednio)
+                    const isProd = window.location.hostname === "stacjadarta.pl";
+                    const sciezkaZasobu = `/storage/v1/object/avatary/${encodeURI(nowaSciezka)}`;
+                    const uploadUrls = isProd
+                        ? [`/api/supabase${sciezkaZasobu}`, `${SUPA_URL}${sciezkaZasobu}`]
+                        : [`${SUPA_URL}${sciezkaZasobu}`];
+
                     const authToken = token || SUPA_KEY;
-                    if (authToken) {
+                    for (const uploadUrl of uploadUrls) {
+                        if (uploadSukces) break;
                         try {
-                            const uploadUrl = `${SUPA_URL}/storage/v1/object/avatary/${encodeURI(nowaSciezka)}`;
                             const resDirect = await fetch(uploadUrl, {
                                 method: "POST",
                                 headers: {
@@ -1410,12 +1441,13 @@
 
                             if (resDirect.ok) {
                                 uploadSukces = true;
+                                break;
                             } else {
                                 const errText = await resDirect.text();
                                 let errJson = {};
                                 try { errJson = JSON.parse(errText); } catch (_) {}
                                 bladSzczegoly = errJson.message || errJson.error || errText || `HTTP ${resDirect.status}`;
-                                console.warn("Direct upload nie powiódł się:", errText, errJson);
+                                console.warn("Upload nie powiódł się na " + uploadUrl + ":", errText, errJson);
                             }
                         } catch (eDir) {
                             bladSzczegoly = eDir.message;
