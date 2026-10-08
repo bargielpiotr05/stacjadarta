@@ -1424,33 +1424,36 @@
                         ? [`/api/supabase${sciezkaZasobu}`, `${SUPA_URL}${sciezkaZasobu}`]
                         : [`${SUPA_URL}${sciezkaZasobu}`];
 
-                    const authToken = token || SUPA_KEY;
+                    const authTokensToTry = token ? [`Bearer ${token}`, `Bearer ${SUPA_KEY}`] : [`Bearer ${SUPA_KEY}`];
                     for (const uploadUrl of uploadUrls) {
                         if (uploadSukces) break;
-                        try {
-                            const resDirect = await fetch(uploadUrl, {
-                                method: "POST",
-                                headers: {
-                                    "apikey": SUPA_KEY,
-                                    "Authorization": `Bearer ${authToken}`,
-                                    "Content-Type": plik.type || "image/png",
-                                    "x-upsert": "true"
-                                },
-                                body: plik
-                            });
+                        for (const authHdr of authTokensToTry) {
+                            if (uploadSukces) break;
+                            try {
+                                const resDirect = await fetch(uploadUrl, {
+                                    method: "POST",
+                                    headers: {
+                                        "apikey": SUPA_KEY,
+                                        "Authorization": authHdr,
+                                        "Content-Type": plik.type || "image/png",
+                                        "x-upsert": "true"
+                                    },
+                                    body: plik
+                                });
 
-                            if (resDirect.ok) {
-                                uploadSukces = true;
-                                break;
-                            } else {
-                                const errText = await resDirect.text();
-                                let errJson = {};
-                                try { errJson = JSON.parse(errText); } catch (_) {}
-                                bladSzczegoly = errJson.message || errJson.error || errText || `HTTP ${resDirect.status}`;
-                                console.warn("Upload nie powiódł się na " + uploadUrl + ":", errText, errJson);
+                                if (resDirect.ok) {
+                                    uploadSukces = true;
+                                    break;
+                                } else {
+                                    const errText = await resDirect.text();
+                                    let errJson = {};
+                                    try { errJson = JSON.parse(errText); } catch (_) {}
+                                    bladSzczegoly = errJson.message || errJson.error || errText || `HTTP ${resDirect.status}`;
+                                    console.warn("Upload nie powiódł się na " + uploadUrl + ":", errText, errJson);
+                                }
+                            } catch (eDir) {
+                                bladSzczegoly = eDir.message;
                             }
-                        } catch (eDir) {
-                            bladSzczegoly = eDir.message;
                         }
                     }
 

@@ -375,11 +375,16 @@ export default {
       try {
         const upstreamRequest = new Request(upstreamUrl, request);
         const upstreamHeaders = new Headers(upstreamRequest.headers);
-        if (!upstreamHeaders.has("apikey")) {
+        if (route.startsWith("/storage/v1/")) {
           upstreamHeaders.set("apikey", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R");
-        }
-        if (!upstreamHeaders.has("authorization")) {
-          upstreamHeaders.set("authorization", `Bearer sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R`);
+          upstreamHeaders.set("authorization", "Bearer sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R");
+        } else {
+          if (!upstreamHeaders.has("apikey")) {
+            upstreamHeaders.set("apikey", "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R");
+          }
+          if (!upstreamHeaders.has("authorization")) {
+            upstreamHeaders.set("authorization", `Bearer sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R`);
+          }
         }
         if (request.method === "GET" && url.pathname === "/api/supabase/rest/v1/profiles") {
           upstreamHeaders.delete("Authorization");
