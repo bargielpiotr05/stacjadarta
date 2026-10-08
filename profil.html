@@ -1337,9 +1337,11 @@
                             if (resDirect.ok) {
                                 uploadSukces = true;
                             } else {
-                                const errJson = await resDirect.json().catch(() => ({}));
-                                bladSzczegoly = errJson.message || errJson.error || `HTTP ${resDirect.status}`;
-                                console.warn("Direct upload nie powiódł się:", errJson);
+                                const errText = await resDirect.text();
+                                let errJson = {};
+                                try { errJson = JSON.parse(errText); } catch (_) {}
+                                bladSzczegoly = errJson.message || errJson.error || errText || `HTTP ${resDirect.status}`;
+                                console.warn("Direct upload nie powiódł się:", errText, errJson);
                             }
                         } catch (eDir) {
                             bladSzczegoly = eDir.message;
@@ -1355,7 +1357,8 @@
                                 upsert: true,
                             });
                             if (uploadErr) {
-                                throw new Error(uploadErr.message || bladSzczegoly || "Błąd zapisu pliku w Storage");
+                                const realError = (bladSzczegoly && bladSzczegoly !== `HTTP 400`) ? bladSzczegoly : (uploadErr.message || "Błąd zapisu pliku w Storage");
+                                throw new Error(realError);
                             }
                             uploadSukces = true;
                         } else {
@@ -1393,8 +1396,8 @@
                 } catch (err) {
                     console.error("Błąd zapisu zdjęcia:", err);
                     let opis = err.message || "Nie udało się zapisać zdjęcia.";
-                    if (opis.includes("violates row-level security") || opis.includes("Unauthorized") || opis.includes("AccessDenied")) {
-                        opis = "Błąd uprawnień Supabase (RLS). Sprawdź politykę w panelu.";
+                    if (opis.includes("violates row-level security") || opis.includes("Unauthorized") || opis.includes("AccessDenied") || opis.includes("400")) {
+                        opis = "Błąd uprawnień Supabase (RLS). Uruchom zapytanie SQL w panelu Supabase.";
                     }
                     avatarStatus.textContent = opis;
                     avatarStatus.style.color = "#f87171";
