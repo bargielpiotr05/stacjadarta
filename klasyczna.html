@@ -28,6 +28,8 @@
         <link rel="stylesheet" href="./formularz.css" />
         <!-- CDN SUPABASE DLA TARCZY MECZOWEJ -->
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <!-- SILNIK COMPUTER VISION W PRZEGLĄDARCE (WASM) -->
+        <script async src="https://docs.opencv.org/4.x/opencv.js" id="opencv-script" onerror="if (document.getElementById('kamera-opencv-status')) { document.getElementById('kamera-opencv-status').textContent = 'Błąd pobierania silnika AI (sprawdź sieć)'; document.getElementById('kamera-opencv-status').style.color = '#f87171'; }"></script>
         <script src="./menu.js" defer></script>
 
         <script>
@@ -36,18 +38,11 @@
 
             async function wyslijDoSupabase(pathWithQuery, { method = "GET", body = null, headers = {}, accessToken = null, timeoutMs = 8000 } = {}) {
                 const isLocal =
-                    typeof window !== "undefined" &&
-                    (window.location.hostname === "localhost" ||
-                     window.location.hostname === "127.0.0.1" ||
-                     window.location.hostname.startsWith("192.168.") ||
-                     window.location.hostname.startsWith("10.") ||
-                     window.location.hostname.endsWith(".local") ||
-                     window.location.port !== "" ||
-                     window.location.protocol === "file:");
+                    typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname.startsWith("192.168.") || window.location.hostname.startsWith("10.") || window.location.hostname.endsWith(".local") || window.location.port !== "" || window.location.protocol === "file:");
 
                 const normalizedPath = pathWithQuery.startsWith("/") ? pathWithQuery : `/${pathWithQuery}`;
                 const fullSupabaseUrl = `${SUPA_URL}${normalizedPath}`;
-                const stringBody = body && typeof body === "object" ? JSON.stringify(body) : (typeof body === "string" ? body : null);
+                const stringBody = body && typeof body === "object" ? JSON.stringify(body) : typeof body === "string" ? body : null;
 
                 // 1. Same-origin proxy przez Cloudflare Worker na produkcji (omija blokady cross-origin i ITP na iOS)
                 if (!isLocal) {
@@ -58,23 +53,23 @@
                             path: normalizedPath,
                             method: method.toUpperCase(),
                             headers: {
-                                "accept": "application/json",
+                                accept: "application/json",
                                 ...(stringBody ? { "content-type": "application/json" } : {}),
-                                ...headers
+                                ...headers,
                             },
                             body: stringBody,
-                            accessToken: accessToken || null
+                            accessToken: accessToken || null,
                         };
 
                         const proxyRes = await fetch("/api/supabase-request", {
                             method: "POST",
                             headers: {
-                                "apikey": SUPA_KEY,
-                                "Content-Type": "application/json"
+                                apikey: SUPA_KEY,
+                                "Content-Type": "application/json",
                             },
                             body: JSON.stringify(proxyPayload),
                             cache: "no-store",
-                            signal: controller.signal
+                            signal: controller.signal,
                         }).finally(() => clearTimeout(tid));
 
                         if (proxyRes.ok) {
@@ -88,10 +83,10 @@
 
                 // 2. Bezpośrednie wywołanie REST Supabase (fallback na localhost)
                 const directHeaders = {
-                    "apikey": SUPA_KEY,
-                    ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+                    apikey: SUPA_KEY,
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                     ...(stringBody ? { "Content-Type": "application/json" } : {}),
-                    ...headers
+                    ...headers,
                 };
                 const controllerDirect = new AbortController();
                 const tidDirect = setTimeout(() => controllerDirect.abort(), timeoutMs);
@@ -100,12 +95,14 @@
                     headers: directHeaders,
                     ...(stringBody && !["GET", "HEAD"].includes(method.toUpperCase()) ? { body: stringBody } : {}),
                     cache: "no-store",
-                    signal: controllerDirect.signal
+                    signal: controllerDirect.signal,
                 }).finally(() => clearTimeout(tidDirect));
 
                 if (!directRes.ok) {
                     let errDetails = "";
-                    try { errDetails = await directRes.text(); } catch (_) {}
+                    try {
+                        errDetails = await directRes.text();
+                    } catch (_) {}
                     throw new Error(`Błąd HTTP ${directRes.status}: ${errDetails || directRes.statusText}`);
                 }
                 const textDirect = await directRes.text();
@@ -164,7 +161,7 @@
                                 <input type="text" id="nazwa-gracza1" class="wspolny-input input-nazwa-gracza" placeholder="Gracz 1" value="Gracz 1" />
                             </div>
                         </label>
-                        <label style="display: flex; flex-direction: column; justify-content: flex-end;">
+                        <label style="display: flex; flex-direction: column; justify-content: flex-end">
                             <h4>&nbsp;</h4>
                             <button type="button" id="btn-dodaj-kolejnego-gracza" class="wspolny-input btn-dodaj-kolejnego-gracza" onclick="otworzPopupDodajGracza('gracz-znajomi')">+ Dodaj gracza</button>
                         </label>
@@ -236,6 +233,7 @@
                     <div class="metoda-wprowadzania">
                         <button type="button" class="btn-metoda aktywna-metoda" data-metoda="klawiatura">Wpisz wynik (Suma)</button>
                         <button type="button" class="btn-metoda" data-metoda="tarcza">Klikaj lotki (Panel)</button>
+                        <button type="button" class="btn-metoda" data-metoda="kamera" style="display:none !important;">Autoscore (Kamerka)</button>
                     </div>
 
                     <div class="strefa-manualna">
@@ -297,6 +295,94 @@
                         <div class="kontener-przycisków">
                             <button type="button" class="btn-cofnij" id="btn-cofnij-rzut">Cofnij rzut</button>
                             <button type="button" id="zatwierdz-klik-kolejke">Zatwierdź</button>
+                        </div>
+                    </div>
+                    <!-- STREFA KAMERY USB Z AUTOMATYCZNYM SKANEREM OPENCV (1-3 KAMERY) -->
+                    <div class="strefa-kamera" style="display: none;">
+                        <!-- Podgląd tury z kamery (identyczny układ jak w strefie klikania) -->
+                        <div class="podglad-kolejki">
+                            <div class="rzuty-lotek">
+                                <span class="lotka-klik" id="kam-lotka-1">-</span>
+                                <span class="lotka-klik" id="kam-lotka-2">-</span>
+                                <span class="lotka-klik" id="kam-lotka-3">-</span>
+                            </div>
+                            <div class="suma-kolejki">Suma: <span id="kam-suma-wartosc">0</span></div>
+                            <button type="button" id="kam-cofnij-lotke">⌫</button>
+                        </div>
+
+                        <!-- Pasek konfiguracji kamer i akcji -->
+                        <div class="pasek-konfiguracji-kamer" style="display: flex;">
+                            <button type="button" id="btn-dodaj-kamere" style="display: inline-flex;" class="kamera-btns">
+                                <span>+ Dodaj kamerę</span>
+                            </button>
+                            <button type="button" id="btn-auto-skan" class="kamera-btns">🎯 Auto-Skanuj</button>
+                            <button type="button" id="btn-reset-tla" class="kamera-btns">Odśwież tło</button>
+                            <button type="button" id="btn-start-kamera" class="kamera-btns">Włącz kamerę</button>
+                        </div>
+
+                        <!-- Pasek wyboru urządzeń dla każdej kamery -->
+                        <div id="kontener-sloty-kamer" style="display: flex;">
+                            <div id="slot-select-kamera-1" class="slot-select-kamera" style="display: flex;">
+                                <span>Kamera 1 (Główna)</span>
+                                <select id="kamera-select"></select>
+                            </div>
+                            <div id="slot-select-kamera-2" class="slot-select-kamera" style="display: none;">
+                                <div class="slot-select-naglowek" style="display: flex;">
+                                    <span>Kamera 2 (Lewa)</span>
+                                    <button type="button" class="btn-usun-kamere" data-cam-id="2" title="Usuń kamerę 2">✕ Usuń</button>
+                                </div>
+                                <select id="kamera-select-2"></select>
+                            </div>
+                            <div id="slot-select-kamera-3" class="slot-select-kamera" style="display: none;">
+                                <div class="slot-select-naglowek" style="display: flex;">
+                                    <span>Kamera 3 (Prawa)</span>
+                                    <button type="button" class="btn-usun-kamere" data-cam-id="3" title="Usuń kamerę 3">✕ Usuń</button>
+                                </div>
+                                <select id="kamera-select-3"></select>
+                            </div>
+                        </div>
+
+                        <!-- Siatka podglądów kamer i nakładek Canvas -->
+                        <div id="siatka-kamer" style="display: grid;">
+                            <!-- Kamera 1 -->
+                            <div id="box-kamera-1" class="box-podglad-kamery">
+                                <div class="kamera-etykieta-box">KAMERA 1</div>
+                                <video id="kamera-podglad" autoplay playsinline muted></video>
+                                <canvas id="kamera-canvas"></canvas>
+                                <div id="radar-skanera" class="radar-skanowania" style="display: none;"></div>
+                            </div>
+                            <!-- Kamera 2 -->
+                            <div id="box-kamera-2" class="box-podglad-kamery" style="display: none;">
+                                <div class="kamera-etykieta-box">KAMERA 2</div>
+                                <div class="box-kamera-akcje-top">
+                                    <button type="button" class="btn-usun-kamere btn-usun-kamere-box" data-cam-id="2" title="Usuń kamerę 2">✕ Usuń</button>
+                                </div>
+                                <video id="kamera-podglad-2" autoplay playsinline muted></video>
+                                <canvas id="kamera-canvas-2"></canvas>
+                                <div id="radar-skanera-2" class="radar-skanowania" style="display: none;"></div>
+                            </div>
+                            <!-- Kamera 3 -->
+                            <div id="box-kamera-3" class="box-podglad-kamery" style="display: none;">
+                                <div class="kamera-etykieta-box">KAMERA 3</div>
+                                <div class="box-kamera-akcje-top">
+                                    <button type="button" class="btn-usun-kamere btn-usun-kamere-box" data-cam-id="3" title="Usuń kamerę 3">✕ Usuń</button>
+                                </div>
+                                <video id="kamera-podglad-3" autoplay playsinline muted></video>
+                                <canvas id="kamera-canvas-3"></canvas>
+                                <div id="radar-skanera-3" class="radar-skanowania" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pasek statusu detekcji -->
+                        <div class="kamera-status-bar" style="display: flex;">
+                            <span id="kamera-opencv-status">Ładowanie AI...</span>
+                            <span id="kamera-stan-tarczy">Tarcza: Niewykryta</span>
+                        </div>
+
+                        <!-- Przyciski akcji na dole (identyczne jak w strefie klikania) -->
+                        <div class="kontener-przycisków" style="display: flex;">
+                            <button type="button" class="btn-cofnij btn-cofnij-rzut" id="btn-kam-cofnij-rzut">Cofnij rzut</button>
+                            <button type="button" id="btn-zatwierdz-kamera">Zatwierdź kolejkę</button>
                         </div>
                     </div>
                 </div>
@@ -664,7 +750,7 @@
                                         access_token: parsed.access_token,
                                         refresh_token: parsed.refresh_token,
                                         expires_at: parsed.expires_at,
-                                        storage_key: klucz
+                                        storage_key: klucz,
                                     };
                                 }
                             }
@@ -703,14 +789,11 @@
 
                     // Wykrywamy, czy ten slot to zalogowany użytkownik LUB dodany znajomy
                     const czyToMojeKonto = zalogowanyNickGlobalny !== "" && nazwa === zalogowanyNickGlobalny;
-                    const czyToKontoZnajomego = nickiZnajomychWGrze.includes(nazwa) || 
-                                               nickiZnajomychWGrze.some((n) => n.toLowerCase() === (nazwa || "").toLowerCase());
+                    const czyToKontoZnajomego = nickiZnajomychWGrze.includes(nazwa) || nickiZnajomychWGrze.some((n) => n.toLowerCase() === (nazwa || "").toLowerCase());
                     const czyZablokowaneEdycja = czyToMojeKonto || czyToKontoZnajomego;
 
                     // DODANE: pointer-events: none całkowicie blokuje dotyk na telefonie
-                    const atrybutyInputa = czyZablokowaneEdycja 
-                        ? 'readonly style="opacity: 0.7; cursor: not-allowed; pointer-events: none;" title="Oficjalnego konta nie można edytować ręcznie"' 
-                        : `oninput="graczeUczestnicy[${idx}] = this.value"`;
+                    const atrybutyInputa = czyZablokowaneEdycja ? 'readonly style="opacity: 0.7; cursor: not-allowed; pointer-events: none;" title="Oficjalnego konta nie można edytować ręcznie"' : `oninput="graczeUczestnicy[${idx}] = this.value"`;
 
                     kontener.innerHTML += `
                         <label>
@@ -720,7 +803,7 @@
                                        class="wspolny-input input-nazwa-gracza" 
                                        placeholder="Gracz ${nr}" value="${nazwa}"
                                        ${atrybutyInputa}>
-                                ${moznaUsunac ? `<button type="button" class="wspolny-input usun-pole-gracza" style="${czyZablokowaneEdycja ? 'opacity: 0.8;' : ''}" onclick="usunGraczaZeSlotu(${idx})">✖</button>` : ""}
+                                ${moznaUsunac ? `<button type="button" class="wspolny-input usun-pole-gracza" style="${czyZablokowaneEdycja ? "opacity: 0.8;" : ""}" onclick="usunGraczaZeSlotu(${idx})">✖</button>` : ""}
                             </div>
                         </label>
                     `;
@@ -783,29 +866,33 @@
                 } catch (e) {}
 
                 const nowSec = Math.floor(Date.now() / 1000);
-                const czyWygasl = !rawSession?.expires_at || nowSec >= (rawSession.expires_at - 60);
+                const czyWygasl = !rawSession?.expires_at || nowSec >= rawSession.expires_at - 60;
 
                 if (rawSession && czyWygasl && rawSession.refresh_token) {
-                    console.log("Token sesji wygasa/wygasł – automatyczne odświeżanie...");
+                    console.log("Token sesji wygasa/wygasł - automatyczne odświeżanie...");
                     try {
                         const newAuth = await wyslijDoSupabase("/auth/v1/token?grant_type=refresh_token", {
                             method: "POST",
-                            body: { refresh_token: rawSession.refresh_token }
+                            body: { refresh_token: rawSession.refresh_token },
                         });
                         if (newAuth && newAuth.access_token) {
                             rawSession.access_token = newAuth.access_token;
                             rawSession.refresh_token = newAuth.refresh_token || rawSession.refresh_token;
-                            rawSession.expires_at = newAuth.expires_at || (nowSec + (newAuth.expires_in || 3600));
+                            rawSession.expires_at = newAuth.expires_at || nowSec + (newAuth.expires_in || 3600);
                             if (newAuth.user) rawSession.user = newAuth.user;
                             if (storageKey) {
-                                try { localStorage.setItem(storageKey, JSON.stringify(rawSession)); } catch (e) {}
+                                try {
+                                    localStorage.setItem(storageKey, JSON.stringify(rawSession));
+                                } catch (e) {}
                             }
                             if (k?.auth?.setSession) {
                                 try {
-                                    k.auth.setSession({
-                                        access_token: rawSession.access_token,
-                                        refresh_token: rawSession.refresh_token
-                                    }).catch(() => {});
+                                    k.auth
+                                        .setSession({
+                                            access_token: rawSession.access_token,
+                                            refresh_token: rawSession.refresh_token,
+                                        })
+                                        .catch(() => {});
                                 } catch (e) {}
                             }
                             return rawSession.access_token;
@@ -849,7 +936,7 @@
                     }
 
                     const nowSec = Math.floor(Date.now() / 1000);
-                    const czyWygasla = session && (!session.expires_at || nowSec >= (session.expires_at - 60));
+                    const czyWygasla = session && (!session.expires_at || nowSec >= session.expires_at - 60);
 
                     if ((!session?.user || czyWygasla) && klient?.auth?.refreshSession) {
                         try {
@@ -867,8 +954,8 @@
                             session = {
                                 access_token: swiezyToken,
                                 refresh_token: storageUser.refresh_token,
-                                expires_at: storageUser.expires_at || (nowSec + 3600),
-                                user: storageUser.user
+                                expires_at: storageUser.expires_at || nowSec + 3600,
+                                user: storageUser.user,
                             };
                         }
                     }
@@ -910,7 +997,7 @@
                     try {
                         const qs = new URLSearchParams(parametry || {}).toString();
                         const proxyRes = await wyslijDoSupabase(`/rest/v1/${tabela}?${qs}`, {
-                            accessToken: token
+                            accessToken: token,
                         });
                         if (Array.isArray(proxyRes)) {
                             return proxyRes;
@@ -922,11 +1009,11 @@
                         const qs = new URLSearchParams(parametry || {}).toString();
                         const headers = {
                             apikey: apiKey,
-                            ...(token ? { Authorization: `Bearer ${token}` } : {})
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
                         };
                         const directRes = await fetch(`${SUPA_URL}/rest/v1/${tabela}?${qs}`, {
                             headers,
-                            cache: "no-store"
+                            cache: "no-store",
                         });
                         if (directRes.ok) {
                             return await directRes.json();
@@ -1076,19 +1163,9 @@
                         return;
                     }
 
-                    const wyslane = await pobierzWierszeZnajomychApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${userId}` },
-                        "pobieranie wysłanych relacji znajomych",
-                        session.access_token,
-                    );
+                    const wyslane = await pobierzWierszeZnajomychApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${userId}` }, "pobieranie wysłanych relacji znajomych", session.access_token);
 
-                    const otrzymane = await pobierzWierszeZnajomychApi(
-                        "znajomi",
-                        { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${userId}` },
-                        "pobieranie otrzymanych relacji znajomych",
-                        session.access_token,
-                    );
+                    const otrzymane = await pobierzWierszeZnajomychApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${userId}` }, "pobieranie otrzymanych relacji znajomych", session.access_token);
 
                     const relacje = [...wyslane, ...otrzymane];
                     if (!relacje.length) {
@@ -1102,11 +1179,7 @@
                         return;
                     }
 
-                    const profileData = await pobierzWierszeZnajomychApi(
-                        "profiles",
-                        { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` },
-                        "pobieranie profili znajomych",
-                    );
+                    const profileData = await pobierzWierszeZnajomychApi("profiles", { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` }, "pobieranie profili znajomych");
 
                     const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
                     const znajomi = relacje
@@ -1200,17 +1273,17 @@
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "");
                 if (!isUUID) {
                     wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`)
-                    .then((rows) => {
-                        if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
-                            window.idZnajomychWGrze[nick] = rows[0].id;
-                            window.idZnajomychWGrze[nick.toLowerCase()] = rows[0].id;
-                            window.idZnajomychWGrze[nick.trim()] = rows[0].id;
-                            try {
-                                localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
-                            } catch (e) {}
-                        }
-                    })
-                    .catch(() => {});
+                        .then((rows) => {
+                            if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                window.idZnajomychWGrze[nick] = rows[0].id;
+                                window.idZnajomychWGrze[nick.toLowerCase()] = rows[0].id;
+                                window.idZnajomychWGrze[nick.trim()] = rows[0].id;
+                                try {
+                                    localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                                } catch (e) {}
+                            }
+                        })
+                        .catch(() => {});
                 }
 
                 zamknijPopupDodajGracza();
@@ -1348,8 +1421,6 @@
                     });
                 }
             } catch (e) {}
-            
-
 
             const tytulStrony = document.getElementById("tytul-strony");
             const formularzUstawien = document.getElementById("formularz-ustawien");
@@ -1500,23 +1571,881 @@
             const przyciskiMetod = document.querySelectorAll(".btn-metoda");
             const strefaManualna = document.querySelector(".strefa-manualna");
             const strefaKlikania = document.querySelector(".strefa-klikania");
+            const strefaKamera = document.querySelector(".strefa-kamera"); // DODANE
 
             przyciskiMetod.forEach((btn) => {
                 btn.addEventListener("click", () => {
                     przyciskiMetod.forEach((b) => b.classList.remove("aktywna-metoda"));
                     btn.classList.add("aktywna-metoda");
                     const metoda = btn.getAttribute("data-metoda");
+
                     if (metoda === "klawiatura") {
                         strefaManualna.style.display = "grid";
                         strefaKlikania.style.display = "none";
+                        wylaczKamere();
+                        if (strefaKamera) strefaKamera.style.display = "none";
                         wpiszWynikInput.focus();
-                    } else {
+                    } else if (metoda === "tarcza") {
                         strefaManualna.style.display = "none";
                         strefaKlikania.style.display = "flex";
+                        if (strefaKamera) strefaKamera.style.display = "none";
+                        wylaczKamere();
                         resetujPodgladKlikow();
+                    } else if (metoda === "kamera") {
+                        strefaManualna.style.display = "none";
+                        strefaKlikania.style.display = "none";
+                        if (strefaKamera) {
+                            strefaKamera.style.display = "flex";
+                            wypelnijListeKamer();
+                        }
                     }
                 });
             });
+            // =========================================================================
+            // ZAAWANSOWANY MODUŁ KAMER & KONSENSUS MULTI-KAMERA (1-3 KAMERY)
+            // =========================================================================
+
+            const btnDodajKamere = document.getElementById("btn-dodaj-kamere");
+            const btnStartKam = document.getElementById("btn-start-kamera");
+            const btnAutoSkan = document.getElementById("btn-auto-skan");
+            const btnResetTla = document.getElementById("btn-reset-tla");
+            const btnZatwierdzKam = document.getElementById("btn-zatwierdz-kamera");
+            const opencvStatusEl = document.getElementById("kamera-opencv-status");
+            const tarczaStanEl = document.getElementById("kamera-stan-tarczy");
+
+            let liczbaUzywanychKamer = parseInt(localStorage.getItem("sd_liczba_kamer") || "1") || 1;
+            let kolejkaLotekKamery = [];
+            let czyOpenCvGotowe = false;
+            let autoDetekcjaAktywna = false;
+            let petlaDetekcjiId = null;
+
+            const SEKTORY_DARTA = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+
+            const kamery = [
+                {
+                    id: 1,
+                    selectEl: document.getElementById("kamera-select"),
+                    videoEl: document.getElementById("kamera-podglad"),
+                    canvasEl: document.getElementById("kamera-canvas"),
+                    radarEl: document.getElementById("radar-skanera"),
+                    boxEl: document.getElementById("box-kamera-1"),
+                    slotSelectEl: document.getElementById("slot-select-kamera-1"),
+                    strumien: null,
+                    klatkaTlaMat: null,
+                    kalibracja: JSON.parse(localStorage.getItem("sd_dart_kalibracja_1") || "null") || JSON.parse(localStorage.getItem("sd_dart_kalibracja") || "null") || {
+                        srodekX: 0,
+                        srodekY: 0,
+                        promienD20: 0,
+                        katRotacji: 0,
+                        skalibrowana: false,
+                    },
+                },
+                {
+                    id: 2,
+                    selectEl: document.getElementById("kamera-select-2"),
+                    videoEl: document.getElementById("kamera-podglad-2"),
+                    canvasEl: document.getElementById("kamera-canvas-2"),
+                    radarEl: document.getElementById("radar-skanera-2"),
+                    boxEl: document.getElementById("box-kamera-2"),
+                    slotSelectEl: document.getElementById("slot-select-kamera-2"),
+                    strumien: null,
+                    klatkaTlaMat: null,
+                    kalibracja: JSON.parse(localStorage.getItem("sd_dart_kalibracja_2") || "null") || {
+                        srodekX: 0,
+                        srodekY: 0,
+                        promienD20: 0,
+                        katRotacji: 0,
+                        skalibrowana: false,
+                    },
+                },
+                {
+                    id: 3,
+                    selectEl: document.getElementById("kamera-select-3"),
+                    videoEl: document.getElementById("kamera-podglad-3"),
+                    canvasEl: document.getElementById("kamera-canvas-3"),
+                    radarEl: document.getElementById("radar-skanera-3"),
+                    boxEl: document.getElementById("box-kamera-3"),
+                    slotSelectEl: document.getElementById("slot-select-kamera-3"),
+                    strumien: null,
+                    klatkaTlaMat: null,
+                    kalibracja: JSON.parse(localStorage.getItem("sd_dart_kalibracja_3") || "null") || {
+                        srodekX: 0,
+                        srodekY: 0,
+                        promienD20: 0,
+                        katRotacji: 0,
+                        skalibrowana: false,
+                    },
+                },
+            ];
+
+            // 1. Sprawdzanie gotowości WebAssembly OpenCV
+            let sprawdzOpenCvProby = 0;
+            function sprawdzOpenCv() {
+                if (typeof cv !== "undefined" && cv.Mat) {
+                    czyOpenCvGotowe = true;
+                    if (opencvStatusEl) {
+                        opencvStatusEl.textContent = "Silnik wizyjny AI aktywny ✓";
+                        opencvStatusEl.style.color = "#4ade80";
+                    }
+                } else {
+                    sprawdzOpenCvProby++;
+                    if (sprawdzOpenCvProby > 50 && opencvStatusEl && !czyOpenCvGotowe) {
+                        opencvStatusEl.textContent = "Ładowanie OpenCV AI trwa dłużej niż zwykle...";
+                        opencvStatusEl.style.color = "#facc15";
+                    }
+                    setTimeout(sprawdzOpenCv, 400);
+                }
+            }
+            sprawdzOpenCv();
+
+            // 2. Zarządzanie layoutem kamer (1, 2 lub 3)
+            function aktualizujWidokLiczbyKamer() {
+                const siatka = document.getElementById("siatka-kamer");
+
+                if (btnDodajKamere) {
+                    if (liczbaUzywanychKamer >= 3) {
+                        btnDodajKamere.style.display = "none";
+                    } else {
+                        btnDodajKamere.style.display = "inline-flex";
+                        btnDodajKamere.innerHTML = `<span>Dodaj kamerę (${liczbaUzywanychKamer}/3)</span>`;
+                    }
+                }
+
+                if (strefaKamera) {
+                    strefaKamera.style.maxWidth = liczbaUzywanychKamer === 1 ? "600px" : liczbaUzywanychKamer === 2 ? "760px" : "840px";
+                }
+
+                if (siatka) {
+                    if (liczbaUzywanychKamer === 1) {
+                        siatka.style.gridTemplateColumns = "1fr";
+                        siatka.style.maxWidth = "480px";
+                    } else if (liczbaUzywanychKamer === 2) {
+                        siatka.style.gridTemplateColumns = "repeat(2, 1fr)";
+                        siatka.style.maxWidth = "680px";
+                    } else {
+                        siatka.style.gridTemplateColumns = "repeat(3, 1fr)";
+                        siatka.style.maxWidth = "780px";
+                    }
+                }
+
+                kamery.forEach((k, idx) => {
+                    const czyAktywna = idx < liczbaUzywanychKamer;
+                    if (k.slotSelectEl) k.slotSelectEl.style.display = czyAktywna ? "flex" : "none";
+                    if (k.boxEl) k.boxEl.style.display = czyAktywna ? "block" : "none";
+                    if (!czyAktywna && k.strumien) {
+                        k.strumien.getTracks().forEach((t) => t.stop());
+                        k.strumien = null;
+                        if (k.videoEl) k.videoEl.srcObject = null;
+                        if (k.klatkaTlaMat) {
+                            try {
+                                k.klatkaTlaMat.delete();
+                            } catch (e) {}
+                            k.klatkaTlaMat = null;
+                        }
+                    }
+                });
+
+                aktualizujStanTarczyUI();
+            }
+
+            function czyJakakolwiekTarczaWykryta() {
+                const aktywne = kamery.slice(0, liczbaUzywanychKamer);
+                return aktywne.some((k) => k.kalibracja && k.kalibracja.skalibrowana);
+            }
+
+            function aktualizujStanTarczyUI() {
+                if (!tarczaStanEl) return;
+                const aktywne = kamery.slice(0, liczbaUzywanychKamer);
+                const skalibrowane = aktywne.filter((k) => k.kalibracja && k.kalibracja.skalibrowana).length;
+
+                if (skalibrowane === aktywne.length && aktywne.length > 0) {
+                    tarczaStanEl.textContent = liczbaUzywanychKamer > 1 ? `Tarcze: Wykryte (${skalibrowane}/${aktywne.length}) ✓ (punktacja aktywna)` : "Tarcza: Wykryta ✓ (punktacja aktywna)";
+                    tarczaStanEl.style.color = "#4ade80";
+                } else if (skalibrowane > 0) {
+                    tarczaStanEl.textContent = `Tarcze: Wykryte częściowo (${skalibrowane}/${aktywne.length}) - punktacja z ${skalibrowane} kamer`;
+                    tarczaStanEl.style.color = "#facc15";
+                } else {
+                    tarczaStanEl.textContent = "Tarcza: Niewykryta ❌ (punktacja wyłączona)";
+                    tarczaStanEl.style.color = "#ef4444";
+                }
+            }
+
+            // 3. Wyszukanie kamer USB i inteligentne przypisanie
+            async function wypelnijListeKamer() {
+                try {
+                    const urzadzenia = await navigator.mediaDevices.enumerateDevices();
+                    const kameryUrzadzenia = urzadzenia.filter((d) => d.kind === "videoinput");
+
+                    kamery.forEach((k, camIdx) => {
+                        if (!k.selectEl) return;
+                        const poprzWartosc = k.selectEl.value;
+                        k.selectEl.innerHTML = "";
+                        kameryUrzadzenia.forEach((dev, idx) => {
+                            const opt = document.createElement("option");
+                            opt.value = dev.deviceId;
+                            opt.textContent = dev.label || `Kamera USB ${idx + 1}`;
+                            k.selectEl.appendChild(opt);
+                        });
+
+                        if (poprzWartosc && Array.from(k.selectEl.options).some((o) => o.value === poprzWartosc)) {
+                            k.selectEl.value = poprzWartosc;
+                        } else if (kameryUrzadzenia[camIdx]) {
+                            k.selectEl.value = kameryUrzadzenia[camIdx].deviceId;
+                        }
+                    });
+                } catch (e) {
+                    console.warn("Dostęp do urządzeń wideo:", e);
+                }
+            }
+
+            // 4. Uruchamianie wybranych kamer
+            async function uruchomKamere() {
+                let uruchomionoCokolwiek = false;
+
+                for (let i = 0; i < liczbaUzywanychKamer; i++) {
+                    const k = kamery[i];
+                    if (k.strumien) {
+                        k.strumien.getTracks().forEach((t) => t.stop());
+                        k.strumien = null;
+                    }
+
+                    const deviceId = k.selectEl ? k.selectEl.value : null;
+                    const constraints = {
+                        video: deviceId ? { deviceId: { exact: deviceId } } : { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    };
+
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                        k.strumien = stream;
+                        if (k.videoEl) {
+                            k.videoEl.srcObject = stream;
+                            k.videoEl.onloadedmetadata = () => {
+                                if (k.canvasEl) {
+                                    k.canvasEl.width = k.videoEl.videoWidth || 640;
+                                    k.canvasEl.height = k.videoEl.videoHeight || 480;
+                                }
+                                rysujNakladkeKalibracji(k);
+                            };
+                        }
+                        uruchomionoCokolwiek = true;
+                    } catch (err) {
+                        console.warn(`Błąd kamery ${i + 1}:`, err);
+                        pokazCustomowyAlert(`Kamera ${i + 1}: błąd dostępu (${err.message})`);
+                    }
+                }
+
+                if (uruchomionoCokolwiek) {
+                    btnStartKam.textContent = liczbaUzywanychKamer > 1 ? "Kamery działają" : "Kamera działa";
+                    btnStartKam.style.background = "40da40";
+
+                    setTimeout(() => {
+                        odswiezKlatkiTlaWszystkich();
+                        aktualizujStanTarczyUI();
+                        if (!czyJakakolwiekTarczaWykryta()) {
+                            automatycznySkanTarczy();
+                        } else {
+                            wlaczAutoDetekcjeRzutow();
+                        }
+                    }, 800);
+                }
+            }
+
+            // 5. Całkowite wyłączenie kamer
+            function wylaczKamere() {
+                autoDetekcjaAktywna = false;
+                if (petlaDetekcjiId) {
+                    clearInterval(petlaDetekcjiId);
+                    petlaDetekcjiId = null;
+                }
+
+                kamery.forEach((k) => {
+                    if (k.strumien) {
+                        k.strumien.getTracks().forEach((track) => track.stop());
+                        k.strumien = null;
+                    }
+                    if (k.videoEl) {
+                        k.videoEl.srcObject = null;
+                    }
+                    if (k.klatkaTlaMat) {
+                        try {
+                            k.klatkaTlaMat.delete();
+                        } catch (e) {}
+                        k.klatkaTlaMat = null;
+                    }
+                    if (k.canvasEl) {
+                        const cctx = k.canvasEl.getContext("2d");
+                        if (cctx) cctx.clearRect(0, 0, k.canvasEl.width, k.canvasEl.height);
+                    }
+                    if (k.radarEl) {
+                        k.radarEl.style.display = "none";
+                    }
+                });
+
+                if (btnStartKam) {
+                    btnStartKam.textContent = liczbaUzywanychKamer > 1 ? "Włącz kamery" : "Włącz kamerę";
+                    btnStartKam.style.background = "40da40";
+                }
+            }
+
+            // 6. Kalibracja tarczy dla pojedynczej kamery
+            function skanujPojedynczaKamere(k) {
+                let src = null,
+                    gray = null,
+                    circles = null;
+                try {
+                    const tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = k.canvasEl.width || 640;
+                    tempCanvas.height = k.canvasEl.height || 480;
+                    tempCanvas.getContext("2d").drawImage(k.videoEl, 0, 0);
+
+                    src = cv.imread(tempCanvas);
+                    gray = new cv.Mat();
+                    circles = new cv.Mat();
+
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    cv.GaussianBlur(gray, gray, new cv.Size(9, 9), 2, 2);
+
+                    const minPromien = Math.floor(Math.min(src.rows, src.cols) * 0.18);
+                    const maxPromien = Math.floor(Math.min(src.rows, src.cols) * 0.52);
+                    cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1.2, gray.rows / 4, 90, 42, minPromien, maxPromien);
+
+                    if (circles.cols > 0) {
+                        let bestIdx = 0;
+                        let minDistToCenter = Infinity;
+                        const centerX = src.cols / 2;
+                        const centerY = src.rows / 2;
+
+                        for (let i = 0; i < circles.cols; ++i) {
+                            const cx = circles.data32F[i * 3];
+                            const cy = circles.data32F[i * 3 + 1];
+                            const dist = Math.hypot(cx - centerX, cy - centerY);
+                            if (dist < minDistToCenter) {
+                                minDistToCenter = dist;
+                                bestIdx = i;
+                            }
+                        }
+
+                        k.kalibracja = {
+                            srodekX: circles.data32F[bestIdx * 3],
+                            srodekY: circles.data32F[bestIdx * 3 + 1],
+                            promienD20: circles.data32F[bestIdx * 3 + 2],
+                            katRotacji: 0,
+                            skalibrowana: true,
+                        };
+
+                        localStorage.setItem(`sd_dart_kalibracja_${k.id}`, JSON.stringify(k.kalibracja));
+                        if (k.id === 1) localStorage.setItem("sd_dart_kalibracja", JSON.stringify(k.kalibracja));
+                        rysujNakladkeKalibracji(k);
+                        return true;
+                    }
+
+                    k.kalibracja = {
+                        srodekX: 0,
+                        srodekY: 0,
+                        promienD20: 0,
+                        katRotacji: 0,
+                        skalibrowana: false,
+                    };
+                    localStorage.removeItem(`sd_dart_kalibracja_${k.id}`);
+                    if (k.id === 1) localStorage.removeItem("sd_dart_kalibracja");
+                    rysujNakladkeKalibracji(k);
+                    return false;
+                } catch (e) {
+                    console.warn(`Błąd HoughCircles dla kamery ${k.id}:`, e);
+                    k.kalibracja = { srodekX: 0, srodekY: 0, promienD20: 0, katRotacji: 0, skalibrowana: false };
+                    rysujNakladkeKalibracji(k);
+                    return false;
+                } finally {
+                    if (src) src.delete();
+                    if (gray) gray.delete();
+                    if (circles) circles.delete();
+                }
+            }
+
+            // 7. Automatyczny skan wszystkich aktywnych kamer
+            function automatycznySkanTarczy() {
+                if (!czyOpenCvGotowe) {
+                    pokazCustomowyAlert("Silnik OpenCV jeszcze się ładuje, poczekaj chwilę...");
+                    return;
+                }
+                const aktywneKamery = kamery.slice(0, liczbaUzywanychKamer).filter((k) => k.videoEl && k.videoEl.videoWidth);
+                if (aktywneKamery.length === 0) {
+                    pokazCustomowyAlert("Najpierw włącz kamery!");
+                    return;
+                }
+
+                aktywneKamery.forEach((k) => {
+                    if (k.radarEl) k.radarEl.style.display = "block";
+                });
+                if (tarczaStanEl) {
+                    tarczaStanEl.textContent = "Tarcza: Skanowanie...";
+                    tarczaStanEl.style.color = "#38bdf8";
+                }
+
+                setTimeout(() => {
+                    let skalibrowanoIle = 0;
+                    aktywneKamery.forEach((k) => {
+                        const sukces = skanujPojedynczaKamere(k);
+                        if (sukces) skalibrowanoIle++;
+                    });
+
+                    aktywneKamery.forEach((k) => {
+                        if (k.radarEl) k.radarEl.style.display = "none";
+                    });
+
+                    if (skalibrowanoIle > 0) {
+                        pokazCustomowyAlert(liczbaUzywanychKamer > 1 ? `Skalibrowano ${skalibrowanoIle}/${liczbaUzywanychKamer} kamer!` : "Tarcza została automatycznie zlokalizowana!");
+                        odswiezKlatkiTlaWszystkich();
+                        wlaczAutoDetekcjeRzutow();
+                    } else {
+                        pokazCustomowyAlert("Nie znaleziono tarczy. Punktacja jest zablokowana do czasu wykrycia tarczy.");
+                    }
+                    aktualizujStanTarczyUI();
+                }, 300);
+            }
+
+            // 8. Rysowanie nakładki tarczy darta
+            function rysujNakladkeKalibracji(k) {
+                if (!k || !k.canvasEl) return;
+                const ctxK = k.canvasEl.getContext("2d");
+                if (!ctxK) return;
+
+                ctxK.clearRect(0, 0, k.canvasEl.width, k.canvasEl.height);
+                if (!k.kalibracja || !k.kalibracja.skalibrowana) {
+                    const w = k.canvasEl.width || 640;
+                    const h = k.canvasEl.height || 480;
+                    ctxK.fillStyle = "rgba(15, 23, 42, 0.72)";
+                    ctxK.fillRect(0, h - 50, w, 50);
+                    ctxK.fillStyle = "#f87171";
+                    ctxK.font = "bold 13px Inter, sans-serif";
+                    ctxK.textAlign = "center";
+                    ctxK.fillText("⚠️ Tarcza niewykryta - punktacja zablokowana", w / 2, h - 28);
+                    ctxK.fillStyle = "#94a3b8";
+                    ctxK.font = "11px Inter, sans-serif";
+                    ctxK.fillText("Skieruj kamerę na tarczę i kliknij '🎯 Auto-Skanuj'", w / 2, h - 12);
+                    return;
+                }
+
+                const { srodekX, srodekY, promienD20 } = k.kalibracja;
+
+                const pierscienie = [
+                    { r: promienD20 * 0.037, kolor: "rgba(239, 68, 68, 0.8)", w: 3 }, // D-Bull
+                    { r: promienD20 * 0.093, kolor: "rgba(34, 197, 94, 0.7)", w: 2 }, // Bull
+                    { r: promienD20 * 0.57, kolor: "rgba(56, 189, 248, 0.5)", w: 2 }, // Triple in
+                    { r: promienD20 * 0.629, kolor: "rgba(239, 68, 68, 0.7)", w: 2 }, // Triple out
+                    { r: promienD20 * 0.952, kolor: "rgba(56, 189, 248, 0.5)", w: 2 }, // Double in
+                    { r: promienD20 * 1.0, kolor: "rgba(239, 68, 68, 0.8)", w: 3 }, // Double out
+                ];
+
+                pierscienie.forEach((p) => {
+                    ctxK.beginPath();
+                    ctxK.arc(srodekX, srodekY, p.r, 0, Math.PI * 2);
+                    ctxK.strokeStyle = p.kolor;
+                    ctxK.lineWidth = p.w;
+                    ctxK.stroke();
+                });
+
+                // Celownik na środku
+                ctxK.fillStyle = "#ef4444";
+                ctxK.beginPath();
+                ctxK.arc(srodekX, srodekY, 3, 0, Math.PI * 2);
+                ctxK.fill();
+
+                // Rysowanie zarejestrowanych lotek
+                kolejkaLotekKamery.forEach((lotka) => {
+                    let lx = lotka.x,
+                        ly = lotka.y;
+                    if (lotka.kamCoords && lotka.kamCoords[k.id]) {
+                        lx = lotka.kamCoords[k.id].x;
+                        ly = lotka.kamCoords[k.id].y;
+                    }
+                    if (typeof lx === "number" && typeof ly === "number") {
+                        ctxK.beginPath();
+                        ctxK.arc(lx, ly, 7, 0, Math.PI * 2);
+                        ctxK.fillStyle = "#facc15";
+                        ctxK.fill();
+                        ctxK.strokeStyle = "#000";
+                        ctxK.lineWidth = 2;
+                        ctxK.stroke();
+                    }
+                });
+            }
+
+            function rysujNakladkiWszystkich() {
+                kamery.forEach((k, idx) => {
+                    if (idx < liczbaUzywanychKamer) {
+                        rysujNakladkeKalibracji(k);
+                    }
+                });
+            }
+
+            // 9. Przeliczenie współrzędnych na punkty darta
+            function przeliczWspolrzedneNaPunkty(x, y, kal) {
+                if (!kal || !kal.skalibrowana) return { punkty: 0, opis: "0" };
+
+                const dx = x - kal.srodekX;
+                const dy = y - kal.srodekY;
+                const odleglosc = Math.hypot(dx, dy);
+                const R = kal.promienD20;
+
+                if (odleglosc > R * 1.03) return { punkty: 0, opis: "0" };
+                if (odleglosc <= R * 0.037) return { punkty: 50, opis: "D-BULL" };
+                if (odleglosc <= R * 0.093) return { punkty: 25, opis: "BULL" };
+
+                let kat = Math.atan2(dy, dx) - (kal.katRotacji || 0);
+                let katStopnie = (kat * 180) / Math.PI + 90;
+                if (katStopnie < 0) katStopnie += 360;
+                katStopnie %= 360;
+
+                let index = Math.floor(((katStopnie + 9) % 360) / 18);
+                const wartosc = SEKTORY_DARTA[index];
+
+                if (odleglosc >= R * 0.57 && odleglosc <= R * 0.629) {
+                    return { punkty: wartosc * 3, opis: `T${wartosc}` };
+                }
+                if (odleglosc >= R * 0.952 && odleglosc <= R * 1.0) {
+                    return { punkty: wartosc * 2, opis: `D${wartosc}` };
+                }
+
+                return { punkty: wartosc, opis: `${wartosc}` };
+            }
+
+            // 10. Zapis czystych klatek tła dla aktywnych kamer
+            function odswiezKlatkiTlaWszystkich() {
+                if (!czyOpenCvGotowe) return;
+                kamery.forEach((k, idx) => {
+                    if (idx >= liczbaUzywanychKamer || !k.videoEl || !k.videoEl.videoWidth) return;
+                    let src = null;
+                    try {
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = k.canvasEl.width || 640;
+                        tempCanvas.height = k.canvasEl.height || 480;
+                        tempCanvas.getContext("2d").drawImage(k.videoEl, 0, 0);
+
+                        if (k.klatkaTlaMat) {
+                            try {
+                                k.klatkaTlaMat.delete();
+                            } catch (e) {}
+                            k.klatkaTlaMat = null;
+                        }
+                        src = cv.imread(tempCanvas);
+                        k.klatkaTlaMat = new cv.Mat();
+                        cv.cvtColor(src, k.klatkaTlaMat, cv.COLOR_RGBA2GRAY);
+                    } catch (e) {
+                        console.warn(`Błąd odświeżania tła dla kamery ${k.id}:`, e);
+                    } finally {
+                        if (src) src.delete();
+                    }
+                });
+            }
+
+            // Alias dla pojedynczego odświeżenia tła
+            function odswiezKlatkeTla() {
+                odswiezKlatkiTlaWszystkich();
+            }
+
+            // 11. Konsensus punktacji z wielu kamer (Triangulacja / Głosowanie)
+            function ustalKonsensusRzutu(kandydaci) {
+                if (!kandydaci || kandydaci.length === 0) return null;
+
+                const kamCoords = {};
+                kandydaci.forEach((k) => {
+                    kamCoords[k.kameraId] = { x: k.x, y: k.y };
+                });
+
+                if (kandydaci.length === 1) {
+                    return {
+                        punkty: kandydaci[0].punkty,
+                        opis: kandydaci[0].opis,
+                        x: kandydaci[0].x,
+                        y: kandydaci[0].y,
+                        kamCoords,
+                    };
+                }
+
+                // Głosowanie większościowe (Majority voting)
+                const glosy = {};
+                kandydaci.forEach((k) => {
+                    glosy[k.opis] = (glosy[k.opis] || 0) + 1;
+                });
+
+                let najlepszyOpis = kandydaci[0].opis;
+                let maxGlosow = 0;
+                for (const opis in glosy) {
+                    if (glosy[opis] > maxGlosow) {
+                        maxGlosow = glosy[opis];
+                        najlepszyOpis = opis;
+                    }
+                }
+
+                const pasujacy = kandydaci.filter((k) => k.opis === najlepszyOpis);
+                pasujacy.sort((a, b) => b.pole - a.pole);
+                const glowny = pasujacy[0] || kandydaci[0];
+
+                return {
+                    punkty: glowny.punkty,
+                    opis: glowny.opis,
+                    x: glowny.x,
+                    y: glowny.y,
+                    kamCoords,
+                };
+            }
+
+            // 12. Pętla autodetekcji z fuzją wyników ze wszystkich kamer
+            function wlaczAutoDetekcjeRzutow() {
+                if (petlaDetekcjiId) clearInterval(petlaDetekcjiId);
+                autoDetekcjaAktywna = true;
+
+                let czyWykrytoRuchGlobal = false;
+                let czasRuchuGlobal = 0;
+
+                petlaDetekcjiId = setInterval(() => {
+                    if (!autoDetekcjaAktywna || !czyOpenCvGotowe || kolejkaLotekKamery.length >= 3 || !czyJakakolwiekTarczaWykryta()) return;
+
+                    const aktywneKamery = kamery.slice(0, liczbaUzywanychKamer).filter((k) => k.klatkaTlaMat && k.videoEl && k.videoEl.videoWidth && k.kalibracja && k.kalibracja.skalibrowana);
+                    if (aktywneKamery.length === 0) return;
+
+                    const kandydaci = [];
+
+                    for (const k of aktywneKamery) {
+                        let obecnaMat = null,
+                            obecnaGray = null,
+                            diff = null,
+                            thresh = null,
+                            contours = null,
+                            hierarchy = null;
+                        try {
+                            const tempCanvas = document.createElement("canvas");
+                            tempCanvas.width = k.canvasEl.width || 640;
+                            tempCanvas.height = k.canvasEl.height || 480;
+                            tempCanvas.getContext("2d").drawImage(k.videoEl, 0, 0);
+
+                            obecnaMat = cv.imread(tempCanvas);
+                            obecnaGray = new cv.Mat();
+                            cv.cvtColor(obecnaMat, obecnaGray, cv.COLOR_RGBA2GRAY);
+
+                            diff = new cv.Mat();
+                            thresh = new cv.Mat();
+                            cv.absdiff(k.klatkaTlaMat, obecnaGray, diff);
+                            cv.threshold(diff, thresh, 38, 255, cv.THRESH_BINARY);
+
+                            contours = new cv.MatVector();
+                            hierarchy = new cv.Mat();
+                            cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+                            let maxContourArea = 0;
+                            let bestRect = null;
+
+                            for (let i = 0; i < contours.size(); ++i) {
+                                let cnt = contours.get(i);
+                                try {
+                                    let area = cv.contourArea(cnt);
+                                    if (area > maxContourArea && area > 60 && area < 4000) {
+                                        let rect = cv.boundingRect(cnt);
+                                        let dist = Math.hypot(rect.x + rect.width / 2 - k.kalibracja.srodekX, rect.y + rect.height / 2 - k.kalibracja.srodekY);
+                                        if (dist < k.kalibracja.promienD20 * 1.05) {
+                                            maxContourArea = area;
+                                            bestRect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+                                        }
+                                    }
+                                } finally {
+                                    cnt.delete();
+                                }
+                            }
+
+                            if (bestRect) {
+                                const hitX = bestRect.x + bestRect.width / 2;
+                                const hitY = bestRect.y + bestRect.height / 2;
+                                const wynik = przeliczWspolrzedneNaPunkty(hitX, hitY, k.kalibracja);
+                                kandydaci.push({
+                                    kameraId: k.id,
+                                    x: hitX,
+                                    y: hitY,
+                                    punkty: wynik.punkty,
+                                    opis: wynik.opis,
+                                    pole: maxContourArea,
+                                });
+                            }
+                        } catch (err) {
+                            // Cichy fallback klatki
+                        } finally {
+                            if (obecnaMat) obecnaMat.delete();
+                            if (obecnaGray) obecnaGray.delete();
+                            if (diff) diff.delete();
+                            if (thresh) thresh.delete();
+                            if (contours) contours.delete();
+                            if (hierarchy) hierarchy.delete();
+                        }
+                    }
+
+                    if (kandydaci.length > 0) {
+                        const now = Date.now();
+                        if (!czyWykrytoRuchGlobal) {
+                            czyWykrytoRuchGlobal = true;
+                            czasRuchuGlobal = now;
+                        } else if (now - czasRuchuGlobal > 450) {
+                            const wygrany = ustalKonsensusRzutu(kandydaci);
+                            if (wygrany) {
+                                zarejestrujPunktKamerki(wygrany);
+                                odswiezKlatkiTlaWszystkich();
+                            }
+                            czyWykrytoRuchGlobal = false;
+                        }
+                    } else {
+                        czyWykrytoRuchGlobal = false;
+                    }
+                }, 200);
+            }
+
+            // 13. Rejestracja punktu w kolejce tury
+            function zarejestrujPunktKamerki(lotka) {
+                if (!czyJakakolwiekTarczaWykryta()) {
+                    pokazCustomowyAlert("Tarcza nie została wykryta! Punkty nie są liczone dopóki tarcza nie zostanie znaleziona.");
+                    return;
+                }
+                if (kolejkaLotekKamery.length >= 3) return;
+
+                kolejkaLotekKamery.push(lotka);
+                rysujNakladkiWszystkich();
+                aktualizujPodgladKolejkiKamery();
+                pokazCustomowyAlert(`Trafienie: ${lotka.opis} (${lotka.punkty} pkt)`);
+
+                if (kolejkaLotekKamery.length === 3) {
+                    setTimeout(() => {
+                        if (kolejkaLotekKamery.length === 3) {
+                            btnZatwierdzKam.click();
+                        }
+                    }, 1200);
+                }
+            }
+
+            function aktualizujPodgladKolejkiKamery() {
+                for (let i = 1; i <= 3; i++) {
+                    const el = document.getElementById(`kam-lotka-${i}`);
+                    if (el) el.textContent = kolejkaLotekKamery[i - 1] ? kolejkaLotekKamery[i - 1].opis : "-";
+                }
+                const suma = kolejkaLotekKamery.reduce((sum, l) => sum + l.punkty, 0);
+                const sumEl = document.getElementById("kam-suma-wartosc");
+                if (sumEl) sumEl.textContent = suma;
+            }
+
+            // 14. Manualne kliknięcie na dowolnym podglądzie jako zapasowa precyzja
+            kamery.forEach((k) => {
+                if (!k.canvasEl) return;
+                k.canvasEl.addEventListener("click", (e) => {
+                    if (!k.kalibracja || !k.kalibracja.skalibrowana) {
+                        pokazCustomowyAlert(`Kamera ${k.id}: tarcza nie została wykryta! Nakieruj kamerę i kliknij '🎯 Auto-Skanuj', aby włączyć punktację.`);
+                        return;
+                    }
+                    const rect = k.canvasEl.getBoundingClientRect();
+                    const skalaX = k.canvasEl.width / rect.width;
+                    const skalaY = k.canvasEl.height / rect.height;
+                    const klikX = (e.clientX - rect.left) * skalaX;
+                    const klikY = (e.clientY - rect.top) * skalaY;
+
+                    const wynik = przeliczWspolrzedneNaPunkty(klikX, klikY, k.kalibracja);
+                    const kamCoords = {};
+                    kamCoords[k.id] = { x: klikX, y: klikY };
+
+                    zarejestrujPunktKamerki({
+                        punkty: wynik.punkty,
+                        opis: wynik.opis,
+                        x: klikX,
+                        y: klikY,
+                        kamCoords,
+                    });
+                    odswiezKlatkiTlaWszystkich();
+                });
+            });
+
+            // 15. Zdarzenia dodawania i usuwania kamer
+            if (btnDodajKamere) {
+                btnDodajKamere.addEventListener("click", () => {
+                    if (liczbaUzywanychKamer < 3) {
+                        liczbaUzywanychKamer++;
+                        localStorage.setItem("sd_liczba_kamer", liczbaUzywanychKamer);
+                        aktualizujWidokLiczbyKamer();
+                        wypelnijListeKamer();
+
+                        const czyDziala = kamery.some((k) => k.strumien !== null);
+                        if (czyDziala) {
+                            uruchomKamere();
+                        }
+                        pokazCustomowyAlert(`Dodano kamerę ${liczbaUzywanychKamer}! Wybierz urządzenie USB i kliknij Auto-Skan.`);
+                    }
+                });
+            }
+
+            document.querySelectorAll(".btn-usun-kamere").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (liczbaUzywanychKamer > 1) {
+                        liczbaUzywanychKamer = Math.max(1, liczbaUzywanychKamer - 1);
+                        localStorage.setItem("sd_liczba_kamer", liczbaUzywanychKamer);
+                        aktualizujWidokLiczbyKamer();
+
+                        const czyDziala = kamery.some((k) => k.strumien !== null);
+                        if (czyDziala) {
+                            uruchomKamere();
+                        }
+                        pokazCustomowyAlert(`Usunięto kamerę. Liczba aktywnych kamer: ${liczbaUzywanychKamer}.`);
+                    }
+                });
+            });
+
+            kamery.forEach((k) => {
+                if (k.selectEl) {
+                    k.selectEl.addEventListener("change", () => {
+                        if (k.strumien) {
+                            uruchomKamere();
+                        }
+                    });
+                }
+            });
+
+            btnStartKam.addEventListener("click", () => {
+                const czyDziala = kamery.some((k) => k.strumien !== null);
+                if (czyDziala) {
+                    wylaczKamere();
+                    pokazCustomowyAlert(liczbaUzywanychKamer > 1 ? "Kamery zostały wyłączone." : "Kamera została wyłączona.");
+                } else {
+                    uruchomKamere();
+                }
+            });
+
+            btnAutoSkan.addEventListener("click", automatycznySkanTarczy);
+            btnResetTla.addEventListener("click", () => {
+                odswiezKlatkiTlaWszystkich();
+                pokazCustomowyAlert("Zaktualizowano tło tarczy.");
+            });
+
+            document.getElementById("kam-cofnij-lotke").addEventListener("click", () => {
+                kolejkaLotekKamery.pop();
+                rysujNakladkiWszystkich();
+                aktualizujPodgladKolejkiKamery();
+                odswiezKlatkiTlaWszystkich();
+            });
+
+            btnZatwierdzKam.addEventListener("click", () => {
+                if (!czyJakakolwiekTarczaWykryta()) {
+                    pokazCustomowyAlert("Tarcza nie została wykryta - brak możliwości zatwierdzenia punktów!");
+                    return;
+                }
+                if (kolejkaLotekKamery.length === 0) return;
+
+                const suma = kolejkaLotekKamery.reduce((sum, l) => sum + l.punkty, 0);
+
+                // Integracja z głównym silnikiem gry w klasyczna.html
+                przetwarzajRzutMeczu(suma, suma.toString(), kolejkaLotekKamery.length, [...kolejkaLotekKamery]);
+
+                kolejkaLotekKamery = [];
+                aktualizujPodgladKolejkiKamery();
+                rysujNakladkiWszystkich();
+                odswiezKlatkiTlaWszystkich();
+            });
+
+            // Inicjalizacja widoku przy starcie strony
+            aktualizujWidokLiczbyKamer();
 
             const przyciskiCyfr = document.querySelectorAll(".btn-cyfra");
             const przyciskCofnijCyfre = document.getElementById("cofnij-cyfre");
@@ -1747,9 +2676,7 @@
                     let profilIdGracza = null;
                     if (!czyTenToBot) {
                         const zalogowanyStorage = odczytajZalogowanegoZStorage();
-                        const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) ||
-                                            (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase()) ||
-                                            (i === 0 && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id));
+                        const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) || (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase()) || (i === 0 && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id));
                         if (isMojeKonto && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id)) {
                             profilIdGracza = zalogowanyUserIdGlobalny || zalogowanyStorage?.id;
                         } else {
@@ -1759,9 +2686,7 @@
                                 } catch (e) {}
                             }
                             if (window.idZnajomychWGrze) {
-                                profilIdGracza = window.idZnajomychWGrze[nazwa] || 
-                                                 window.idZnajomychWGrze[nazwa.toLowerCase()] || 
-                                                 window.idZnajomychWGrze[nazwa.trim()] || null;
+                                profilIdGracza = window.idZnajomychWGrze[nazwa] || window.idZnajomychWGrze[nazwa.toLowerCase()] || window.idZnajomychWGrze[nazwa.trim()] || null;
                             }
                         }
                     }
@@ -1865,6 +2790,10 @@
             });
             function rozpocznijWlasciwaGre(zaczynajacyIndex) {
                 czyZapisanoStatystykiMeczu = false; // Reset przed nową rozgrywką
+                historiaMeczuLegi = []; // WAŻNE: Reset historii poprzedniego meczu
+                historiaAktualnegoLegu = [];
+                window.botOstatniaLotka = 3;
+                window.botLotkiNaDoubla = 0;
                 graczZaczynajacyLegIndex = zaczynajacyIndex;
                 resetujLeg();
 
@@ -1878,6 +2807,8 @@
                 aktualnaKolejka = 1;
                 aktualnyGraczIndex = graczZaczynajacyLegIndex;
                 historiaStanuGry = [];
+                window.botOstatniaLotka = 3;
+                window.botLotkiNaDoubla = 0;
 
                 gracze.forEach((gracz, i) => {
                     gracz.punkty = punktyStartowe;
@@ -2137,27 +3068,31 @@
             }
 
             // Obsługa klawiatury dla popupu Doubles (zarówno klawisze główne jak i numpad)
-            window.addEventListener("keydown", (e) => {
-                const popup = document.getElementById("popup-doubles");
-                if (!popup || popup.style.display !== "flex") return;
+            window.addEventListener(
+                "keydown",
+                (e) => {
+                    const popup = document.getElementById("popup-doubles");
+                    if (!popup || popup.style.display !== "flex") return;
 
-                let key = e.key;
-                if (key.startsWith("Numpad") || key.startsWith("Digit")) {
-                    key = key.replace("Numpad", "").replace("Digit", "");
-                }
-
-                if (["0", "1", "2", "3"].includes(key)) {
-                    const btnContainer = document.getElementById("popup-doubles-buttons");
-                    if (!btnContainer) return;
-
-                    const pasujacyPrzycisk = btnContainer.querySelector(`button[data-wartosc="${key}"]`);
-                    if (pasujacyPrzycisk) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        pasujacyPrzycisk.click();
+                    let key = e.key;
+                    if (key.startsWith("Numpad") || key.startsWith("Digit")) {
+                        key = key.replace("Numpad", "").replace("Digit", "");
                     }
-                }
-            }, true);
+
+                    if (["0", "1", "2", "3"].includes(key)) {
+                        const btnContainer = document.getElementById("popup-doubles-buttons");
+                        if (!btnContainer) return;
+
+                        const pasujacyPrzycisk = btnContainer.querySelector(`button[data-wartosc="${key}"]`);
+                        if (pasujacyPrzycisk) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            pasujacyPrzycisk.click();
+                        }
+                    }
+                },
+                true,
+            );
 
             function cofnijRzut() {
                 if (typeof anulujTureBota === "function") {
@@ -2212,6 +3147,11 @@
 
                 wpiszWynikInput.value = "";
                 resetujPodgladKlikow();
+                if (typeof kolejkaLotekKamery !== "undefined") {
+                    kolejkaLotekKamery = [];
+                    if (typeof aktualizujPodgladKolejkiKamery === "function") aktualizujPodgladKolejkiKamery();
+                    if (typeof rysujNakladkiWszystkich === "function") rysujNakladkiWszystkich();
+                }
                 sprawdzTureBota();
 
                 if (typeof zapiszStanMeczuDoStorage === "function") {
@@ -2249,7 +3189,7 @@
                     rzut: czyFura ? 0 : punktyWpisane,
                     szczegoly: czyFura ? "0" : opisDoHistorii,
                     punktyPo: pozostalePunkty,
-                    zuzyteLotki: 3,
+                    zuzyteLotki: zuzyteLotki || 3,
                 });
 
                 aktualizujHistorieRzutowUI(aktywnyGracz.id, aktualnyGraczIndex);
@@ -2257,16 +3197,28 @@
 
                 // 1. Zakończenie Lega
                 if (pozostalePunkty === 0 && !czyFura) {
+                    const minLotekWLegu = punktyStartowe <= 50 ? 1 : Math.ceil((punktyStartowe - 50) / 60) + 1;
+
                     if (aktywnyGracz.czyBot) {
-                        aktywnyGracz.lotkiNaDoubla += window.botLotkiNaDoubla || 1;
+                        aktywnyGracz.lotkiNaDoubla += (typeof window.botLotkiNaDoubla === "number" ? window.botLotkiNaDoubla : 1);
                         aktywnyGracz.trafioneDouble += 1;
 
                         let ostatniWpis = historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
-                        ostatniWpis.zuzyteLotki = window.botOstatniaLotka || 3;
+                        let botLotkaKonc = (typeof window.botOstatniaLotka === "number" && window.botOstatniaLotka >= 1 && window.botOstatniaLotka <= 3) ? window.botOstatniaLotka : 3;
+                        ostatniWpis.zuzyteLotki = botLotkaKonc;
 
                         let rzutyWLegu = historiaAktualnegoLegu.filter((h) => h.graczId === aktywnyGracz.id);
                         let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
-                        let lotkiZwyciezcy = lotkiWPoprzednich + ostatniWpis.zuzyteLotki;
+                        let lotkiZwyciezcy = lotkiWPoprzednich + botLotkaKonc;
+
+                        // Zabezpieczenie przed niemożliwą liczbą lotek w legu
+                        if (lotkiZwyciezcy < minLotekWLegu) {
+                            lotkiZwyciezcy = minLotekWLegu;
+                            ostatniWpis.zuzyteLotki = Math.max(1, Math.min(3, lotkiZwyciezcy - lotkiWPoprzednich));
+                        }
+
+                        window.botOstatniaLotka = 3;
+                        window.botLotkiNaDoubla = 0;
 
                         pokazCustomowyAlert(`${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`);
                         zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
@@ -2281,6 +3233,9 @@
                         let rzutyWLegu = historiaAktualnegoLegu.filter((h) => h.graczId === aktywnyGracz.id);
                         let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
                         let lotkiZwyciezcy = lotkiWPoprzednich + lotkaKonczaca;
+                        if (lotkiZwyciezcy < minLotekWLegu) {
+                            lotkiZwyciezcy = minLotekWLegu;
+                        }
                         pokazCustomowyAlert(`${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`);
                         zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
                     });
@@ -2328,7 +3283,7 @@
 
                         if (czyMialSzanse) {
                             if (aktywnyGracz.czyBot) {
-                                aktywnyGracz.lotkiNaDoubla += window.botLotkiNaDoubla || 1;
+                                aktywnyGracz.lotkiNaDoubla += (typeof window.botLotkiNaDoubla === "number" ? window.botLotkiNaDoubla : 1);
                                 finalizujTure();
                                 return;
                             }
@@ -2427,17 +3382,14 @@
                         console.log("Mecz został pomyślnie zapisany w chmurze przez Hosta.");
                         return;
                     }
-                    console.log("Brak potwierdzenia od Hosta po 2.5s – Gość wykonuje zapasowy zapis meczu i statystyk.");
+                    console.log("Brak potwierdzenia od Hosta po 2.5s - Gość wykonuje zapasowy zapis meczu i statystyk.");
                 }
 
                 try {
                     let user = null;
                     let session = null;
                     try {
-                        const sessionData = await Promise.race([
-                            pobierzAktywnaSesjeSupabase(),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 3000))
-                        ]);
+                        const sessionData = await Promise.race([pobierzAktywnaSesjeSupabase(), new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 3000))]);
                         session = sessionData;
                         user = session?.user;
                     } catch (eSess) {}
@@ -2447,7 +3399,7 @@
                     }
 
                     if (!user) {
-                        console.warn("Brak aktywnej sesji – mecz zapisany tylko lokalnie.");
+                        console.warn("Brak aktywnej sesji - mecz zapisany tylko lokalnie.");
                         alert("Mecz zapisany lokalnie, ale nie znaleziono sesji konta. Zaloguj się ponownie, aby zapisać statystyki online.");
                         return;
                     }
@@ -2500,11 +3452,7 @@
                             continue;
                         }
                         if (g.profilId && /^[0-9a-f-]{36}$/i.test(g.profilId)) continue;
-                        let pid = g.profilId || (window.idZnajomychWGrze && (
-                            window.idZnajomychWGrze[g.nazwa] || 
-                            window.idZnajomychWGrze[g.nazwa.trim()] || 
-                            window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]
-                        ));
+                        let pid = g.profilId || (window.idZnajomychWGrze && (window.idZnajomychWGrze[g.nazwa] || window.idZnajomychWGrze[g.nazwa.trim()] || window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]));
                         if (!pid && czyOnline) {
                             if (g.id === 1 && gosc_id_db) pid = gosc_id_db;
                             else if (g.id === 0 && host_id_db) pid = host_id_db;
@@ -2549,22 +3497,21 @@
                             mojGracz = gracze[0];
                         }
                         if (mojGracz) {
-                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id && g.profilId && g.profilId !== userId) ||
-                                         gracze.find((g) => g.id !== mojGracz.id) || null;
+                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id && g.profilId && g.profilId !== userId) || gracze.find((g) => g.id !== mojGracz.id) || null;
                         }
                     }
 
                     if (!mojGracz) {
-                        console.log("Pominięto zapis – zalogowany użytkownik nie brał udziału w meczu turniejowym.");
+                        console.log("Pominięto zapis - zalogowany użytkownik nie brał udziału w meczu turniejowym.");
                         alert("Nie zapisano statystyk: nie udało się dopasować Twojego konta do gracza w meczu.");
                         return;
                     }
 
                     if (czyOnline && rywalGracz && !rywalGracz.profilId) {
-                        rywalGracz.profilId = (mojIndeksOnline === 0 ? gosc_id_db : host_id_db);
+                        rywalGracz.profilId = mojIndeksOnline === 0 ? gosc_id_db : host_id_db;
                     }
                     if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
-                        gosc_id_db = (mojIndeksOnline === 0 ? rywalGracz.profilId : userId);
+                        gosc_id_db = mojIndeksOnline === 0 ? rywalGracz.profilId : userId;
                     }
 
                     let idZwyciezcy = null;
@@ -2584,7 +3531,7 @@
                         }
                     }
 
-                    const czyWygralem = zwyciezca ? (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa || idZwyciezcy === userId) : false;
+                    const czyWygralem = zwyciezca ? zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa || idZwyciezcy === userId : false;
                     const statyMojGracz = podsumowanieMeczu.gracze.find((g) => g.id === mojGracz.id);
                     const nowaMojaSrednia = parseFloat(statyMojGracz?.srednia) || 0;
                     const nowaSrednia9 = parseFloat(statyMojGracz?.srednia9) || 0;
@@ -2608,11 +3555,7 @@
 
                     if (!obecnyProfil && klientBazy) {
                         try {
-                            const { data: pData } = await zLimitemCzasu(
-                                klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle(),
-                                "odczyt profilu hosta",
-                                3500
-                            );
+                            const { data: pData } = await zLimitemCzasu(klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle(), "odczyt profilu hosta", 3500);
                             obecnyProfil = pData;
                         } catch (eSdkP) {}
                     }
@@ -2625,7 +3568,7 @@
                             wygrane_mecze: 0,
                             srednia: 0,
                             srednia_9_lotek: 0,
-                            ilosc_180: 0
+                            ilosc_180: 0,
                         };
                     }
 
@@ -2651,8 +3594,8 @@
                                 p_nowe_wygrane: noweWygrane,
                                 p_nowa_srednia: parseFloat(nowaSredniaOgolna),
                                 p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
-                                p_nowe_180: nowe180
-                            }
+                                p_nowe_180: nowe180,
+                            },
                         });
                         zapisanoHosta = true;
                     } catch (eRpcHost) {
@@ -2667,7 +3610,7 @@
                                 p_nowe_wygrane: noweWygrane,
                                 p_nowa_srednia: parseFloat(nowaSredniaOgolna),
                                 p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
-                                p_nowe_180: nowe180
+                                p_nowe_180: nowe180,
                             });
                             if (!rpcErrHost) zapisanoHosta = true;
                         } catch (eSdkRpcHost) {}
@@ -2717,11 +3660,7 @@
 
                             if (!profRywal && klientBazy) {
                                 try {
-                                    const { data: pData } = await klientBazy
-                                        .from("profiles")
-                                        .select("*")
-                                        .eq("id", idProfiluRywala)
-                                        .maybeSingle();
+                                    const { data: pData } = await klientBazy.from("profiles").select("*").eq("id", idProfiluRywala).maybeSingle();
                                     profRywal = pData;
                                 } catch (eSdkR) {}
                             }
@@ -2755,8 +3694,8 @@
                                             p_nowe_wygrane: noweWygraneR,
                                             p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
                                             p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
-                                            p_nowe_180: nowe180R
-                                        }
+                                            p_nowe_180: nowe180R,
+                                        },
                                     });
                                     zaktualizowanoRywala = true;
                                 } catch (eRpcDirect) {
@@ -2813,7 +3752,7 @@
                     // ================================================================
                     const payloadMeczu = {
                         host_id: userId,
-                        gosc_id: gosc_id_db, 
+                        gosc_id: gosc_id_db,
                         zwyciezca_id: idZwyciezcy,
                         wynik_host: mojGracz.wygraneLegi || 0,
                         wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
@@ -2833,7 +3772,7 @@
                                     method: "POST",
                                     body: payloadMeczu,
                                     accessToken: token,
-                                    headers: { prefer: "return=minimal" }
+                                    headers: { prefer: "return=minimal" },
                                 });
                                 zapisanoMecz = true;
                             } catch (eProxyMatch) {
@@ -2851,8 +3790,8 @@
                                         table: "matches",
                                         operation: "insert",
                                         values: payloadMeczu,
-                                        accessToken: token
-                                    })
+                                        accessToken: token,
+                                    }),
                                 });
                                 if (resWriteMatch.ok) zapisanoMecz = true;
                             } catch (eWriteMatch) {}
@@ -2869,10 +3808,10 @@
                                         apikey: SUPA_KEY,
                                         Authorization: `Bearer ${token}`,
                                         "Content-Type": "application/json",
-                                        Prefer: "return=minimal"
+                                        Prefer: "return=minimal",
                                     },
                                     body: JSON.stringify(payloadMeczu),
-                                    signal: controller.signal
+                                    signal: controller.signal,
                                 }).finally(() => clearTimeout(tid));
                                 if (resMatch.ok) zapisanoMecz = true;
                             } catch (eRestMatch) {}
@@ -2922,6 +3861,7 @@
             };
 
             function zakonczMecz(zwyciezca) {
+                wylaczKamere();
                 zapiszMeczDoHistorii(zwyciezca);
                 let czyToTurniej = false;
 
@@ -3112,6 +4052,7 @@
                 if (typeof czyTrybOnline !== "undefined" && czyTrybOnline) return;
                 pokazModalSystemowyOnline("Przerwanie gry", "Czy na pewno chcesz przerwać bieżącą grę i wrócić do ustawień?", "confirm", (czyPrzerwac) => {
                     if (czyPrzerwac) {
+                        wylaczKamere();
                         ekranGry.style.display = "none";
                         formularzUstawien.style.display = "flex";
                         tytulStrony.style.display = "block";
@@ -3408,6 +4349,9 @@
                     if (przyciskGraj) przyciskGraj.click();
                 }, 200);
             });
+
+            window.addEventListener("beforeunload", wylaczKamere);
+            window.addEventListener("pagehide", wylaczKamere);
         </script>
 
         <script src="./dartbot.js" defer></script>

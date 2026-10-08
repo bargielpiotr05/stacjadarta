@@ -131,7 +131,7 @@ main {
 
 /* FILTROWANIE SZCZEGÓŁOWE MECZÓW */
 #filtracja-meczy {
-    display: flex;
+    display: none;
     align-items: flex-end;
     gap: 12px;
     width: 100%;

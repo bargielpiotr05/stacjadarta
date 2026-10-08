@@ -643,4 +643,7 @@ header a {
   .footer-status {
     justify-content: center;
   }
+  .kamera-btns{
+    width:49% !important;
+  }
 }
