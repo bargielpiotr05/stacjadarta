@@ -337,7 +337,7 @@
                 try {
                     for (let i = 0; i < localStorage.length; i++) {
                         const klucz = localStorage.key(i);
-                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.includes("-auth-token")) || klucz === "supabase.auth.token")) {
                             const raw = localStorage.getItem(klucz);
                             if (raw) {
                                 const parsed = JSON.parse(raw);
@@ -1311,6 +1311,12 @@
                         try {
                             const { data: sd } = await client.auth.getSession();
                             token = sd?.session?.access_token || null;
+                        } catch (_) {}
+                    }
+                    if (!token && typeof window.pobierzAktywnaSesjeSupabase === "function") {
+                        try {
+                            const actSes = await window.pobierzAktywnaSesjeSupabase();
+                            token = actSes?.access_token || null;
                         } catch (_) {}
                     }
 
