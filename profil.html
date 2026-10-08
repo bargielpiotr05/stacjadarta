@@ -1271,49 +1271,40 @@
             async function usunStareAvatary(userId, zachowajPlikNazwa = null) {
                 try {
                     const cleanUserId = String(userId).trim();
-                    let klient = window.supabaseKlient || window.supabaseClient;
+                    const isProd = window.location.hostname === "stacjadarta.pl";
                     let plikiDoUsuniecia = [];
 
-                    // 1. Pobranie listy plików przez SDK
-                    if (klient?.storage) {
+                    // 1. Na produkcji pobieramy listę przez Cloudflare Workera (bez zbędnych błędów SDK)
+                    if (isProd) {
                         try {
-                            const { data: lista, error } = await klient.storage.from("avatary").list(cleanUserId);
-                            if (!error && Array.isArray(lista)) {
-                                plikiDoUsuniecia = lista
-                                    .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                    .map(item => `${cleanUserId}/${item.name}`);
+                            const resList = await fetch(`/api/supabase/storage/v1/object/list/avatary`, {
+                                method: "POST",
+                                headers: {
+                                    "apikey": SUPA_KEY,
+                                    "Authorization": `Bearer ${SUPA_KEY}`,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
+                            });
+                            if (resList.ok) {
+                                const lista = await resList.json();
+                                if (Array.isArray(lista)) {
+                                    plikiDoUsuniecia = lista
+                                        .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
+                                        .map(item => `${cleanUserId}/${item.name}`);
+                                }
                             }
                         } catch (_) {}
-                    }
-
-                    // 2. Fallback przez REST API (przez Cloudflare Worker na produkcji lub bezpośrednio)
-                    if (plikiDoUsuniecia.length === 0) {
-                        const sesja = pobierzSesjeZStorage();
-                        const token = sesja?.token || SUPA_KEY;
-                        const isProd = window.location.hostname === "stacjadarta.pl";
-                        const listUrls = isProd
-                            ? [`/api/supabase/storage/v1/object/list/avatary`, `${SUPA_URL}/storage/v1/object/list/avatary`]
-                            : [`${SUPA_URL}/storage/v1/object/list/avatary`];
-
-                        for (const lUrl of listUrls) {
+                    } else {
+                        // 2. W środowisku lokalnym pobieramy listę przez klienta Supabase
+                        let klient = window.supabaseKlient || window.supabaseClient;
+                        if (klient?.storage) {
                             try {
-                                const resList = await fetch(lUrl, {
-                                    method: "POST",
-                                    headers: {
-                                        "apikey": SUPA_KEY,
-                                        "Authorization": `Bearer ${token}`,
-                                        "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
-                                });
-                                if (resList.ok) {
-                                    const lista = await resList.json();
-                                    if (Array.isArray(lista)) {
-                                        plikiDoUsuniecia = lista
-                                            .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                            .map(item => `${cleanUserId}/${item.name}`);
-                                        if (plikiDoUsuniecia.length > 0) break;
-                                    }
+                                const { data: lista, error } = await klient.storage.from("avatary").list(cleanUserId);
+                                if (!error && Array.isArray(lista)) {
+                                    plikiDoUsuniecia = lista
+                                        .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
+                                        .map(item => `${cleanUserId}/${item.name}`);
                                 }
                             } catch (_) {}
                         }
@@ -1321,35 +1312,33 @@
 
                     if (plikiDoUsuniecia.length === 0) return;
 
-                    // 3. Usunięcie starych plików ze Storage
-                    let usunieto = false;
-                    if (klient?.storage) {
+                    // 3. Usuwanie starych plików ze Storage
+                    if (isProd) {
                         try {
-                            const { error: delErr } = await klient.storage.from("avatary").remove(plikiDoUsuniecia);
-                            if (!delErr) usunieto = true;
+                            await fetch(`/api/supabase/storage/v1/object/avatary`, {
+                                method: "DELETE",
+                                headers: {
+                                    "apikey": SUPA_KEY,
+                                    "Authorization": `Bearer ${SUPA_KEY}`,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ prefixes: plikiDoUsuniecia })
+                            });
                         } catch (_) {}
-                    }
-                    if (!usunieto) {
-                        const sesja = pobierzSesjeZStorage();
-                        const token = sesja?.token || SUPA_KEY;
-                        const isProd = window.location.hostname === "stacjadarta.pl";
-                        const deleteUrls = isProd
-                            ? [`/api/supabase/storage/v1/object/avatary`, `${SUPA_URL}/storage/v1/object/avatary`]
-                            : [`${SUPA_URL}/storage/v1/object/avatary`];
-
-                        for (const dUrl of deleteUrls) {
-                            try {
-                                const resDel = await fetch(dUrl, {
-                                    method: "DELETE",
-                                    headers: {
-                                        "apikey": SUPA_KEY,
-                                        "Authorization": `Bearer ${token}`,
-                                        "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify({ prefixes: plikiDoUsuniecia })
-                                });
-                                if (resDel.ok) break;
-                            } catch (_) {}
+                    } else {
+                        let klient = window.supabaseKlient || window.supabaseClient;
+                        if (klient?.storage) {
+                            await klient.storage.from("avatary").remove(plikiDoUsuniecia).catch(() => {});
+                        } else {
+                            await fetch(`${SUPA_URL}/storage/v1/object/avatary`, {
+                                method: "DELETE",
+                                headers: {
+                                    "apikey": SUPA_KEY,
+                                    "Authorization": `Bearer ${SUPA_KEY}`,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({ prefixes: plikiDoUsuniecia })
+                            }).catch(() => {});
                         }
                     }
                 } catch (err) {
