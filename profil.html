@@ -1280,6 +1280,9 @@
                 if (!plik) return;
 
                 if (!aktualnyUser) {
+                    aktualnyUser = odczytajZalogowanegoZStorage();
+                }
+                if (!aktualnyUser && client?.auth) {
                     const { data: sessionData } = await client.auth.getSession();
                     aktualnyUser = sessionData?.session?.user;
                 }
@@ -1302,39 +1305,83 @@
 
                 try {
                     const userId = aktualnyUser.id;
+                    const sesja = pobierzSesjeZStorage();
+                    let token = sesja.token;
+                    if (!token && client?.auth) {
+                        try {
+                            const { data: sd } = await client.auth.getSession();
+                            token = sd?.session?.access_token || null;
+                        } catch (_) {}
+                    }
+
                     const ext = plik.name.split(".").pop().toLowerCase() || "png";
                     const nowaSciezka = `${userId}/avatar_${Date.now()}.${ext}`;
+                    let uploadSukces = false;
+                    let bladSzczegoly = "";
 
-                    // 1. Upload unikalnego pliku
-                    const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
-                        contentType: plik.type || "image/png",
-                        upsert: true,
-                    });
+                    // 1. Metoda główna: Direct REST upload do Supabase Storage z jawnym tokenem Bearer
+                    if (token) {
+                        try {
+                            const uploadUrl = `${SUPA_URL}/storage/v1/object/avatary/${nowaSciezka}`;
+                            const resDirect = await fetch(uploadUrl, {
+                                method: "POST",
+                                headers: {
+                                    "apikey": SUPA_KEY,
+                                    "Authorization": `Bearer ${token}`,
+                                    "Content-Type": plik.type || "image/png",
+                                    "x-upsert": "true"
+                                },
+                                body: plik
+                            });
 
-                    if (uploadErr) throw uploadErr;
+                            if (resDirect.ok) {
+                                uploadSukces = true;
+                            } else {
+                                const errJson = await resDirect.json().catch(() => ({}));
+                                bladSzczegoly = errJson.message || errJson.error || `HTTP ${resDirect.status}`;
+                                console.warn("Direct upload nie powiódł się:", errJson);
+                            }
+                        } catch (eDir) {
+                            bladSzczegoly = eDir.message;
+                        }
+                    }
 
-                    // 2. Pobranie adresu publicznego
-                    const {
-                        data: { publicUrl },
-                    } = client.storage.from("avatary").getPublicUrl(nowaSciezka);
+                    // 2. Metoda zapasowa: SDK Supabase Storage
+                    if (!uploadSukces) {
+                        if (!client) client = window.supabaseKlient || window.supabaseClient;
+                        if (client?.storage) {
+                            const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
+                                contentType: plik.type || "image/png",
+                                upsert: true,
+                            });
+                            if (uploadErr) {
+                                throw new Error(uploadErr.message || bladSzczegoly || "Błąd zapisu pliku w Storage");
+                            }
+                            uploadSukces = true;
+                        } else {
+                            throw new Error(bladSzczegoly || "Brak połączenia z Supabase Storage.");
+                        }
+                    }
 
-                    // 3. Aktualizacja tabeli public.profiles (odporna na uśpione sockety i locki iOS)
+                    // 3. Pobranie adresu publicznego
+                    const publicUrl = `${SUPA_URL}/storage/v1/object/public/avatary/${nowaSciezka}`;
+
+                    // 4. Aktualizacja tabeli public.profiles (odporna na uśpione sockety i locki iOS)
                     await wykonajZapisProfilu({ avatar_url: publicUrl }, userId);
 
-                    // 4. Kopia zapasowa w sesji użytkownika (w tle)
+                    // 5. Kopia zapasowa w sesji użytkownika (w tle)
                     try {
-                        await Promise.race([
-                            client.auth.updateUser({ data: { avatar_url: publicUrl } }),
-                            new Promise((r) => setTimeout(r, 2000))
-                        ]);
-                        await Promise.race([
-                            client.auth.refreshSession(),
-                            new Promise((r) => setTimeout(r, 2000))
-                        ]);
+                        if (client?.auth) {
+                            Promise.race([
+                                client.auth.updateUser({ data: { avatar_url: publicUrl } }),
+                                new Promise((r) => setTimeout(r, 2000))
+                            ]).catch(() => {});
+                        }
                     } catch (eAuth) {}
 
-                    // 5. Aktualizacja UI
+                    // 6. Aktualizacja UI
                     imgAvatar.src = publicUrl;
+                    if (aktualnyProfil) aktualnyProfil.avatar_url = publicUrl;
                     const headerAvatarWrap = document.querySelector(".user-avatar-wrap");
                     if (headerAvatarWrap) {
                         headerAvatarWrap.innerHTML = `<img src="${publicUrl}" alt="Avatar" class="header-avatar-img" />`;
@@ -1345,7 +1392,11 @@
                     setTimeout(() => (avatarStatus.textContent = ""), 3000);
                 } catch (err) {
                     console.error("Błąd zapisu zdjęcia:", err);
-                    avatarStatus.textContent = "Nie udało się zapisać zdjęcia.";
+                    let opis = err.message || "Nie udało się zapisać zdjęcia.";
+                    if (opis.includes("violates row-level security") || opis.includes("Unauthorized") || opis.includes("AccessDenied")) {
+                        opis = "Błąd uprawnień Supabase (RLS). Sprawdź politykę w panelu.";
+                    }
+                    avatarStatus.textContent = opis;
                     avatarStatus.style.color = "#f87171";
                 } finally {
                     inputAvatar.value = "";
