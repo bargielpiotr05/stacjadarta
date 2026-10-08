@@ -45,17 +45,6 @@
           <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
           <div class="sekcja-formularza">
             <div class="sekcja-tytul">UCZESTNICY</div>
-            <div style="margin-bottom: 15px">
-              <label>
-                <h4>ILOŚĆ GRACZY:</h4>
-                <select id="ilosc-graczy">
-                  <option value="1">1</option>
-                  <option value="2" selected>2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
-              </label>
-            </div>
             <div id="kontener-nazw-graczy"></div>
           </div>
           <div class="sekcja-formularza">
@@ -228,7 +217,6 @@
     </main>
 
     <script>
-      const inputIloscGraczy = document.getElementById("ilosc-graczy");
       const kontenerNazwGraczy = document.getElementById(
         "kontener-nazw-graczy",
       );
@@ -271,6 +259,15 @@
       let rundaKoncowa = 7;
       let aktualnaRundaCel = 1;
       let biezaceRzutyTury = [];
+
+      // Inicjalizacja wspólnego modułu wyboru graczy (bez DartBota)
+      if (window.PlayerSetupModule) {
+        window.PlayerSetupModule.init();
+      } else {
+        window.addEventListener("DOMContentLoaded", () => {
+          if (window.PlayerSetupModule) window.PlayerSetupModule.init();
+        });
+      }
 
       wlaczCustom.addEventListener("change", () => {
         inputOdCustom.disabled = !wlaczCustom.checked;
@@ -326,26 +323,6 @@
       inputOd.addEventListener("input", wyczyscCheckboxyDlaCustom);
       inputDo.addEventListener("input", wyczyscCheckboxyDlaCustom);
 
-      function generujPolaGraczy() {
-        const ilosc = parseInt(inputIloscGraczy.value);
-        kontenerNazwGraczy.innerHTML = "";
-        for (let i = 1; i <= ilosc; i++) {
-          kontenerNazwGraczy.innerHTML += `
-                    <label>
-                        <h4>Gracz ${i}:</h4>
-                        <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" />
-                    </label>
-                `;
-          if (ilosc === 1) {
-            kontenerNazwGraczy.style.gridTemplateColumns = "1fr";
-          } else {
-            kontenerNazwGraczy.style.gridTemplateColumns = "1fr 1fr";
-          }
-        }
-      }
-      inputIloscGraczy.addEventListener("input", generujPolaGraczy);
-      generujPolaGraczy();
-
       btnZacznijGrac.addEventListener("click", () => {
         tytulStrony.style.display = "none";
         if (chkOneToSeven.checked) {
@@ -378,20 +355,33 @@
         }
 
         listaGraczy = [];
-        const inputsNazw = document.querySelectorAll(".input-nazwa-gracza");
-        inputsNazw.forEach((inp, idx) => {
-          let nazwa = inp.value.trim();
-          if (nazwa === "") nazwa = `Gracz ${idx + 1}`;
-
-          listaGraczy.push({
-            id: idx,
-            nazwa: nazwa,
-            punkty: 0,
-            zdobylShanghai: false,
-            iloscTrafien: 0,
-            wszystkieRzuty: 0,
+        const graczeImiona = window.PlayerSetupModule ? window.PlayerSetupModule.getPlayers() : [];
+        if (graczeImiona.length > 0) {
+          graczeImiona.forEach((nazwa, idx) => {
+            listaGraczy.push({
+              id: idx,
+              nazwa: nazwa || `Gracz ${idx + 1}`,
+              punkty: 0,
+              zdobylShanghai: false,
+              iloscTrafien: 0,
+              wszystkieRzuty: 0,
+            });
           });
-        });
+        } else {
+          const inputsNazw = document.querySelectorAll(".input-nazwa-gracza");
+          inputsNazw.forEach((inp, idx) => {
+            let nazwa = inp.value.trim();
+            if (nazwa === "") nazwa = `Gracz ${idx + 1}`;
+            listaGraczy.push({
+              id: idx,
+              nazwa: nazwa,
+              punkty: 0,
+              zdobylShanghai: false,
+              iloscTrafien: 0,
+              wszystkieRzuty: 0,
+            });
+          });
+        }
 
         indeksAktualnegoGracza = 0;
         aktualnaRundaCel = rundaStartowa;
@@ -583,16 +573,52 @@
                 </tr>
             `;
         tabelaKoncowa.querySelector("tbody").innerHTML = htmlBody;
+        ekranGry.style.display = "none";
+        ekranWynikowy.style.display = "flex";
+
+        // Zapis statystyk do bazy danych
+        try {
+          const mojGracz = listaGraczy[0];
+          const supa = window.supabaseKlient || window.supabaseClient;
+          (async () => {
+            let userId = null;
+            if (supa?.auth) {
+              const { data } = await supa.auth.getSession();
+              userId = data?.session?.user?.id;
+            }
+            if (!userId) {
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith("sb-") && k.endsWith("-auth-token") || k === "supabase.auth.token")) {
+                  const parsed = JSON.parse(localStorage.getItem(k) || "{}");
+                  userId = parsed?.user?.id;
+                  if (userId) break;
+                }
+              }
+            }
+            if (!userId) return;
+
+            if (window.StatsManager && mojGracz) {
+              await StatsManager.zaktualizujShanghai(userId, {
+                czyWygrana: mojGracz.nazwa === zwyciezca.nazwa,
+                punkty: mojGracz.punkty || 0,
+                czyZrobilShanghai: mojGracz.zdobylShanghai || false
+              });
+            }
+          })().catch((err) => console.warn("Błąd zapisu statystyk Shanghai:", err));
+        } catch (e) {}
       }
 
       btnRestart.addEventListener("click", () => {
         tytulStrony.style.display = "block";
         ekranWynikowy.style.display = "none";
         sekcjaUstawien.style.display = "block";
-        generujPolaNazwGraczy(); // <-- Uwaga, w Twoim oryginale wywoływałeś tę funkcję z błędem w nazwie, warto ją potem naprawić
+        if (window.PlayerSetupModule) window.PlayerSetupModule.init();
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./player-setup.js" defer></script>
+    <script src="./stats-manager.js" defer></script>
     <script src="./menu.js" defer></script>
   </body>
 </html>

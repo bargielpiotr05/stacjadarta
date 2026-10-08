@@ -209,7 +209,8 @@ form h4 {
     padding: 10px 20px;
 }
 #wyswietl-kolejke {
-    margin-left: 70px;
+    margin: 0;
+    text-align: center;
 }
 #powrot-gra {
     background-color: var(--light-grey);
@@ -240,6 +241,7 @@ form h4 {
     padding: 25px;
     flex: 1 1 calc(50% - 20px);
     min-width: 250px;
+    max-width: 380px;
     box-sizing: border-box;
     transition: all 0.3s ease;
     opacity: 0.5;
@@ -761,7 +763,8 @@ form h4 {
         display: none;
     }
     #wyswietl-kolejke {
-        margin-left: 50px;
+        margin: 0;
+        text-align: center;
     }
     .ekran-wygranej {
         padding: 10px;

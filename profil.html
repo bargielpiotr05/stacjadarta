@@ -258,10 +258,16 @@
                     <!-- FORMULARZ USUNIĘCIA KONTA -->
                     <div id="usun-konto-blok" style="display: none">
                         <form id="form-usun-konto" class="modal-form">
-                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 15px 0; line-height: 1.5">UWAGA: Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki oraz zapisane mecze zostaną bezpowrotnie usunięte.</p>
+                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 10px 0; line-height: 1.5">
+                                <strong>⚠️ UWAGA:</strong> Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki, znajomości oraz mecze zostaną trwale skasowane.
+                            </p>
+                            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4">
+                                Aby zapobiec przypadkowemu usunięciu konta, wpisz poniżej słowo: <strong style="color: #f87171; letter-spacing: 1px;">USUŃ</strong>
+                            </p>
+                            <input type="text" id="potwierdzenie-usuniecia-input" class="wspolny-input" placeholder="Wpisz USUŃ..." autocomplete="off" style="margin-bottom: 18px; text-transform: uppercase; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 2px;" />
                             <div class="modal-akcje">
                                 <button type="button" class="btn-secondary btn-anuluj-modal">Anuluj</button>
-                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie">Potwierdź usunięcie</button>
+                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie" disabled style="opacity: 0.45; cursor: not-allowed;">Potwierdź usunięcie</button>
                             </div>
                         </form>
                     </div>
@@ -1774,17 +1780,46 @@
             });
 
             // 3. Otwieranie okna usunięcia konta
+            const inputPotwierdzUsun = document.getElementById("potwierdzenie-usuniecia-input");
+            const btnPotwierdzUsun = document.getElementById("btn-potwierdz-usuniecie");
+
+            inputPotwierdzUsun?.addEventListener("input", () => {
+                const wpisane = (inputPotwierdzUsun.value || "").trim().toUpperCase();
+                if (wpisane === "USUŃ") {
+                    btnPotwierdzUsun.disabled = false;
+                    btnPotwierdzUsun.style.opacity = "1";
+                    btnPotwierdzUsun.style.cursor = "pointer";
+                } else {
+                    btnPotwierdzUsun.disabled = true;
+                    btnPotwierdzUsun.style.opacity = "0.45";
+                    btnPotwierdzUsun.style.cursor = "not-allowed";
+                }
+            });
+
             document.getElementById("btn-usun-konto")?.addEventListener("click", () => {
                 modalTytul.textContent = "Usuń konto";
                 formEdycja.style.display = "none";
                 blokWyloguj.style.display = "none";
                 blokUsunKonto.style.display = "block";
+                if (inputPotwierdzUsun) inputPotwierdzUsun.value = "";
+                if (btnPotwierdzUsun) {
+                    btnPotwierdzUsun.disabled = true;
+                    btnPotwierdzUsun.style.opacity = "0.45";
+                    btnPotwierdzUsun.style.cursor = "not-allowed";
+                    btnPotwierdzUsun.textContent = "Potwierdź usunięcie";
+                }
                 modal.style.display = "flex";
+                setTimeout(() => inputPotwierdzUsun?.focus(), 100);
             });
 
             document.getElementById("form-usun-konto")?.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 if (!aktualnyUser) return;
+                const wpisane = (inputPotwierdzUsun?.value || "").trim().toUpperCase();
+                if (wpisane !== "USUŃ") {
+                    alert("Wpisz słowo USUŃ, aby potwierdzić.");
+                    return;
+                }
 
                 const btnUsun = document.getElementById("btn-potwierdz-usuniecie");
                 btnUsun.disabled = true;

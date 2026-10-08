@@ -38,17 +38,6 @@
                     <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
                     <div class="sekcja-formularza">
                         <h3 class="sekcja-tytul">UCZESTNICY</h3>
-                        <div class="wiersz-odstep">
-                            <label>
-                                <h4>ILOŚĆ GRACZY:</h4>
-                                <select id="ilosc-graczy" class="wspolny-input">
-                                    <option value="1">1</option>
-                                    <option value="2" selected>2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </label>
-                        </div>
                         <div id="kontener-nazw-graczy"></div>
                     </div>
                     <div class="sekcja-formularza">
@@ -317,21 +306,14 @@
             inputOd.addEventListener("input", wyczyscCheckboxyDlaCustom);
             inputDo.addEventListener("input", wyczyscCheckboxyDlaCustom);
 
-            function generujPolaGraczy() {
-                const ilosc = parseInt(inputIloscGraczy.value);
-                kontenerNazwGraczy.innerHTML = "";
-                for (let i = 1; i <= ilosc; i++) {
-                    kontenerNazwGraczy.innerHTML += `
-                    <label>
-                        <h4>Gracz ${i}:</h4>
-                        <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" />
-                    </label>
-                `;
-                }
-                kontenerNazwGraczy.style.gridTemplateColumns = ilosc === 1 ? "1fr" : "1fr 1fr";
+            // Inicjalizacja wspólnego modułu wyboru graczy (bez DartBota)
+            if (window.PlayerSetupModule) {
+                window.PlayerSetupModule.init();
+            } else {
+                window.addEventListener("DOMContentLoaded", () => {
+                    if (window.PlayerSetupModule) window.PlayerSetupModule.init();
+                });
             }
-            inputIloscGraczy.addEventListener("change", generujPolaGraczy);
-            generujPolaGraczy();
 
             btnZacznijGrac.addEventListener("click", () => {
                 tytulStrony.style.display = "none";
@@ -366,13 +348,14 @@
                 }
 
                 listaGraczy = [];
-                document.querySelectorAll(".input-nazwa-gracza").forEach((inp, idx) => {
-                    let nazwa = inp.value.trim();
-                    if (nazwa === "") nazwa = `Gracz ${idx + 1}`;
+                const graczeImiona = window.PlayerSetupModule ? window.PlayerSetupModule.getPlayers() : [];
+                const listaDoGry = graczeImiona.length > 0 ? graczeImiona : ["Gracz 1"];
 
+                listaDoGry.forEach((nazwa, idx) => {
+                    let n = nazwa && nazwa.trim() !== "" ? nazwa.trim() : `Gracz ${idx + 1}`;
                     listaGraczy.push({
                         id: idx,
-                        nazwa: nazwa,
+                        nazwa: n,
                         punkty: 0,
                         iloscTrafien: 0,
                         calkowitaIloscRzutow: 0,
@@ -608,16 +591,47 @@
                 });
 
                 btnZakladkaOgolne.click();
+
+                // Zapis statystyk graczy (w tym trafień każdego sektora) do bazy danych
+                try {
+                    const localUser = typeof odczytajZalogowanegoZStorage === "function" ? odczytajZalogowanegoZStorage() : null;
+                    if (window.StatsManager && (localUser || window.supabaseKlient || window.supabaseClient)) {
+                        const supa = window.supabaseKlient || window.supabaseClient;
+                        (async () => {
+                            let userId = localUser?.id;
+                            if (!userId && supa?.auth) {
+                                const { data } = await supa.auth.getSession();
+                                userId = data?.session?.user?.id;
+                            }
+                            if (!userId) return;
+
+                            // Znajdź gracza odpowiadającego zalogowanemu użytkownikowi (lub gracz 1 w grze lokalnej)
+                            const mojGracz = listaGraczy[0];
+                            if (mojGracz) {
+                                await StatsManager.zaktualizujDoubles(userId, {
+                                    czyWygrana: zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa,
+                                    rzutySuma: mojGracz.calkowitaIloscRzutow || 0,
+                                    trafieniaSuma: mojGracz.iloscTrafien || 0,
+                                    rzutyNaLiczbe: mojGracz.rzutyNaLiczbe || {}
+                                });
+                            }
+                        })().catch((err) => console.warn("Błąd zapisu statystyk doubles:", err));
+                    }
+                } catch (eSave) {
+                    console.warn("Pominięto zapis statystyk doubles:", eSave);
+                }
             }
 
             btnRestart.addEventListener("click", () => {
                 ekranWynikowy.style.display = "none";
                 sekcjaUstawien.style.display = "block";
                 btnPowrotDoGier.style.display = "inline-flex";
-                generujPolaGraczy();
+                if (window.PlayerSetupModule) window.PlayerSetupModule.init();
             });
         </script>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./player-setup.js" defer></script>
+        <script src="./stats-manager.js" defer></script>
         <script src="./menu.js" defer></script>
     </body>
 </html>

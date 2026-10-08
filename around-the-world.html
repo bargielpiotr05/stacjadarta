@@ -38,17 +38,6 @@
                     <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
                     <div class="sekcja-formularza">
                         <h3 class="sekcja-tytul">UCZESTNICY</h3>
-                        <div class="wiersz-odstep">
-                            <label>
-                                <h4>ILOŚĆ GRACZY:</h4>
-                                <select id="ilosc-graczy" class="wspolny-input">
-                                    <option value="1">1</option>
-                                    <option value="2" selected>2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </label>
-                        </div>
                         <div id="kontener-nazw-graczy"></div>
                     </div>
 
@@ -142,7 +131,6 @@
         <script>
             // Elementy Formularza
             const formularzKontener = document.getElementById("formularz-kontener");
-            const iloscGraczySelect = document.getElementById("ilosc-graczy");
             const zakonczenieGrySelect = document.getElementById("zakonczenie-gry");
             const trybSelect = document.getElementById("tryb");
             const tytulStrony = document.getElementById("tytul-strony");
@@ -185,17 +173,13 @@
             let lotkiWKolejce = 3;
             let historiaGry = [];
 
-            function generujPolaNazwGraczy(ilosc) {
-                const kontener = document.getElementById("kontener-nazw-graczy");
-                kontener.innerHTML = "";
-                for (let i = 1; i <= ilosc; i++) {
-                    const label = document.createElement("label");
-                    label.innerHTML = `
-                        <h4>GRACZ ${i}:</h4>
-                        <input type="text" id="gracz-${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}" />
-                    `;
-                    kontener.appendChild(label);
-                }
+            // Inicjalizacja modułu wyboru graczy (bez DartBota)
+            if (window.PlayerSetupModule) {
+                window.PlayerSetupModule.init();
+            } else {
+                window.addEventListener("DOMContentLoaded", () => {
+                    if (window.PlayerSetupModule) window.PlayerSetupModule.init();
+                });
             }
 
             function generujSekwencje(tryb, zakonczenie) {
@@ -215,15 +199,10 @@
                 return baza;
             }
 
-            iloscGraczySelect.addEventListener("change", (event) => {
-                generujPolaNazwGraczy(parseInt(event.target.value));
-            });
-            generujPolaNazwGraczy(2);
-
             formUstawienia.addEventListener("submit", (event) => {
                 event.preventDefault();
 
-                const iloscGraczy = parseInt(iloscGraczySelect.value);
+                const graczeImiona = window.PlayerSetupModule ? window.PlayerSetupModule.getPlayers() : [];
                 const tryb = trybSelect.value;
                 const zakonczenie = zakonczenieGrySelect.value;
 
@@ -239,14 +218,15 @@
 
                 kontenerKartGraczy.innerHTML = "";
 
-                for (let i = 1; i <= iloscGraczy; i++) {
-                    let inputNazwy = document.getElementById(`gracz-${i}`);
-                    let nazwa = inputNazwy && inputNazwy.value.trim() !== "" ? inputNazwy.value.trim() : `Gracz ${i}`;
+                const listaNazw = graczeImiona.length > 0 ? graczeImiona : ["Gracz 1", "Gracz 2"];
+                listaNazw.forEach((nazwa, idx) => {
+                    const i = idx + 1;
+                    const finalNazwa = nazwa && nazwa.trim() !== "" ? nazwa.trim() : `Gracz ${i}`;
                     let sekwencja = generujSekwencje(tryb, zakonczenie);
 
                     gracze.push({
                         id: i,
-                        nazwa: nazwa,
+                        nazwa: finalNazwa,
                         sekwencja: sekwencja,
                         aktualnyIndeksCelu: 0,
                         rzuty: 0,
@@ -270,8 +250,8 @@
                             </div>
                         </div>
                     `;
-                }
-
+                });
+                
                 formularzKontener.style.display = "none";
                 tytulStrony.style.display = "none";
                 powrotDoGier.style.display = "none";
@@ -470,6 +450,41 @@
                 `;
 
                 ekranWygranej.style.display = "flex";
+
+                // Zapis statystyk do bazy danych
+                try {
+                    const mojGracz = gracze[0];
+                    const supa = window.supabaseKlient || window.supabaseClient;
+                    (async () => {
+                        let userId = null;
+                        if (supa?.auth) {
+                            const { data } = await supa.auth.getSession();
+                            userId = data?.session?.user?.id;
+                        }
+                        if (!userId) {
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const k = localStorage.key(i);
+                                if (k && (k.startsWith("sb-") && k.endsWith("-auth-token") || k === "supabase.auth.token")) {
+                                    const parsed = JSON.parse(localStorage.getItem(k) || "{}");
+                                    userId = parsed?.user?.id;
+                                    if (userId) break;
+                                }
+                            }
+                        }
+                        if (!userId || !mojGracz) return;
+
+                        if (window.StatsManager) {
+                            const czyWygralem = wygranyGracz && (wygranyGracz.id === mojGracz.id || wygranyGracz.nazwa === mojGracz.nazwa);
+                            const trafienia = (mojGracz.singles || 0) + (mojGracz.doubles || 0) + (mojGracz.triples || 0);
+                            await StatsManager.zaktualizujAroundTheWorld(userId, {
+                                czyWygrana: czyWygralem,
+                                czyUkonczyl: mojGracz.aktualnyIndeksCelu >= mojGracz.sekwencja.length,
+                                rzuty: mojGracz.rzuty || 0,
+                                trafienia: trafienia
+                            });
+                        }
+                    })().catch((err) => console.warn("Błąd zapisu statystyk Around The World:", err));
+                } catch (e) {}
             }
 
             btnNowaGra.addEventListener("click", () => {
@@ -477,9 +492,12 @@
                 formularzKontener.style.display = "block";
                 tytulStrony.style.display = "block";
                 powrotDoGier.style.display = "inline-flex";
+                if (window.PlayerSetupModule) window.PlayerSetupModule.init();
             });
         </script>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./player-setup.js" defer></script>
+        <script src="./stats-manager.js" defer></script>
         <script src="./menu.js" defer></script>
     </body>
 </html>

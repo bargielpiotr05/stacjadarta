@@ -324,7 +324,7 @@ export default {
       const cleanProfileId = profileId.trim();
       const isUuid = /^[0-9a-f-]{36}$/i.test(cleanProfileId);
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-      upstreamUrl.searchParams.set("select", "id,nazwa_gracza,avatar_url,utworzono,srednia,srednia_9_lotek,ilosc_180,rozegrane_mecze,wygrane_mecze,barele,shafty,groty,tarcza,auto_score,druzyna");
+      upstreamUrl.searchParams.set("select", "id,nazwa_gracza,avatar_url,utworzono,srednia,srednia_9_lotek,ilosc_180,rozegrane_mecze,wygrane_mecze,barele,shafty,groty,tarcza,auto_score,druzyna,stats_by_game");
       if (isUuid) {
         upstreamUrl.searchParams.set("id", `eq.${cleanProfileId}`);
       } else {

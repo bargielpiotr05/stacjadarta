@@ -144,7 +144,7 @@
             grid-area: zdjecie;
             width: 300px;
             height: 400px;
-            object-fit: contain;
+            object-fit: cover;
             align-self: start;
             margin: 0;
             border-radius: 8px;

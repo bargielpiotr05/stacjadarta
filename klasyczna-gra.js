@@ -1,0 +1,3027 @@
+// =========================================================================
+// STACJA DARTA - GŁÓWNY SILNIK MECZOWY I ROZGRYWKI KLASYCZNEJ (501 / 301)
+// =========================================================================
+
+            const checkouts = {
+                170: "T20 T20 BULL",
+                167: "T20 T19 BULL",
+                164: "T20 T18 BULL",
+                161: "T20 T17 BULL",
+                160: "T20 T20 D20",
+                158: "T20 T20 D19",
+                157: "T20 T19 D20",
+                156: "T20 T20 D18",
+                155: "T20 T19 D19",
+                154: "T20 T18 D20",
+                153: "T20 T19 D18",
+                152: "T20 T20 D16",
+                151: "T20 T17 D20",
+                150: "BULL BULL BULL",
+                149: "T20 T19 D16",
+                148: "T20 T16 D20",
+                147: "T20 T17 D18",
+                146: "T20 T18 D16",
+                145: "T20 T15 D20",
+                144: "T20 T20 D12",
+                143: "T20 T17 D16",
+                142: "T20 T14 D20",
+                141: "T20 T19 D12",
+                140: "T20 T16 D16",
+                139: "T19 T14 D20",
+                138: "T20 T18 D12",
+                137: "T19 T16 D16",
+                136: "T20 T20 D8",
+                135: "T20 T17 D12",
+                134: "T20 T14 D16",
+                133: "T20 T19 D8",
+                132: "T20 T16 D12",
+                131: "T20 T13 D16",
+                130: "T20 T20 D5",
+                129: "T19 T16 D12",
+                128: "T18 T14 D16",
+                127: "T20 T17 D8",
+                126: "T19 T19 D6",
+                125: "25 T20 D20",
+                124: "T20 T16 D8",
+                123: "T19 T16 D9",
+                122: "T18 T20 D4",
+                121: "T17 T10 D20",
+                120: "T20 20 D20",
+                119: "T19 T10 D16",
+                118: "T20 18 D20",
+                117: "T20 17 D20",
+                116: "T20 16 D20",
+                115: "T20 15 D20",
+                114: "T20 14 D20",
+                113: "T20 13 D20",
+                112: "T20 12 D20",
+                111: "T20 19 D16",
+                110: "T20 18 D16",
+                109: "T19 20 D16",
+                108: "T20 16 D16",
+                107: "T19 18 D16",
+                106: "T20 14 D16",
+                105: "T19 16 D16",
+                104: "T18 18 D16",
+                103: "T20 3 D20",
+                102: "T20 10 D16",
+                101: "T20 1 D20",
+                100: "T20 D20",
+                99: "T19 10 D16",
+                98: "T20 D19",
+                97: "T19 D20",
+                96: "T20 D18",
+                95: "T19 D19",
+                94: "T18 D20",
+                93: "T19 D18",
+                92: "T20 D16",
+                91: "T17 D20",
+                90: "T20 D15",
+                89: "T19 D16",
+                88: "T16 D20",
+                87: "T17 D18",
+                86: "T18 D16",
+                85: "T15 D20",
+                84: "T20 D12",
+                83: "T17 D16",
+                82: "T14 D20",
+                81: "T19 D12",
+                80: "T20 D10",
+                79: "T19 D11",
+                78: "T18 D12",
+                77: "T19 D10",
+                76: "T20 D8",
+                75: "T17 D12",
+                74: "T14 D16",
+                73: "T19 D8",
+                72: "T16 D12",
+                71: "T13 D16",
+                70: "T10 D20",
+                69: "T15 D12",
+                68: "T20 D4",
+                67: "T17 D8",
+                66: "T10 D18",
+                65: "T19 D4",
+                64: "T16 D8",
+                63: "T13 D12",
+                62: "T10 D16",
+                61: "T15 D8",
+                60: "20 D20",
+                59: "19 D20",
+                58: "18 D20",
+                57: "17 D20",
+                56: "16 D20",
+                55: "15 D20",
+                54: "14 D20",
+                53: "13 D20",
+                52: "20 D16",
+                51: "19 D16",
+                50: "18 D16",
+                49: "17 D16",
+                48: "16 D16",
+                47: "15 D16",
+                46: "14 D16",
+                45: "13 D16",
+                44: "12 D16",
+                43: "11 D16",
+                42: "10 D16",
+                41: "9 D16",
+                40: "D20",
+                39: "7 D16",
+                38: "D19",
+                37: "5 D16",
+                36: "D18",
+                35: "3 D16",
+                34: "D17",
+                33: "1 D16",
+                32: "D16",
+                31: "7 D12",
+                30: "D15",
+                29: "5 D12",
+                28: "D14",
+                27: "3 D12",
+                26: "D13",
+                25: "1 D12",
+                24: "D12",
+                23: "7 D8",
+                22: "D11",
+                21: "5 D8",
+                20: "D10",
+                19: "3 D8",
+                18: "D9",
+                17: "1 D8",
+                16: "D8",
+                15: "7 D4",
+                14: "D7",
+                13: "5 D4",
+                12: "D6",
+                11: "3 D4",
+                10: "D5",
+                9: "1 D4",
+                8: "D4",
+                7: "3 D2",
+                6: "D3",
+                5: "1 D2",
+                4: "D2",
+                3: "1 D1",
+                2: "D1",
+            };
+
+            function getCheckout(points) {
+                return checkouts[points] || "";
+            }
+            const niemozliweZamkniecia = [169, 168, 166, 165, 163, 162, 159];
+
+            const kontenerNazwGraczy = document.getElementById("kontener-nazw-graczy");
+
+            const wlaczLimitLotekCheckbox = document.getElementById("wlacz-limit-lotek");
+            const limitLotekWartoscInput = document.getElementById("limit-lotek-wartosc");
+
+            wlaczLimitLotekCheckbox.addEventListener("change", () => {
+                limitLotekWartoscInput.disabled = !wlaczLimitLotekCheckbox.checked;
+                if (wlaczLimitLotekCheckbox.checked) {
+                    limitLotekWartoscInput.focus();
+                }
+            });
+
+            // Szybki, synchroniczny odczyt danych sesji z localStorage (błyskawiczny na iOS / telefonach)
+            function odczytajZalogowanegoZStorage() {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                const u = parsed?.user;
+                                if (u) {
+                                    const meta = u.user_metadata || {};
+                                    const nick = meta.nazwa_gracza || meta.username || (u.email ? u.email.split("@")[0] : "");
+                                    return {
+                                        id: u.id,
+                                        nick: (nick || "").trim(),
+                                        user: u,
+                                        user_metadata: meta,
+                                        access_token: parsed.access_token,
+                                        refresh_token: parsed.refresh_token,
+                                        expires_at: parsed.expires_at,
+                                        storage_key: klucz,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            const wstepnyZalogowany = odczytajZalogowanegoZStorage();
+            let zalogowanyNickGlobalny = wstepnyZalogowany?.nick || "";
+            let zalogowanyUserIdGlobalny = wstepnyZalogowany?.id || null;
+
+            // Startujemy z wykrytym kontem lub 'Gracz 1'
+            let graczeUczestnicy = [zalogowanyNickGlobalny || "Gracz 1"];
+            let czyBotWlaczony = false;
+            try {
+                window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+            } catch (e) {
+                window.idZnajomychWGrze = {};
+            }
+
+            function renderujPolaUczestnikow() {
+                const kontener = document.getElementById("kontener-nazw-graczy");
+                if (!kontener) return;
+                kontener.innerHTML = "";
+
+                const moznaUsunac = graczeUczestnicy.length > 1 || czyBotWlaczony;
+
+                // Tablica imion znajomych przypiętych do UUID
+                const nickiZnajomychWGrze = Object.keys(window.idZnajomychWGrze || {});
+
+                // 1. Pola graczy z blokadą edycji własnego profilu ORAZ profili znajomych
+                graczeUczestnicy.forEach((nazwa, idx) => {
+                    const nr = idx + 1;
+
+                    // Wykrywamy, czy ten slot to zalogowany użytkownik LUB dodany znajomy
+                    const czyToMojeKonto = zalogowanyNickGlobalny !== "" && nazwa === zalogowanyNickGlobalny;
+                    const czyToKontoZnajomego = nickiZnajomychWGrze.includes(nazwa) || nickiZnajomychWGrze.some((n) => n.toLowerCase() === (nazwa || "").toLowerCase());
+                    const czyZablokowaneEdycja = czyToMojeKonto || czyToKontoZnajomego;
+
+                    // DODANE: pointer-events: none całkowicie blokuje dotyk na telefonie
+                    const atrybutyInputa = czyZablokowaneEdycja ? 'readonly style="opacity: 0.7; cursor: not-allowed; pointer-events: none;" title="Oficjalnego konta nie można edytować ręcznie"' : `oninput="graczeUczestnicy[${idx}] = this.value"`;
+
+                    kontener.innerHTML += `
+                        <label>
+                            <h4>Gracz ${nr}:</h4>
+                            <div id="default-dodaj-gracza">
+                                <input type="text" id="nazwa-gracza${nr}" 
+                                       class="wspolny-input input-nazwa-gracza" 
+                                       placeholder="Gracz ${nr}" value="${nazwa}"
+                                       ${atrybutyInputa}>
+                                ${moznaUsunac ? `<button type="button" class="wspolny-input usun-pole-gracza" style="${czyZablokowaneEdycja ? "opacity: 0.8;" : ""}" onclick="usunGraczaZeSlotu(${idx})">✖</button>` : ""}
+                            </div>
+                        </label>
+                    `;
+                });
+
+                // Kafelek bota
+                if (czyBotWlaczony) {
+                    const botNr = graczeUczestnicy.length + 1;
+                    const avg = document.getElementById("srednia-bota")?.value || "50";
+                    kontener.innerHTML += `
+                        <label>
+                            <h4>Gracz ${botNr} (Bot):</h4>
+                            <div id="default-dodaj-gracza">
+                                <button type="button" id="btn-dartbot" class="wspolny-input input-nazwa-gracza" onclick="otworzPopupDodajGracza('gracz-dartbot')">
+                                    DartBot (Śr: ${avg})
+                                </button>
+                                <button type="button" class="wspolny-input usun-pole-gracza" onclick="usunBota()">✖</button>
+                            </div>
+                        </label>
+                    `;
+                }
+
+                // Czysty kafelek "+ Dodaj gracza"
+                const lacznaLiczba = graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0);
+                if (lacznaLiczba < 4) {
+                    kontener.innerHTML += `
+                        <label style="display: flex; flex-direction: column; justify-content: flex-end;">
+                            <h4>&nbsp;</h4>
+                            <button type="button" class="wspolny-input btn-dodaj-kolejnego-gracza" onclick="otworzPopupDodajGracza('gracz-znajomi')">
+                                + Dodaj gracza
+                            </button>
+                        </label>
+                    `;
+                }
+            }
+
+            // Natychmiastowe wyrenderowanie kafelków graczy (0ms opóźnienia, zabezpiecza przed znikaniem na iOS)
+            renderujPolaUczestnikow();
+
+            async function uzyskajSwiezyTokenAuth(klient) {
+                const k = klient || window.supabaseClient || window.supabaseKlient;
+                let rawSession = null;
+                let storageKey = null;
+
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const klucz = localStorage.key(i);
+                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
+                            const raw = localStorage.getItem(klucz);
+                            if (raw) {
+                                const parsed = JSON.parse(raw);
+                                if (parsed && (parsed.access_token || parsed.user)) {
+                                    rawSession = parsed;
+                                    storageKey = klucz;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                const nowSec = Math.floor(Date.now() / 1000);
+                const czyWygasl = !rawSession?.expires_at || nowSec >= rawSession.expires_at - 60;
+
+                if (rawSession && czyWygasl && rawSession.refresh_token) {
+                    console.log("Token sesji wygasa/wygasł - automatyczne odświeżanie...");
+                    try {
+                        const newAuth = await wyslijDoSupabase("/auth/v1/token?grant_type=refresh_token", {
+                            method: "POST",
+                            body: { refresh_token: rawSession.refresh_token },
+                        });
+                        if (newAuth && newAuth.access_token) {
+                            rawSession.access_token = newAuth.access_token;
+                            rawSession.refresh_token = newAuth.refresh_token || rawSession.refresh_token;
+                            rawSession.expires_at = newAuth.expires_at || nowSec + (newAuth.expires_in || 3600);
+                            if (newAuth.user) rawSession.user = newAuth.user;
+                            if (storageKey) {
+                                try {
+                                    localStorage.setItem(storageKey, JSON.stringify(rawSession));
+                                } catch (e) {}
+                            }
+                            if (k?.auth?.setSession) {
+                                try {
+                                    k.auth
+                                        .setSession({
+                                            access_token: rawSession.access_token,
+                                            refresh_token: rawSession.refresh_token,
+                                        })
+                                        .catch(() => {});
+                                } catch (e) {}
+                            }
+                            return rawSession.access_token;
+                        }
+                    } catch (eRefDirect) {
+                        console.warn("Refresh token błąd:", eRefDirect);
+                    }
+
+                    if (k?.auth?.refreshSession) {
+                        try {
+                            const { data: refData } = await k.auth.refreshSession();
+                            if (refData?.session?.access_token) {
+                                return refData.session.access_token;
+                            }
+                        } catch (eRefSdk) {}
+                    }
+                }
+
+                if (rawSession?.access_token && !czyWygasl) {
+                    return rawSession.access_token;
+                }
+
+                if (k?.auth?.getSession) {
+                    try {
+                        const { data: sData } = await k.auth.getSession();
+                        if (sData?.session?.access_token) return sData.session.access_token;
+                    } catch (e) {}
+                }
+
+                return rawSession?.access_token || null;
+            }
+
+            async function pobierzAktywnaSesjeSupabase() {
+                const klient = window.supabaseClient || window.supabaseKlient;
+
+                try {
+                    let session = null;
+                    if (klient?.auth) {
+                        const { data, error } = await klient.auth.getSession();
+                        if (!error && data?.session) session = data.session;
+                    }
+
+                    const nowSec = Math.floor(Date.now() / 1000);
+                    const czyWygasla = session && (!session.expires_at || nowSec >= session.expires_at - 60);
+
+                    if ((!session?.user || czyWygasla) && klient?.auth?.refreshSession) {
+                        try {
+                            const refreshed = await klient.auth.refreshSession();
+                            if (refreshed?.data?.session) {
+                                session = refreshed.data.session;
+                            }
+                        } catch (eRef) {}
+                    }
+
+                    if (!session || !session.access_token || czyWygasla) {
+                        const swiezyToken = await uzyskajSwiezyTokenAuth(klient);
+                        const storageUser = odczytajZalogowanegoZStorage();
+                        if (swiezyToken && storageUser) {
+                            session = {
+                                access_token: swiezyToken,
+                                refresh_token: storageUser.refresh_token,
+                                expires_at: storageUser.expires_at || nowSec + 3600,
+                                user: storageUser.user,
+                            };
+                        }
+                    }
+
+                    return session || null;
+                } catch (error) {
+                    console.warn("Błąd aktywacji sesji w klasie:", error);
+                    return null;
+                }
+            }
+
+            function zLimitemCzasu(obietnica, etap) {
+                let timerId;
+                const timeout = new Promise((resolve, reject) => {
+                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), 12000);
+                });
+                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
+            }
+
+            async function pobierzWierszeZnajomychApi(tabela, parametry, etap, accessToken = null) {
+                const klient = window.supabaseClient || window.supabaseKlient;
+                const apiKey = klient?.supabaseKey || SUPA_KEY;
+
+                const wyslij = async (token) => {
+                    // 1. Próba przez Cloudflare Worker endpoint /api/supabase-read
+                    try {
+                        const response = await fetch("/api/supabase-read", {
+                            method: "POST",
+                            headers: { apikey: apiKey, "Content-Type": "application/json" },
+                            body: JSON.stringify({ table: tabela, params: parametry, accessToken: token }),
+                            cache: "no-store",
+                        });
+                        if (response.ok) {
+                            return await response.json();
+                        }
+                    } catch (eProxy) {}
+
+                    // 2. Próba przez same-origin proxy wyslijDoSupabase
+                    try {
+                        const qs = new URLSearchParams(parametry || {}).toString();
+                        const proxyRes = await wyslijDoSupabase(`/rest/v1/${tabela}?${qs}`, {
+                            accessToken: token,
+                        });
+                        if (Array.isArray(proxyRes)) {
+                            return proxyRes;
+                        }
+                    } catch (eProxyReq) {}
+
+                    // 3. Bezpośredni REST fetch z Supabase (fallback)
+                    try {
+                        const qs = new URLSearchParams(parametry || {}).toString();
+                        const headers = {
+                            apikey: apiKey,
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        };
+                        const directRes = await fetch(`${SUPA_URL}/rest/v1/${tabela}?${qs}`, {
+                            headers,
+                            cache: "no-store",
+                        });
+                        if (directRes.ok) {
+                            return await directRes.json();
+                        }
+                    } catch (eDirect) {}
+
+                    throw new Error(`Nie udało się pobrać danych z tabeli ${tabela}`);
+                };
+
+                try {
+                    return await zLimitemCzasu(wyslij(accessToken), etap);
+                } catch (error) {
+                    if (!accessToken || !/JWT issued at future/i.test(error.message)) throw error;
+                    const refreshed = await zLimitemCzasu(klient?.auth?.refreshSession(), "odświeżanie sesji znajomych");
+                    const freshToken = refreshed?.data?.session?.access_token;
+                    if (!freshToken) throw error;
+                    return zLimitemCzasu(wyslij(freshToken), etap);
+                }
+            }
+
+            // 2. OBSŁUGA POPUPU DODAWANIA GRACZA
+            window.otworzPopupDodajGracza = function (domyslnaZakladka = "gracz-znajomi") {
+                const popup = document.getElementById("popup-dodaj-gracza");
+                if (!popup) return;
+
+                const inputGosc = document.getElementById("nazwa-gracza-popup");
+                if (inputGosc) inputGosc.value = `Gracz ${graczeUczestnicy.length + 1}`;
+
+                // Blokada wizualna bota
+                const btnBot = document.querySelector('.btn-opcja-gracza[data-target="gracz-dartbot"]');
+                if (btnBot) {
+                    btnBot.style.opacity = czyBotWlaczony ? "0.4" : "1";
+                    btnBot.style.cursor = czyBotWlaczony ? "not-allowed" : "pointer";
+                }
+
+                // Sprawdzanie stanu konta dla zakładki "Ty" i "Znajomi"
+                const czyZalogowany = !!zalogowanyNickGlobalny;
+                const czyJuzWGrze = czyZalogowany && graczeUczestnicy.includes(zalogowanyNickGlobalny);
+
+                // Bezpiecznik: Jeśli gracz nie jest zalogowany, wymuś zakładkę "Gość"
+                if (!czyZalogowany && (domyslnaZakladka === "gracz-znajomi" || domyslnaZakladka === "gracz-ty")) {
+                    domyslnaZakladka = "gracz-gosc";
+                }
+
+                const divZalogowany = document.getElementById("gracz-ty-zalogowany");
+                const divNiezalogowany = document.getElementById("gracz-ty-niezalogowany");
+                const inputTy = document.getElementById("nazwa-gracza-ty");
+
+                if (czyZalogowany) {
+                    if (divZalogowany) divZalogowany.style.display = "block";
+                    if (divNiezalogowany) divNiezalogowany.style.display = "none";
+                    if (inputTy) inputTy.value = zalogowanyNickGlobalny;
+                } else {
+                    if (divZalogowany) divZalogowany.style.display = "none";
+                    if (divNiezalogowany) divNiezalogowany.style.display = "block";
+                }
+
+                // Blokada wizualna zakładek
+                const btnTy = document.querySelector('.btn-opcja-gracza[data-target="gracz-ty"]');
+                if (btnTy) {
+                    const zablokujTy = !czyZalogowany || czyJuzWGrze;
+                    btnTy.style.opacity = zablokujTy ? "0.4" : "1";
+                    btnTy.style.cursor = zablokujTy ? "not-allowed" : "pointer";
+                }
+
+                const btnZnajomi = document.querySelector('.btn-opcja-gracza[data-target="gracz-znajomi"]');
+                if (btnZnajomi) {
+                    btnZnajomi.style.opacity = czyZalogowany ? "1" : "0.4";
+                    btnZnajomi.style.cursor = czyZalogowany ? "pointer" : "not-allowed";
+                }
+
+                // Jeśli otwieramy znajomych, od razu pobierz ich z bazy
+                if (domyslnaZakladka === "gracz-znajomi") {
+                    if (typeof pobierzZnajomychDoPopupu === "function") {
+                        pobierzZnajomychDoPopupu();
+                    }
+                }
+
+                przelaczZakladkePopupu(domyslnaZakladka);
+                popup.style.display = "flex";
+
+                if (domyslnaZakladka === "gracz-gosc" && inputGosc) {
+                    inputGosc.focus();
+                    inputGosc.select();
+                }
+            };
+
+            window.zamknijPopupDodajGracza = function () {
+                document.getElementById("popup-dodaj-gracza").style.display = "none";
+            };
+
+            function przelaczZakladkePopupu(targetId) {
+                document.querySelectorAll(".btn-opcja-gracza").forEach((b) => {
+                    b.classList.toggle("aktywna-opcja", b.getAttribute("data-target") === targetId);
+                });
+                document.querySelectorAll(".zakladka-dodaj-tresc").forEach((div) => {
+                    div.style.display = div.id === targetId ? "flex" : "none";
+                });
+            }
+
+            function podepnijZakladkiPopupu() {
+                document.querySelectorAll(".btn-opcja-gracza").forEach((btn) => {
+                    btn.onclick = () => {
+                        const target = btn.getAttribute("data-target");
+
+                        if (target === "gracz-dartbot" && czyBotWlaczony) {
+                            pokazCustomowyAlert("DartBot jest już w grze!");
+                            return;
+                        }
+                        if (target === "gracz-ty" && zalogowanyNickGlobalny && graczeUczestnicy.includes(zalogowanyNickGlobalny)) {
+                            pokazCustomowyAlert("Jesteś już dodany do tej gry!");
+                            return;
+                        }
+                        if ((target === "gracz-ty" || target === "gracz-znajomi") && !zalogowanyNickGlobalny) {
+                            pokazCustomowyAlert("Musisz być zalogowany, aby użyć tej opcji!");
+                            return;
+                        }
+
+                        if (target === "gracz-znajomi") {
+                            pobierzZnajomychDoPopupu();
+                        }
+
+                        przelaczZakladkePopupu(target);
+                    };
+                });
+            }
+            podepnijZakladkiPopupu();
+
+            // NOWA FUNKCJA: Pobieranie znajomych do popupu
+            window.pobierzZnajomychDoPopupu = async function () {
+                const kontener = document.getElementById("lista-znajomych-popup");
+                if (!kontener) return;
+
+                kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Sprawdzam znajomych...</p>`;
+
+                const klient = window.supabaseClient || window.supabaseKlient;
+                if (!klient?.auth) {
+                    kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Brak połączenia z kontem.</p>`;
+                    return;
+                }
+
+                try {
+                    const session = await zLimitemCzasu(pobierzAktywnaSesjeSupabase(), "odczyt sesji znajomych");
+                    const userId = session?.user?.id;
+                    if (!userId) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Zaloguj się, aby zobaczyć znajomych.</p>`;
+                        return;
+                    }
+
+                    const wyslane = await pobierzWierszeZnajomychApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszajacy_id: `eq.${userId}` }, "pobieranie wysłanych relacji znajomych", session.access_token);
+
+                    const otrzymane = await pobierzWierszeZnajomychApi("znajomi", { select: "id,zapraszajacy_id,zapraszany_id,status", status: "eq.zaakceptowane", zapraszany_id: `eq.${userId}` }, "pobieranie otrzymanych relacji znajomych", session.access_token);
+
+                    const relacje = [...wyslane, ...otrzymane];
+                    if (!relacje.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    const idsZnajomych = [...new Set(relacje.map((rel) => (rel.zapraszajacy_id === userId ? rel.zapraszany_id : rel.zapraszajacy_id)))].filter(Boolean);
+                    if (!idsZnajomych.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    const profileData = await pobierzWierszeZnajomychApi("profiles", { select: "id,nazwa_gracza,avatar_url,srednia", id: `in.(${idsZnajomych.join(",")})` }, "pobieranie profili znajomych");
+
+                    const profilePoId = new Map((profileData || []).map((profil) => [profil.id, profil]));
+                    const znajomi = relacje
+                        .map((rel) => {
+                            const idZnajomego = rel.zapraszajacy_id === userId ? rel.zapraszany_id : rel.zapraszajacy_id;
+                            return profilePoId.get(idZnajomego);
+                        })
+                        .filter(Boolean);
+
+                    if (!znajomi.length) {
+                        kontener.innerHTML = `<p style="color:#94a3b8; font-size: 14px; text-align: center;">Nie masz jeszcze znajomych na koncie.</p>`;
+                        return;
+                    }
+
+                    window.znajomiPopupMap = {};
+                    let html = '<div style="display:flex; flex-direction:column; gap:10px; max-height:min(55vh, 460px); overflow-y:auto; padding-right:5px;">';
+                    znajomi.forEach((znajomy) => {
+                        window.znajomiPopupMap[znajomy.id] = znajomy;
+                        const juzDodan = graczeUczestnicy.some((g) => (g || "").toLowerCase() === (znajomy.nazwa_gracza || "").toLowerCase());
+                        const safeNick = (znajomy.nazwa_gracza || "").replace(/'/g, "\\'");
+
+                        html += `
+                            <div style="display:flex; align-items:center; justify-content:space-between; background:var(--primary-color-lighter); padding:10px; border-radius:8px; border:1px solid var(--primary-color-border);">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <img src="${znajomy.avatar_url || "./loga/logo.png"}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                                    <strong style="color:white; font-size:14px;">${znajomy.nazwa_gracza}</strong>
+                                </div>
+                                <button type="button" class="popup-btn popup-btn-yes" style="padding:10px; max-width:30%; opacity:${juzDodan ? "0.4" : "1"}; cursor:${juzDodan ? "not-allowed" : "pointer"}" 
+                                        onclick="${juzDodan ? "" : `zatwierdzDodanieZnajomego('${znajomy.id}', '${safeNick}')`}">
+                                    ${juzDodan ? "Dodano" : "Dodaj"}
+                                </button>
+                            </div>
+                        `;
+                    });
+                    html += "</div>";
+                    kontener.innerHTML = html;
+                } catch (error) {
+                    console.error("Błąd pobierania znajomych do popupu:", error);
+                    kontener.innerHTML = `<p style="color:#fca5a5; font-size: 14px; text-align: center;">Błąd pobierania znajomych: ${error.message || "spróbuj ponownie"}</p>`;
+                }
+            };
+
+            // NOWA FUNKCJA: Wstawianie znajomego z przypisaniem jego ID
+            window.zatwierdzDodanieZnajomego = function (param1, param2) {
+                if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
+
+                let id = null;
+                let nick = "";
+
+                const p1Str = String(param1 || "").trim();
+                const p2Str = String(param2 || "").trim();
+                const isP1UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p1Str);
+                const isP2UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p2Str);
+
+                if (window.znajomiPopupMap && window.znajomiPopupMap[param1]) {
+                    const z = window.znajomiPopupMap[param1];
+                    id = z.id;
+                    nick = (z.nazwa_gracza || param2 || "Gracz").trim();
+                } else if (window.znajomiPopupMap && window.znajomiPopupMap[param2]) {
+                    const z = window.znajomiPopupMap[param2];
+                    id = z.id;
+                    nick = (z.nazwa_gracza || param1 || "Gracz").trim();
+                } else if (isP1UUID) {
+                    id = p1Str;
+                    nick = p2Str;
+                } else if (isP2UUID) {
+                    id = p2Str;
+                    nick = p1Str;
+                } else {
+                    nick = p1Str || p2Str;
+                }
+
+                if (!nick && !id) return;
+                if (!nick && id) nick = "Znajomy";
+
+                if (graczeUczestnicy.some((g) => (g || "").toLowerCase() === nick.toLowerCase())) return;
+
+                graczeUczestnicy.push(nick);
+
+                if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
+                if (id) {
+                    window.idZnajomychWGrze[nick] = id;
+                    window.idZnajomychWGrze[nick.toLowerCase()] = id;
+                    window.idZnajomychWGrze[nick.trim()] = id;
+                }
+                try {
+                    localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                } catch (e) {}
+
+                // Jeśli id nie jest poprawnym UUID, spróbuj pobrać UUID w tle z bazy profiles
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "");
+                if (!isUUID) {
+                    wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(nick)}&select=id`)
+                        .then((rows) => {
+                            if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                window.idZnajomychWGrze[nick] = rows[0].id;
+                                window.idZnajomychWGrze[nick.toLowerCase()] = rows[0].id;
+                                window.idZnajomychWGrze[nick.trim()] = rows[0].id;
+                                try {
+                                    localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                                } catch (e) {}
+                            }
+                        })
+                        .catch(() => {});
+                }
+
+                zamknijPopupDodajGracza();
+                renderujPolaUczestnikow();
+            };
+
+            // 3. AKCJE WSTAWIANIA Z POPUPU DO SIATKI GRACZY
+            window.zatwierdzDodanieGoscia = function () {
+                if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
+                const inputGosc = document.getElementById("nazwa-gracza-popup");
+                graczeUczestnicy.push(inputGosc?.value.trim() || `Gracz ${graczeUczestnicy.length + 1}`);
+                zamknijPopupDodajGracza();
+                renderujPolaUczestnikow();
+            };
+
+            window.zatwierdzDodanieSiebie = function () {
+                if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
+                const nick = zalogowanyNickGlobalny || "Ja";
+
+                // Żelazna blokada przed duplikatem
+                if (graczeUczestnicy.some((g) => (g || "").toLowerCase() === nick.toLowerCase())) {
+                    pokazCustomowyAlert("Jesteś już dodany do tej gry!");
+                    return;
+                }
+
+                graczeUczestnicy.push(nick);
+                zamknijPopupDodajGracza();
+                renderujPolaUczestnikow();
+            };
+
+            window.zatwierdzDodanieBota = function () {
+                if (graczeUczestnicy.length + (czyBotWlaczony ? 1 : 0) >= 4) return;
+                czyBotWlaczony = true;
+                const slider = document.getElementById("bot-slider-input");
+                if (slider) document.getElementById("srednia-bota").value = slider.value;
+                zamknijPopupDodajGracza();
+                renderujPolaUczestnikow();
+            };
+
+            window.usunGraczaZeSlotu = function (index) {
+                if (graczeUczestnicy.length <= 1 && !czyBotWlaczony) return;
+                const usunietyNick = graczeUczestnicy[index];
+                if (usunietyNick && window.idZnajomychWGrze) {
+                    delete window.idZnajomychWGrze[usunietyNick];
+                    delete window.idZnajomychWGrze[usunietyNick.trim()];
+                    delete window.idZnajomychWGrze[usunietyNick.trim().toLowerCase()];
+                    try {
+                        localStorage.setItem("sd_id_znajomych_w_grze", JSON.stringify(window.idZnajomychWGrze));
+                    } catch (e) {}
+                }
+                graczeUczestnicy.splice(index, 1);
+                renderujPolaUczestnikow();
+            };
+
+            window.usunBota = function () {
+                czyBotWlaczony = false;
+                renderujPolaUczestnikow();
+            };
+
+            // 4. OBSŁUGA SUWAKA BOTA (W POPUPIE)
+            document.getElementById("bot-slider-input")?.addEventListener("input", (e) => {
+                const avg = parseInt(e.target.value);
+                document.getElementById("bot-slider-val").textContent = avg;
+                document.getElementById("bot-stat-range").textContent = `${Math.max(10, avg - 5)} - ${Math.min(180, avg + 5)} pkt`;
+                document.getElementById("bot-stat-good").textContent = `${Math.max(5, Math.round((avg / 100) * 35))}%`;
+                document.getElementById("bot-stat-bad").textContent = `${Math.max(2, Math.round(((100 - avg) / 100) * 25))}%`;
+                document.getElementById("bot-stat-checkout").textContent = `${Math.max(5, Math.round((avg / 100) * 60))}%`;
+            });
+
+            // 5. INICJALIZACJA PRZY WEJŚCIU NA STRONĘ I OBSŁUGA SESJI
+            async function sprawdzSesjeIProfilGracza() {
+                try {
+                    const sessionPromise = pobierzAktywnaSesjeSupabase();
+                    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3500));
+                    const session = await Promise.race([sessionPromise, timeoutPromise]);
+                    const user = session?.user;
+
+                    if (user) {
+                        zalogowanyUserIdGlobalny = user.id;
+                        let nick = user.user_metadata?.username || user.user_metadata?.nazwa_gracza || user.email?.split("@")[0] || "";
+
+                        try {
+                            const klient = window.supabaseClient || window.supabaseKlient;
+                            if (klient) {
+                                const profFetch = klient.from("profiles").select("nazwa_gracza").eq("id", user.id).maybeSingle();
+                                const profTimeout = new Promise((resolve) => setTimeout(() => resolve({ data: null }), 2000));
+                                const { data: prof } = await Promise.race([profFetch, profTimeout]);
+                                if (prof?.nazwa_gracza) {
+                                    nick = prof.nazwa_gracza.trim();
+                                }
+                            }
+                        } catch (e) {}
+
+                        if (nick) {
+                            const staryNick = zalogowanyNickGlobalny;
+                            zalogowanyNickGlobalny = nick;
+
+                            const suroweTurniej = localStorage.getItem("sd_konfiguracja_gry");
+                            let czyTurniejMecz = false;
+                            try {
+                                czyTurniejMecz = suroweTurniej && JSON.parse(suroweTurniej).tryb === "turniej";
+                            } catch (e) {}
+
+                            if (!czyTurniejMecz) {
+                                // Jeśli pierwszy gracz to domyślny lub poprzedni nick, zaktualizuj go na oficjalny nick
+                                if (!graczeUczestnicy[0] || graczeUczestnicy[0] === "Gracz 1" || graczeUczestnicy[0] === staryNick) {
+                                    graczeUczestnicy[0] = zalogowanyNickGlobalny;
+                                }
+                                renderujPolaUczestnikow();
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Nie udało się pobrać sesji zalogowanego użytkownika:", e);
+                }
+            }
+
+            function pelnaInicjalizacjaGraczy() {
+                renderujPolaUczestnikow();
+                if (typeof podepnijZakladkiPopupu === "function") podepnijZakladkiPopupu();
+                sprawdzSesjeIProfilGracza();
+            }
+
+            // Uruchomienie od razu
+            pelnaInicjalizacjaGraczy();
+
+            // Bezpiecznik DOMContentLoaded (gdyby skrypt uruchomił się w trakcie parsowania)
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", pelnaInicjalizacjaGraczy);
+            }
+
+            // KLUCZOWE DLA iOS SAFARI: obsługa powrotu z pamięci podręcznej podróży (bfcache)
+            window.addEventListener("pageshow", pelnaInicjalizacjaGraczy);
+
+            // Nasłuchiwanie zmian sesji Supabase (np. po logowaniu lub odświeżeniu przez menu.js)
+            try {
+                const klient = window.supabaseClient || window.supabaseKlient;
+                if (klient?.auth?.onAuthStateChange) {
+                    klient.auth.onAuthStateChange((event, session) => {
+                        if (session?.user) {
+                            sprawdzSesjeIProfilGracza();
+                        }
+                    });
+                }
+            } catch (e) {}
+
+            const tytulStrony = document.getElementById("tytul-strony");
+            const formularzUstawien = document.getElementById("formularz-ustawien");
+            const przyciskStart = document.getElementById("zacznij-grac");
+            const ekranGry = document.getElementById("ekran-gry");
+            const ekranWygranej = document.querySelector(".ekran-wygranej");
+            const wygranyTekst = document.getElementById("wygrany");
+            const przyciskKolejnaGra = document.getElementById("zacznij-kolejna");
+            const wyswietlKolejke = document.getElementById("wyswietl-kolejke");
+            const celMeczuTekst = document.getElementById("cel-meczu");
+            const wpiszWynikInput = document.getElementById("wpisz-wynik");
+            const przyciskZatwierdz = document.getElementById("zatwierdz-rzut");
+            const powrotDoGier = document.getElementById("powrot-do-gier");
+
+            const kontenerGraczyWGrze = document.getElementById("kontener-graczy-w-grze");
+
+            const modalPrzebiegu = document.getElementById("modal-przebiegu");
+            const przyciskZobaczPrzebieg = document.getElementById("zobacz-przebieg");
+            const przyciskZamknijPrzebieg = document.getElementById("zamknij-przebieg");
+            const kontenerZakladek = document.getElementById("kontener-zakladek");
+            const kontenerTabeleLegow = document.getElementById("kontener-tabele-legow");
+
+            const selectWejscia = document.getElementById("select-wejscia");
+            const selectWyjscia = document.getElementById("select-wyjscia");
+
+            var punktyStartowe = 501;
+            var doceloweLegi = 3;
+            var aktualnaKolejka = 1;
+
+            var gracze = [];
+            var liczbaGraczy = 2;
+            var aktualnyGraczIndex = 0;
+            var graczZaczynajacyLegIndex = 0;
+
+            var trybWejscia = "si";
+            var trybWyjscia = "do";
+
+            var limitLotekAktywny = false;
+            var maksymalnyLimitLotek = 30;
+
+            let historiaMeczuLegi = [];
+            let historiaAktualnegoLegu = [];
+            let historiaStanuGry = [];
+
+            let alertTimeout;
+
+            function pokazCustomowyAlert(wiadomosc) {
+                const alertDiv = document.getElementById("wylosowana-osoba");
+
+                alertDiv.innerHTML = `
+              <span>${wiadomosc}</span>
+              <button id="zamknij-alert" style="margin-left: 20px; background: none; border: none; font-weight: bold; font-size: 18px; cursor: pointer; color: inherit;">✖</button>
+            `;
+
+                alertDiv.style.display = "flex";
+                alertDiv.style.alignItems = "center";
+                alertDiv.style.justifyContent = "space-between";
+
+                document.getElementById("zamknij-alert").addEventListener("click", () => {
+                    alertDiv.style.display = "none";
+                    clearTimeout(alertTimeout);
+                });
+
+                clearTimeout(alertTimeout);
+
+                alertTimeout = setTimeout(() => {
+                    alertDiv.style.display = "none";
+                }, 3000);
+            }
+            window.pokazCustomowyAlert = pokazCustomowyAlert;
+
+            function sprawdzRozmiar() {
+                if (window.innerWidth < 1500) {
+                    wpiszWynikInput.disabled = true;
+                } else {
+                    wpiszWynikInput.disabled = false;
+                }
+            }
+            sprawdzRozmiar();
+            window.addEventListener("resize", sprawdzRozmiar);
+
+            function aktualizujHistorieRzutowUI(graczId, graczIndex) {
+                let rzutyGracza = historiaAktualnegoLegu.filter((h) => h.graczId === graczId);
+                const tbody = document.getElementById(`tabela-historia-body-g${graczIndex}`);
+                if (!tbody) return;
+
+                if (rzutyGracza.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>`;
+                    return;
+                }
+
+                let html = "";
+                rzutyGracza.forEach((h, idx) => {
+                    let sumaLotek = (idx + 1) * 3;
+                    html += `
+                <tr>
+                  <td>${sumaLotek}</td>
+                  <td><strong>${h.szczegoly}</strong></td>
+                  <td>${h.punktyPo}</td>
+                </tr>
+              `;
+                });
+
+                tbody.innerHTML = html;
+
+                const container = document.getElementById(`historia-g${graczIndex}`);
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+
+            function aktualizujCalaHistorieLeguUI() {
+                const elListaLegu = document.getElementById("lista-historii-legu");
+                if (!elListaLegu) return;
+
+                if (historiaAktualnegoLegu.length === 0) {
+                    elListaLegu.innerHTML = "Brak rzutów w tym legu.";
+                    return;
+                }
+
+                let html = "";
+                historiaAktualnegoLegu.forEach((h) => {
+                    let graczObj = gracze.find((g) => g.id === h.graczId);
+                    let nazwa = graczObj ? graczObj.nazwa : `Gracz ${h.graczId + 1}`;
+                    html += `
+                <div class="wpis-historii-legu">
+                  <span><strong>Kolejka ${h.kolejka}</strong> - ${nazwa}: <strong>${h.szczegoly}</strong></span>
+                  <span>Wynik: <strong>${h.punktyPo}</strong> pkt</span>
+                </div>
+              `;
+                });
+
+                elListaLegu.innerHTML = html;
+                elListaLegu.scrollTop = elListaLegu.scrollHeight;
+            }
+
+            function zapiszStanGry() {
+                const migawka = {
+                    gracze: JSON.parse(JSON.stringify(gracze)),
+                    aktualnyGraczId: gracze[aktualnyGraczIndex]?.id,
+                    aktualnyGraczIndex: aktualnyGraczIndex,
+                    aktualnaKolejka: aktualnaKolejka,
+                    graczZaczynajacyLegIndex: graczZaczynajacyLegIndex,
+                    historiaAktualnegoLegu: JSON.parse(JSON.stringify(historiaAktualnegoLegu)),
+                };
+                historiaStanuGry.push(migawka);
+            }
+
+            const przyciskiMetod = document.querySelectorAll(".btn-metoda");
+            const strefaManualna = document.querySelector(".strefa-manualna");
+            const strefaKlikania = document.querySelector(".strefa-klikania");
+            const strefaKamera = document.querySelector(".strefa-kamera"); // DODANE
+
+            przyciskiMetod.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    przyciskiMetod.forEach((b) => b.classList.remove("aktywna-metoda"));
+                    btn.classList.add("aktywna-metoda");
+                    const metoda = btn.getAttribute("data-metoda");
+
+                    if (metoda === "klawiatura") {
+                        strefaManualna.style.display = "grid";
+                        strefaKlikania.style.display = "none";
+                        if (typeof window.wylaczKamere === "function") window.wylaczKamere();
+                        if (strefaKamera) strefaKamera.style.display = "none";
+                        wpiszWynikInput.focus();
+                    } else if (metoda === "tarcza") {
+                        strefaManualna.style.display = "none";
+                        strefaKlikania.style.display = "flex";
+                        if (strefaKamera) strefaKamera.style.display = "none";
+                        if (typeof window.wylaczKamere === "function") window.wylaczKamere();
+                        resetujPodgladKlikow();
+                    } else if (metoda === "kamera") {
+                        strefaManualna.style.display = "none";
+                        strefaKlikania.style.display = "none";
+                        if (strefaKamera) {
+                            strefaKamera.style.display = "flex";
+                            if (typeof window.wypelnijListeKamer === "function") window.wypelnijListeKamer();
+                            if (typeof window.zaladujOpenCvNaZadanie === "function") window.zaladujOpenCvNaZadanie();
+                        }
+                    }
+                });
+            });
+
+            // Uwaga: Zaawansowany moduł kamer USB & OpenCV AutoScore został wydzielony
+            // do zewnętrznego pliku ./kamera-autoscore.js z pełnym lazy-loadingiem silnika AI.
+            const przyciskiCyfr = document.querySelectorAll(".btn-cyfra");
+            const przyciskCofnijCyfre = document.getElementById("cofnij-cyfre");
+
+            przyciskiCyfr.forEach((przycisk) => {
+                przycisk.addEventListener("click", () => {
+                    let val = wpiszWynikInput.value;
+                    if (val === "0" || val === "") val = "";
+                    if (val.length < 3) {
+                        wpiszWynikInput.value = val + przycisk.textContent;
+                    }
+                    wpiszWynikInput.focus();
+                });
+            });
+
+            przyciskCofnijCyfre.addEventListener("click", () => {
+                wpiszWynikInput.value = wpiszWynikInput.value.slice(0, -1);
+                wpiszWynikInput.focus();
+            });
+
+            wpiszWynikInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+
+                    const popupDoubles = document.getElementById("popup-doubles");
+                    const popupWeryfikacji = document.getElementById("popup-weryfikacji");
+
+                    if (popupDoubles.style.display === "flex" || popupWeryfikacji.style.display === "flex") {
+                        return;
+                    }
+
+                    przyciskZatwierdz.click();
+                }
+            });
+
+            wpiszWynikInput.addEventListener("input", () => {
+                if (wpiszWynikInput.value.length > 3) {
+                    wpiszWynikInput.value = wpiszWynikInput.value.slice(0, 3);
+                }
+            });
+
+            const tabBtns = document.querySelectorAll(".tab-btn");
+            const konteneryKlawiszy = document.querySelectorAll(".kontener-klawiszy");
+            let kliknieteLotkiWQueue = [];
+
+            tabBtns.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    tabBtns.forEach((b) => b.classList.remove("aktywne-tab"));
+                    btn.classList.add("aktywne-tab");
+                    const target = btn.getAttribute("data-target");
+                    konteneryKlawiszy.forEach((k) => (k.style.display = "none"));
+                    document.querySelector(`.kontener-klawiszy.${target}`).style.display = "grid";
+                });
+            });
+
+            konteneryKlawiszy.forEach((kontener) => {
+                kontener.querySelectorAll("button").forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        if (kliknieteLotkiWQueue.length >= 3) return;
+                        const wartosc = parseInt(btn.getAttribute("data-value"));
+                        let tekstRzutu = btn.textContent;
+                        kliknieteLotkiWQueue.push({ punkty: wartosc, opis: tekstRzutu });
+                        aktualizujPodgladKlikow();
+                    });
+                });
+            });
+
+            document.getElementById("cofnij-klik-lotke").addEventListener("click", () => {
+                kliknieteLotkiWQueue.pop();
+                aktualizujPodgladKlikow();
+            });
+
+            function aktualizujPodgladKlikow() {
+                for (let i = 1; i <= 3; i++) {
+                    const span = document.getElementById(`lotka-${i}`);
+                    if (kliknieteLotkiWQueue[i - 1] !== undefined) {
+                        span.textContent = kliknieteLotkiWQueue[i - 1].opis;
+                    } else {
+                        span.textContent = "-";
+                    }
+                }
+                const suma = kliknieteLotkiWQueue.reduce((acc, curr) => acc + curr.punkty, 0);
+                document.getElementById("suma-klik-wartosc").textContent = suma;
+            }
+
+            function resetujPodgladKlikow() {
+                kliknieteLotkiWQueue = [];
+                aktualizujPodgladKlikow();
+            }
+
+            document.getElementById("zatwierdz-klik-kolejke").addEventListener("click", () => {
+                if (kliknieteLotkiWQueue.length === 0) return;
+                const sumaPunktow = kliknieteLotkiWQueue.reduce((acc, curr) => acc + curr.punkty, 0);
+                let szczegolyOpis = sumaPunktow.toString();
+                przetwarzajRzutMeczu(sumaPunktow, szczegolyOpis, kliknieteLotkiWQueue.length, kliknieteLotkiWQueue);
+                resetujPodgladKlikow();
+            });
+
+            // --- DYNAMICZNE FUNKCJE STATYSTYK ---
+            function obliczSredniaGracza(graczId) {
+                let wszystkieRzuty = [];
+
+                historiaMeczuLegi.forEach((leg) => {
+                    wszystkieRzuty = wszystkieRzuty.concat(leg.filter((r) => r.graczId === graczId));
+                });
+
+                wszystkieRzuty = wszystkieRzuty.concat(historiaAktualnegoLegu.filter((r) => r.graczId === graczId));
+
+                if (wszystkieRzuty.length === 0) return "0.00";
+
+                let sumaPunktow = 0;
+                let sumaRzuconychLotek = 0;
+
+                wszystkieRzuty.forEach((r) => {
+                    sumaPunktow += r.rzut;
+                    sumaRzuconychLotek += r.zuzyteLotki !== undefined ? r.zuzyteLotki : 3;
+                });
+
+                if (sumaRzuconychLotek === 0) return "0.00";
+
+                return ((sumaPunktow / sumaRzuconychLotek) * 3).toFixed(2);
+            }
+
+            function obliczSrednia9Lotek(graczId) {
+                let sumaPunktow = 0;
+                let sumaLotek = 0;
+
+                let wszystkieLegi = [...historiaMeczuLegi, historiaAktualnegoLegu];
+
+                wszystkieLegi.forEach((leg) => {
+                    let rzutyGracza = leg.filter((r) => r.graczId === graczId);
+                    let pierwszeRzuty = rzutyGracza.slice(0, 3);
+
+                    pierwszeRzuty.forEach((r) => {
+                        sumaPunktow += r.rzut;
+                        sumaLotek += r.zuzyteLotki !== undefined ? r.zuzyteLotki : 3;
+                    });
+                });
+
+                if (sumaLotek === 0) return "0.00";
+                return ((sumaPunktow / sumaLotek) * 3).toFixed(2);
+            }
+
+            function pobierzOstatniLeg(graczId) {
+                if (historiaMeczuLegi.length === 0) return "-";
+
+                let ostatnioWygrany = "-";
+
+                historiaMeczuLegi.forEach((leg) => {
+                    let rzutyGracza = leg.filter((r) => r.graczId === graczId);
+                    if (rzutyGracza.length > 0) {
+                        let ostatniRzut = rzutyGracza[rzutyGracza.length - 1];
+
+                        if (ostatniRzut && ostatniRzut.punktyPo === 0) {
+                            let lotkiLacznie = rzutyGracza.reduce((sum, r) => sum + (r.zuzyteLotki || 3), 0);
+                            ostatnioWygrany = lotkiLacznie + " lotek";
+                        }
+                    }
+                });
+
+                return ostatnioWygrany;
+            }
+
+            function aktualizujKartyUI() {
+                gracze.forEach((gracz, index) => {
+                    const karta = document.getElementById(`karta-g${index}`);
+                    if (index === aktualnyGraczIndex) {
+                        karta.classList.add("aktywne-tury");
+                    } else {
+                        karta.classList.remove("aktywne-tury");
+                    }
+                    document.getElementById(`punkty-g${index}`).textContent = gracz.punkty;
+
+                    let checkoutText = gracz.punkty <= 170 && gracz.punkty > 1 ? getCheckout(gracz.punkty) : "";
+                    document.getElementById(`checkout-g${index}`).textContent = checkoutText;
+
+                    document.getElementById(`wygrane-g${index}`).textContent = `Wygrane rundy: ${gracz.wygraneLegi}`;
+
+                    document.getElementById(`srednia-tabela-g${index}`).textContent = obliczSredniaGracza(gracz.id);
+                    document.getElementById(`dziewiec-lotek-g${index}`).textContent = obliczSrednia9Lotek(gracz.id);
+                    document.getElementById(`ostatni-leg-g${index}`).textContent = pobierzOstatniLeg(gracz.id);
+                });
+            }
+
+            przyciskStart.addEventListener("click", () => {
+                let iloscLudzi = graczeUczestnicy.length;
+
+                // POPRAWKA: Używamy globalnej zmiennej z popupu, a nie szukamy usuniętego checkboxa
+                let czyBotAktywny = typeof czyBotWlaczony !== "undefined" ? czyBotWlaczony : false;
+
+                // Zapisujemy imiona graczy do localStorage (przed rozpoczęciem meczu)
+                const wpisaneImiona = [];
+                for (let i = 1; i <= iloscLudzi; i++) {
+                    const inp = document.getElementById(`nazwa-gracza${i}`);
+                    if (inp && inp.value.trim() !== "") {
+                        wpisaneImiona.push(inp.value.trim());
+                    }
+                }
+                localStorage.setItem("sd_ostatni_gracze", JSON.stringify(wpisaneImiona));
+
+                liczbaGraczy = iloscLudzi + (czyBotAktywny ? 1 : 0);
+
+                punktyStartowe = parseInt(document.getElementById("punkty").value);
+                doceloweLegi = parseInt(document.getElementById("liczba_rund").value) || 3;
+                trybWejscia = selectWejscia.value;
+                trybWyjscia = selectWyjscia.value;
+
+                limitLotekAktywny = wlaczLimitLotekCheckbox.checked;
+                maksymalnyLimitLotek = parseInt(limitLotekWartoscInput.value) || 30;
+
+                gracze = [];
+                kontenerGraczyWGrze.innerHTML = "";
+
+                for (let i = 0; i < liczbaGraczy; i++) {
+                    let czyTenToBot = czyBotAktywny && i === liczbaGraczy - 1;
+                    let nazwa = "";
+                    let poziomBota = 50;
+
+                    if (czyTenToBot) {
+                        poziomBota = document.getElementById("srednia-bota")?.value || 50;
+                        nazwa = `DartBot (Śr: ${poziomBota})`;
+                    } else {
+                        let inputElement = document.getElementById(`nazwa-gracza${i + 1}`);
+                        nazwa = inputElement ? inputElement.value.trim() : "";
+                        if (nazwa === "") nazwa = `Gracz ${i + 1}`;
+                    }
+
+                    let profilIdGracza = null;
+                    if (!czyTenToBot) {
+                        const zalogowanyStorage = odczytajZalogowanegoZStorage();
+                        const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) || (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase()) || (i === 0 && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id));
+                        if (isMojeKonto && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id)) {
+                            profilIdGracza = zalogowanyUserIdGlobalny || zalogowanyStorage?.id;
+                        } else {
+                            if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
+                                try {
+                                    window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+                                } catch (e) {}
+                            }
+                            if (window.idZnajomychWGrze) {
+                                profilIdGracza = window.idZnajomychWGrze[nazwa] || window.idZnajomychWGrze[nazwa.toLowerCase()] || window.idZnajomychWGrze[nazwa.trim()] || null;
+                            }
+                        }
+                    }
+
+                    gracze.push({
+                        id: i,
+                        nazwa: nazwa,
+                        profilId: profilIdGracza,
+                        punkty: punktyStartowe,
+                        wygraneLegi: 0,
+                        rzuty: [],
+                        najlepszyLeg: null,
+                        lotkiNaDoubla: 0,
+                        trafioneDouble: 0,
+                        czyBot: czyTenToBot,
+                        poziomBota: poziomBota,
+                    });
+
+                    kontenerGraczyWGrze.innerHTML += `
+                        <div class="karta-gracza" id="karta-g${i}">
+                            <h2>${nazwa}</h2>
+                            <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: 0</div>
+                            <div class="wynik-główny" id="punkty-g${i}">${punktyStartowe}</div>
+                            <div class="checkout-sugerowany" id="checkout-g${i}"></div>
+
+                            <!-- ZAKŁADKI KARTY -->
+                            <div class="karta-zakladki">
+                                <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+                                <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+                            </div>
+
+                            <!-- PANEL STATYSTYK -->
+                            <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+                              <table class="aktualne-statystyki-tabela">
+                                <tr>
+                                    <th>Średnia</th>
+                                    <td id="srednia-tabela-g${i}">0.00</td>
+                                </tr>
+                                <tr>
+                                  <th>Pierwsze 9-lotek</th>
+                                  <td id="dziewiec-lotek-g${i}">0.00</td>
+                                </tr>
+                                <tr class="ostatni-wiersz">
+                                  <th>Ostatni Leg</th>
+                                  <td id="ostatni-leg-g${i}">-</td>
+                                </tr>
+                              </table>
+                            </div>
+
+                            <!-- PANEL HISTORII -->
+                            <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+                                <table class="tabela-historii-karty">
+                                    <thead>
+                                        <tr>
+                                            <th>Lotki</th>
+                                            <th>Rzucone</th>
+                                            <th>Zostało</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-historia-body-g${i}">
+                                        <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
+                historiaMeczuLegi = [];
+
+                const popupKtoPierwszy = document.getElementById("popup-kto-pierwszy");
+                const buttonsContainer = document.getElementById("popup-kto-zaczyna-buttons");
+                buttonsContainer.innerHTML = "";
+
+                gracze.forEach((gracz, index) => {
+                    const btn = document.createElement("button");
+                    btn.className = "popup-btn popup-btn-yes";
+                    btn.textContent = gracz.nazwa;
+                    btn.onclick = () => {
+                        popupKtoPierwszy.style.display = "none";
+                        rozpocznijWlasciwaGre(index);
+                    };
+                    buttonsContainer.appendChild(btn);
+                });
+
+                if (liczbaGraczy > 1) {
+                    const btnLosowo = document.createElement("button");
+                    btnLosowo.className = "popup-btn popup-btn-no";
+                    btnLosowo.textContent = "Random";
+                    btnLosowo.onclick = () => {
+                        const wylosowanyIndex = Math.floor(Math.random() * liczbaGraczy);
+                        popupKtoPierwszy.style.display = "none";
+                        pokazCustomowyAlert(`Zaczyna ${gracze[wylosowanyIndex].nazwa}.`);
+                        rozpocznijWlasciwaGre(wylosowanyIndex);
+                    };
+                    buttonsContainer.appendChild(btnLosowo);
+                }
+
+                popupKtoPierwszy.style.display = "flex";
+            });
+            function rozpocznijWlasciwaGre(zaczynajacyIndex) {
+                czyZapisanoStatystykiMeczu = false; // Reset przed nową rozgrywką
+                historiaMeczuLegi = []; // WAŻNE: Reset historii poprzedniego meczu
+                historiaAktualnegoLegu = [];
+                window.botOstatniaLotka = 3;
+                window.botLotkiNaDoubla = 0;
+                graczZaczynajacyLegIndex = zaczynajacyIndex;
+                resetujLeg();
+
+                formularzUstawien.style.display = "none";
+                tytulStrony.style.display = "none";
+                powrotDoGier.style.display = "none";
+                ekranGry.style.display = "block";
+            }
+
+            function resetujLeg() {
+                aktualnaKolejka = 1;
+                aktualnyGraczIndex = graczZaczynajacyLegIndex;
+                historiaStanuGry = [];
+                window.botOstatniaLotka = 3;
+                window.botLotkiNaDoubla = 0;
+
+                gracze.forEach((gracz, i) => {
+                    gracz.punkty = punktyStartowe;
+                    const tbody = document.getElementById(`tabela-historia-body-g${i}`);
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>`;
+                    }
+                });
+
+                wyswietlKolejke.textContent = `Lotki: 0 ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+                historiaAktualnegoLegu = [];
+
+                aktualizujKartyUI();
+                aktualizujCalaHistorieLeguUI();
+                sprawdzTureBota();
+            }
+
+            przyciskZatwierdz.addEventListener("click", () => {
+                if (document.getElementById("popup-weryfikacji").style.display === "flex" || document.getElementById("popup-doubles").style.display === "flex") return;
+
+                const punkty = parseInt(wpiszWynikInput.value) || 0;
+                if (punkty > 180) {
+                    pokazCustomowyAlert("Maksymalny wynik w jednej kolejce to 180 punktów!");
+                    wpiszWynikInput.value = "";
+                    wpiszWynikInput.focus();
+                    return;
+                }
+
+                let aktywnyGracz = gracze[aktualnyGraczIndex];
+
+                if (aktywnyGracz.punkty === punktyStartowe && punkty > 0 && (trybWejscia === "di" || trybWejscia === "ti")) {
+                    let nazwaTypu = trybWejscia === "di" ? "Double (Podwójne)" : "Triple (Potrójne)";
+                    otworzWeryfikacjePopup("Potwierdzenie Wejścia", `Czy rzut rozpoczynający grę o wartości ${punkty} zawierał prawidłowe trafienie w sektor ${nazwaTypu}?`, (zaakceptowano) => {
+                        if (zaakceptowano) {
+                            przetwarzajRzutMeczu(punkty, punkty.toString(), 3, null);
+                        } else {
+                            wykonajProcesRzutu(punkty, punkty.toString(), 3, true, null);
+                        }
+                    });
+                } else {
+                    przetwarzajRzutMeczu(punkty, punkty.toString(), 3, null);
+                }
+
+                wpiszWynikInput.value = "";
+                wpiszWynikInput.focus();
+            });
+
+            function otworzWeryfikacjePopup(tytul, wiadomosc, callback) {
+                let aktywnyGracz = gracze[aktualnyGraczIndex];
+
+                if (aktywnyGracz.punkty === 180 || niemozliweZamkniecia.includes(aktywnyGracz.punkty)) {
+                    return;
+                }
+
+                const popupWeryfikacji = document.getElementById("popup-weryfikacji");
+                const popupTytul = document.getElementById("popup-tytul");
+                const popupWiadomosc = document.getElementById("popup-wiadomosc");
+
+                if (popupTytul) popupTytul.textContent = tytul;
+                if (popupWiadomosc) popupWiadomosc.textContent = wiadomosc;
+
+                if (popupWeryfikacji) {
+                    popupWeryfikacji.style.display = "flex";
+                }
+
+                const btnTak = document.getElementById("popup-btn-tak");
+                const btnNie = document.getElementById("popup-btn-nie");
+
+                if (btnTak && btnNie) {
+                    const nowyTak = btnTak.cloneNode(true);
+                    const nowyNie = btnNie.cloneNode(true);
+
+                    btnTak.parentNode.replaceChild(nowyTak, btnTak);
+                    btnNie.parentNode.replaceChild(nowyNie, btnNie);
+
+                    nowyTak.addEventListener("click", () => {
+                        popupWeryfikacji.style.display = "none";
+                        callback(true);
+                    });
+                    nowyNie.addEventListener("click", () => {
+                        popupWeryfikacji.style.display = "none";
+                        callback(false);
+                    });
+                }
+            }
+
+            function przetwarzajRzutMeczu(punktyWpisane, opisDoHistorii, zuzyteLotki = 3, lotkiZPanelu = null) {
+                let aktywnyGracz = gracze[aktualnyGraczIndex];
+                let czyFura = false;
+
+                if (aktywnyGracz.punkty === punktyStartowe && lotkiZPanelu !== null) {
+                    if (punktyWpisane === 0) {
+                        czyFura = true;
+                    } else {
+                        let pierwszaLotka = lotkiZPanelu.find((l) => l.punkty > 0);
+                        if (!pierwszaLotka) {
+                            czyFura = true;
+                        } else {
+                            if (trybWejscia === "di" && !pierwszaLotka.opis.startsWith("D") && pierwszaLotka.punkty !== 50) {
+                                czyFura = true;
+                            } else if (trybWejscia === "ti" && !pierwszaLotka.opis.startsWith("T")) {
+                                czyFura = true;
+                            }
+                        }
+                    }
+                }
+
+                let pozostalePunkty = aktywnyGracz.punkty - punktyWpisane;
+
+                if (!czyFura) {
+                    if (pozostalePunkty < 0) {
+                        czyFura = true;
+                    } else if (pozostalePunkty === 1 && (trybWyjscia === "do" || trybWyjscia === "to")) {
+                        czyFura = true;
+                    } else if (pozostalePunkty === 2 && trybWyjscia === "to") {
+                        czyFura = true;
+                    } else if (pozostalePunkty === 0) {
+                        if (trybWyjscia === "do" || trybWyjscia === "to") {
+                            if (aktywnyGracz.punkty > 170 || niemozliweZamkniecia.includes(aktywnyGracz.punkty)) {
+                                czyFura = true;
+                            }
+                        }
+
+                        if (lotkiZPanelu !== null && (trybWyjscia === "do" || trybWyjscia === "to")) {
+                            let ostatniaLotka = lotkiZPanelu[lotkiZPanelu.length - 1];
+                            if (trybWyjscia === "do") {
+                                let czyOstatniaDouble = ostatniaLotka && (ostatniaLotka.opis.startsWith("D") || ostatniaLotka.punkty === 50);
+                                if (!czyOstatniaDouble) czyFura = true;
+                            } else if (trybWyjscia === "to") {
+                                let czyOstatniaTriple = ostatniaLotka && ostatniaLotka.opis.startsWith("T");
+                                if (!czyOstatniaTriple) czyFura = true;
+                            }
+                        }
+                    }
+                }
+
+                wykonajProcesRzutu(punktyWpisane, opisDoHistorii, zuzyteLotki, czyFura, lotkiZPanelu);
+            }
+            window.przetwarzajRzutMeczu = przetwarzajRzutMeczu;
+
+            function zakonczLeg(zwyciezcaId, uzyteLotki) {
+                let zwyciezca = gracze.find((g) => g.id === zwyciezcaId);
+                zwyciezca.wygraneLegi++;
+
+                if (zwyciezca.najlepszyLeg === null || uzyteLotki < zwyciezca.najlepszyLeg) {
+                    zwyciezca.najlepszyLeg = uzyteLotki;
+                }
+
+                historiaMeczuLegi.push([...historiaAktualnegoLegu]);
+                historiaAktualnegoLegu = [];
+
+                if (zwyciezca.wygraneLegi === doceloweLegi) {
+                    aktualizujKartyUI();
+                    zakonczMecz(zwyciezca);
+                } else {
+                    graczZaczynajacyLegIndex = (graczZaczynajacyLegIndex + 1) % liczbaGraczy;
+                    resetujLeg();
+                }
+            }
+
+            function pokazPopupBlizejSrodka() {
+                const popupBlizejSrodka = document.getElementById("popup-blizej-srodka");
+                const buttonsContainer = document.getElementById("popup-srodek-buttons");
+                buttonsContainer.innerHTML = "";
+
+                gracze.forEach((gracz) => {
+                    const btn = document.createElement("button");
+                    btn.className = "popup-btn popup-btn-yes";
+                    btn.textContent = gracz.nazwa;
+                    btn.onclick = () => {
+                        popupBlizejSrodka.style.display = "none";
+                        pokazCustomowyAlert(`${gracz.nazwa} wygrywa rundę rzutem bliżej środka!`);
+                        zakonczLeg(gracz.id, maksymalnyLimitLotek);
+                    };
+                    buttonsContainer.appendChild(btn);
+                });
+
+                popupBlizejSrodka.style.display = "flex";
+            }
+
+            function pokazPopupDoubles(czyZakonczyl, punktyPrzedRzutem, rzuconePunkty, maxMozliwychLoteKNaDabla, callback) {
+                const popup = document.getElementById("popup-doubles");
+                const btnContainer = document.getElementById("popup-doubles-buttons");
+                const tytul = document.getElementById("popup-doubles-tytul");
+                const opis = document.getElementById("popup-doubles-opis");
+
+                btnContainer.innerHTML = "";
+
+                if (czyZakonczyl) {
+                    tytul.textContent = "Koniec Lega!";
+                    opis.textContent = "W której lotce trafiłeś kończącego doubla?";
+
+                    let minLotka = 1;
+                    if (punktyPrzedRzutem > 110) {
+                        minLotka = 3;
+                    } else if (punktyPrzedRzutem > 50) {
+                        minLotka = 2;
+                    }
+
+                    for (let i = minLotka; i <= 3; i++) {
+                        let btn = document.createElement("button");
+                        btn.className = "popup-btn popup-btn-yes";
+                        btn.textContent = `${i}. lotka`;
+                        btn.dataset.wartosc = i.toString();
+                        btn.onclick = () => {
+                            pokazPytanieOProbyZamkniecia(i, punktyPrzedRzutem, callback);
+                        };
+                        btnContainer.appendChild(btn);
+                    }
+                } else {
+                    tytul.textContent = "Szansa na podwójne";
+                    opis.textContent = "Ile lotek w tej kolejce rzuciłeś na doubla (D)?";
+
+                    let maxLotekNaDoubla = Math.min(3, maxMozliwychLoteKNaDabla);
+
+                    for (let i = maxLotekNaDoubla; i >= 0; i--) {
+                        let btn = document.createElement("button");
+                        btn.className = "popup-btn popup-btn-no";
+                        btn.style.backgroundColor = i === 0 ? "#475569" : "var(--secondary-color)";
+                        btn.style.color = i === 0 ? "white" : "var(--primary-color)";
+                        btn.textContent = i.toString();
+                        btn.dataset.wartosc = i.toString();
+                        btn.onclick = () => {
+                            popup.style.display = "none";
+                            callback(3, i);
+                        };
+                        btnContainer.appendChild(btn);
+                    }
+                }
+                popup.style.display = "flex";
+            }
+
+            function pokazPytanieOProbyZamkniecia(lotkaKonczaca, punktyPrzedRzutem, callback) {
+                const popup = document.getElementById("popup-doubles");
+                const btnContainer = document.getElementById("popup-doubles-buttons");
+                const tytul = document.getElementById("popup-doubles-tytul");
+                const opis = document.getElementById("popup-doubles-opis");
+
+                btnContainer.innerHTML = "";
+                tytul.textContent = "Statystyki Doubli";
+                opis.textContent = `Ile łącznie lotek w tej turze rzuciłeś na doubla (wliczając ${lotkaKonczaca}. trafną)?`;
+
+                let maxDarts = lotkaKonczaca;
+                if (punktyPrzedRzutem > 110 && maxDarts > 1) maxDarts = 1;
+                else if (punktyPrzedRzutem > 50 && maxDarts > 2) maxDarts = 2;
+
+                for (let i = 1; i <= maxDarts; i++) {
+                    let btn = document.createElement("button");
+                    btn.className = "popup-btn popup-btn-yes";
+                    btn.textContent = `${i}`;
+                    btn.dataset.wartosc = i.toString();
+                    btn.onclick = () => {
+                        popup.style.display = "none";
+                        callback(lotkaKonczaca, i);
+                    };
+                    btnContainer.appendChild(btn);
+                }
+            }
+
+            // Obsługa klawiatury dla popupu Doubles (zarówno klawisze główne jak i numpad)
+            window.addEventListener(
+                "keydown",
+                (e) => {
+                    const popup = document.getElementById("popup-doubles");
+                    if (!popup || popup.style.display !== "flex") return;
+
+                    let key = e.key;
+                    if (key.startsWith("Numpad") || key.startsWith("Digit")) {
+                        key = key.replace("Numpad", "").replace("Digit", "");
+                    }
+
+                    if (["0", "1", "2", "3"].includes(key)) {
+                        const btnContainer = document.getElementById("popup-doubles-buttons");
+                        if (!btnContainer) return;
+
+                        const pasujacyPrzycisk = btnContainer.querySelector(`button[data-wartosc="${key}"]`);
+                        if (pasujacyPrzycisk) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            pasujacyPrzycisk.click();
+                        }
+                    }
+                },
+                true,
+            );
+
+            function cofnijRzut() {
+                if (typeof anulujTureBota === "function") {
+                    anulujTureBota();
+                }
+
+                if (!historiaStanuGry || historiaStanuGry.length === 0) {
+                    pokazCustomowyAlert("Brak rzutów do cofnięcia!");
+                    return;
+                }
+
+                const czyGraZBotem = gracze.some((g) => g.czyBot);
+                let stanDoPrzywrocenia = null;
+
+                if (czyGraZBotem) {
+                    // TRYB Z DARTBOTEM:
+                    // Jeśli bot zdążył już odpowiedzieć na nasz rzut, cofamy rzut bota ORAZ gracza
+                    const ostatniaMigawka = historiaStanuGry[historiaStanuGry.length - 1];
+                    const ostatniGracz = gracze.find((g) => g.id === ostatniaMigawka.aktualnyGraczId);
+
+                    if (ostatniGracz && ostatniGracz.czyBot && historiaStanuGry.length >= 2) {
+                        historiaStanuGry.pop(); // Usuń rzut bota
+                        stanDoPrzywrocenia = historiaStanuGry.pop(); // Cofnij do rzutu gracza
+                    } else {
+                        // Bot jeszcze nie rzucił (np. w trakcie rzutu gracza)
+                        stanDoPrzywrocenia = historiaStanuGry.pop();
+                    }
+                } else {
+                    // TRYB NORMALNY (Solo / 2-4 graczy):
+                    // Zawsze cofamy dokładnie 1 ostatni rzut tego gracza, który właśnie rzucił
+                    stanDoPrzywrocenia = historiaStanuGry.pop();
+                }
+
+                if (!stanDoPrzywrocenia) {
+                    pokazCustomowyAlert("Brak rzutów do cofnięcia!");
+                    return;
+                }
+
+                // Przywrócenie stanu gry
+                gracze = stanDoPrzywrocenia.gracze;
+                aktualnyGraczIndex = stanDoPrzywrocenia.aktualnyGraczIndex;
+                aktualnaKolejka = stanDoPrzywrocenia.aktualnaKolejka;
+                graczZaczynajacyLegIndex = stanDoPrzywrocenia.graczZaczynajacyLegIndex;
+                historiaAktualnegoLegu = stanDoPrzywrocenia.historiaAktualnegoLegu;
+
+                const wykorzystaneLotki = historiaAktualnegoLegu.reduce((suma, rzut) => suma + (rzut.zuzyteLotki || 3), 0);
+                wyswietlKolejke.textContent = `Lotki: ${wykorzystaneLotki} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+
+                aktualizujKartyUI();
+                gracze.forEach((gracz, i) => aktualizujHistorieRzutowUI(gracz.id, i));
+                aktualizujCalaHistorieLeguUI();
+
+                wpiszWynikInput.value = "";
+                resetujPodgladKlikow();
+                if (typeof kolejkaLotekKamery !== "undefined") {
+                    kolejkaLotekKamery = [];
+                    if (typeof aktualizujPodgladKolejkiKamery === "function") aktualizujPodgladKolejkiKamery();
+                    if (typeof rysujNakladkiWszystkich === "function") rysujNakladkiWszystkich();
+                }
+                sprawdzTureBota();
+
+                if (typeof zapiszStanMeczuDoStorage === "function") {
+                    zapiszStanMeczuDoStorage();
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const przyciskiCofnij = document.querySelectorAll("#btn-cofnij-rzut, .btn-cofnij-rzut");
+
+                przyciskiCofnij.forEach((przycisk) => {
+                    przycisk.addEventListener("click", cofnijRzut);
+                });
+            });
+
+            function wykonajProcesRzutu(punktyWpisane, opisDoHistorii, zuzyteLotki, czyFura, lotkiZPanelu = null) {
+                zapiszStanGry();
+
+                let aktywnyGracz = gracze[aktualnyGraczIndex];
+                let punktyPrzedRzutem = aktywnyGracz.punkty;
+
+                let pozostalePunkty = czyFura ? aktywnyGracz.punkty : aktywnyGracz.punkty - punktyWpisane;
+
+                if (!czyFura) {
+                    aktywnyGracz.punkty = pozostalePunkty;
+                    aktywnyGracz.rzuty.push(punktyWpisane);
+                } else {
+                    aktywnyGracz.rzuty.push(0);
+                }
+
+                historiaAktualnegoLegu.push({
+                    kolejka: aktualnaKolejka,
+                    graczId: aktywnyGracz.id,
+                    punktyPrzed: punktyPrzedRzutem,
+                    rzut: czyFura ? 0 : punktyWpisane,
+                    szczegoly: czyFura ? "0" : opisDoHistorii,
+                    punktyPo: pozostalePunkty,
+                    zuzyteLotki: zuzyteLotki || 3,
+                });
+
+                aktualizujHistorieRzutowUI(aktywnyGracz.id, aktualnyGraczIndex);
+                aktualizujCalaHistorieLeguUI();
+
+                // 1. Zakończenie Lega
+                if (pozostalePunkty === 0 && !czyFura) {
+                    const minLotekWLegu = punktyStartowe <= 50 ? 1 : Math.ceil((punktyStartowe - 50) / 60) + 1;
+
+                    if (aktywnyGracz.czyBot) {
+                        aktywnyGracz.lotkiNaDoubla += (typeof window.botLotkiNaDoubla === "number" ? window.botLotkiNaDoubla : 1);
+                        aktywnyGracz.trafioneDouble += 1;
+
+                        let ostatniWpis = historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+                        let botLotkaKonc = (typeof window.botOstatniaLotka === "number" && window.botOstatniaLotka >= 1 && window.botOstatniaLotka <= 3) ? window.botOstatniaLotka : 3;
+                        ostatniWpis.zuzyteLotki = botLotkaKonc;
+
+                        let rzutyWLegu = historiaAktualnegoLegu.filter((h) => h.graczId === aktywnyGracz.id);
+                        let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
+                        let lotkiZwyciezcy = lotkiWPoprzednich + botLotkaKonc;
+
+                        // Zabezpieczenie przed niemożliwą liczbą lotek w legu
+                        if (lotkiZwyciezcy < minLotekWLegu) {
+                            lotkiZwyciezcy = minLotekWLegu;
+                            ostatniWpis.zuzyteLotki = Math.max(1, Math.min(3, lotkiZwyciezcy - lotkiWPoprzednich));
+                        }
+
+                        window.botOstatniaLotka = 3;
+                        window.botLotkiNaDoubla = 0;
+
+                        pokazCustomowyAlert(`${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`);
+                        zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
+                        return;
+                    }
+
+                    pokazPopupDoubles(true, punktyPrzedRzutem, punktyWpisane, 3, (lotkaKonczaca, lotkiNaDoubla) => {
+                        aktywnyGracz.lotkiNaDoubla += lotkiNaDoubla;
+                        aktywnyGracz.trafioneDouble += 1;
+                        let ostatniWpis = historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+                        ostatniWpis.zuzyteLotki = lotkaKonczaca;
+                        let rzutyWLegu = historiaAktualnegoLegu.filter((h) => h.graczId === aktywnyGracz.id);
+                        let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
+                        let lotkiZwyciezcy = lotkiWPoprzednich + lotkaKonczaca;
+                        if (lotkiZwyciezcy < minLotekWLegu) {
+                            lotkiZwyciezcy = minLotekWLegu;
+                        }
+                        pokazCustomowyAlert(`${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`);
+                        zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
+                    });
+                    return;
+                }
+
+                // 2. Szansa na zakończenie
+                if (trybWyjscia === "do" && (pozostalePunkty > 0 || czyFura)) {
+                    if (lotkiZPanelu !== null) {
+                        let rzuconeNaDabla = lotkiZPanelu.filter((l) => l.opis.startsWith("D") || l.punkty === 50).length;
+                        if (rzuconeNaDabla > 0) {
+                            aktywnyGracz.lotkiNaDoubla += rzuconeNaDabla;
+                        }
+                        finalizujTure();
+                        return;
+                    } else {
+                        let czyMialSzanse = false;
+                        let maxDarts = 0;
+
+                        const mialFinisz = punktyPrzedRzutem <= 170 && !niemozliweZamkniecia.includes(punktyPrzedRzutem);
+
+                        if (mialFinisz) {
+                            let bylJuzNaDoublu = (punktyPrzedRzutem <= 40 && punktyPrzedRzutem % 2 === 0) || punktyPrzedRzutem === 50;
+
+                            if (bylJuzNaDoublu) {
+                                czyMialSzanse = true;
+                                maxDarts = 3;
+                            } else if (czyFura || punktyWpisane === 0) {
+                                czyMialSzanse = true;
+                                maxDarts = punktyPrzedRzutem <= 110 ? 2 : 1;
+                            } else if (punktyPrzedRzutem <= 110) {
+                                let minSetup1Lotka = punktyPrzedRzutem - 50;
+                                if (punktyWpisane >= minSetup1Lotka) {
+                                    czyMialSzanse = true;
+                                    maxDarts = 2;
+                                }
+                            } else if (punktyPrzedRzutem <= 170) {
+                                let minSetup2Lotki = punktyPrzedRzutem - 50;
+                                if (punktyWpisane >= minSetup2Lotki) {
+                                    czyMialSzanse = true;
+                                    maxDarts = 1;
+                                }
+                            }
+                        }
+
+                        if (czyMialSzanse) {
+                            if (aktywnyGracz.czyBot) {
+                                aktywnyGracz.lotkiNaDoubla += (typeof window.botLotkiNaDoubla === "number" ? window.botLotkiNaDoubla : 1);
+                                finalizujTure();
+                                return;
+                            }
+                            pokazPopupDoubles(false, punktyPrzedRzutem, punktyWpisane, maxDarts, (lotkaKonczaca, lotkiNaDoubla) => {
+                                aktywnyGracz.lotkiNaDoubla += lotkiNaDoubla;
+                                finalizujTure();
+                            });
+                            return;
+                        }
+                    }
+                }
+
+                finalizujTure();
+            }
+
+            function finalizujTure() {
+                aktualnyGraczIndex = (aktualnyGraczIndex + 1) % liczbaGraczy;
+
+                if (aktualnyGraczIndex === graczZaczynajacyLegIndex) {
+                    aktualnaKolejka++;
+                    wyswietlKolejke.textContent = `Lotki: ${aktualnaKolejka * 3} ${limitLotekAktywny ? "/ " + maksymalnyLimitLotek : ""}`;
+
+                    if (limitLotekAktywny && (aktualnaKolejka - 1) * 3 >= maksymalnyLimitLotek) {
+                        aktualizujKartyUI();
+                        pokazPopupBlizejSrodka();
+                        return;
+                    }
+                }
+
+                aktualizujKartyUI();
+                sprawdzTureBota();
+            }
+
+            // Flaga blokująca wielokrotny zapis w ramach jednego pojedynku
+            let czyZapisanoStatystykiMeczu = false;
+
+            async function zapiszMeczDoHistorii(zwyciezca) {
+                if (czyZapisanoStatystykiMeczu) return;
+                czyZapisanoStatystykiMeczu = true;
+
+                const historiaRundDoZapisu = typeof historiaMeczuLegi !== "undefined" ? JSON.parse(JSON.stringify(historiaMeczuLegi)) : [];
+
+                // 1. Zapis lokalny do pamięci urządzenia (Dla obu graczy, żeby widzieli tabelę)
+                const podsumowanieMeczu = {
+                    id: Date.now(),
+                    data: new Date().toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }),
+                    punktyStartowe: punktyStartowe,
+                    doceloweLegi: doceloweLegi,
+                    zwyciezca: zwyciezca ? zwyciezca.nazwa : "Trening",
+                    gracze: gracze.map((g) => ({
+                        id: g.id,
+                        nazwa: g.nazwa,
+                        wygraneLegi: g.wygraneLegi,
+                        srednia: typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(g.id) : "0.00",
+                        srednia9: typeof obliczSrednia9Lotek === "function" ? obliczSrednia9Lotek(g.id) : "0.00",
+                        najlepszyRzut: g.rzuty && g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
+                        najlepszyLeg: g.najlepszyLeg || "-",
+                        liczba180: g.rzuty ? g.rzuty.filter((r) => r === 180).length : 0,
+                        skutecznoscDouble: g.lotkiNaDoubla > 0 ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%` : "0%",
+                    })),
+                    pelny_przebieg_meczu: historiaRundDoZapisu,
+                };
+
+                const historia = JSON.parse(localStorage.getItem("sd_historia_meczow") || "[]");
+                historia.unshift(podsumowanieMeczu);
+                if (historia.length > 30) historia.pop();
+                localStorage.setItem("sd_historia_meczow", JSON.stringify(historia));
+
+                // 2. Zapis do Supabase
+                let klientBazy = window.supabaseClient || window.supabaseKlient;
+                if (!klientBazy && window.supabase) {
+                    try {
+                        klientBazy = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+                        window.supabaseClient = klientBazy;
+                        window.supabaseKlient = klientBazy;
+                    } catch (eInit) {}
+                }
+
+                // ================================================================
+                // OBSŁUGA TRYBU ONLINE: Host zapisuje jako pierwszy, Gość zapasowo
+                // ================================================================
+                const pokojKod = window.onlineKodPokoju || (typeof onlineKodPokoju !== "undefined" ? onlineKodPokoju : new URLSearchParams(window.location.search).get("pokoj"));
+                const czyOnline = (typeof czyTrybOnline !== "undefined" && czyTrybOnline) || !!pokojKod;
+
+                if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline !== 0) {
+                    console.log("Oczekiwanie gościa na zapis meczu przez Hosta...");
+                    let hostZapisal = false;
+                    for (let i = 0; i < 25; i++) {
+                        if (window.meczJuzZapisanyPrzezHosta) {
+                            hostZapisal = true;
+                            break;
+                        }
+                        await new Promise((r) => setTimeout(r, 100));
+                    }
+                    if (hostZapisal) {
+                        console.log("Mecz został pomyślnie zapisany w chmurze przez Hosta.");
+                        return;
+                    }
+                    console.log("Brak potwierdzenia od Hosta po 2.5s - Gość wykonuje zapasowy zapis meczu i statystyk.");
+                }
+
+                try {
+                    let user = null;
+                    let session = null;
+                    try {
+                        const sessionData = await Promise.race([pobierzAktywnaSesjeSupabase(), new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout sesji")), 3000))]);
+                        session = sessionData;
+                        user = session?.user;
+                    } catch (eSess) {}
+
+                    if (!user) {
+                        user = odczytajZalogowanegoZStorage();
+                    }
+
+                    if (!user) {
+                        console.warn("Brak aktywnej sesji - mecz zapisany tylko lokalnie.");
+                        alert("Mecz zapisany lokalnie, ale nie znaleziono sesji konta. Zaloguj się ponownie, aby zapisać statystyki online.");
+                        return;
+                    }
+
+                    const userId = user.id;
+                    const meta = user.user_metadata || {};
+                    const userEmail = user.email || user.user?.email || "";
+                    const mojNick = (meta.nazwa_gracza || meta.username || zalogowanyNickGlobalny || (userEmail ? userEmail.split("@")[0] : "")).trim().toLowerCase();
+
+                    // Pobieramy świeży token autoryzacji do zapytań REST
+                    const token = await uzyskajSwiezyTokenAuth(klientBazy);
+
+                    // Identyfikacja pokoju i UUID graczy w trybie online
+                    let host_id_db = window.onlinePokoj?.host_id || null;
+                    let gosc_id_db = window.onlinePokoj?.gosc_id || null;
+
+                    if (czyOnline && pokojKod && (!host_id_db || !gosc_id_db)) {
+                        try {
+                            const pokData = await wyslijDoSupabase(`/rest/v1/rooms?kod_pokoju=eq.${encodeURIComponent(pokojKod)}&select=host_id,gosc_id,host_nazwa,gosc_nazwa`);
+                            if (Array.isArray(pokData) && pokData[0]) {
+                                if (pokData[0].host_id) host_id_db = pokData[0].host_id;
+                                if (pokData[0].gosc_id) gosc_id_db = pokData[0].gosc_id;
+                            }
+                        } catch (ePok) {}
+                    }
+
+                    if (czyOnline) {
+                        if (host_id_db && gracze[0]) gracze[0].profilId = host_id_db;
+                        if (gosc_id_db && gracze[1]) gracze[1].profilId = gosc_id_db;
+                    }
+
+                    // Sprawdzamy czy to mecz turniejowy
+                    let czyTurniej = false;
+                    try {
+                        const conf = JSON.parse(localStorage.getItem("sd_konfiguracja_gry") || "{}");
+                        if (conf.tryb === "turniej") czyTurniej = true;
+                    } catch (e) {}
+
+                    // Automatyczne wykrycie i uzupełnienie UUID wszystkich uczestników (znajomych)
+                    if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
+                        try {
+                            window.idZnajomychWGrze = JSON.parse(localStorage.getItem("sd_id_znajomych_w_grze") || "{}");
+                        } catch (e) {}
+                    }
+
+                    for (const g of gracze) {
+                        if (g.czyBot) continue;
+                        if (userId && (g.id === (typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0 ? mojIndeksOnline : 0) || g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
+                            g.profilId = userId;
+                            continue;
+                        }
+                        if (g.profilId && /^[0-9a-f-]{36}$/i.test(g.profilId)) continue;
+                        let pid = g.profilId || (window.idZnajomychWGrze && (window.idZnajomychWGrze[g.nazwa] || window.idZnajomychWGrze[g.nazwa.trim()] || window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]));
+                        if (!pid && czyOnline) {
+                            if (g.id === 1 && gosc_id_db) pid = gosc_id_db;
+                            else if (g.id === 0 && host_id_db) pid = host_id_db;
+                        }
+                        if (!pid || !/^[0-9a-f-]{36}$/i.test(pid)) {
+                            try {
+                                const rows = await wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`);
+                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
+                                    pid = rows[0].id;
+                                }
+                            } catch (eLook) {}
+                        }
+                        if (pid && /^[0-9a-f-]{36}$/i.test(pid)) {
+                            g.profilId = pid;
+                            if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
+                            window.idZnajomychWGrze[g.nazwa] = pid;
+                            window.idZnajomychWGrze[g.nazwa.trim()] = pid;
+                            window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()] = pid;
+                        }
+                    }
+
+                    let mojGracz = null;
+                    let rywalGracz = null;
+
+                    if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0) {
+                        mojGracz = gracze[mojIndeksOnline];
+                        rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
+                    } else {
+                        // 1. Dopasowanie po profilId (jeśli przypisane)
+                        if (userId) {
+                            mojGracz = gracze.find((g) => g.profilId === userId);
+                        }
+                        // 2. Dopasowanie po nazwie gracza
+                        if (!mojGracz && mojNick) {
+                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === mojNick);
+                        }
+                        if (!mojGracz && zalogowanyNickGlobalny) {
+                            mojGracz = gracze.find((g) => g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase());
+                        }
+                        // 3. Fallback: gracz 0 (o ile to nie turniej)
+                        if (!mojGracz && !czyTurniej) {
+                            mojGracz = gracze[0];
+                        }
+                        if (mojGracz) {
+                            rywalGracz = gracze.find((g) => g.id !== mojGracz.id && g.profilId && g.profilId !== userId) || gracze.find((g) => g.id !== mojGracz.id) || null;
+                        }
+                    }
+
+                    if (!mojGracz) {
+                        console.log("Pominięto zapis - zalogowany użytkownik nie brał udziału w meczu turniejowym.");
+                        alert("Nie zapisano statystyk: nie udało się dopasować Twojego konta do gracza w meczu.");
+                        return;
+                    }
+
+                    if (czyOnline && rywalGracz && !rywalGracz.profilId) {
+                        rywalGracz.profilId = mojIndeksOnline === 0 ? gosc_id_db : host_id_db;
+                    }
+                    if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
+                        gosc_id_db = mojIndeksOnline === 0 ? rywalGracz.profilId : userId;
+                    }
+
+                    let idZwyciezcy = null;
+                    if (zwyciezca) {
+                        if (zwyciezca.profilId && /^[0-9a-f-]{36}$/i.test(zwyciezca.profilId)) {
+                            idZwyciezcy = zwyciezca.profilId;
+                        } else if (czyOnline) {
+                            if (zwyciezca.id === 0) idZwyciezcy = host_id_db || gracze[0]?.profilId || null;
+                            else if (zwyciezca.id === 1) idZwyciezcy = gosc_id_db || gracze[1]?.profilId || null;
+                        }
+                        if (!idZwyciezcy) {
+                            if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
+                                idZwyciezcy = userId;
+                            } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
+                                idZwyciezcy = gosc_id_db;
+                            }
+                        }
+                    }
+
+                    const czyWygralem = zwyciezca ? zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa || idZwyciezcy === userId : false;
+                    const statyMojGracz = podsumowanieMeczu.gracze.find((g) => g.id === mojGracz.id);
+                    const nowaMojaSrednia = parseFloat(statyMojGracz?.srednia) || 0;
+                    const nowaSrednia9 = parseFloat(statyMojGracz?.srednia9) || 0;
+                    const moje180 = statyMojGracz?.liczba180 || 0;
+
+                    // ================================================================
+                    // KROK 1: AKTUALIZACJA STATYSTYK HOSTA
+                    // ================================================================
+                    let obecnyProfil = null;
+                    try {
+                        const rowsP = await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`);
+                        if (Array.isArray(rowsP) && rowsP.length > 0) obecnyProfil = rowsP[0];
+                    } catch (eHostFetch) {}
+
+                    if (!obecnyProfil) {
+                        try {
+                            const rowsWorker = await pobierzWierszeZnajomychApi("profiles", { id: `eq.${userId}` }, "odczyt profilu hosta");
+                            if (Array.isArray(rowsWorker) && rowsWorker.length > 0) obecnyProfil = rowsWorker[0];
+                        } catch (eWork) {}
+                    }
+
+                    if (!obecnyProfil && klientBazy) {
+                        try {
+                            const { data: pData } = await zLimitemCzasu(klientBazy.from("profiles").select("*").eq("id", userId).maybeSingle(), "odczyt profilu hosta", 3500);
+                            obecnyProfil = pData;
+                        } catch (eSdkP) {}
+                    }
+
+                    if (!obecnyProfil) {
+                        console.warn("Nie udało się pobrać profilu hosta z bazy, użyto wartości domyślnych.");
+                        obecnyProfil = {
+                            id: userId,
+                            rozegrane_mecze: 0,
+                            wygrane_mecze: 0,
+                            srednia: 0,
+                            srednia_9_lotek: 0,
+                            ilosc_180: 0,
+                        };
+                    }
+
+                    const dotychczasMecze = parseInt(obecnyProfil.rozegrane_mecze) || 0;
+                    const dotychczasWygrane = parseInt(obecnyProfil.wygrane_mecze) || 0;
+                    const dotychczasSrednia = parseFloat(obecnyProfil.srednia) || 0;
+                    const dotychczasSrednia9 = parseFloat(obecnyProfil.srednia_9_lotek) || 0;
+                    const dotychczas180 = parseInt(obecnyProfil.ilosc_180) || 0;
+
+                    const noweMecze = dotychczasMecze + 1;
+                    const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
+                    const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
+                    const noweWygrane = czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane;
+                    const nowe180 = dotychczas180 + moje180;
+
+                    let zapisanoHosta = false;
+                    try {
+                        await wyslijDoSupabase("/rest/v1/rpc/zaktualizuj_statystyki_po_meczu", {
+                            method: "POST",
+                            body: {
+                                p_gracz_id: userId,
+                                p_nowe_mecze: noweMecze,
+                                p_nowe_wygrane: noweWygrane,
+                                p_nowa_srednia: parseFloat(nowaSredniaOgolna),
+                                p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
+                                p_nowe_180: nowe180,
+                            },
+                        });
+                        zapisanoHosta = true;
+                    } catch (eRpcHost) {
+                        console.warn("Błąd RPC hosta przez proxy:", eRpcHost);
+                    }
+
+                    if (!zapisanoHosta && klientBazy) {
+                        try {
+                            const { error: rpcErrHost } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
+                                p_gracz_id: userId,
+                                p_nowe_mecze: noweMecze,
+                                p_nowe_wygrane: noweWygrane,
+                                p_nowa_srednia: parseFloat(nowaSredniaOgolna),
+                                p_nowa_srednia9: parseFloat(nowaSrednia9Ogolna),
+                                p_nowe_180: nowe180,
+                            });
+                            if (!rpcErrHost) zapisanoHosta = true;
+                        } catch (eSdkRpcHost) {}
+                    }
+
+                    if (!zapisanoHosta && klientBazy) {
+                        try {
+                            await klientBazy
+                                .from("profiles")
+                                .update({
+                                    rozegrane_mecze: noweMecze,
+                                    wygrane_mecze: noweWygrane,
+                                    srednia: nowaSredniaOgolna,
+                                    srednia_9_lotek: nowaSrednia9Ogolna,
+                                    ilosc_180: nowe180,
+                                })
+                                .eq("id", userId);
+                            zapisanoHosta = true;
+                        } catch (eUpdateHost) {}
+                    }
+
+                    // ================================================================
+                    // KROK 2: AKTUALIZACJA STATYSTYK ZNAJOMYCH / RYWALÓW (PRZED ZAPISEM MECZU!)
+                    // ================================================================
+                    for (const graczUczestnik of gracze) {
+                        if (graczUczestnik.id === mojGracz.id || graczUczestnik.czyBot) continue;
+
+                        const idProfiluRywala = graczUczestnik.profilId;
+                        if (!idProfiluRywala || !/^[0-9a-f-]{36}$/i.test(idProfiluRywala)) continue;
+
+                        const statyRywal = podsumowanieMeczu.gracze.find((g) => g.id === graczUczestnik.id);
+                        if (!statyRywal) continue;
+
+                        try {
+                            let profRywal = null;
+                            try {
+                                const rowsR = await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${encodeURIComponent(idProfiluRywala)}&select=*`);
+                                if (Array.isArray(rowsR) && rowsR.length > 0) profRywal = rowsR[0];
+                            } catch (eFetchR) {}
+
+                            if (!profRywal) {
+                                try {
+                                    const rowsWorkerR = await pobierzWierszeZnajomychApi("profiles", { id: `eq.${idProfiluRywala}` }, "odczyt profilu rywala");
+                                    if (Array.isArray(rowsWorkerR) && rowsWorkerR.length > 0) profRywal = rowsWorkerR[0];
+                                } catch (eWorkerR) {}
+                            }
+
+                            if (!profRywal && klientBazy) {
+                                try {
+                                    const { data: pData } = await klientBazy.from("profiles").select("*").eq("id", idProfiluRywala).maybeSingle();
+                                    profRywal = pData;
+                                } catch (eSdkR) {}
+                            }
+
+                            if (profRywal) {
+                                const dotychczasMeczeR = parseInt(profRywal.rozegrane_mecze) || 0;
+                                const dotychczasWygraneR = parseInt(profRywal.wygrane_mecze) || 0;
+                                const dotychczasSredniaR = parseFloat(profRywal.srednia) || 0;
+                                const dotychczasSrednia9R = parseFloat(profRywal.srednia_9_lotek) || 0;
+                                const dotychczas180R = parseInt(profRywal.ilosc_180) || 0;
+
+                                const noweMeczeR = dotychczasMeczeR + 1;
+                                const nowaSredniaRywal = parseFloat(statyRywal.srednia) || 0;
+                                const nowaSrednia9Rywal = parseFloat(statyRywal.srednia9) || 0;
+
+                                const nowaSredniaOgolnaR = dotychczasMeczeR === 0 ? nowaSredniaRywal.toFixed(2) : ((dotychczasSredniaR * dotychczasMeczeR + nowaSredniaRywal) / noweMeczeR).toFixed(2);
+                                const nowaSrednia9OgolnaR = dotychczasMeczeR === 0 ? nowaSrednia9Rywal.toFixed(2) : ((dotychczasSrednia9R * dotychczasMeczeR + nowaSrednia9Rywal) / noweMeczeR).toFixed(2);
+                                const czyTenRywalWygral = idZwyciezcy === idProfiluRywala || (zwyciezca && (zwyciezca.id === graczUczestnik.id || (zwyciezca.nazwa && graczUczestnik.nazwa && zwyciezca.nazwa.toLowerCase() === graczUczestnik.nazwa.toLowerCase())));
+                                const noweWygraneR = czyTenRywalWygral ? dotychczasWygraneR + 1 : dotychczasWygraneR;
+                                const nowe180R = dotychczas180R + (statyRywal.liczba180 || 0);
+
+                                let zaktualizowanoRywala = false;
+
+                                // Wywołanie RPC SECURITY DEFINER przez wyslijDoSupabase (proxy)
+                                try {
+                                    await wyslijDoSupabase("/rest/v1/rpc/zaktualizuj_statystyki_po_meczu", {
+                                        method: "POST",
+                                        body: {
+                                            p_gracz_id: idProfiluRywala,
+                                            p_nowe_mecze: noweMeczeR,
+                                            p_nowe_wygrane: noweWygraneR,
+                                            p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                            p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                            p_nowe_180: nowe180R,
+                                        },
+                                    });
+                                    zaktualizowanoRywala = true;
+                                } catch (eRpcDirect) {
+                                    console.warn("Błąd RPC rywala przez proxy:", eRpcDirect);
+                                }
+
+                                if (!zaktualizowanoRywala && klientBazy) {
+                                    try {
+                                        const { error: rpcErr } = await klientBazy.rpc("zaktualizuj_statystyki_po_meczu", {
+                                            p_gracz_id: idProfiluRywala,
+                                            p_nowe_mecze: noweMeczeR,
+                                            p_nowe_wygrane: noweWygraneR,
+                                            p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                            p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                            p_nowe_180: nowe180R,
+                                        });
+                                        if (!rpcErr) zaktualizowanoRywala = true;
+                                    } catch (eRpc) {}
+                                }
+
+                                if (!zaktualizowanoRywala && klientBazy) {
+                                    try {
+                                        const { data: updateRes, error: updateErr } = await klientBazy
+                                            .from("profiles")
+                                            .update({
+                                                rozegrane_mecze: noweMeczeR,
+                                                wygrane_mecze: noweWygraneR,
+                                                srednia: nowaSredniaOgolnaR,
+                                                srednia_9_lotek: nowaSrednia9OgolnaR,
+                                                ilosc_180: nowe180R,
+                                            })
+                                            .eq("id", idProfiluRywala)
+                                            .select("id");
+
+                                        if (!updateErr && updateRes && updateRes.length > 0) {
+                                            zaktualizowanoRywala = true;
+                                        }
+                                    } catch (eUpd) {}
+                                }
+
+                                if (zaktualizowanoRywala) {
+                                    console.log(`Statystyki profilu znajomego (${graczUczestnik.nazwa}) pomyślnie zaktualizowane.`);
+                                } else {
+                                    console.warn(`Nie udało się zaktualizować profilu znajomego (${graczUczestnik.nazwa}).`);
+                                }
+                            }
+                        } catch (errRywal) {
+                            console.warn("Błąd podczas aktualizacji profilu rywala:", errRywal);
+                        }
+                    }
+
+                    // ================================================================
+                    // KROK 3: ZAPISANIE POJEDYNKU DO TABELI MATCHES (ZE ŚWIEŻYM TOKENEM)
+                    // ================================================================
+                    const payloadMeczu = {
+                        host_id: userId,
+                        gosc_id: gosc_id_db,
+                        zwyciezca_id: idZwyciezcy,
+                        wynik_host: mojGracz.wygraneLegi || 0,
+                        wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
+                        format_gry: `${punktyStartowe} ${trybWyjscia.toUpperCase()}`,
+                        pelny_przebieg_meczu: historiaRundDoZapisu,
+                        statystyki_graczy: podsumowanieMeczu.gracze,
+                    };
+
+                    let zapisanoMecz = false;
+                    try {
+                        const token = await uzyskajSwiezyTokenAuth(klientBazy);
+
+                        // 1. Zapis przez wyslijDoSupabase (same-origin proxy na produkcji, działa 100% na iOS)
+                        if (token) {
+                            try {
+                                await wyslijDoSupabase("/rest/v1/matches", {
+                                    method: "POST",
+                                    body: payloadMeczu,
+                                    accessToken: token,
+                                    headers: { prefer: "return=minimal" },
+                                });
+                                zapisanoMecz = true;
+                            } catch (eProxyMatch) {
+                                console.warn("Proxy /rest/v1/matches błąd:", eProxyMatch);
+                            }
+                        }
+
+                        // 2. Fallback na Worker /api/supabase-write
+                        if (!zapisanoMecz && token) {
+                            try {
+                                const resWriteMatch = await fetch("/api/supabase-write", {
+                                    method: "POST",
+                                    headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        table: "matches",
+                                        operation: "insert",
+                                        values: payloadMeczu,
+                                        accessToken: token,
+                                    }),
+                                });
+                                if (resWriteMatch.ok) zapisanoMecz = true;
+                            } catch (eWriteMatch) {}
+                        }
+
+                        // 3. Fallback na bezpośredni REST fetch z autoryzacją Bearer
+                        if (!zapisanoMecz && token) {
+                            try {
+                                const controller = new AbortController();
+                                const tid = setTimeout(() => controller.abort(), 5000);
+                                const resMatch = await fetch(`${SUPA_URL}/rest/v1/matches`, {
+                                    method: "POST",
+                                    headers: {
+                                        apikey: SUPA_KEY,
+                                        Authorization: `Bearer ${token}`,
+                                        "Content-Type": "application/json",
+                                        Prefer: "return=minimal",
+                                    },
+                                    body: JSON.stringify(payloadMeczu),
+                                    signal: controller.signal,
+                                }).finally(() => clearTimeout(tid));
+                                if (resMatch.ok) zapisanoMecz = true;
+                            } catch (eRestMatch) {}
+                        }
+
+                        // 4. Fallback na Supabase SDK
+                        if (!zapisanoMecz && klientBazy) {
+                            try {
+                                const { error: bladZapisuMeczu } = await klientBazy.from("matches").insert([payloadMeczu]);
+                                if (!bladZapisuMeczu) zapisanoMecz = true;
+                                else console.warn("Błąd SDK matches:", bladZapisuMeczu);
+                            } catch (eSdkMatch) {}
+                        }
+                    } catch (eMatchInsertBlock) {
+                        console.warn("Błąd bloku zapisu meczu:", eMatchInsertBlock);
+                    }
+
+                    if (zapisanoMecz) {
+                        console.log("Mecz pomyślnie zapisany w bazie danych matches!");
+                    } else {
+                        console.warn("Mecz nie został dodany do tabeli 'matches', ale statystyki obu graczy zostały pomyślnie zaktualizowane.");
+                    }
+                } catch (error) {
+                    console.error("Błąd zapisu meczu do Supabase:", error);
+                    alert(`Błąd zapisu meczu lub statystyk: ${error.message || "nieznany błąd"}`);
+                }
+            }
+
+            // Funkcja przełączania zakładek w ekranie wygranej
+            window.przelaczStatystyki = function (typ) {
+                const btnOgolne = document.getElementById("tab-stat-ogolne");
+                const btnLiczby = document.getElementById("tab-stat-liczby");
+                const tabOgolne = document.getElementById("tabela-statystyki-ogolne");
+                const tabLiczby = document.getElementById("tabela-statystyki-liczby");
+
+                if (typ === "ogolne") {
+                    btnOgolne.classList.add("aktywna-stat-tab");
+                    btnLiczby.classList.remove("aktywna-stat-tab");
+                    tabOgolne.style.display = "table";
+                    tabLiczby.style.display = "none";
+                } else {
+                    btnLiczby.classList.add("aktywna-stat-tab");
+                    btnOgolne.classList.remove("aktywna-stat-tab");
+                    tabOgolne.style.display = "none";
+                    tabLiczby.style.display = "table";
+                }
+            };
+
+            function zakonczMecz(zwyciezca) {
+                if (typeof window.wylaczKamere === "function") window.wylaczKamere();
+                zapiszMeczDoHistorii(zwyciezca);
+                let czyToTurniej = false;
+
+                // --- INTEGRACJA Z TURNIEJAMI: ZAPIS WYNIKU ---
+                const suroweDaneTurnieju = localStorage.getItem("sd_konfiguracja_gry");
+                if (suroweDaneTurnieju) {
+                    try {
+                        const konfiguracja = JSON.parse(suroweDaneTurnieju);
+                        if (konfiguracja.tryb === "turniej") {
+                            czyToTurniej = true;
+
+                            // Pobieramy średnie OBU graczy
+                            const sredniaZwyciezcy = typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(zwyciezca.id) : "0.00";
+                            const przegrany = gracze.find((g) => g.id !== zwyciezca.id);
+                            const sredniaPrzegranego = przegrany && typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(przegrany.id) : "0.00";
+
+                            // Zapisujemy wynik do schowka turniejowego (z podziałem na role wygrany/przegrany)
+                            const wynikiTurnieju = JSON.parse(localStorage.getItem("sd_wyniki_turnieju") || "{}");
+                            wynikiTurnieju[konfiguracja.meczId] = {
+                                zwyciezca: zwyciezca.nazwa,
+                                przegrany: przegrany ? przegrany.nazwa : "Przeciwnik",
+                                wygraneZwyciezcy: zwyciezca.wygraneLegi,
+                                wygranePrzegranego: przegrany ? przegrany.wygraneLegi : 0,
+                                sredniaZwyciezcy: `(${sredniaZwyciezcy})`,
+                                sredniaPrzegranego: `(${sredniaPrzegranego})`,
+                            };
+
+                            localStorage.setItem("sd_wyniki_turnieju", JSON.stringify(wynikiTurnieju));
+                            localStorage.removeItem("sd_konfiguracja_gry"); // Czyścimy schowek meczowy
+                        }
+                    } catch (e) {
+                        console.error("Błąd zapisu wyników turniejowych:", e);
+                    }
+                }
+
+                // --- ZMIANA EKRANU UI ---
+                ekranGry.style.display = "none";
+                ekranWygranej.style.display = "flex";
+                powrotDoGier.style.display = "inline-flex";
+
+                if (liczbaGraczy === 1) {
+                    wygranyTekst.textContent = `Koniec treningu!`;
+                } else {
+                    wygranyTekst.textContent = `Wygrywa ${zwyciezca.nazwa}!`;
+                }
+
+                // ZMIANA TEKSTU PRZYCISKU POWROTNEGO
+                const btnKolejna = document.getElementById("zacznij-kolejna");
+                if (btnKolejna) {
+                    btnKolejna.textContent = czyToTurniej ? "WRÓĆ DO TURNIEJU" : "ROZPOCZNIJ NOWĄ GRĘ";
+                }
+
+                // Przywracamy domyślnie pierwszą zakładkę statystyk
+                przelaczStatystyki("ogolne");
+
+                // Wspólny nagłówek dla obu tabel
+                let theadHtml = `<thead><tr><th style="width:28%">Statystyki</th>`;
+                gracze.forEach((g) => {
+                    theadHtml += `<th><div class="nick-przewijany">${g.nazwa}</div></th>`;
+                });
+                theadHtml += `</tr></thead>`;
+
+                const dodajWiersz = (tytul, wartoscFn) => {
+                    let tr = `<tr><td><strong>${tytul}</strong></td>`;
+                    gracze.forEach((g) => {
+                        tr += `<td>${wartoscFn(g)}</td>`;
+                    });
+                    tr += `</tr>`;
+                    return tr;
+                };
+
+                const policzStatystyke = (g, min, max, dokladnie) => {
+                    return g.rzuty.filter((r) => {
+                        if (dokladnie !== undefined) return r === dokladnie;
+                        if (max !== undefined) return r >= min && r < max;
+                        return r >= min;
+                    }).length;
+                };
+
+                // --- TABELA 1: STATYSTYKI OGÓLNE ---
+                let tbodyOgolne = `<tbody>`;
+                tbodyOgolne += dodajWiersz("Wygrane legi", (g) => g.wygraneLegi);
+                tbodyOgolne += dodajWiersz("Średnia", (g) => obliczSredniaGracza(g.id));
+                tbodyOgolne += dodajWiersz("Pierwsze 9-lotek", (g) => obliczSrednia9Lotek(g.id));
+                tbodyOgolne += dodajWiersz("Najlepszy leg", (g) => (g.najlepszyLeg === null ? "-" : `${g.najlepszyLeg} lotek`));
+                tbodyOgolne += dodajWiersz("Najlepszy rzut", (g) => (g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0));
+                tbodyOgolne += dodajWiersz("Skuteczność Double", (g) => {
+                    if (g.lotkiNaDoubla === 0) return "0/0 (0%)";
+                    return `${g.trafioneDouble}/${g.lotkiNaDoubla} (${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%)`;
+                });
+                tbodyOgolne += `</tbody>`;
+
+                // --- TABELA 2: STATYSTYKI LICZBOWE (PRZEDZIAŁY CO 20, 170+ I 180) ---
+                let tbodyLiczby = `<tbody>`;
+                tbodyLiczby += dodajWiersz("26", (g) => policzStatystyke(g, 0, 0, 26));
+                tbodyLiczby += dodajWiersz("40+", (g) => policzStatystyke(g, 40, 60));
+                tbodyLiczby += dodajWiersz("60+", (g) => policzStatystyke(g, 60, 80));
+                tbodyLiczby += dodajWiersz("80+", (g) => policzStatystyke(g, 80, 100));
+                tbodyLiczby += dodajWiersz("100+", (g) => policzStatystyke(g, 100, 120));
+                tbodyLiczby += dodajWiersz("120+", (g) => policzStatystyke(g, 120, 140));
+                tbodyLiczby += dodajWiersz("140+", (g) => policzStatystyke(g, 140, 160));
+                tbodyLiczby += dodajWiersz("160+", (g) => policzStatystyke(g, 160, 170));
+                tbodyLiczby += dodajWiersz("170+", (g) => policzStatystyke(g, 170, 180));
+                tbodyLiczby += dodajWiersz("180", (g) => policzStatystyke(g, 0, 0, 180));
+                tbodyLiczby += `</tbody>`;
+
+                document.getElementById("tabela-statystyki-ogolne").innerHTML = theadHtml + tbodyOgolne;
+                document.getElementById("tabela-statystyki-liczby").innerHTML = theadHtml + tbodyLiczby;
+            }
+
+            przyciskZobaczPrzebieg.addEventListener("click", () => {
+                kontenerZakladek.innerHTML = "";
+                kontenerTabeleLegow.innerHTML = "";
+
+                historiaMeczuLegi.forEach((legData, index) => {
+                    const btnTab = document.createElement("button");
+                    btnTab.className = `przycisk-zakladki ${index === 0 ? "aktywna" : ""}`;
+                    btnTab.textContent = `Leg ${index + 1}`;
+                    btnTab.setAttribute("data-leg", index);
+                    btnTab.addEventListener("click", () => {
+                        document.querySelectorAll(".przycisk-zakladki").forEach((b) => b.classList.remove("aktywna"));
+                        document.querySelectorAll(".zawartosc-zakladki").forEach((z) => z.classList.remove("aktywna"));
+                        btnTab.classList.add("aktywna");
+                        document.getElementById(`zawartosc-leg-${index}`).classList.add("aktywna");
+                    });
+                    kontenerZakladek.appendChild(btnTab);
+
+                    const divTabContent = document.createElement("div");
+                    divTabContent.className = `zawartosc-zakladki ${index === 0 ? "aktywna" : ""}`;
+                    divTabContent.id = `zawartosc-leg-${index}`;
+
+                    let szerokoscKolumny = Math.floor(90 / liczbaGraczy);
+
+                    let srednieWLegu = {};
+
+                    gracze.forEach((g) => {
+                        let rzutyGraczaWLegu = legData.filter((r) => r.graczId === g.id);
+                        let sumaPkt = rzutyGraczaWLegu.reduce((sum, r) => sum + r.rzut, 0);
+                        let iloscKolejek = rzutyGraczaWLegu.length; // Liczymy ilość tur
+
+                        srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
+                    });
+
+                    let htmlTabeli = `
+                                    <table class="tabela-przebiegu">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 10%;">Kolejka</th>
+                                `;
+                    gracze.forEach((g) => {
+                        htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
+                                            <div class="nick-przewijany">${g.nazwa}</div>
+                                            <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
+                                        </th>`;
+                    });
+
+                    htmlTabeli += `</tr></thead><tbody>`;
+
+                    let rundyMap = {};
+                    legData.forEach((rekord) => {
+                        if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
+                        rundyMap[rekord.kolejka][rekord.graczId] = rekord;
+                    });
+
+                    Object.keys(rundyMap).forEach((kol) => {
+                        htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
+                        gracze.forEach((g) => {
+                            let rzutG = rundyMap[kol][g.id];
+                            let cel = rzutG ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>` : "-";
+                            htmlTabeli += `<td>${cel}</td>`;
+                        });
+                        htmlTabeli += `</tr>`;
+                    });
+
+                    htmlTabeli += `</tbody></table>`;
+                    divTabContent.innerHTML = htmlTabeli;
+                    kontenerTabeleLegow.appendChild(divTabContent);
+                });
+
+                modalPrzebiegu.style.display = "flex";
+            });
+
+            przyciskZamknijPrzebieg.addEventListener("click", () => {
+                modalPrzebiegu.style.display = "none";
+            });
+
+            document.getElementById("powrot-gra").addEventListener("click", () => {
+                if (typeof czyTrybOnline !== "undefined" && czyTrybOnline) return;
+                const suroweDaneT = localStorage.getItem("sd_konfiguracja_gry");
+                let czyTurniej = false;
+                try {
+                    czyTurniej = suroweDaneT && JSON.parse(suroweDaneT).tryb === "turniej";
+                } catch (e) {}
+
+                const pytanie = czyTurniej
+                    ? "Czy na pewno chcesz przerwać mecz i wrócić do turnieju?"
+                    : "Czy na pewno chcesz przerwać bieżącą grę i wrócić do ustawień?";
+
+                pokazModalSystemowyOnline("Przerwanie gry", pytanie, "confirm", (czyPrzerwac) => {
+                    if (czyPrzerwac) {
+                        if (typeof window.wylaczKamere === "function") window.wylaczKamere();
+                        if (czyTurniej) {
+                            localStorage.removeItem("sd_konfiguracja_gry");
+                            localStorage.removeItem("sd_trwajacy_mecz");
+                            window.location.href = "./turnieje.html";
+                            return;
+                        }
+                        ekranGry.style.display = "none";
+                        formularzUstawien.style.display = "flex";
+                        tytulStrony.style.display = "block";
+                        wpiszWynikInput.value = "";
+                        powrotDoGier.style.display = "inline-flex";
+                        resetujPodgladKlikow();
+                    }
+                });
+            });
+
+            przyciskKolejnaGra.addEventListener("click", () => {
+                // Jeśli jesteśmy w trybie turniejowym, przycisk ma wracać do drabinki/grup
+                if (przyciskKolejnaGra.textContent === "WRÓĆ DO TURNIEJU") {
+                    window.location.href = "./turnieje.html";
+                    return;
+                }
+
+                // Normalny tryb gry - resetujemy tarczę
+                ekranWygranej.style.display = "none";
+                formularzUstawien.style.display = "flex";
+                tytulStrony.style.display = "block";
+                wpiszWynikInput.value = "";
+                resetujPodgladKlikow();
+            });
+
+            // --- LOGIKA PRZEŁĄCZANIA ZAKŁADEK NA KARCIE GRACZA ---
+            window.przelaczZakladkeKarty = function (btn, pokazId, ukryjId) {
+                const karta = btn.closest(".karta-gracza");
+                const buttons = karta.querySelectorAll(".zakladka-btn-karta");
+                buttons.forEach((b) => {
+                    b.classList.remove("aktywne-btn");
+                });
+
+                btn.classList.add("aktywne-btn");
+
+                document.getElementById(pokazId).style.display = "block";
+                document.getElementById(ukryjId).style.display = "none";
+            };
+
+            function sprawdzTureBota() {
+                if (typeof anulujTureBota === "function") {
+                    anulujTureBota();
+                }
+
+                let aktywnyGracz = gracze[aktualnyGraczIndex];
+                if (aktywnyGracz.czyBot) {
+                    // Blokujemy ręczne wpisywanie
+                    wpiszWynikInput.disabled = true;
+                    document.querySelector(".strefa-klikania").style.pointerEvents = "none";
+
+                    // Wywołujemy funkcję z osobnego pliku dartbot.js
+                    if (typeof wykonajTureBota === "function") {
+                        wykonajTureBota(aktywnyGracz);
+                    }
+                } else {
+                    // Zdejmujemy blokady dla ludzkiego gracza
+                    document.querySelector(".strefa-klikania").style.pointerEvents = "auto";
+                    sprawdzRozmiar();
+                    wpiszWynikInput.focus();
+                }
+            }
+            // ==========================================
+            // PANCERNY AUTOZAPIS MECZU (F5)
+            // ==========================================
+
+            function usunStanMeczuZStorage() {
+                localStorage.removeItem("sd_trwajacy_mecz");
+            }
+
+            // ==========================================
+            // PANCERNY AUTOZAPIS MECZU + PEŁNE COFANIE (F5)
+            // ==========================================
+
+            function zapiszStanMeczuDoStorage() {
+                if (ekranGry.style.display !== "block") return;
+
+                const daneMeczu = {
+                    punktyStartowe,
+                    limitLotek: typeof maksymalnyLimitLotek !== "undefined" ? maksymalnyLimitLotek : 30,
+                    doceloweLegi,
+                    aktualnaKolejka,
+                    gracze,
+                    liczbaGraczy,
+                    aktualnyGraczIndex,
+                    graczZaczynajacyLegIndex,
+                    trybWejscia,
+                    trybWyjscia,
+                    limitLotekAktywny,
+                    maksymalnyLimitLotek,
+                    historiaMeczuLegi,
+                    historiaAktualnegoLegu,
+                    historiaStanuGry, // Zapisujemy pełną historię cofnięć
+                    idZnajomychWGrze: window.idZnajomychWGrze || {},
+                };
+
+                localStorage.setItem("sd_trwajacy_mecz", JSON.stringify(daneMeczu));
+            }
+
+            function usunStanMeczuZStorage() {
+                localStorage.removeItem("sd_trwajacy_mecz");
+            }
+
+            function przywrocMeczZStorage() {
+                const suroweDane = localStorage.getItem("sd_trwajacy_mecz");
+                if (!suroweDane) return;
+
+                try {
+                    const stan = JSON.parse(suroweDane);
+
+                    punktyStartowe = stan.punktyStartowe;
+                    maksymalnyLimitLotek = stan.limit || 30;
+                    doceloweLegi = stan.doceloweLegi;
+                    aktualnaKolejka = stan.aktualnaKolejka;
+                    gracze = stan.gracze;
+                    liczbaGraczy = stan.liczbaGraczy;
+                    aktualnyGraczIndex = stan.aktualnyGraczIndex;
+                    graczZaczynajacyLegIndex = stan.graczZaczynajacyLegIndex;
+                    trybWejscia = stan.trybWejscia;
+                    trybWyjscia = stan.trybWyjscia;
+                    limitLotekAktywny = stan.limitLotekAktywny;
+                    maksymalnyLimitLotek = stan.maksymalnyLimitLotek;
+                    historiaMeczuLegi = stan.historiaMeczuLegi || [];
+                    historiaAktualnegoLegu = stan.historiaAktualnegoLegu || [];
+                    historiaStanuGry = stan.historiaStanuGry || []; // Przywracamy historię cofnięć
+
+                    if (stan.idZnajomychWGrze) {
+                        window.idZnajomychWGrze = Object.assign({}, window.idZnajomychWGrze || {}, stan.idZnajomychWGrze);
+                    }
+
+                    // Przełącz widok
+                    formularzUstawien.style.display = "none";
+                    tytulStrony.style.display = "none";
+                    powrotDoGier.style.display = "none";
+                    ekranGry.style.display = "block";
+
+                    celMeczuTekst.textContent = `Do ${doceloweLegi} wygranych`;
+                    const zuzyte = historiaAktualnegoLegu.reduce((acc, r) => acc + (r.zuzyteLotki || 3), 0);
+                    wyswietlKolejke.textContent = `Lotki: ${zuzyte} ${limitLotekAktywny ? `/ ${maksymalnyLimitLotek}` : ""}`;
+
+                    // Odtworzenie kart graczy
+                    kontenerGraczyWGrze.innerHTML = "";
+                    gracze.forEach((gracz, i) => {
+                        kontenerGraczyWGrze.innerHTML += `
+        <div class="karta-gracza" id="karta-g${i}">
+            <h2>${gracz.nazwa}</h2>
+            <div class="stan-meczu" id="wygrane-g${i}">Wygrane rundy: ${gracz.wygraneLegi}</div>
+            <div class="wynik-główny" id="punkty-g${i}">${gracz.punkty}</div>
+            <div class="checkout-sugerowany" id="checkout-g${i}"></div>
+
+            <div class="karta-zakladki">
+                <button type="button" class="zakladka-btn-karta aktywne-btn" onclick="przelaczZakladkeKarty(this, 'statystyki-g${i}', 'historia-g${i}')">Statystyki</button>
+                <button type="button" class="zakladka-btn-karta" onclick="przelaczZakladkeKarty(this, 'historia-g${i}', 'statystyki-g${i}')">Historia</button>
+            </div>
+
+            <div id="statystyki-g${i}" class="zawartosc-karty panel-statystyk-karty">
+              <table class="aktualne-statystyki-tabela">
+                <tr><th>Średnia</th><td id="srednia-tabela-g${i}">0.00</td></tr>
+                <tr><th>Pierwsze 9-lotek</th><td id="dziewiec-lotek-g${i}">0.00</td></tr>
+                <tr class="ostatni-wiersz"><th>Ostatni Leg</th><td id="ostatni-leg-g${i}">-</td></tr>
+              </table>
+            </div>
+
+            <div class="historia-rzutow panel-historii-karty" id="historia-g${i}" style="display: none;">
+                <table class="tabela-historii-karty">
+                    <thead><tr><th>Lotki</th><th>Rzucone</th><th>Zostało</th></tr></thead>
+                    <tbody id="tabela-historia-body-g${i}">
+                        <tr><td colspan="3" style="color: #777; padding: 10px;">Brak rzutów</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      `;
+                    });
+
+                    aktualizujKartyUI();
+                    gracze.forEach((g, i) => aktualizujHistorieRzutowUI(g.id, i));
+                    aktualizujCalaHistorieLeguUI();
+                    sprawdzTureBota();
+                } catch (err) {
+                    console.error("Błąd odtwarzania:", err);
+                    usunStanMeczuZStorage();
+                }
+            }
+
+            // Bezpośrednie podpięcie przycisków cofania (bez zawodnego DOMContentLoaded)
+            function podepnijPrzyciskiCofania() {
+                const przyciski = document.querySelectorAll("#btn-cofnij-rzut, .btn-cofnij, .btn-cofnij-rzut");
+                przyciski.forEach((btn) => {
+                    // Nadpisujemy onclick i zatrzymujemy propagację, by event nie odpalał się dwukrotnie
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        cofnijRzut();
+                    };
+                });
+            }
+            podepnijPrzyciskiCofania();
+
+            // Aktualizacja zapisu przy akcjach meczowych
+            const orgFinalizujTure = finalizujTure;
+            finalizujTure = function () {
+                orgFinalizujTure();
+                zapiszStanMeczuDoStorage();
+            };
+
+            const orgRozpocznijWlasciwaGre = rozpocznijWlasciwaGre;
+            rozpocznijWlasciwaGre = function (idx) {
+                orgRozpocznijWlasciwaGre(idx);
+                zapiszStanMeczuDoStorage();
+            };
+
+            const orgResetujLeg = resetujLeg;
+            resetujLeg = function () {
+                orgResetujLeg();
+                zapiszStanMeczuDoStorage();
+            };
+
+            const orgZakonczMecz = zakonczMecz;
+            zakonczMecz = function (zwyciezca) {
+                usunStanMeczuZStorage();
+                orgZakonczMecz(zwyciezca);
+            };
+
+            document.getElementById("powrot-gra").addEventListener("click", () => {
+                setTimeout(() => {
+                    if (ekranGry.style.display !== "block") {
+                        usunStanMeczuZStorage();
+                    }
+                }, 100);
+            });
+
+            const suroweTurniejWczesne = localStorage.getItem("sd_konfiguracja_gry");
+            let czyMeczTurniejWczesny = false;
+            try {
+                czyMeczTurniejWczesny = suroweTurniejWczesne && JSON.parse(suroweTurniejWczesne).tryb === "turniej";
+            } catch (e) {}
+
+            if (czyMeczTurniejWczesny) {
+                localStorage.removeItem("sd_trwajacy_mecz");
+            } else if (!new URLSearchParams(window.location.search).get("pokoj")) {
+                przywrocMeczZStorage();
+            }
+            // ==========================================
+            // INTEGRACJA Z MODUŁEM TURNIEJOWYM
+            // ==========================================
+            function zainicjalizujMeczTurniejowy() {
+                const suroweDane = localStorage.getItem("sd_konfiguracja_gry");
+                if (!suroweDane) return;
+
+                let konfiguracja;
+                try {
+                    konfiguracja = JSON.parse(suroweDane);
+                } catch (e) {
+                    return;
+                }
+                if (!konfiguracja || konfiguracja.tryb !== "turniej") return;
+
+                // Usuń ewentualny stary autozapis gry solo, aby nie brać starych stanów
+                localStorage.removeItem("sd_trwajacy_mecz");
+
+                // 1. Wpisanie graczy do globalnej tablicy i wyrenderowanie pól
+                czyBotWlaczony = false;
+                graczeUczestnicy = [konfiguracja.gracz1, konfiguracja.gracz2];
+                renderujPolaUczestnikow();
+
+                const inputGracz1 = document.getElementById("nazwa-gracza1");
+                const inputGracz2 = document.getElementById("nazwa-gracza2");
+
+                if (inputGracz1) {
+                    inputGracz1.value = konfiguracja.gracz1;
+                    inputGracz1.disabled = true;
+                }
+                if (inputGracz2) {
+                    inputGracz2.value = konfiguracja.gracz2;
+                    inputGracz2.disabled = true;
+                }
+
+                // Ukryj przyciski modyfikacji uczestników podczas meczu turniejowego
+                const btnDodaj = document.querySelector(".btn-dodaj-kolejnego-gracza");
+                if (btnDodaj) btnDodaj.style.display = "none";
+                document.querySelectorAll(".usun-pole-gracza").forEach((b) => (b.style.display = "none"));
+
+                // 2. Ustawienie parametrów gry
+                const inputPunkty = document.getElementById("punkty");
+                if (inputPunkty && konfiguracja.punktyStartowe) {
+                    inputPunkty.value = konfiguracja.punktyStartowe;
+                    inputPunkty.disabled = true;
+                }
+
+                const wlaczLimitLotekCheckbox = document.getElementById("wlacz-limit-lotek");
+                const maxLiczbaLotek = document.getElementById("limit-lotek-wartosc");
+                if (wlaczLimitLotekCheckbox) {
+                    wlaczLimitLotekCheckbox.checked = !!konfiguracja.limitLotekWlaczony;
+                }
+                if (maxLiczbaLotek) {
+                    maxLiczbaLotek.value = konfiguracja.limitLotek || 30;
+                    maxLiczbaLotek.disabled = true;
+                }
+
+                const inputLiczbaRund = document.getElementById("liczba_rund");
+                if (inputLiczbaRund && konfiguracja.doIluWygranych) {
+                    inputLiczbaRund.value = konfiguracja.doIluWygranych;
+                    inputLiczbaRund.disabled = true;
+                }
+
+                const selectWejsciaEl = document.getElementById("select-wejscia");
+                if (selectWejsciaEl && konfiguracja.in) {
+                    selectWejsciaEl.value = konfiguracja.in;
+                    selectWejsciaEl.disabled = true;
+                }
+
+                const selectWyjsciaEl = document.getElementById("select-wyjscia");
+                if (selectWyjsciaEl && konfiguracja.out) {
+                    selectWyjsciaEl.value = konfiguracja.out;
+                    selectWyjsciaEl.disabled = true;
+                }
+
+                setTimeout(() => {
+                    const przyciskGraj = document.getElementById("zacznij-grac");
+                    if (przyciskGraj) przyciskGraj.click();
+                }, 150);
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", zainicjalizujMeczTurniejowy);
+            } else {
+                zainicjalizujMeczTurniejowy();
+            }
+
+            if (typeof window.wylaczKamere === "function") {
+                window.addEventListener("beforeunload", window.wylaczKamere);
+                window.addEventListener("pagehide", window.wylaczKamere);
+            }

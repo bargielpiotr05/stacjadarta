@@ -198,6 +198,7 @@
                 <button class="tab-btn active" id="btn-tab-matches" onclick="pokazZakladke('matches')">Rozegrane mecze (matches)</button>
                 <button class="tab-btn" id="btn-tab-rooms" onclick="pokazZakladke('rooms')">Pokoje Live / Oczekujące (rooms)</button>
                 <button class="tab-btn" id="btn-tab-profiles" onclick="pokazZakladke('profiles')">Gracze (profiles)</button>
+                <button class="tab-btn" id="btn-tab-stats" onclick="pokazZakladke('stats')">📊 Statystyki konta (bargielpiotr05)</button>
             </div>
 
             <!-- SEKCJA: MATCHES -->
@@ -263,6 +264,51 @@
                         <tr><td colspan="8" style="text-align: center; color: #94a3b8;">Ładowanie profili...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- SEKCJA: DEDYKOWANE STATYSTYKI KONTA -->
+            <div class="section-box" id="sekcja-stats" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0; color: #fff;">Statystyki konta: <span id="stat-acc-email" style="color: var(--accent);">bargielpiotr05@gmail.com</span></h3>
+                        <small style="color: #94a3b8;" id="stat-acc-nick">Pobieranie profilu...</small>
+                    </div>
+                    <button class="tab-btn active" style="margin: 0;" onclick="zaladujStatystykiKonta()">🔄 Odśwież statystyki</button>
+                </div>
+
+                <!-- Siatka podsumowań per tryb -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;" id="kontener-kart-trybow">
+                    <!-- Karty generowane przez JS -->
+                </div>
+
+                <!-- Dedykowana tabela sektorów Doubles -->
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; margin-top: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: var(--accent); font-size: 16px;">🎯 Skuteczność per sektor w trybie DOUBLES (D1 - D20, DBull)</h4>
+                    <p style="color: #94a3b8; font-size: 13px; margin-top: 0;">Dokładne rozbicie wszystkich oddanych rzutów, trafień i wyliczonego % celności dla każdego podwójnego pola.</p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; text-align: center; font-size: 13px;">
+                            <thead>
+                                <tr style="background: rgba(30, 41, 59, 0.8);">
+                                    <th style="text-align: left;">Sektor</th>
+                                    <th>Trafienia</th>
+                                    <th>Wszystkie rzuty</th>
+                                    <th>Skuteczność %</th>
+                                    <th>Pasek skuteczności</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doubles-sektory-tbody">
+                                <tr><td colspan="5" style="color: #94a3b8; padding: 15px;">Brak danych rzutów na deble. Rozegraj mecz w trybie Doubles!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Surowe dane JSON -->
+                <details style="margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <summary style="cursor: pointer; color: #94a3b8; font-weight: bold;">Podgląd surowego obiektu JSON (stats_by_game)</summary>
+                    <pre id="raw-stats-json" style="color: #4ade80; font-size: 12px; overflow-x: auto; margin-top: 10px;"></pre>
+                </details>
             </div>
         </div>
 
@@ -524,19 +570,218 @@
                 const sekcje = {
                     matches: document.getElementById("sekcja-matches"),
                     rooms: document.getElementById("sekcja-rooms"),
-                    profiles: document.getElementById("sekcja-profiles")
+                    profiles: document.getElementById("sekcja-profiles"),
+                    stats: document.getElementById("sekcja-stats")
                 };
                 const btns = {
                     matches: document.getElementById("btn-tab-matches"),
                     rooms: document.getElementById("btn-tab-rooms"),
-                    profiles: document.getElementById("btn-tab-profiles")
+                    profiles: document.getElementById("btn-tab-profiles"),
+                    stats: document.getElementById("btn-tab-stats")
                 };
 
                 Object.keys(sekcje).forEach((key) => {
                     const isActive = key === tab;
-                    sekcje[key].style.display = isActive ? "block" : "none";
-                    btns[key].classList.toggle("active", isActive);
+                    if (sekcje[key]) sekcje[key].style.display = isActive ? "block" : "none";
+                    if (btns[key]) btns[key].classList.toggle("active", isActive);
                 });
+
+                if (tab === "stats") {
+                    zaladujStatystykiKonta();
+                }
+            }
+
+            async function zaladujStatystykiKonta() {
+                const targetEmail = "bargielpiotr05@gmail.com";
+                const nickEl = document.getElementById("stat-acc-nick");
+                const kontenerKart = document.getElementById("kontener-kart-trybow");
+                const tbodySektory = document.getElementById("doubles-sektory-tbody");
+                const rawJsonEl = document.getElementById("raw-stats-json");
+
+                if (nickEl) nickEl.textContent = "Ładowanie danych z profiles...";
+
+                let profil = null;
+
+                // 1. Spróbuj pobrać po zalogowanym użytkowniku
+                let sessionUser = odczytajZalogowanegoZStorage();
+                let userId = sessionUser?.id;
+
+                if (!userId && adminSupabase?.auth) {
+                    try {
+                        const { data } = await adminSupabase.auth.getUser();
+                        userId = data?.user?.id;
+                    } catch (e) {}
+                }
+
+                // 2. Pobierz z tabeli profiles
+                if (userId) {
+                    try {
+                        const { data, error } = await adminSupabase
+                            .from("profiles")
+                            .select("*")
+                            .eq("id", userId)
+                            .maybeSingle();
+                        if (!error && data) profil = data;
+                    } catch (e) {}
+                }
+
+                if (!profil) {
+                    try {
+                        const { data, error } = await adminSupabase
+                            .from("profiles")
+                            .select("*")
+                            .order("utworzono", { ascending: false })
+                            .limit(10);
+                        if (!error && data && data.length > 0) {
+                            profil = data[0]; // Pierwszy najnowszy (admin)
+                        }
+                    } catch (e) {}
+                }
+
+                if (!profil) {
+                    if (nickEl) nickEl.textContent = "Nie udało się znaleźć profilu.";
+                    return;
+                }
+
+                if (nickEl) nickEl.innerHTML = `Nick: <strong style="color:#fff;">${profil.nazwa_gracza || "Gracz"}</strong> (ID: <code>${profil.id}</code>)`;
+
+                const sbg = profil.stats_by_game || {};
+                if (rawJsonEl) rawJsonEl.textContent = JSON.stringify(sbg, null, 2);
+
+                // --- 1. GENEROWANIE KART DLA KAŻDEGO TRYBU ---
+                if (kontenerKart) {
+                    // DLA GRY KLASYCZNEJ: Pobieramy bezpośrednio z oficjalnych dedykowanych kolumn tabeli profiles!
+                    const klasMecze = profil.rozegrane_mecze ?? 0;
+                    const klasWygrane = profil.wygrane_mecze ?? 0;
+                    const klasSrednia = profil.srednia ?? "0.00";
+                    const klasSrednia9 = profil.srednia_9_lotek ?? "0.00";
+                    const klas180 = profil.ilosc_180 ?? 0;
+                    const klasNajwyzszyCheckout = profil.najwyzszy_checkout ?? 0;
+                    const klasNajlepszyLeg = profil.najlepszy_leg ?? "-";
+                    const klasSkutecznoscDouble = profil.skutecznosc_double ?? "0.00";
+
+                    const dbl = sbg.doubles || { mecze: 0, wygrane: 0, suma_rzutow: 0, suma_trafien: 0, skutecznosc: 0, sektory: {} };
+                    const shg = sbg.shanghai || { mecze: 0, wygrane: 0, rekord_punktow: 0, suma_punktow: 0, liczba_shanghai: 0, srednia_na_gre: 0 };
+                    const atw = sbg.around_the_world || { mecze: 0, wygrane: 0, rekord_najmniej_lotek: null, skutecznosc: 0, suma_rzutow: 0, suma_trafien: 0 };
+                    const c121 = sbg.checkout_121 || { podejscia: 0, sukcesy: 0, max_poziom: 121, najlepsza_seria: 0, skutecznosc: 0 };
+                    const crk = sbg.cricket || { mecze: 0, wygrane: 0, mpr: 0 };
+
+                    kontenerKart.innerHTML = `
+                        <!-- Klasyczna 501 (Dedykowane kolumny w profiles) -->
+                        <div class="stat-card" style="text-align: left; padding: 16px; border: 1px solid rgba(74, 222, 128, 0.3);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:var(--accent); font-size:15px;">🎯 KLASYCZNA (Oficjalna tabela)</strong>
+                                <span class="badge badge-active">${klasWygrane}W / ${klasMecze}M</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>Średnia meczowa: <strong style="color:#fff; font-size:15px;">${klasSrednia}</strong></div>
+                                <div>Średnia 9 lotek: <strong style="color:#fff;">${klasSrednia9}</strong></div>
+                                <div>Maksy (180): <strong style="color:#4ade80;">${klas180}</strong></div>
+                                <div>Najwyższy Checkout: <strong style="color:#38bdf8;">${klasNajwyzszyCheckout}</strong></div>
+                                <div>Najlepszy leg: <strong style="color:#fbbf24;">${klasNajlepszyLeg} lotek</strong></div>
+                                <div>Skuteczność double (meczowa): <strong style="color:#a855f7;">${klasSkutecznoscDouble}%</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Doubles -->
+                        <div class="stat-card" style="text-align: left; padding: 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:#38bdf8; font-size:15px;">⭕ DOUBLES</strong>
+                                <span class="badge badge-active">${dbl.wygrane || 0}W / ${dbl.mecze || 0}M</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>Ogólna skuteczność debla: <strong style="color:#4ade80; font-size:16px;">${dbl.skutecznosc || 0}%</strong></div>
+                                <div>Trafione podwójne: <strong style="color:#fff;">${dbl.suma_trafien || 0}</strong></div>
+                                <div>Oddane rzuty na deble: <strong style="color:#fff;">${dbl.suma_rzutow || 0}</strong></div>
+                                <div>Zarejestrowane sektory: <strong style="color:#fff;">${Object.keys(dbl.sektory || {}).length} / 21</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Shanghai -->
+                        <div class="stat-card" style="text-align: left; padding: 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:#fbbf24; font-size:15px;">🏮 SHANGHAI</strong>
+                                <span class="badge badge-active">${shg.wygrane || 0}W / ${shg.mecze || 0}M</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>Rekord punktów: <strong style="color:#fbbf24; font-size:16px;">${shg.rekord_punktow || 0}</strong></div>
+                                <div>Trafione 'Shanghai' (S+D+T): <strong style="color:#4ade80;">${shg.liczba_shanghai || 0}</strong></div>
+                                <div>Średnia pkt / gra: <strong style="color:#fff;">${shg.srednia_na_gre || 0}</strong></div>
+                                <div>Łącznie punktów: <strong style="color:#fff;">${shg.suma_punktow || 0}</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Around The World -->
+                        <div class="stat-card" style="text-align: left; padding: 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:#a855f7; font-size:15px;">🌍 AROUND THE WORLD</strong>
+                                <span class="badge badge-active">${atw.wygrane || 0}W / ${atw.mecze || 0}M</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>Rekord (najmniej lotek): <strong style="color:#4ade80; font-size:16px;">${atw.rekord_najmniej_lotek !== null ? atw.rekord_najmniej_lotek : "-"}</strong></div>
+                                <div>Średnia skuteczność: <strong style="color:#fff;">${atw.skutecznosc || 0}%</strong></div>
+                                <div>Wszystkie rzuty: <strong style="color:#fff;">${atw.suma_rzutow || 0}</strong></div>
+                                <div>Trafione cele: <strong style="color:#fff;">${atw.suma_trafien || 0}</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- 121 Checkout -->
+                        <div class="stat-card" style="text-align: left; padding: 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:#ec4899; font-size:15px;">🔢 121 CHECKOUT</strong>
+                                <span class="badge badge-active">${c121.sukcesy || 0} / ${c121.podejscia || 0}</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>Najwyższy poziom (Max): <strong style="color:#ec4899; font-size:16px;">${c121.max_poziom || 121}</strong></div>
+                                <div>Najlepsza seria z rzędu: <strong style="color:#4ade80;">${c121.najlepsza_seria || 0}</strong></div>
+                                <div>Skuteczność checkoutu: <strong style="color:#fff;">${c121.skutecznosc || 0}%</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Cricket -->
+                        <div class="stat-card" style="text-align: left; padding: 16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="color:#10b981; font-size:15px;">🏏 CRICKET</strong>
+                                <span class="badge badge-active">${crk.wygrane || 0}W / ${crk.mecze || 0}M</span>
+                            </div>
+                            <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:4px;">
+                                <div>MPR (Marks Per Round): <strong style="color:#10b981; font-size:16px;">${crk.mpr || 0}</strong></div>
+                                <div>Rozegrane mecze: <strong style="color:#fff;">${crk.mecze || 0}</strong></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // --- 2. GENEROWANIE TABELI SEKTORÓW D1-D20 I DBULL ---
+                if (tbodySektory) {
+                    const sektoryData = sbg.doubles?.sektory || {};
+                    const wszystkieCele = ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","25"];
+                    
+                    let htmlRows = "";
+                    wszystkieCele.forEach((cel) => {
+                        const nazwaCelu = cel === "25" ? "D-BULL (50)" : `D${cel}`;
+                        const s = sektoryData[cel] || { rzuty: 0, trafienia: 0, procent: 0 };
+                        const proc = s.rzuty > 0 ? ((s.trafienia / s.rzuty) * 100).toFixed(1) : 0;
+                        const kolorPaska = proc >= 50 ? "#4ade80" : proc >= 30 ? "#38bdf8" : proc > 0 ? "#fbbf24" : "#64748b";
+
+                        htmlRows += `
+                            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                <td style="text-align: left; font-weight: bold; color: ${cel === '25' ? '#f87171' : 'white'};">
+                                    ${nazwaCelu}
+                                </td>
+                                <td style="color: #4ade80; font-weight: bold;">${s.trafienia}</td>
+                                <td>${s.rzuty}</td>
+                                <td style="font-weight: bold; color: ${kolorPaska};">${proc}%</td>
+                                <td style="width: 35%;">
+                                    <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden; width: 100%;">
+                                        <div style="background: ${kolorPaska}; width: ${proc}%; height: 100%; border-radius: 4px;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbodySektory.innerHTML = htmlRows;
+                }
             }
 
             async function odswiezWszystko() {
@@ -550,6 +795,8 @@
                     await zaladujPokoje();
                     if (status) status.textContent = "Pobieranie profili...";
                     await zaladujProfile();
+                    if (status) status.textContent = "Pobieranie statystyk konta...";
+                    await zaladujStatystykiKonta();
                     if (status) status.textContent = "Dane odświeżone.";
                 } catch (error) {
                     console.error("Błąd odświeżania panelu:", error);

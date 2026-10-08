@@ -37,16 +37,6 @@
                 <a id="powrot-do-gier" href="./gry.html"><strong>✖</strong></a>
                 <div class="sekcja-formularza">
                     <h3 class="sekcja-tytul">Uczestnicy</h3>
-                    <label>
-                        <h4>Ilość graczy:</h4>
-                        <select id="ilosc-graczy" class="wspolny-input">
-                            <option value="1">1</option>
-                            <option value="2" selected>2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
-                    </label>
-
                     <div id="kontener-nazw-graczy"></div>
                 </div>
 
@@ -368,21 +358,14 @@
                 aktualizujPodgladKlikow();
             });
 
-            function generujPolaGraczy() {
-                const ilosc = parseInt(iloscGraczySelect.value);
-                kontenerNazwGraczy.innerHTML = "";
-                for (let i = 1; i <= ilosc; i++) {
-                    kontenerNazwGraczy.innerHTML += `
-                        <label>
-                            <h4>Gracz ${i}:</h4>
-                            <input type="text" id="nazwa-gracza${i}" class="wspolny-input input-nazwa-gracza" placeholder="Gracz ${i}">
-                        </label>
-                    `;
-                }
+            // Inicjalizacja wspólnego modułu wyboru graczy (bez DartBota)
+            if (window.PlayerSetupModule) {
+                window.PlayerSetupModule.init();
+            } else {
+                window.addEventListener("DOMContentLoaded", () => {
+                    if (window.PlayerSetupModule) window.PlayerSetupModule.init();
+                });
             }
-
-            iloscGraczySelect.addEventListener("change", generujPolaGraczy);
-            generujPolaGraczy();
 
             liczbaRundSelect.addEventListener("change", () => {
                 if (liczbaRundSelect.value === "Custom") {
@@ -393,8 +376,8 @@
             });
 
             przyciskStart.addEventListener("click", () => {
-                liczbaGraczy = parseInt(iloscGraczySelect.value);
-                const inputyNazw = document.querySelectorAll(".input-nazwa-gracza");
+                const graczeImiona = window.PlayerSetupModule ? window.PlayerSetupModule.getPlayers() : [];
+                liczbaGraczy = graczeImiona.length > 0 ? graczeImiona.length : 1;
 
                 limitLotek = parseInt(limitLotekWartoscInput.value) || 9;
 
@@ -419,20 +402,19 @@
                 obecnyStreak = 0;
                 ostatniTypRundy = null;
 
-                for (let i = 0; i < liczbaGraczy; i++) {
-                    let nazwa = inputyNazw[i].value.trim();
-                    if (nazwa === "") nazwa = `Gracz ${i + 1}`;
-
+                const listaDoGry = graczeImiona.length > 0 ? graczeImiona : ["Gracz 1"];
+                listaDoGry.forEach((nazwa, i) => {
+                    let n = nazwa && nazwa.trim() !== "" ? nazwa.trim() : `Gracz ${i + 1}`;
                     gracze.push({
                         id: i,
-                        nazwa: nazwa,
+                        nazwa: n,
                         sumaPunktow: 0,
                         iloscRzutowSuma: 0,
                         iloscCheckoutow: 0,
                         obecnyStreakZwyciestw: 0,
                         najlepszyStreakZwyciestw: 0,
                     });
-                }
+                });
 
                 kontenerGraczyWGrze.innerHTML = `
                     <div class="karta-gracza aktywne-tury karta-druzyny">
@@ -658,6 +640,39 @@
                         </tr>
                     `;
                 });
+
+                // Zapis statystyk do bazy danych
+                try {
+                    const mojGracz = gracze[0];
+                    const supa = window.supabaseKlient || window.supabaseClient;
+                    (async () => {
+                        let userId = null;
+                        if (supa?.auth) {
+                            const { data } = await supa.auth.getSession();
+                            userId = data?.session?.user?.id;
+                        }
+                        if (!userId) {
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const k = localStorage.key(i);
+                                if (k && (k.startsWith("sb-") && k.endsWith("-auth-token") || k === "supabase.auth.token")) {
+                                    const parsed = JSON.parse(localStorage.getItem(k) || "{}");
+                                    userId = parsed?.user?.id;
+                                    if (userId) break;
+                                }
+                            }
+                        }
+                        if (!userId || !mojGracz) return;
+
+                        if (window.StatsManager) {
+                            await StatsManager.zaktualizuj121Checkout(userId, {
+                                liczbaPodejsc: obecnaRunda > 1 ? obecnaRunda - 1 : 1,
+                                sukcesy: wygraneRundyDruzyny || 0,
+                                osiagnietyPoziom: obecnyCel || 121,
+                                najlepszaSeria: mojGracz.najlepszyStreakZwyciestw || 0
+                            });
+                        }
+                    })().catch((err) => console.warn("Błąd zapisu statystyk 121:", err));
+                } catch (e) {}
             }
 
             przyciskKolejnaGra.addEventListener("click", () => {
@@ -665,6 +680,7 @@
                 formularzUstawien.style.display = "flex";
                 tytulStrony.style.display = "block";
                 powrotDoGier.style.display = "inline-flex";
+                if (window.PlayerSetupModule) window.PlayerSetupModule.init();
             });
 
             wpiszWynikInput.addEventListener("keypress", function (event) {
@@ -675,6 +691,8 @@
             });
         </script>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./player-setup.js" defer></script>
+        <script src="./stats-manager.js" defer></script>
         <script src="./menu.js" defer></script>
     </body>
 </html>

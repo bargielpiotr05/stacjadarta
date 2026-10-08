@@ -331,7 +331,8 @@ form h4 {
 }
 
 #wyswietl-kolejke {
-  margin-left: 150px;
+  margin: 0;
+  text-align: center;
 }
 
 #powrot-gra {
@@ -346,9 +347,9 @@ form h4 {
 }
 
 #powrot-gra:hover {
-  background-color: var(--red-btn-hover);
-  border-color: var(--red-btn-border-hover);
-  color: var(--red-text-hover);
+  background-color: var(--color-red-btn-hover);
+  border-color: var(--color-red-btn-border-hover);
+  color: var(--color-red-text-hover);
 }
 
 .kontener-graczy {
@@ -1507,7 +1508,8 @@ form h4 {
   }
 
   #wyswietl-kolejke {
-    margin-left: 50px;
+    margin: 0;
+    text-align: center;
   }
 
   .ekran-wygranej {
