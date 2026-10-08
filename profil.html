@@ -1346,6 +1346,60 @@
                 }
             }
 
+            // Funkcja do automatycznej mikro-kompresji awatara w przeglądarce przed wysłaniem do bazy
+            // Skaluje do kwadratu max 320x320 px (idealne dla ekranów Retina) i konwertuje na lekki WebP/JPEG (~20-40 KB)
+            async function kompresujAwatar(plikZrodlowy, maxRozmiar = 320, jakosc = 0.85) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onerror = () => reject(new Error("Błąd odczytu pliku"));
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onerror = () => reject(new Error("Nieprawidłowy format obrazu"));
+                        img.onload = () => {
+                            let { width, height } = img;
+                            // Wycinamy idealny kwadrat ze środka zdjęcia (center crop)
+                            const minBok = Math.min(width, height);
+                            const startX = (width - minBok) / 2;
+                            const startY = (height - minBok) / 2;
+
+                            const docelowyRozmiar = Math.min(minBok, maxRozmiar);
+
+                            const canvas = document.createElement("canvas");
+                            canvas.width = docelowyRozmiar;
+                            canvas.height = docelowyRozmiar;
+                            const ctx = canvas.getContext("2d");
+
+                            // Wygładzanie wysokiej jakości
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = "high";
+
+                            ctx.drawImage(img, startX, startY, minBok, minBok, 0, 0, docelowyRozmiar, docelowyRozmiar);
+
+                            // Preferujemy nowoczesny format WebP, a jeśli przeglądarka nie wspiera - JPEG
+                            const mimeType = "image/webp";
+                            canvas.toBlob(
+                                (blob) => {
+                                    if (blob) {
+                                        resolve({ blob, ext: "webp", mime: mimeType });
+                                    } else {
+                                        // Fallback na jpeg
+                                        canvas.toBlob(
+                                            (jpegBlob) => resolve({ blob: jpegBlob, ext: "jpg", mime: "image/jpeg" }),
+                                            "image/jpeg",
+                                            jakosc
+                                        );
+                                    }
+                                },
+                                mimeType,
+                                jakosc
+                            );
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(plikZrodlowy);
+                });
+            }
+
             // --- OBSŁUGA AVATARA ---
             const avatarContainer = document.getElementById("avatar-container");
             const inputAvatar = document.getElementById("input-avatar");
@@ -1372,11 +1426,15 @@
                     return;
                 }
 
-                if (plik.size > 2 * 1024 * 1024) {
-                    avatarStatus.textContent = "Plik jest za duży (maks. 2 MB)!";
-                    avatarStatus.style.color = "#f87171";
-                    inputAvatar.value = "";
-                    return;
+                avatarStatus.textContent = "Optymalizacja zdjęcia...";
+                avatarStatus.style.color = "#38bdf8";
+
+                let skompresowanyPlik;
+                try {
+                    skompresowanyPlik = await kompresujAwatar(plik, 320, 0.85);
+                } catch (eKomp) {
+                    console.warn("Fallback na oryginalny plik:", eKomp);
+                    skompresowanyPlik = { blob: plik, ext: (plik.name.split(".").pop() || "png").toLowerCase(), mime: plik.type || "image/png" };
                 }
 
                 avatarStatus.textContent = "Wgrywanie zdjęcia...";
@@ -1400,8 +1458,7 @@
                     }
 
                     const cleanUserId = String(userId).trim();
-                    const cleanExt = (plik.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
-                    const nazwaNowegoPliku = `avatar_${Date.now()}.${cleanExt}`;
+                    const nazwaNowegoPliku = `avatar_${Date.now()}.${skompresowanyPlik.ext}`;
                     const nowaSciezka = `${cleanUserId}/${nazwaNowegoPliku}`;
                     let uploadSukces = false;
                     let bladSzczegoly = "";
@@ -1424,10 +1481,10 @@
                                     headers: {
                                         "apikey": SUPA_KEY,
                                         "Authorization": authHdr,
-                                        "Content-Type": plik.type || "image/png",
+                                        "Content-Type": skompresowanyPlik.mime,
                                         "x-upsert": "true"
                                     },
-                                    body: plik
+                                    body: skompresowanyPlik.blob
                                 });
 
                                 if (resDirect.ok) {
@@ -1450,8 +1507,8 @@
                     if (!uploadSukces) {
                         if (!client) client = window.supabaseKlient || window.supabaseClient;
                         if (client?.storage) {
-                            const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, plik, {
-                                contentType: plik.type || "image/png",
+                            const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, skompresowanyPlik.blob, {
+                                contentType: skompresowanyPlik.mime,
                                 upsert: true,
                             });
                             if (uploadErr) {
