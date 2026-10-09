@@ -1790,6 +1790,56 @@
                 });
             });
 
+            // Inteligentna analiza rzutów na podwójne (lotka po lotce)
+            function analizujLotkiTuryNaDoubla(punktyPrzed, lotki, trybWyj) {
+                if (trybWyj !== "do" || !Array.isArray(lotki) || lotki.length === 0) {
+                    return { lotkiNaDoubla: 0, trafilKoniec: false, nrLotkiKonczacej: 3 };
+                }
+
+                let pozostalo = punktyPrzed;
+                let lotkiNaDoubla = 0;
+                let trafilKoniec = false;
+                let nrLotkiKonczacej = Math.min(3, lotki.length);
+
+                for (let i = 0; i < lotki.length; i++) {
+                    const lotka = lotki[i];
+                    const nrLotki = i + 1;
+                    const pts = typeof lotka.punkty === "number" ? lotka.punkty : 0;
+                    const opis = lotka.opis || "";
+                    const czyTrafilDouble = opis.startsWith("D") || pts === 50;
+
+                    // Czy przed tą konkretną lotką gracz miał bezpośrednią szansę na zakończenie (1-lotkowy finisz dublowy)?
+                    const czyBylNaDoublu = (pozostalo <= 40 && pozostalo > 0 && pozostalo % 2 === 0) || pozostalo === 50;
+
+                    if (czyBylNaDoublu) {
+                        lotkiNaDoubla++;
+
+                        // Czy ta lotka trafiła kończącego doubla?
+                        if (pts === pozostalo && czyTrafilDouble) {
+                            trafilKoniec = true;
+                            nrLotkiKonczacej = nrLotki;
+                            break;
+                        }
+
+                        // Czy nastąpiła fura (bust) na doublu? (za dużo punktów lub zostało 1)
+                        if (pts >= pozostalo || pozostalo - pts === 1) {
+                            break;
+                        }
+
+                        // Pudło w singla lub poza tarczę – punkty maleją pod kolejną lotkę
+                        pozostalo -= pts;
+                    } else {
+                        // Rzut przygotowawczy (setup)
+                        if (pts >= pozostalo || pozostalo - pts === 1) {
+                            break;
+                        }
+                        pozostalo -= pts;
+                    }
+                }
+
+                return { lotkiNaDoubla, trafilKoniec, nrLotkiKonczacej };
+            }
+
             function wykonajProcesRzutu(punktyWpisane, opisDoHistorii, zuzyteLotki, czyFura, lotkiZPanelu = null) {
                 zapiszStanGry();
 
@@ -1848,6 +1898,24 @@
                         return;
                     }
 
+                    // W trybie kamerki / panelu klikania: 100% automatyczne wyliczenie lotek na doubla bez pytania popupem!
+                    if (lotkiZPanelu !== null) {
+                        const analiza = analizujLotkiTuryNaDoubla(punktyPrzedRzutem, lotkiZPanelu, trybWyjscia);
+                        aktywnyGracz.lotkiNaDoubla += Math.max(1, analiza.lotkiNaDoubla);
+                        aktywnyGracz.trafioneDouble += 1;
+                        let ostatniWpis = historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+                        ostatniWpis.zuzyteLotki = analiza.nrLotkiKonczacej;
+                        let rzutyWLegu = historiaAktualnegoLegu.filter((h) => h.graczId === aktywnyGracz.id);
+                        let lotkiWPoprzednich = (rzutyWLegu.length - 1) * 3;
+                        let lotkiZwyciezcy = lotkiWPoprzednich + analiza.nrLotkiKonczacej;
+                        if (lotkiZwyciezcy < minLotekWLegu) {
+                            lotkiZwyciezcy = minLotekWLegu;
+                        }
+                        pokazCustomowyAlert(`${aktywnyGracz.nazwa} wygrywa lega w ${lotkiZwyciezcy}. lotce!`);
+                        zakonczLeg(aktywnyGracz.id, lotkiZwyciezcy);
+                        return;
+                    }
+
                     pokazPopupDoubles(true, punktyPrzedRzutem, punktyWpisane, 3, (lotkaKonczaca, lotkiNaDoubla) => {
                         aktywnyGracz.lotkiNaDoubla += lotkiNaDoubla;
                         aktywnyGracz.trafioneDouble += 1;
@@ -1868,9 +1936,9 @@
                 // 2. Szansa na zakończenie
                 if (trybWyjscia === "do" && (pozostalePunkty > 0 || czyFura)) {
                     if (lotkiZPanelu !== null) {
-                        let rzuconeNaDabla = lotkiZPanelu.filter((l) => l.opis.startsWith("D") || l.punkty === 50).length;
-                        if (rzuconeNaDabla > 0) {
-                            aktywnyGracz.lotkiNaDoubla += rzuconeNaDabla;
+                        const analiza = analizujLotkiTuryNaDoubla(punktyPrzedRzutem, lotkiZPanelu, trybWyjscia);
+                        if (analiza.lotkiNaDoubla > 0) {
+                            aktywnyGracz.lotkiNaDoubla += analiza.lotkiNaDoubla;
                         }
                         finalizujTure();
                         return;
