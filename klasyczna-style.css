@@ -1682,7 +1682,6 @@ form h4 {
 .box-podglad-kamery {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
   background: #020617;
   border-radius: 8px;
   overflow: hidden;
@@ -1698,8 +1697,7 @@ form h4 {
 
 .box-podglad-kamery video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   display: block;
 }
 
@@ -1710,6 +1708,7 @@ form h4 {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  touch-action: none;
 }
 
 .kamera-etykieta-box {
@@ -1776,4 +1775,42 @@ form h4 {
 #kamera-stan-tarczy {
   color: #ef4444;
   font-weight: bold;
+}
+
+/* Precyzyjna kalibracja tarczy */
+#panel-fine-tune {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.fine-tune-btn {
+  padding: 3px 10px;
+  background: #334155;
+  color: #f1f5f9;
+  border: 1px solid #475569;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.fine-tune-btn:hover {
+  background: #475569;
+  border-color: #64748b;
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.fine-tune-btn:active {
+  transform: translateY(0);
+}
+
+.btn-wybierz-punkt {
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.btn-wybierz-punkt:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
 }

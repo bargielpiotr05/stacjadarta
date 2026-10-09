@@ -231,7 +231,7 @@
                     <div class="metoda-wprowadzania">
                         <button type="button" class="btn-metoda aktywna-metoda" data-metoda="klawiatura">Wpisz wynik (Suma)</button>
                         <button type="button" class="btn-metoda" data-metoda="tarcza">Klikaj lotki (Panel)</button>
-                        <button type="button" class="btn-metoda" data-metoda="kamera" style="display:none !important;">Autoscore (Kamerka)</button>
+                        <button type="button" class="btn-metoda" data-metoda="kamera" style="display: none !important;">Autoscore (Kamerka)</button>
                     </div>
 
                     <div class="strefa-manualna">
@@ -376,6 +376,55 @@
                             <span id="kamera-opencv-status">Ładowanie AI...</span>
                             <span id="kamera-stan-tarczy">Tarcza: Niewykryta</span>
                         </div>
+
+                        <!-- Fine-tune kalibracji (Perspektywa 4 punktów i mikro-korekta) -->
+                        <div id="panel-fine-tune" style="display:none; flex-direction:column; gap:8px; margin-top:8px; padding:12px; background:rgba(15,23,42,0.92); border-radius:10px; border:1px solid #334155;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                                <span style="color:#94a3b8; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">🔧 Precyzyjna kalibracja perspektywy</span>
+                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                    <button type="button" id="btn-kreator-4pkt" style="font-size:11px; font-weight:600; padding:4px 10px; background:#1e293b; color:#38bdf8; border:1px solid #0284c7; border-radius:5px; cursor:pointer;" title="Kliknij kolejno w D20, D6, D3, D11 na zewnętrznym drucie">📍 Kalibruj 4 punkty</button>
+                                    <button type="button" id="btn-ustaw-srodek-klik" style="font-size:11px; padding:4px 10px; background:#1e293b; color:#38bdf8; border:1px solid #334155; border-radius:5px; cursor:pointer;">🎯 Kliknij w Bullseye</button>
+                                </div>
+                            </div>
+
+                            <div style="font-size:11px; color:#cbd5e1; background:rgba(30,41,59,0.7); padding:6px 10px; border-radius:6px; border-left:3px solid #38bdf8;">
+                                💡 <strong>Wskazówka:</strong> Chwyć i przeciągaj punkty <span style="color:#ef4444; font-weight:bold;">D20</span>, <span style="color:#06b6d4; font-weight:bold;">D6</span>, <span style="color:#f59e0b; font-weight:bold;">D3</span>, <span style="color:#a855f7; font-weight:bold;">D11</span> lub <span style="color:#22c55e; font-weight:bold;">Środek</span> bezpośrednio myszką na obrazie kamery!
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="color:#94a3b8; font-size:11px; font-weight:600;">Wybierz punkt:</span>
+                                <button type="button" class="btn-wybierz-punkt fine-punkt-aktywny" data-punkt="bull" style="padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #38bdf8; background:#0284c7; color:#fff; cursor:pointer;">🎯 Cała tarcza</button>
+                                <button type="button" class="btn-wybierz-punkt" data-punkt="p20" style="padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #ef4444; background:#1e293b; color:#ef4444; cursor:pointer;">🔴 D20 (góra)</button>
+                                <button type="button" class="btn-wybierz-punkt" data-punkt="p6" style="padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #06b6d4; background:#1e293b; color:#06b6d4; cursor:pointer;">🔵 D6 (prawo)</button>
+                                <button type="button" class="btn-wybierz-punkt" data-punkt="p3" style="padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #f59e0b; background:#1e293b; color:#f59e0b; cursor:pointer;">🟠 D3 (dół)</button>
+                                <button type="button" class="btn-wybierz-punkt" data-punkt="p11" style="padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #a855f7; background:#1e293b; color:#a855f7; cursor:pointer;">🟣 D11 (lewo)</button>
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="color:#cbd5e1; font-size:11px;">Mikro-przesunięcie:</span>
+                                <button type="button" class="fine-tune-btn" data-dx="0" data-dy="-2" title="W górę (lub strzałka w górę na klawiaturze)">▲</button>
+                                <button type="button" class="fine-tune-btn" data-dx="0" data-dy="2" title="W dół (lub strzałka w dół)">▼</button>
+                                <button type="button" class="fine-tune-btn" data-dx="-2" data-dy="0" title="W lewo (lub strzałka w lewo)">◀</button>
+                                <button type="button" class="fine-tune-btn" data-dx="2" data-dy="0" title="W prawo (lub strzałka w prawo)">▶</button>
+                                <span style="color:#64748b; font-size:11px; margin-left:4px;">(krok 2px / strzałki)</span>
+                                <button type="button" id="fine-tune-reset" style="margin-left:auto; font-size:11px; padding:3px 10px; background:#374151; color:#e2e8f0; border:1px solid #4b5563; border-radius:4px; cursor:pointer;">Reset</button>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <label style="color:#cbd5e1; font-size:11px; white-space:nowrap;">Skala: <span id="fine-tune-promien-val">100</span>%</label>
+                                    <input type="range" id="fine-tune-promien" min="60" max="140" value="100" step="1"
+                                        style="flex:1; min-width:80px; accent-color:#6366f1; cursor:pointer;" />
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <label style="color:#cbd5e1; font-size:11px; white-space:nowrap;">Rotacja: <span id="fine-tune-rotacja-val">0</span>°</label>
+                                    <input type="range" id="fine-tune-rotacja" min="-90" max="90" value="0" step="1"
+                                        style="flex:1; min-width:80px; accent-color:#f59e0b; cursor:pointer;" />
+                                </div>
+                            </div>
+                        </div>
+
+
 
                         <!-- Przyciski akcji na dole (identyczne jak w strefie klikania) -->
                         <div class="kontener-przycisków" style="display: flex;">
@@ -546,7 +595,7 @@
 
         <script src="./klasyczna-gra.js" defer></script>
 
-        <script src="./kamera-autoscore.js" defer></script>
+        <script src="./kamera-autoscore.js?v=2.2" defer></script>
         <script src="./dartbot.js" defer></script>
         <script src="./klasyczna-online.js" defer></script>
     </body>
