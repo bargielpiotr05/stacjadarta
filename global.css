@@ -757,7 +757,6 @@ header a {
   max-width: 380px;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  opacity: 0.5;
   text-align: center;
 }
 
