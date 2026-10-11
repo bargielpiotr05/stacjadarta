@@ -1758,19 +1758,22 @@ form h4 {
     grid-template-columns: 1fr !important;
   }
 }
-@media (max-width: 550px) {
+
+@media (max-width: 1300px) {
   .open-chat-btn {
-    left: 7%;
+    left: 3%;
   }
 }
+
 @media (max-width: 740px) {
   .open-chat-btn {
     left: 5%;
   }
 }
-@media (max-width: 1300px) {
+
+@media (max-width: 550px) {
   .open-chat-btn {
-    left: 3%;
+    left: 7%;
   }
 }
 
