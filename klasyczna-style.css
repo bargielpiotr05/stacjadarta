@@ -1570,7 +1570,9 @@ form h4 {
   cursor: pointer;
   font-weight: bold;
   border-radius: 8px;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
 }
 
 #chat-input-container button:hover {
@@ -1598,7 +1600,9 @@ form h4 {
   cursor: pointer;
   font-size: 14px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .open-chat-btn:hover {
@@ -1606,7 +1610,7 @@ form h4 {
 }
 
 .open-chat-btn.has-unread::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 4px;
@@ -1752,6 +1756,21 @@ form h4 {
 
   #siatka-kamer {
     grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 550px) {
+  .open-chat-btn {
+    left: 7%;
+  }
+}
+@media (max-width: 740px) {
+  .open-chat-btn {
+    left: 5%;
+  }
+}
+@media (max-width: 1300px) {
+  .open-chat-btn {
+    left: 3%;
   }
 }
 
