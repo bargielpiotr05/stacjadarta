@@ -1593,7 +1593,7 @@ form h4 {
   position: fixed;
   transform: rotate(90deg);
   transform-origin: top left;
-  left: 0;
+  left: 2%;
   top: 35%;
   cursor: pointer;
   font-size: 14px;
@@ -1605,15 +1605,17 @@ form h4 {
   filter: brightness(1.1);
 }
 
-.open-chat-btn.has-unread {
-  background-color: #facc15;
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.9);
-  animation: pulsowanieCzatu 1.5s infinite;
-}
-
-@keyframes pulsowanieCzatu {
-  0%, 100% { transform: rotate(90deg) scale(1); }
-  50% { transform: rotate(90deg) scale(1.06); }
+.open-chat-btn.has-unread::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.9);
+  animation: pulsowanieKropki 1.5s infinite ease-in-out;
 }
 
 @media (max-width: 768px) {

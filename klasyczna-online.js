@@ -1302,7 +1302,6 @@ function dodajWiadomoscDoWidoku(wiadomosc, czyNowa = false) {
     const btnOpen = document.getElementById("open-chat");
     if (btnOpen) {
       btnOpen.classList.add("has-unread");
-      btnOpen.textContent = `Czat (${liczbaNieprzeczytanychCzatu})`;
     }
   }
 
