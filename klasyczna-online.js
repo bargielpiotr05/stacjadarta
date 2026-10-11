@@ -13,6 +13,11 @@ let sprawdzaniePoczekalni = false;
 let odbieranieRzutuZSieci = false;
 let lokalnaWersjaStanu = 0;
 let czyMeczZakonczonyOnline = false;
+let mojNickOnline = "Gracz";
+let mojAwatarOnline = "./loga/logo.png";
+let liczbaNieprzeczytanychCzatu = 0;
+const wyswietloneIdWiadomosci = new Set();
+window.aktualnyCzatMeczu = [];
 
 function onlineZLimitemCzasu(obietnica, etap, timeoutMs = 12000) {
   let timerId;
@@ -247,6 +252,23 @@ async function inicjalizujPoczekalnieOnline(kod) {
   const { data: { session }, error: sessionError } = await onlineZLimitemCzasu(supabaseClient.auth.getSession(), "odczyt sesji");
   if (sessionError) throw sessionError;
   const user = session?.user;
+  if (user) {
+    window.aktualnyUserOnline = user;
+    mojNickOnline = user.user_metadata?.username || user.email?.split("@")[0] || "Gracz";
+    if (user.user_metadata?.avatar_url) {
+      mojAwatarOnline = user.user_metadata.avatar_url;
+    }
+    pobierzWierszeOnline("profiles", {
+      select: "id,nazwa_gracza,avatar_url",
+      id: `eq.${user.id}`,
+      limit: "1"
+    }, session?.access_token || null, "pobieranie profilu gracza").then((profile) => {
+      if (profile && profile[0]) {
+        if (profile[0].nazwa_gracza) mojNickOnline = profile[0].nazwa_gracza;
+        if (profile[0].avatar_url) mojAwatarOnline = profile[0].avatar_url;
+      }
+    }).catch(() => {});
+  }
 
   ustawStatusStartu("Pobieranie danych stołu...");
   const pokoje = await pobierzWierszeOnline("rooms", {
@@ -273,11 +295,17 @@ async function inicjalizujPoczekalnieOnline(kod) {
     if (pokoj.host_id === user.id) {
       mojIndeksOnline = 0;
       czyWidz = false;
+      if (pokoj.host_nazwa && pokoj.host_nazwa !== "Gracz" && mojNickOnline === "Gracz") {
+        mojNickOnline = pokoj.host_nazwa;
+      }
     } 
     // 2. Sprawdzamy czy byłem już przypisany jako gość (odświeżenie strony)
     else if (pokoj.gosc_id === user.id) {
       mojIndeksOnline = 1;
       czyWidz = false;
+      if (pokoj.gosc_nazwa && pokoj.gosc_nazwa !== "Gracz" && mojNickOnline === "Gracz") {
+        mojNickOnline = pokoj.gosc_nazwa;
+      }
     } 
     // 3. JESTEM GOŚCIEM Z ZAPROSZENIA - Wchodzę i ZAJMUJĘ STÓŁ!
     else if (pokoj.gosc_id === null && pokoj.status === 'waiting') {
@@ -286,11 +314,13 @@ async function inicjalizujPoczekalnieOnline(kod) {
       
       ustawStatusStartu("Dołączanie do stołu...");
       const profileData = await pobierzWierszeOnline("profiles", {
-        select: "id,nazwa_gracza",
+        select: "id,nazwa_gracza,avatar_url",
         id: `eq.${user.id}`,
         limit: "1",
       }, null, "pobieranie profilu gościa");
       const mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
+      mojNickOnline = mojNick;
+      if (profileData[0]?.avatar_url) mojAwatarOnline = profileData[0].avatar_url;
       
       // Claim the empty room and start it in one guarded update; the host observes this state change.
       const pokojPoDolaczeniu = await przypiszGosciaDoPokoju(kod, user, mojNick, pokoj.host_id, session.access_token);
@@ -352,6 +382,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
   document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
     e.preventDefault();
+    ukryjPrzyciskCzatuOnline();
     if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
     window.location.href = "./online.html";
   });
@@ -677,6 +708,11 @@ function startMeczuOnline(pokoj) {
   }
 
   zainicjalizujKanalMeczu(pokoj.kod_pokoju);
+  pokazPrzyciskCzatuOnline();
+  inicjalizujCzatOnline();
+  if (pokoj.stan_gry && Array.isArray(pokoj.stan_gry.czat)) {
+    wczytajWiadomosciCzatu(pokoj.stan_gry.czat);
+  }
   window.sprawdzTureOnline();
 }
 
@@ -724,7 +760,12 @@ function zainicjalizujKanalMeczu(kod) {
         wyslijAktualnyStanGry();
       }
     })
+    .on("broadcast", { event: "chat-wiadomosc" }, ({ payload }) => {
+      odbierzWiadomoscCzatu(payload);
+    })
     .on("broadcast", { event: "mecz-przerwany" }, () => {
+      wyczyscCzatZBazy();
+      ukryjPrzyciskCzatuOnline();
       pokazModalSystemowyOnline("Mecz przerwany", "Mecz został zakończony przez drugiego gracza.", "alert", () => {
         window.location.href = "./online.html";
       });
@@ -769,6 +810,7 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
     historiaAktualnegoLegu: historiaLegu,
     historiaMeczuLegi: historiaLegow,
     wersjaStanu: lokalnaWersjaStanu,
+    czat: dodatkowePola?.czyKoniec ? [] : (window.aktualnyCzatMeczu || []),
     gracze: listaGraczy.map((g) => ({
       id: g.id,
       punkty: g.punkty,
@@ -808,6 +850,11 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
 
 function zastosujStanGry(dane) {
   if (!dane || !dane.gracze) return;
+
+  if (Array.isArray(dane.czat)) {
+    wczytajWiadomosciCzatu(dane.czat);
+  }
+
   if (dane.wersjaStanu && dane.wersjaStanu <= lokalnaWersjaStanu) {
     return;
   }
@@ -909,6 +956,17 @@ function zastosujStanGry(dane) {
 function pokazEkranKoncaMeczu(zwyciezca, historiaLegow, zdalniGracze) {
   if (czyMeczZakonczonyOnline) return;
   czyMeczZakonczonyOnline = true; // Zabezpieczenie przed podwójnym wyświetleniem
+  wyczyscCzatZBazy();
+
+  const btnKolejna = document.getElementById("zacznij-kolejna");
+  if (btnKolejna && czyTrybOnline) {
+    btnKolejna.textContent = "Wróć do lobby online";
+    btnKolejna.onclick = async () => {
+      await wyczyscCzatZBazy();
+      if (mojIndeksOnline === 0) await usunAktualnyPokoj();
+      window.location.href = "./online.html";
+    };
+  }
 
   if (historiaLegow) {
     if (typeof historiaMeczuLegi !== "undefined") historiaMeczuLegi = historiaLegow;
@@ -1012,6 +1070,7 @@ function podepnijNasluchSilnika() {
     window.sprawdzTureOnline();
 
     if (czyTrybOnline && !czyWidz && !odbieranieRzutuZSieci && !bylJuzKoniec) {
+      wyczyscCzatZBazy();
       const historiaLegow = (typeof historiaMeczuLegi !== "undefined") ? historiaMeczuLegi : (window.historiaMeczuLegi || []);
       const graczeAktualni = (typeof gracze !== "undefined" ? gracze : window.gracze) || [];
 
@@ -1047,6 +1106,7 @@ function podepnijNasluchSilnika() {
   document.getElementById("powrot-gra")?.addEventListener("click", () => {
     if (czyTrybOnline) {
       if (czyWidz) {
+        ukryjPrzyciskCzatuOnline();
         window.location.href = "./online.html";
       } else {
         pokazModalSystemowyOnline(
@@ -1056,6 +1116,8 @@ function podepnijNasluchSilnika() {
           async (potwierdzono) => {
             if (potwierdzono) {
               kanalMeczuRealtime?.send({ type: "broadcast", event: "mecz-przerwany", payload: {} });
+              await wyczyscCzatZBazy();
+              ukryjPrzyciskCzatuOnline();
               if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
               window.location.href = "./online.html";
             }
@@ -1118,3 +1180,283 @@ document.addEventListener("visibilitychange", async () => {
     if (data?.stan_gry) zastosujStanGry(data.stan_gry);
   }
 });
+
+// ============================================================
+// 6. MINI CZAT DLA GIER ONLINE
+// ============================================================
+
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== "string") return "";
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function pokazPrzyciskCzatuOnline() {
+  if (!czyTrybOnline) return;
+  const btn = document.getElementById("open-chat");
+  if (btn) {
+    btn.style.display = "block";
+  }
+}
+
+function ukryjPrzyciskCzatuOnline() {
+  const btn = document.getElementById("open-chat");
+  if (btn) btn.style.display = "none";
+  const blok = document.getElementById("blok-chatu");
+  if (blok) blok.style.display = "none";
+}
+
+function otworzWidokCzatu() {
+  const blok = document.getElementById("blok-chatu");
+  const btn = document.getElementById("open-chat");
+  if (blok) blok.style.display = "flex";
+  if (btn) {
+    btn.style.display = "none";
+    btn.classList.remove("has-unread");
+    btn.textContent = "Czat";
+  }
+  liczbaNieprzeczytanychCzatu = 0;
+  przewinCzatDoDolu();
+  setTimeout(() => {
+    document.getElementById("chat-input")?.focus();
+  }, 60);
+}
+
+function zamknijWidokCzatu() {
+  const blok = document.getElementById("blok-chatu");
+  const btn = document.getElementById("open-chat");
+  if (blok) blok.style.display = "none";
+  if (btn && czyTrybOnline) {
+    btn.style.display = "block";
+  }
+}
+
+function przewinCzatDoDolu() {
+  const kontener = document.getElementById("chat-messages");
+  if (kontener) {
+    kontener.scrollTop = kontener.scrollHeight;
+  }
+}
+
+function dodajWiadomoscDoWidoku(wiadomosc, czyNowa = false) {
+  if (!wiadomosc || !wiadomosc.id) return;
+  if (wyswietloneIdWiadomosci.has(wiadomosc.id)) return;
+  wyswietloneIdWiadomosci.add(wiadomosc.id);
+
+  const kontener = document.getElementById("chat-messages");
+  if (!kontener) return;
+
+  const pustyStan = document.getElementById("chat-pusty-stan");
+  if (pustyStan) pustyStan.remove();
+
+  const blokChatu = document.getElementById("blok-chatu");
+  const czyCzatOtwarty = blokChatu && blokChatu.style.display !== "none";
+
+  const czyJa = Boolean(
+    (window.aktualnyUserOnline && wiadomosc.senderId === window.aktualnyUserOnline.id) ||
+    (mojIndeksOnline !== -1 && wiadomosc.senderIndex === mojIndeksOnline)
+  );
+  const czyGracz2 = wiadomosc.senderIndex === 1;
+
+  const msgEl = document.createElement("div");
+  msgEl.className = `gracz-messages ${czyGracz2 ? "msg-gracz2" : ""}`;
+
+  const czasWyswietlany = wiadomosc.time || "";
+  const nazwaGracza = escapeHtml(wiadomosc.senderName || (czyGracz2 ? "Gość" : "Gospodarz"));
+  const awatarGracza = escapeHtml(wiadomosc.senderAvatar || "./loga/logo.png");
+  const tekstWiadomosci = escapeHtml(wiadomosc.text || "");
+  const etykietaTy = czyJa ? " (Ty)" : "";
+
+  if (czyGracz2) {
+    msgEl.innerHTML = `
+      <div class="gracz-container">
+        <div class="dane-gracza">
+          <span style="font-size: 11px; font-weight: normal; color: #94a3b8; margin-right: 4px;">${czasWyswietlany}</span>
+          <h2 style="color: #38bdf8;">${nazwaGracza}${etykietaTy}</h2>
+          <img src="${awatarGracza}" class="chat-avatar" alt="Awatar" onerror="this.src='./loga/logo.png'" />
+        </div>
+        <p>${tekstWiadomosci}</p>
+      </div>
+    `;
+  } else {
+    msgEl.innerHTML = `
+      <div class="gracz-container">
+        <div class="dane-gracza">
+          <img src="${awatarGracza}" class="chat-avatar" alt="Awatar" onerror="this.src='./loga/logo.png'" />
+          <h2 style="color: var(--secondary-color);">${nazwaGracza}${etykietaTy}</h2>
+          <span style="font-size: 11px; font-weight: normal; color: #94a3b8; margin-left: 4px;">${czasWyswietlany}</span>
+        </div>
+        <p>${tekstWiadomosci}</p>
+      </div>
+    `;
+  }
+
+  kontener.appendChild(msgEl);
+
+  if (czyNowa && !czyCzatOtwarty) {
+    liczbaNieprzeczytanychCzatu++;
+    const btnOpen = document.getElementById("open-chat");
+    if (btnOpen) {
+      btnOpen.classList.add("has-unread");
+      btnOpen.textContent = `Czat (${liczbaNieprzeczytanychCzatu})`;
+    }
+  }
+
+  przewinCzatDoDolu();
+}
+
+function wczytajWiadomosciCzatu(lista) {
+  if (!Array.isArray(lista) || lista.length === 0) return;
+  if (!window.aktualnyCzatMeczu) window.aktualnyCzatMeczu = [];
+
+  lista.forEach((msg) => {
+    if (msg && msg.id && !wyswietloneIdWiadomosci.has(msg.id)) {
+      window.aktualnyCzatMeczu.push(msg);
+      dodajWiadomoscDoWidoku(msg, false);
+    }
+  });
+
+  if (window.aktualnyCzatMeczu.length > 50) {
+    window.aktualnyCzatMeczu = window.aktualnyCzatMeczu.slice(-50);
+  }
+}
+
+function odbierzWiadomoscCzatu(payload) {
+  if (!payload || !payload.id || !payload.text) return;
+  if (!window.aktualnyCzatMeczu) window.aktualnyCzatMeczu = [];
+
+  if (!wyswietloneIdWiadomosci.has(payload.id)) {
+    window.aktualnyCzatMeczu.push(payload);
+    if (window.aktualnyCzatMeczu.length > 50) {
+      window.aktualnyCzatMeczu = window.aktualnyCzatMeczu.slice(-50);
+    }
+    dodajWiadomoscDoWidoku(payload, true);
+  }
+}
+
+let timerZapisuCzatuDoBazy = null;
+function zaplanujZapisCzatuDoBazy() {
+  if (timerZapisuCzatuDoBazy) clearTimeout(timerZapisuCzatuDoBazy);
+  timerZapisuCzatuDoBazy = setTimeout(async () => {
+    if (!onlineKodPokoju || czyMeczZakonczonyOnline) return;
+    try {
+      const { data } = await supabaseClient
+        .from("rooms")
+        .select("stan_gry")
+        .eq("kod_pokoju", onlineKodPokoju)
+        .maybeSingle();
+
+      const aktualnyStan = (data && data.stan_gry) ? data.stan_gry : {};
+      aktualnyStan.czat = window.aktualnyCzatMeczu || [];
+
+      await supabaseClient
+        .from("rooms")
+        .update({ stan_gry: aktualnyStan })
+        .eq("kod_pokoju", onlineKodPokoju);
+    } catch (err) {
+      console.warn("Błąd zapisu czatu do bazy:", err);
+    }
+  }, 400);
+}
+
+async function wyczyscCzatZBazy() {
+  if (timerZapisuCzatuDoBazy) {
+    clearTimeout(timerZapisuCzatuDoBazy);
+    timerZapisuCzatuDoBazy = null;
+  }
+  window.aktualnyCzatMeczu = [];
+  if (!onlineKodPokoju) return;
+  try {
+    const { data } = await supabaseClient
+      .from("rooms")
+      .select("stan_gry")
+      .eq("kod_pokoju", onlineKodPokoju)
+      .maybeSingle();
+
+    if (data && data.stan_gry) {
+      const stanWyczyszczony = { ...data.stan_gry, czat: [] };
+      await supabaseClient
+        .from("rooms")
+        .update({ stan_gry: stanWyczyszczony })
+        .eq("kod_pokoju", onlineKodPokoju);
+    }
+  } catch (err) {
+    console.warn("Błąd czyszczenia czatu ze stołu:", err);
+  }
+}
+
+function wyslijWiadomoscCzatu() {
+  const inp = document.getElementById("chat-input");
+  if (!inp) return;
+  const tekst = inp.value.trim();
+  if (!tekst) return;
+
+  inp.value = "";
+  inp.focus();
+
+  const teraz = new Date();
+  const czas = teraz.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const msgId = `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+  const nowaWiadomosc = {
+    id: msgId,
+    senderId: window.aktualnyUserOnline?.id || null,
+    senderIndex: mojIndeksOnline,
+    senderName: mojNickOnline || (mojIndeksOnline === 0 ? "Gospodarz" : "Gość"),
+    senderAvatar: mojAwatarOnline || "./loga/logo.png",
+    text: tekst,
+    time: czas,
+    timestamp: Date.now()
+  };
+
+  if (!window.aktualnyCzatMeczu) window.aktualnyCzatMeczu = [];
+  window.aktualnyCzatMeczu.push(nowaWiadomosc);
+  if (window.aktualnyCzatMeczu.length > 50) {
+    window.aktualnyCzatMeczu = window.aktualnyCzatMeczu.slice(-50);
+  }
+
+  dodajWiadomoscDoWidoku(nowaWiadomosc, false);
+
+  kanalMeczuRealtime?.send({
+    type: "broadcast",
+    event: "chat-wiadomosc",
+    payload: nowaWiadomosc
+  });
+
+  zaplanujZapisCzatuDoBazy();
+}
+
+let czatZainicjalizowany = false;
+function inicjalizujCzatOnline() {
+  if (czatZainicjalizowany) return;
+  czatZainicjalizowany = true;
+
+  const btnOpen = document.getElementById("open-chat");
+  const btnToggle = document.getElementById("toggle-chat");
+  const btnSend = document.getElementById("chat-send-btn");
+  const inputChat = document.getElementById("chat-input");
+
+  btnOpen?.addEventListener("click", otworzWidokCzatu);
+  btnToggle?.addEventListener("click", zamknijWidokCzatu);
+  btnSend?.addEventListener("click", wyslijWiadomoscCzatu);
+
+  inputChat?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      wyslijWiadomoscCzatu();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const blok = document.getElementById("blok-chatu");
+      if (blok && blok.style.display !== "none") {
+        zamknijWidokCzatu();
+      }
+    }
+  });
+}
