@@ -368,6 +368,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  border:none;
 }
 
 .btn-zobacz-wszystkie:hover {
