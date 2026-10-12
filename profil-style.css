@@ -356,7 +356,6 @@ main {
 .btn-zobacz-wszystkie {
   background-color: var(--secondary-color);
   color: black;
-  border: 1px solid var(--primary-color-border-hover);
   border-radius: 8px;
   padding: 12px 28px;
   font-weight: 700;
