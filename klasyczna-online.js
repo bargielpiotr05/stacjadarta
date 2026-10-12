@@ -19,6 +19,55 @@ let liczbaNieprzeczytanychCzatu = 0;
 const wyswietloneIdWiadomosci = new Set();
 window.aktualnyCzatMeczu = [];
 
+let timerBezczynnosciPokoju = null;
+let timerBezczynnosciPoczekalni = null;
+const LIMIT_BEZCYNNOSCI_ONLINE_MS = 5 * 60 * 1000; // 5 minut
+
+function zresetujTimerBezczynnosciGry() {
+  if (timerBezczynnosciPokoju) {
+    clearTimeout(timerBezczynnosciPokoju);
+    timerBezczynnosciPokoju = null;
+  }
+
+  if (czyMeczZakonczonyOnline || !onlineKodPokoju) return;
+
+  timerBezczynnosciPokoju = setTimeout(async () => {
+    if (czyMeczZakonczonyOnline || !onlineKodPokoju) return;
+    console.warn("Wykryto 5 minut braku aktywności w meczu:", onlineKodPokoju);
+
+    try {
+      kanalMeczuRealtime?.send({
+        type: "broadcast",
+        event: "pokoj-zamkniety-brak-aktywnosci",
+        payload: {}
+      });
+    } catch (_) {}
+
+    if (mojIndeksOnline === 0) {
+      try {
+        await usunAktualnyPokoj();
+      } catch (_) {}
+    }
+
+    wyczyscCzatZBazy();
+    ukryjPrzyciskCzatuOnline();
+
+    if (typeof pokazModalSystemowyOnline === "function") {
+      pokazModalSystemowyOnline(
+        "Mecz przerwany",
+        "Stół został usunięty z powodu 5 minut braku aktywności w grze.",
+        "alert",
+        () => {
+          window.location.href = "./online.html";
+        }
+      );
+    } else {
+      alert("Stół został usunięty z powodu 5 minut braku aktywności w grze.");
+      window.location.href = "./online.html";
+    }
+  }, LIMIT_BEZCYNNOSCI_ONLINE_MS);
+}
+
 function onlineZLimitemCzasu(obietnica, etap, timeoutMs = 12000) {
   let timerId;
   const timeout = new Promise((resolve, reject) => {
@@ -333,6 +382,10 @@ async function inicjalizujPoczekalnieOnline(kod) {
     }
   }
 
+  if (czyWidz) {
+    ukryjPrzyciskCzatuOnline();
+  }
+
   if (pokoj.status === "in_progress" || pokoj.status === "finished") {
     statusStartu.remove();
     startMeczuOnline(pokoj);
@@ -354,6 +407,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
       
       <div id="status-oczekiwania" style="margin: 20px 0; padding: 16px; background: rgba(34,197,94,0.08); border: 1px dashed #22c55e; border-radius: 12px;">
         <span style="color: #22c55e; font-weight: 600;">⏳ Oczekiwanie na dołączenie drugiego gracza...</span>
+        <div style="color: #94a3b8; font-size: 12px; margin-top: 6px;">Stół zostanie automatycznie usunięty po 5 minutach bezczynności.</div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
@@ -371,6 +425,44 @@ async function inicjalizujPoczekalnieOnline(kod) {
   kontenerMain.prepend(poczekalnia);
   statusStartu.remove();
 
+  // Uruchomienie limitu 5 minut na dołączenie gracza do poczekalni
+  if (timerBezczynnosciPoczekalni) clearTimeout(timerBezczynnosciPoczekalni);
+  timerBezczynnosciPoczekalni = setTimeout(async () => {
+    if (czyMeczJuzWystartowal) return;
+    if (timerSprawdzaniaPoczekalni) {
+      clearInterval(timerSprawdzaniaPoczekalni);
+      timerSprawdzaniaPoczekalni = null;
+    }
+    if (kanalCzekaniaPoczekalni) {
+      supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+      kanalCzekaniaPoczekalni = null;
+    }
+    if (window.kanalOdrzuceniaPoczekalni) {
+      supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+      window.kanalOdrzuceniaPoczekalni = null;
+    }
+
+    try {
+      if (mojIndeksOnline === 0) {
+        await usunAktualnyPokoj();
+      }
+    } catch (_) {}
+
+    if (typeof pokazModalSystemowyOnline === "function") {
+      pokazModalSystemowyOnline(
+        "Pokój wygasł",
+        "Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.",
+        "alert",
+        () => {
+          window.location.href = "./online.html";
+        }
+      );
+    } else {
+      alert("Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.");
+      window.location.href = "./online.html";
+    }
+  }, LIMIT_BEZCYNNOSCI_ONLINE_MS);
+
   document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
     navigator.clipboard.writeText(kod);
     if (typeof pokazCustomowyAlert === "function") {
@@ -382,6 +474,10 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
   document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
     e.preventDefault();
+    if (timerBezczynnosciPoczekalni) {
+      clearTimeout(timerBezczynnosciPoczekalni);
+      timerBezczynnosciPoczekalni = null;
+    }
     ukryjPrzyciskCzatuOnline();
     if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
     window.location.href = "./online.html";
@@ -389,6 +485,10 @@ async function inicjalizujPoczekalnieOnline(kod) {
 
   function pokazOdrzucenieZaproszenia() {
     if (czyMeczJuzWystartowal) return;
+    if (timerBezczynnosciPoczekalni) {
+      clearTimeout(timerBezczynnosciPoczekalni);
+      timerBezczynnosciPoczekalni = null;
+    }
     if (timerSprawdzaniaPoczekalni) {
       clearInterval(timerSprawdzaniaPoczekalni);
       timerSprawdzaniaPoczekalni = null;
@@ -588,6 +688,12 @@ function startMeczuOnline(pokoj) {
   if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
   timerSprawdzaniaPoczekalni = null;
 
+  if (timerBezczynnosciPoczekalni) {
+    clearTimeout(timerBezczynnosciPoczekalni);
+    timerBezczynnosciPoczekalni = null;
+  }
+  zresetujTimerBezczynnosciGry();
+
   if (kanalCzekaniaPoczekalni) {
     supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
     kanalCzekaniaPoczekalni = null;
@@ -708,10 +814,14 @@ function startMeczuOnline(pokoj) {
   }
 
   zainicjalizujKanalMeczu(pokoj.kod_pokoju);
-  pokazPrzyciskCzatuOnline();
-  inicjalizujCzatOnline();
-  if (pokoj.stan_gry && Array.isArray(pokoj.stan_gry.czat)) {
-    wczytajWiadomosciCzatu(pokoj.stan_gry.czat);
+  if (!czyWidz) {
+    pokazPrzyciskCzatuOnline();
+    inicjalizujCzatOnline();
+    if (pokoj.stan_gry && Array.isArray(pokoj.stan_gry.czat)) {
+      wczytajWiadomosciCzatu(pokoj.stan_gry.czat);
+    }
+  } else {
+    ukryjPrzyciskCzatuOnline();
   }
   window.sprawdzTureOnline();
 }
@@ -761,12 +871,24 @@ function zainicjalizujKanalMeczu(kod) {
       }
     })
     .on("broadcast", { event: "chat-wiadomosc" }, ({ payload }) => {
+      if (czyWidz) return;
       odbierzWiadomoscCzatu(payload);
     })
     .on("broadcast", { event: "mecz-przerwany" }, () => {
       wyczyscCzatZBazy();
       ukryjPrzyciskCzatuOnline();
       pokazModalSystemowyOnline("Mecz przerwany", "Mecz został zakończony przez drugiego gracza.", "alert", () => {
+        window.location.href = "./online.html";
+      });
+    })
+    .on("broadcast", { event: "pokoj-zamkniety-brak-aktywnosci" }, () => {
+      if (timerBezczynnosciPokoju) {
+        clearTimeout(timerBezczynnosciPokoju);
+        timerBezczynnosciPokoju = null;
+      }
+      wyczyscCzatZBazy();
+      ukryjPrzyciskCzatuOnline();
+      pokazModalSystemowyOnline("Brak aktywności", "Stół został usunięty z powodu 5 minut braku aktywności w grze.", "alert", () => {
         window.location.href = "./online.html";
       });
     })
@@ -800,6 +922,8 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
 
   if (!czyTrybOnline || listaGraczy.length === 0) return;
 
+  zresetujTimerBezczynnosciGry();
+
   // Inkrementujemy licznik wersji zamiast pobierać Date.now()
   lokalnaWersjaStanu = (Number(lokalnaWersjaStanu) || 0) + 1;
 
@@ -810,6 +934,7 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
     historiaAktualnegoLegu: historiaLegu,
     historiaMeczuLegi: historiaLegow,
     wersjaStanu: lokalnaWersjaStanu,
+    ostatniaAktywnosc: Date.now(),
     czat: dodatkowePola?.czyKoniec ? [] : (window.aktualnyCzatMeczu || []),
     gracze: listaGraczy.map((g) => ({
       id: g.id,
@@ -851,7 +976,9 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
 function zastosujStanGry(dane) {
   if (!dane || !dane.gracze) return;
 
-  if (Array.isArray(dane.czat)) {
+  zresetujTimerBezczynnosciGry();
+
+  if (Array.isArray(dane.czat) && !czyWidz) {
     wczytajWiadomosciCzatu(dane.czat);
   }
 
@@ -956,6 +1083,14 @@ function zastosujStanGry(dane) {
 function pokazEkranKoncaMeczu(zwyciezca, historiaLegow, zdalniGracze) {
   if (czyMeczZakonczonyOnline) return;
   czyMeczZakonczonyOnline = true; // Zabezpieczenie przed podwójnym wyświetleniem
+  if (timerBezczynnosciPokoju) {
+    clearTimeout(timerBezczynnosciPokoju);
+    timerBezczynnosciPokoju = null;
+  }
+  if (timerBezczynnosciPoczekalni) {
+    clearTimeout(timerBezczynnosciPoczekalni);
+    timerBezczynnosciPoczekalni = null;
+  }
   wyczyscCzatZBazy();
 
   const btnKolejna = document.getElementById("zacznij-kolejna");
@@ -1196,7 +1331,7 @@ function escapeHtml(unsafe) {
 }
 
 function pokazPrzyciskCzatuOnline() {
-  if (!czyTrybOnline) return;
+  if (!czyTrybOnline || czyWidz) return;
   const btn = document.getElementById("open-chat");
   if (btn) {
     btn.style.display = "block";
@@ -1211,6 +1346,7 @@ function ukryjPrzyciskCzatuOnline() {
 }
 
 function otworzWidokCzatu() {
+  if (czyWidz) return;
   const blok = document.getElementById("blok-chatu");
   const btn = document.getElementById("open-chat");
   if (blok) blok.style.display = "flex";
@@ -1230,7 +1366,7 @@ function zamknijWidokCzatu() {
   const blok = document.getElementById("blok-chatu");
   const btn = document.getElementById("open-chat");
   if (blok) blok.style.display = "none";
-  if (btn && czyTrybOnline) {
+  if (btn && czyTrybOnline && !czyWidz) {
     btn.style.display = "block";
   }
 }
@@ -1243,6 +1379,7 @@ function przewinCzatDoDolu() {
 }
 
 function dodajWiadomoscDoWidoku(wiadomosc, czyNowa = false) {
+  if (czyWidz) return;
   if (!wiadomosc || !wiadomosc.id) return;
   if (wyswietloneIdWiadomosci.has(wiadomosc.id)) return;
   wyswietloneIdWiadomosci.add(wiadomosc.id);
@@ -1309,6 +1446,7 @@ function dodajWiadomoscDoWidoku(wiadomosc, czyNowa = false) {
 }
 
 function wczytajWiadomosciCzatu(lista) {
+  if (czyWidz) return;
   if (!Array.isArray(lista) || lista.length === 0) return;
   if (!window.aktualnyCzatMeczu) window.aktualnyCzatMeczu = [];
 
@@ -1325,8 +1463,11 @@ function wczytajWiadomosciCzatu(lista) {
 }
 
 function odbierzWiadomoscCzatu(payload) {
+  if (czyWidz) return;
   if (!payload || !payload.id || !payload.text) return;
   if (!window.aktualnyCzatMeczu) window.aktualnyCzatMeczu = [];
+
+  zresetujTimerBezczynnosciGry();
 
   if (!wyswietloneIdWiadomosci.has(payload.id)) {
     window.aktualnyCzatMeczu.push(payload);
@@ -1389,6 +1530,7 @@ async function wyczyscCzatZBazy() {
 }
 
 function wyslijWiadomoscCzatu() {
+  if (czyWidz) return;
   const inp = document.getElementById("chat-input");
   if (!inp) return;
   const tekst = inp.value.trim();
@@ -1419,6 +1561,8 @@ function wyslijWiadomoscCzatu() {
   }
 
   dodajWiadomoscDoWidoku(nowaWiadomosc, false);
+
+  zresetujTimerBezczynnosciGry();
 
   kanalMeczuRealtime?.send({
     type: "broadcast",
