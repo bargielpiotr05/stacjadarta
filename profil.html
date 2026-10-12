@@ -167,6 +167,9 @@
                     <div id="lista-ostatnich-meczy">
                         <div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>
                     </div>
+                    <div id="kontener-wiecej-meczy" style="display: none; text-align: center; margin-top: 15px">
+                        <button type="button" id="btn-zobacz-wszystkie-mecze" class="btn-zobacz-wszystkie">Zobacz wszystkie mecze</button>
+                    </div>
                 </div>
 
                 <div id="btn-container">
@@ -584,11 +587,14 @@
                 };
             }
 
-            async function pobierzHistorieMeczow(profilId, nazwaGracza = "", czyMojProfil = false) {
+            async function pobierzHistorieMeczow(profilId, nazwaGracza = "", czyMojProfil = false, limit = 5) {
                 let meczeZdalne = [];
                 const naglowki = {
                     apikey: SUPA_KEY,
                 };
+                const limitLiczba = limit && Number(limit) > 0 ? Number(limit) : 100;
+                const limitStr = String(limitLiczba);
+                const limitQuery = `&limit=${limitLiczba}`;
 
                 // 1. Serwer Cloudflare Worker /api/supabase-read (Niezawodny same-origin na iOS Safari)
                 try {
@@ -601,7 +607,7 @@
                                 select: "*",
                                 or: `(host_id.eq.${profilId},gosc_id.eq.${profilId})`,
                                 order: "utworzono.desc",
-                                limit: "10"
+                                limit: limitStr
                             }
                         })
                     });
@@ -620,7 +626,7 @@
                             method: "POST",
                             headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                path: `/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`,
+                                path: `/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc${limitQuery}`,
                                 method: "GET"
                             })
                         });
@@ -638,7 +644,7 @@
                     try {
                         const controller = new AbortController();
                         const timerId = setTimeout(() => controller.abort(), 4000);
-                        const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc&limit=10`;
+                        const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc${limitQuery}`;
                         const res = await fetch(url, {
                             headers: naglowki,
                             cache: "no-store",
@@ -660,7 +666,7 @@
                 if (meczeZdalne.length === 0 && client) {
                     try {
                         const { data, error } = await zLimitemCzasu(
-                            client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(10),
+                            client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(limitLiczba),
                             "odczyt meczy z Supabase SDK",
                             4000
                         );
@@ -700,16 +706,87 @@
                     const brakujaceLokalne = znormalizowaneLokalne.filter(
                         (lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`)
                     );
-                    return [...znormalizowaneZdalne, ...brakujaceLokalne].slice(0, 10);
+                    const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
+                    return limit ? scalone.slice(0, limit) : scalone;
                 }
 
-                return znormalizowaneLokalne.slice(0, 10);
+                return limit ? znormalizowaneLokalne.slice(0, limit) : znormalizowaneLokalne;
             }
 
             let client = window.supabaseKlient || window.supabaseClient || null;
             let aktualnyUser = odczytajZalogowanegoZStorage();
             let aktualnyProfil = null;
             let ostatnieMeczeCache = [];
+            let pelnaHistoriaMeczowCache = null;
+            let czyWszystkieMeczeRozwiniete = false;
+
+            function renderujListeMeczow(meczeDoWyswietlenia) {
+                const listaMeczy = document.getElementById("lista-ostatnich-meczy");
+                ostatnieMeczeCache = meczeDoWyswietlenia || [];
+
+                if (!meczeDoWyswietlenia || meczeDoWyswietlenia.length === 0) {
+                    listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
+                    return;
+                }
+
+                listaMeczy.innerHTML = meczeDoWyswietlenia
+                    .map((m, idx) => `
+                        <div class="mecz ${m._czyWygrana ? "wygrana" : "porazka"}">
+                            <p class="przeciwnik">Przeciwnik: <strong>${m._przeciwnikNazwa}</strong></p>
+                            <p class="wynik">Wynik: <strong>${m._wynik}</strong></p>
+                            <p class="data">Data: ${m._dataMeczu}</p>
+                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
+                        </div>`)
+                    .join("");
+            }
+
+            function podepnijObslugeWszystkichMeczow(profilId, nazwaGracza, czyMojProfil) {
+                const kontenerWiecej = document.getElementById("kontener-wiecej-meczy");
+                const btnWiecej = document.getElementById("btn-zobacz-wszystkie-mecze");
+                if (!kontenerWiecej || !btnWiecej) return;
+
+                btnWiecej.onclick = async () => {
+                    if (btnWiecej.disabled) return;
+
+                    // Jeśli pełna historia jest już w cache, przełączamy widok lokalnie bez zapytań do bazy!
+                    if (pelnaHistoriaMeczowCache) {
+                        if (czyWszystkieMeczeRozwiniete) {
+                            renderujListeMeczow(pelnaHistoriaMeczowCache.slice(0, 5));
+                            btnWiecej.textContent = "Zobacz wszystkie mecze";
+                            czyWszystkieMeczeRozwiniete = false;
+                        } else {
+                            renderujListeMeczow(pelnaHistoriaMeczowCache);
+                            btnWiecej.textContent = "Zwiń mecze";
+                            czyWszystkieMeczeRozwiniete = true;
+                        }
+                        return;
+                    }
+
+                    // Pierwsze kliknięcie — jednorazowe pobranie wszystkich meczów z bazy
+                    btnWiecej.disabled = true;
+                    const staryTekst = btnWiecej.textContent;
+                    btnWiecej.textContent = "Ładowanie meczów...";
+
+                    try {
+                        const wszystkieMecze = await pobierzHistorieMeczow(profilId, nazwaGracza, czyMojProfil, 0);
+                        pelnaHistoriaMeczowCache = wszystkieMecze || [];
+                        renderujListeMeczow(pelnaHistoriaMeczowCache);
+
+                        if (pelnaHistoriaMeczowCache.length > 5) {
+                            btnWiecej.textContent = "Zwiń mecze";
+                            btnWiecej.disabled = false;
+                            czyWszystkieMeczeRozwiniete = true;
+                        } else {
+                            kontenerWiecej.style.display = "none";
+                        }
+                    } catch (err) {
+                        console.error("Błąd pobierania wszystkich meczów:", err);
+                        btnWiecej.disabled = false;
+                        btnWiecej.textContent = staryTekst;
+                        alert("Nie udało się pobrać wszystkich meczów. Spróbuj ponownie.");
+                    }
+                };
+            }
 
             function zLimitemCzasu(obietnica, etap, czasMs = 12000) {
                 let timerId;
@@ -1094,24 +1171,21 @@
                         sprawdzRelacjeZnajomego(mId, cId, tok).catch((err) => console.warn(err));
                     }
 
-                    // 5. Pobranie historii gier (odporne na zawieszenia iOS Safari, chmura + pamięć lokalna)
-                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil);
+                    // 5. Pobranie historii gier — domyślnie tylko 5 ostatnich meczy, aby oszczędzać bazę danych
+                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil, 5);
+                    renderujListeMeczow(mecze);
 
-                    const listaMeczy = document.getElementById("lista-ostatnich-meczy");
-                    ostatnieMeczeCache = mecze || [];
-
-                    if (!mecze || mecze.length === 0) {
-                        listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
-                    } else {
-                        listaMeczy.innerHTML = mecze
-                            .map((m, idx) => `
-                                <div class="mecz ${m._czyWygrana ? "wygrana" : "porazka"}">
-                                    <p class="przeciwnik">Przeciwnik: <strong>${m._przeciwnikNazwa}</strong></p>
-                                    <p class="wynik">Wynik: <strong>${m._wynik}</strong></p>
-                                    <p class="data">Data: ${m._dataMeczu}</p>
-                                    <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
-                                </div>`)
-                            .join("");
+                    const kontenerWiecej = document.getElementById("kontener-wiecej-meczy");
+                    const btnWiecej = document.getElementById("btn-zobacz-wszystkie-mecze");
+                    if (kontenerWiecej && btnWiecej) {
+                        const maWiecejMeczow = (mecze && mecze.length >= 5) || (profil?.rozegrane_mecze && profil.rozegrane_mecze > 5);
+                        if (maWiecejMeczow) {
+                            kontenerWiecej.style.display = "block";
+                            btnWiecej.textContent = "Zobacz wszystkie mecze";
+                            podepnijObslugeWszystkichMeczow(finalProfilId, nazwaGracza, czyMojProfil);
+                        } else {
+                            kontenerWiecej.style.display = "none";
+                        }
                     }
                 } catch (error) {
                     // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE

@@ -353,6 +353,39 @@ main {
   transform: translateY(-1px);
 }
 
+.btn-zobacz-wszystkie {
+  background-color: var(--secondary-color);
+  color: black;
+  border: 1px solid var(--primary-color-border-hover);
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 320px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-zobacz-wszystkie:hover {
+  background-color: var(--secondary-color);
+  color: #0b091f;
+  border-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-zobacz-wszystkie:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* --- DOLNE PRZYCISKI --- */
 #btn-container {
   display: flex;
