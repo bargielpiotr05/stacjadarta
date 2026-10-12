@@ -1,9 +1,6 @@
 User-agent: *
 Allow: /
 
-# Jeśli chcesz zablokować dostęp do konkretnych folderów (np. panelu administratora), odkomentuj poniższe linie:
-# Disallow: /admin/
-# Disallow: /prywatne/
+Disallow: /admin-panel/
 
-# Wskazanie adresu do mapy strony (Sitemap) – zalecane (podmień adres na swój):
-Sitemap: https://twojadomena.pl/sitemap.xml
+Sitemap: https://stacjadarta.pl/sitemap.xml
