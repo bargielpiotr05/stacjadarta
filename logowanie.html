@@ -118,6 +118,29 @@
                 pokazKomunikat("Zalogowano pomyślnie! Przekierowanie...", "success");
                 btnSubmit.textContent = "Zalogowano!";
 
+                if (data?.user?.id) {
+                    try {
+                        const getIp = window.pobierzAdresIPMenu || (async () => {
+                            try {
+                                const r = await fetch("/api/my-ip");
+                                const d = await r.json();
+                                if (d?.ip) return d.ip;
+                            } catch (_) {}
+                            try {
+                                const r2 = await fetch("https://api64.ipify.org?format=json");
+                                const d2 = await r2.json();
+                                return d2?.ip;
+                            } catch (_) {}
+                            return null;
+                        });
+                        getIp().then((ip) => {
+                            if (ip) {
+                                client.from("profiles").update({ ostatnie_ip: ip }).eq("id", data.user.id).then();
+                            }
+                        }).catch(() => {});
+                    } catch (_) {}
+                }
+
                 setTimeout(() => {
                     window.location.href = "./index.html";
                 }, 1000);

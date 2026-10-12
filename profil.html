@@ -216,6 +216,10 @@
                             <input type="password" id="edycja-haslo" minlength="6" placeholder="Wpisz nowe hasło..." />
                         </label>
                         <label class="form-grupa">
+                            <span>Ostatnie IP:</span>
+                            <input type="text" id="edycja-ip" readonly disabled style="opacity: 0.7; cursor: not-allowed; background: rgba(255, 255, 255, 0.05);" />
+                        </label>
+                        <label class="form-grupa">
                             <a id="sprzet-gracza" style="cursor: pointer; user-select: none">
                                 <h3 class="nazwa-sekcji">Sprzęt <span class="ikona-strzalki">∨</span></h3>
                             </a>
@@ -448,6 +452,51 @@
                 }
 
                 throw new Error(ostatniBlad?.message || "Nie udało się zapisać zmian w bazie danych. Spróbuj ponownie.");
+            }
+
+            async function pobierzAdresIP() {
+                // 1. Serwer lokalny / Cloudflare Worker (najszybszy, same-origin)
+                try {
+                    const controller = new AbortController();
+                    const tId = setTimeout(() => controller.abort(), 2000);
+                    const res = await fetch("/api/my-ip", { signal: controller.signal });
+                    clearTimeout(tId);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data?.ip) return data.ip;
+                    }
+                } catch (_) {}
+
+                // 2. Fallback na publiczne API ipify
+                try {
+                    const controller = new AbortController();
+                    const tId = setTimeout(() => controller.abort(), 2500);
+                    const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
+                    clearTimeout(tId);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data?.ip) return data.ip;
+                    }
+                } catch (_) {}
+
+                return null;
+            }
+
+            async function zsynchronizujOstatnieIp(userId, zapisaneIp) {
+                try {
+                    const mojeIp = await pobierzAdresIP();
+                    if (mojeIp) {
+                        if (aktualnyProfil) aktualnyProfil.ostatnie_ip = mojeIp;
+                        const poleEdycjaIp = document.getElementById("edycja-ip");
+                        if (poleEdycjaIp) poleEdycjaIp.value = mojeIp;
+
+                        if (mojeIp !== zapisaneIp) {
+                            await wykonajZapisProfilu({ ostatnie_ip: mojeIp }, userId);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Błąd synchronizacji ostatnie_ip:", e);
+                }
             }
 
             function normalizujMecz(m, profilId, nazwaGracza = "") {
@@ -929,6 +978,7 @@
                             tarcza: "-",
                             auto_score: "-",
                             druzyna: "-",
+                            ostatnie_ip: "-",
                             avatar_url: aktualnyUser.user_metadata?.avatar_url || "./loga/logo.png"
                         };
                     }
@@ -948,6 +998,11 @@
 
                     if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick && client) {
                         client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
+                    }
+
+                    // Synchronizacja ostatniego IP gracza z profilem
+                    if (czyMojProfil && finalProfilId) {
+                        zsynchronizujOstatnieIp(finalProfilId, profil?.ostatnie_ip);
                     }
 
                     // WYPEŁNIENIE CAŁEGO UI NATYCHMIAST (Nagłówek, Ranga, Statystyki, Sprzęt)
@@ -1623,6 +1678,8 @@
 
                 document.getElementById("edycja-nick").value = obecnyNick;
                 document.getElementById("edycja-haslo").value = "";
+                const poleEdycjaIp = document.getElementById("edycja-ip");
+                if (poleEdycjaIp) poleEdycjaIp.value = aktualnyProfil?.ostatnie_ip || "-";
 
                 // --- NOWE: Wypełnianie inputów sprzętu ---
                 document.getElementById("edycja-barele").value = aktualnyProfil?.barele || "";

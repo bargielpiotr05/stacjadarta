@@ -274,6 +274,32 @@ function zaktualizujWidokZalogowanego(user, daneZProfilu = null) {
     }
 }
 
+async function pobierzAdresIPMenu() {
+    try {
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch("/api/my-ip", { signal: controller.signal });
+        clearTimeout(tId);
+        if (res.ok) {
+            const data = await res.json();
+            if (data?.ip) return data.ip;
+        }
+    } catch (_) {}
+
+    try {
+        const controller = new AbortController();
+        const tId = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
+        clearTimeout(tId);
+        if (res.ok) {
+            const data = await res.json();
+            if (data?.ip) return data.ip;
+        }
+    } catch (_) {}
+
+    return null;
+}
+
 async function sprawdzStanLogowania() {
     if (!supabaseKlient) return;
 
@@ -296,11 +322,24 @@ async function sprawdzStanLogowania() {
             // Aktualizacja profilu z bazy w tle
             supabaseKlient
                 .from("profiles")
-                .select("nazwa_gracza, avatar_url")
+                .select("nazwa_gracza, avatar_url, ostatnie_ip")
                 .eq("id", user.id)
                 .maybeSingle()
-                .then(({ data: profil }) => {
+                .then(async ({ data: profil }) => {
                     if (profil) zaktualizujWidokZalogowanego(user, profil);
+
+                    // Zapis ostatniego IP gracza (raz na sesję przeglądarki)
+                    if (sessionStorage.getItem("sd_ip_zapisane") !== "1") {
+                        try {
+                            const mojeIp = await pobierzAdresIPMenu();
+                            if (mojeIp) {
+                                sessionStorage.setItem("sd_ip_zapisane", "1");
+                                if (!profil || profil.ostatnie_ip !== mojeIp) {
+                                    await supabaseKlient.from("profiles").update({ ostatnie_ip: mojeIp }).eq("id", user.id);
+                                }
+                            }
+                        } catch (_) {}
+                    }
                 })
                 .catch(() => {});
         }
@@ -311,9 +350,18 @@ async function sprawdzStanLogowania() {
 
 function podepnijNasluchLogowania() {
     if (!supabaseKlient) return;
-    supabaseKlient.auth.onAuthStateChange((event, session) => {
+    supabaseKlient.auth.onAuthStateChange(async (event, session) => {
         if (session && session.user) {
             zaktualizujWidokZalogowanego(session.user);
+            if (event === "SIGNED_IN") {
+                try {
+                    const mojeIp = await pobierzAdresIPMenu();
+                    if (mojeIp) {
+                        sessionStorage.setItem("sd_ip_zapisane", "1");
+                        supabaseKlient.from("profiles").update({ ostatnie_ip: mojeIp }).eq("id", session.user.id).then();
+                    }
+                } catch (_) {}
+            }
         }
     });
 }

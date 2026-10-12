@@ -41,11 +41,25 @@ async function pobierzMojeIP() {
   try {
     const controller = new AbortController();
     const tId = setTimeout(() => controller.abort(), 1200);
+    const res = await fetch("/api/my-ip", { signal: controller.signal });
+    clearTimeout(tId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ip) {
+        mojeIP = data.ip;
+        return;
+      }
+    }
+  } catch (err) {}
+
+  try {
+    const controller = new AbortController();
+    const tId = setTimeout(() => controller.abort(), 1500);
     const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
     clearTimeout(tId);
     if (res.ok) {
       const data = await res.json();
-      mojeIP = data.ip;
+      if (data?.ip) mojeIP = data.ip;
     }
   } catch (err) {}
 }

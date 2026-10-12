@@ -8,6 +8,15 @@ export default {
       return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     }
 
+    if (url.pathname === "/api/my-ip" && request.method === "GET") {
+      const clientIp =
+        request.headers.get("cf-connecting-ip") ||
+        request.headers.get("x-real-ip") ||
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "";
+      return Response.json({ ip: clientIp }, { headers: { "Cache-Control": "no-store" } });
+    }
+
     if (url.pathname === "/api/supabase-request") {
       if (request.method !== "POST") {
         return new Response("Method not allowed", { status: 405, headers: { Allow: "POST" } });
@@ -324,7 +333,7 @@ export default {
       const cleanProfileId = profileId.trim();
       const isUuid = /^[0-9a-f-]{36}$/i.test(cleanProfileId);
       const upstreamUrl = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-      upstreamUrl.searchParams.set("select", "id,nazwa_gracza,avatar_url,utworzono,srednia,srednia_9_lotek,ilosc_180,rozegrane_mecze,wygrane_mecze,barele,shafty,groty,tarcza,auto_score,druzyna,stats_by_game");
+      upstreamUrl.searchParams.set("select", "id,nazwa_gracza,avatar_url,utworzono,srednia,srednia_9_lotek,ilosc_180,rozegrane_mecze,wygrane_mecze,barele,shafty,groty,tarcza,auto_score,druzyna,stats_by_game,ostatnie_ip");
       if (isUuid) {
         upstreamUrl.searchParams.set("id", `eq.${cleanProfileId}`);
       } else {
