@@ -1,0 +1,2033 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+
+            gtag("config", "G-6Q270446R2");
+        </script>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Statystyki | Stacja Dart</title>
+        <meta name="description" content="Statystyki gracza na platformie Stacja Dart." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./profil-style.css" />
+        <link rel="stylesheet" href="./formularz.css" />
+        <link rel="stylesheet" href="./klasyczna-style.css" />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            /* Główny kontener strony */
+            #sekcja-statystyk {
+                max-width: 1050px;
+                margin: 0 auto;
+                padding: 20px 16px;
+            }
+
+            /* Przełącznik głównych zakładek */
+            #btn-container-stats {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin: 15px 0 25px 0;
+            }
+
+            .btn-stat-tab {
+                background-color: var(--primary-color);
+                color: white;
+                border: 1px solid var(--primary-color-border);
+                padding: 10px 18px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .btn-stat-tab:hover {
+                color: white;
+                border-color: var(--primary-color-border-hover);
+                background-color: var(--primary-color-lighter);
+            }
+
+            .btn-stat-tab.aktywna {
+                color: white;
+                border-color: var(--primary-color-border-hover);
+                background-color: var(--primary-color-lighter);
+                font-weight: 700;
+            }
+
+            .stats-sekcja {
+                display: none;
+            }
+
+            .stats-sekcja.aktywna {
+                display: block;
+                animation: fadeIn 0.3s ease;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Karta sekcji Heatmapy */
+            .heatmap-card {
+                background-color: var(--primary-form-color);
+                border: 1px solid var(--primary-form-inside-border-color);
+                border-radius: 12px;
+                padding: 28px 20px;
+                margin-top: 25px;
+                text-align: center;
+            }
+
+            /* Pigułki podsumowania (Quick stats) */
+            .heatmap-quick-stats {
+                display: flex;
+                justify-content: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin: 16px 0 24px 0;
+            }
+
+            .quick-stat-chip {
+                background-color: var(--primary-form-color);
+                border: 1px solid var(--primary-color-border);
+                border-radius: 8px;
+                padding: 6px 14px;
+                font-size: 13px;
+                color: #cbd5e1;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            }
+
+            .quick-stat-chip strong {
+                color: #ffffff;
+            }
+
+            .quick-stat-chip.hot {
+                background: rgba(64, 218, 64, 0.12);
+                border: 1px solid var(--secondary-color);
+                color: #e2e8f0 !important;
+                font-weight: 600;
+            }
+
+            .quick-stat-chip.hot strong {
+                color: var(--secondary-color);
+            }
+
+            /* Pasek z informacją o wybranym sektorze (ukryty na PC, widoczny na telefonach/tabletach) */
+            .wybrany-sektor-info {
+                display: none;
+                margin: 0 auto 18px auto;
+                padding: 10px 18px;
+                background-color: var(--primary-form-inside-color);
+                border: 1px dashed var(--primary-form-inside-border-color);
+                border-radius: 12px;
+                color: #94a3b8;
+                font-size: 13px;
+                max-width: 390px;
+                transition: all 0.25s ease;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                user-select: none;
+            }
+
+            /* Widoczny wyłącznie na urządzeniach dotykowych, telefonach i tabletach */
+            @media (hover: none), (pointer: coarse), (max-width: 768px) {
+                .wybrany-sektor-info {
+                    display: flex;
+                }
+            }
+
+            .wybrany-sektor-info.aktywny {
+                background-color: var(--secondary-color);
+                border: none;
+                color: black;
+            }
+
+            /* OKRĄGŁA TARCZA - eliminacja białego koła zdjęcia JPG */
+            .tarcza-ramka {
+                position: relative;
+                width: 100%;
+                max-width: 430px;
+                aspect-ratio: 1 / 1;
+                margin: 0 auto;
+                border-radius: 50%;
+                overflow: hidden;
+                background-color: black;
+                /* Pierścień obudowy tarczy z cieniem 3D */
+                box-shadow:
+                    0 25px 60px black,
+                    0 0 0 5px black,
+                    0 0 0 7px black;
+            }
+
+            /* Zdjęcie i SVG przeskalowane o 1.065x, aby ukryć białe rogi tarczy */
+            .tarcza-warstwa-img,
+            .tarcza-warstwa-svg {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                transform: scale(1.065);
+                transform-origin: center center;
+                border-radius: 50%;
+            }
+
+            .tarcza-warstwa-img {
+                object-fit: cover;
+                z-index: 1;
+                user-select: none;
+                pointer-events: none;
+            }
+
+            .tarcza-warstwa-svg {
+                z-index: 2;
+                pointer-events: auto;
+            }
+
+            /* Efekty cienia i kontrastu na SVG dla wszystkich trybów */
+            #dartboard-heatmap path,
+            #dartboard-heatmap circle,
+            #dartboard-heatmap-around path,
+            #dartboard-heatmap-around circle,
+            #dartboard-heatmap-shanghai path,
+            #dartboard-heatmap-shanghai circle {
+                transition:
+                    fill 0.3s ease,
+                    stroke 0.2s ease,
+                    filter 0.3s ease;
+                cursor: pointer;
+            }
+
+            /* Sektory o wysokiej skuteczności (odkryte / żywe kolory tarczy) */
+            .sektor-odkryty {
+                stroke: var(--secondary-color);
+                stroke-width: 0.25;
+            }
+
+            /* Sektory w cieniu */
+            .sektor-zacieniony {
+                mix-blend-mode: normal;
+            }
+
+            /* Dymek (Tooltip) */
+            .heatmap-tooltip {
+                position: fixed;
+                background-color: var(--primary-form-color);
+                border: 1px solid lightslategray;
+                color: #ffffff;
+                padding: 8px 14px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 600;
+                pointer-events: none;
+                z-index: 9999;
+                box-shadow:
+                    0 10px 25px rgba(0, 0, 0, 0.8),
+                    0 0 15px rgba(134, 134, 134, 0.25);
+                transform: translate(-50%, -135%);
+                white-space: nowrap;
+            }
+
+            /* Przełącznik widoku: Tarcza / Lista */
+            .widok-przelacznik-kontener {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin: 22px 0 16px 0;
+            }
+
+            .btn-widok-przelacznik {
+                background-color: var(--primary-color);
+                color: white;
+                border: 1px solid var(--primary-color-border);
+                padding: 10px 18px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.25s ease;
+            }
+
+            .btn-widok-przelacznik:hover {
+                color: white;
+                border-color: var(--primary-color-border-hover);
+                background-color: var(--primary-color-lighter);
+                font-weight: 700;
+            }
+
+            .btn-widok-przelacznik.aktywny {
+                color: white;
+                border-color: var(--primary-color-border-hover);
+                background-color: var(--primary-color-lighter);
+                font-weight: 700;
+            }
+
+            /* Lista rankingowa Doubles */
+            .doubles-ranking-lista {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-width: 580px;
+                margin: 0 auto;
+                text-align: left;
+            }
+
+            .ranking-item {
+                background: var(--primary-color);
+                border: 1px solid var(--primary-color-lighter);
+                border-radius: 12px;
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                transition: all 0.2s ease;
+            }
+
+            .ranking-item:hover {
+                border-color: var(--primary-color-border-hover);
+                background-color: var(--primary-color-lighter);
+            }
+
+            .ranking-pozycja {
+                font-size: 12px;
+                font-weight: 700;
+                color: white;
+                width: 28px;
+                height: 28px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background-color: var(--primary-color-border);
+                flex-shrink: 0;
+            }
+
+            .ranking-info {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .ranking-nazwa-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 5px;
+                font-size: 14px;
+            }
+
+            .ranking-nazwa {
+                font-weight: 700;
+                color: white;
+            }
+
+            .ranking-wynik {
+                font-weight: 700;
+                color: lightgrey;
+                font-size: 13px;
+            }
+
+            .ranking-pasek-tlo {
+                width: 100%;
+                height: 5px;
+                background: #1e293b;
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .ranking-pasek-wypelnienie {
+                height: 100%;
+                background: var(--secondary-color);
+                border-radius: 3px;
+                transition: width 0.4s ease;
+            }
+
+            /* Karty wykresów formy */
+            .chart-card {
+                background-color: var(--primary-color);
+                border: 1px solid var(--primary-color-border);
+                border-radius: 12px;
+                padding: 24px 22px;
+                margin-top: 25px;
+                text-align: left;
+            }
+
+            .chart-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 14px;
+                margin-bottom: 18px;
+            }
+
+            .chart-tytul {
+                color: white;
+                font-size: 19px;
+                font-weight: 700;
+                margin: 0 0 4px 0;
+            }
+
+            .chart-przelacznik-metryki {
+                display: flex;
+                gap: 6px;
+                background-color: var(--primary-form-inside-color);
+                padding: 4px;
+                border-radius: 999px;
+                border: 1px solid var(--primary-color-border);
+            }
+
+            .btn-metryka {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 6px 14px;
+                border-radius: 999px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .btn-metryka:hover {
+                color: #ffffff;
+            }
+
+            .btn-metryka.aktywny {
+                background-color: var(--secondary-color);
+                color: #090723;
+                font-weight: 700;
+            }
+
+            .chart-canvas-kontener {
+                position: relative;
+                width: 100%;
+                height: 270px;
+            }
+            .wspolny-div {
+                background: none !important;
+                border: none !important;
+                padding: 10px 14px !important;
+                box-shadow: none !important;
+            }
+
+            .wspolny-div:hover {
+                transform: none !important;
+                border: none !important;
+            }
+
+            .bloki-sekcji {
+                grid-template-columns: none !important;
+                display: block !important;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                border-bottom: 2px solid var(--secondary-color);
+                margin-bottom: 20px;
+            }
+
+            table td {
+                width: 33.333%;
+                padding: 4px 8px;
+                vertical-align: middle;
+            }
+
+            /* Delikatne szare linie pionowe pomiędzy kolumnami */
+            table td:not(:last-child) {
+                border-right: 1px solid rgba(255, 255, 255, 0.15);
+            }
+
+            /* Delikatna szara linia pozioma pomiędzy wierszami */
+            table tr:not(:last-child) td {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            }
+            .stats-sekcja{
+                background-color:var(--primary-color);
+                border-radius:12px;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <div id="sekcja-statystyk" class="sekcje-gracza">
+                <h3>Statystyki</h3>
+
+                <!-- Zakładki trybów -->
+                <div id="btn-container-stats">
+                    <button type="button" class="btn-stat-tab aktywna" data-target="stats-klasyczna">Klasyczna</button>
+                    <button type="button" class="btn-stat-tab" data-target="stats-shanghai">Shanghai</button>
+                    <button type="button" class="btn-stat-tab" data-target="stats-around-the-world">Around The World</button>
+                    <button type="button" class="btn-stat-tab" data-target="stats-121checkout">121 Checkout</button>
+                    <button type="button" class="btn-stat-tab" data-target="stats-doubles">Doubles</button>
+                </div>
+
+                <!-- 1. Klasyczna -->
+                <div id="stats-klasyczna" class="stats-sekcja aktywna">
+                    <h1>Klasyczna</h1>
+
+                    <!-- Karta Wykresu Klasyczna -->
+                    <div class="chart-card">
+                        <div id="bloki-statystyk" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="srednia-gracza" class="wspolny-div">
+                                            <h4>Średnia:</h4>
+                                            <p id="stat-srednia">0.00</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="srednia-9-lotek" class="wspolny-div">
+                                            <h4>Średnia 9-lotek:</h4>
+                                            <p id="stat-9lotek">0.00</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="liczba-180" class="wspolny-div">
+                                            <h4>Liczba 180:</h4>
+                                            <p id="stat-180">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div id="rozegrane-mecze" class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stat-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="zwyciestwa" class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stat-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="porażki" class="wspolny-div">
+                                            <h4>Porażki:</h4>
+                                            <p id="stat-porazki">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="chart-tytul">Wykres Średniej</h2>
+                            </div>
+                            <div class="chart-przelacznik-metryki">
+                                <button type="button" class="btn-metryka aktywny" data-chart="klasyczna" data-metric="srednia">Średnia 3 lotek</button>
+                                <button type="button" class="btn-metryka" data-chart="klasyczna" data-metric="srednia9">Średnia 9 lotek</button>
+                            </div>
+                        </div>
+                        <div class="heatmap-quick-stats" style="margin: 0 0 16px 0; justify-content: flex-start">
+                            <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-klas-ostatni">-</strong></span>
+                            <span class="quick-stat-chip">Rekord meczu: <strong id="chip-klas-max">-</strong></span>
+                            <span class="quick-stat-chip">Trend: <strong id="chip-klas-trend">-</strong></span>
+                        </div>
+                        <div class="chart-canvas-kontener">
+                            <canvas id="chart-klasyczna"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Shanghai -->
+                <div id="stats-shanghai" class="stats-sekcja">
+                    <h1>Shanghai</h1>
+
+                    <div id="bloki-statystyk-shanghai" class="bloki-sekcji">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div id="rekord-punktow" class="wspolny-div">
+                                        <h4>Rekord punktów:</h4>
+                                        <p id="stat-rekord">6</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="srednia-pkt" class="wspolny-div">
+                                        <h4>Średnia punktów:</h4>
+                                        <p id="stat-shanghai-srednia">6</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="trafione-sdt" class="wspolny-div">
+                                        <h4>Trafione S+D+T:</h4>
+                                        <p id="stat-sdt">2</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Skuteczność:</h4>
+                                        <p id="stat-shanghai-skutecznosc">50% (13/26)</p>
+                                        <span id="stat-lacznie" style="display:none">12</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Rozegrane mecze:</h4>
+                                        <p id="stat-shanghai-mecze">2</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Zwycięstwa:</h4>
+                                        <p id="stat-shanghai-wygrane">2</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Przełącznik widoku: Tarcza / Wykres -->
+                    <div class="widok-przelacznik-kontener">
+                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-shanghai-tarcza">Tarcza (Heatmapa)</button>
+                        <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-wykres">Wykres formy (W czasie)</button>
+                    </div>
+
+                    <!-- 1. Widok Tarczy (Domyślny) -->
+                    <div id="shanghai-widok-tarcza">
+                        <div class="heatmap-card">
+                            <h2 style="color: #f8fafc; font-size: 20px; margin: 0 0 6px 0">Tarcza Wyników Shanghai</h2>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 16px 0">Punkty rundy oraz skuteczność trafień S/D/T</p>
+
+                            <!-- Pigułki podsumowania Shanghai -->
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Ustrzelone Shanghai: <strong id="chip-shanghai-ilosc">2</strong></span>
+                                <span class="quick-stat-chip">Rekord rundy: <strong id="chip-shanghai-rekord">6 pkt</strong></span>
+                                <span class="quick-stat-chip">Skuteczność rzutów: <strong id="chip-shanghai-skutecznosc">50% (13/26)</strong></span>
+                            </div>
+
+                            <!-- Informacja o wybranym sektorze -->
+                            <div id="wybrany-sektor-info-shanghai" class="wybrany-sektor-info">
+                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy</span>
+                            </div>
+
+                            <!-- Obudowa tarczy -->
+                            <div class="tarcza-ramka">
+                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                <svg id="dartboard-heatmap-shanghai" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                            </div>
+
+                            <div style="margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 6px">
+                                <div class="heatmap-legend-bar"></div>
+                                <div style="display: flex; justify-content: space-between; width: 220px; font-size: 11px; color: #64748b">
+                                    <span>0 pkt (Cień)</span>
+                                    <span>Max pkt (Odkryta)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Widok Wykresu -->
+                    <div id="shanghai-widok-wykres" style="display: none">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul">Wykres Formy Shanghai w Czasie</h2>
+                                    <p class="chart-podtytul">Średnia punktów oraz suma z kolejnych gier z podziałem na daty</p>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="shanghai" data-metric="srednia">Średnia na rundę</button>
+                                    <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="punkty">Suma punktów</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats" style="margin: 0 0 16px 0; justify-content: flex-start">
+                                <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-sh-ostatni">-</strong></span>
+                                <span class="quick-stat-chip">Rekord: <strong id="chip-sh-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-sh-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-shanghai"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Around The World -->
+                <div id="stats-around-the-world" class="stats-sekcja">
+                    <h1>Around The World</h1>
+                    <div id="bloki-statystyk-around" class="bloki-sekcji">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div id="najmniej-lotek" class="wspolny-div">
+                                        <h4>Najmniej lotek:</h4>
+                                        <p id="stat-najmniej">7</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="srednia-skutecznosc" class="wspolny-div">
+                                        <h4>Skuteczność:</h4>
+                                        <p id="stat-around-skutecznosc">100%</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="trafione-cele" class="wspolny-div">
+                                        <h4>Trafione cele:</h4>
+                                        <p id="stat-trafione">7</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div id="wszystkie-rzuty" class="wspolny-div">
+                                        <h4>Wszystkie rzuty:</h4>
+                                        <p id="stat-wszystkie">7</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Rozegrane mecze:</h4>
+                                        <p id="stat-around-mecze">1</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Zwycięstwa:</h4>
+                                        <p id="stat-around-wygrane">1</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Przełącznik widoku: Tarcza / Wykres -->
+                    <div class="widok-przelacznik-kontener">
+                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-around-tarcza">Tarcza (Heatmapa)</button>
+                        <button type="button" class="btn-widok-przelacznik" id="btn-around-wykres">Wykres formy (W czasie)</button>
+                    </div>
+
+                    <!-- 1. Widok Tarczy (Domyślny) -->
+                    <div id="around-widok-tarcza">
+                        <div class="heatmap-card">
+                            <h2 style="color: #f8fafc; font-size: 20px; margin: 0 0 6px 0">Heatmapa Trafień Around The World</h2>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 16px 0">Liczba trafionych celów od 1 do 20 oraz Bullseye (cień maleje z trafieniami)</p>
+
+                            <!-- Pigułki podsumowania Around The World -->
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Najlepszy cel: <strong id="chip-around-najwiecej">Cel 1: 100% (2/2)</strong></span>
+                                <span class="quick-stat-chip">Najsłabszy cel: <strong id="chip-around-najmniej">Cel 11: 0% (0/2)</strong></span>
+                                <span class="quick-stat-chip">Łącznie: <strong id="chip-around-suma">50% (13/26)</strong></span>
+                            </div>
+
+                            <!-- Informacja o wybranym sektorze -->
+                            <div id="wybrany-sektor-info-around" class="wybrany-sektor-info">
+                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić liczbę trafień</span>
+                            </div>
+
+                            <!-- Obudowa tarczy -->
+                            <div class="tarcza-ramka">
+                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                <svg id="dartboard-heatmap-around" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                            </div>
+
+                            <div style="margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 6px">
+                                <div class="heatmap-legend-bar"></div>
+                                <div style="display: flex; justify-content: space-between; width: 220px; font-size: 11px; color: #64748b">
+                                    <span>0 trafień (Cień)</span>
+                                    <span>Max trafień (Odkryta)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Widok Wykresu -->
+                    <div id="around-widok-wykres" style="display: none">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul">Wykres Skuteczności w Czasie</h2>
+                                    <p class="chart-podtytul">Skuteczność trafień celów oraz liczba lotek z gier w różnych datach</p>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="around_the_world" data-metric="skutecznosc">Skuteczność %</button>
+                                    <button type="button" class="btn-metryka" data-chart="around_the_world" data-metric="lotki">Liczba lotek</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats" style="margin: 0 0 16px 0; justify-content: flex-start">
+                                <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-atw-ostatni">-</strong></span>
+                                <span class="quick-stat-chip">Najlepszy wynik: <strong id="chip-atw-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-atw-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-around-the-world"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 121 Checkout -->
+                <div id="stats-121checkout" class="stats-sekcja">
+                    <h1>121 Checkout</h1>
+
+                    <!-- Karta Wykresu 121 Checkout -->
+                    <div class="chart-card">
+                        <div id="bloki-statystyk-121" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="najwyzszy-poziom" class="wspolny-div">
+                                            <h4>Najwyższy poziom:</h4>
+                                            <p id="stats-najwyzszy">121</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="najlepsza-seria" class="wspolny-div">
+                                            <h4>Najlepsza seria:</h4>
+                                            <p id="stats-najlepsza">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="skutecznosc-checkout" class="wspolny-div">
+                                            <h4>Skuteczność:</h4>
+                                            <p id="stats-121-skutecznosc">0%</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Liczba podejść:</h4>
+                                            <p id="stats-121-podejscia">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Sukcesy:</h4>
+                                            <p id="stats-121-sukcesy">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Porażki:</h4>
+                                            <p id="stats-121-porazki">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="chart-header">
+                            <div>
+                                <h2 class="chart-tytul">Wykres Skuteczności Checkoutu w Czasie</h2>
+                                <p class="chart-podtytul">Skuteczność ukończenia oraz najwyższy poziom z sesji w różnych datach</p>
+                            </div>
+                            <div class="chart-przelacznik-metryki">
+                                <button type="button" class="btn-metryka aktywny" data-chart="checkout_121" data-metric="skutecznosc">Skuteczność %</button>
+                                <button type="button" class="btn-metryka" data-chart="checkout_121" data-metric="max_poziom">Max Poziom</button>
+                            </div>
+                        </div>
+                        <div class="heatmap-quick-stats" style="margin: 0 0 16px 0; justify-content: flex-start">
+                            <span class="quick-stat-chip hot">Ostatnia sesja: <strong id="chip-chk-ostatni">-</strong></span>
+                            <span class="quick-stat-chip">Max poziom: <strong id="chip-chk-max">-</strong></span>
+                            <span class="quick-stat-chip">Trend: <strong id="chip-chk-trend">-</strong></span>
+                        </div>
+                        <div class="chart-canvas-kontener">
+                            <canvas id="chart-121checkout"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Doubles + Heatmapa -->
+                <div id="stats-doubles" class="stats-sekcja">
+                    <h1>Doubles</h1>
+                    <div id="bloki-statystyk-doubles" class="bloki-sekcji">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div id="ogolna-skutecznosc" class="wspolny-div">
+                                        <h4>Ogólna skuteczność:</h4>
+                                        <p id="stats-doubles-skutecznosc">50% (13/26)</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="trafione-double" class="wspolny-div">
+                                        <h4>Trafione double:</h4>
+                                        <p id="stats-trafione">0</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="rzuty-double" class="wspolny-div">
+                                        <h4>Rzuty na double:</h4>
+                                        <p id="stats-rzuty">0</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Rozegrane mecze:</h4>
+                                        <p id="stats-doubles-mecze">0</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Zwycięstwa:</h4>
+                                        <p id="stats-doubles-wygrane">0</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="wspolny-div">
+                                        <h4>Porażki:</h4>
+                                        <p id="stats-doubles-porazki">0</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                    <div class="widok-przelacznik-kontener">
+                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-doubles-tarcza">Tarcza</button>
+                        <button type="button" class="btn-widok-przelacznik" id="btn-doubles-lista">Lista</button>
+                        <button type="button" class="btn-widok-przelacznik" id="btn-doubles-wykres">Wykres formy</button>
+                    </div>
+
+                    <!-- 1. Widok Tarczy (Domyślny) -->
+                    <div id="doubles-widok-tarcza">
+                        <div class="heatmap-card">
+                            <h2 style="color: #f8fafc; font-size: 20px; margin: 0 0 6px 0">Heatmapa Skuteczności Doubles</h2>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 16px 0">Wizualizacja skuteczności trafień w double</p>
+
+                            <!-- Pigułki podsumowania Doubles -->
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Najlepszy: <strong id="chip-najlepszy">Double 16: 90% (9/10)</strong></span>
+                                <span class="quick-stat-chip">Najniższy: <strong id="chip-najnizszy">Double 3: 0% (0/4)</strong></span>
+                                <span class="quick-stat-chip">Średnia: <strong id="chip-srednia">50% (13/26)</strong></span>
+                            </div>
+
+                            <!-- Informacja o wybranym sektorze -->
+                            <div id="wybrany-sektor-info" class="wybrany-sektor-info">
+                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność</span>
+                            </div>
+
+                            <!-- Obudowa tarczy -->
+                            <div class="tarcza-ramka">
+                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                <svg id="dartboard-heatmap" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Widok Listy (Ranking malejąco) -->
+                    <div id="doubles-widok-lista" style="display: none">
+                        <div class="heatmap-card">
+                            <h2 style="color: #f8fafc; font-size: 20px; margin: 0 0 6px 0">Ranking Skuteczności Doubles</h2>
+                            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 20px 0">Sektory podwójne posortowane malejąco od najwyższego procentu trafień</p>
+
+                            <div class="doubles-ranking-lista" id="doubles-ranking-lista">
+                                <!-- Generowane dynamicznie w JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Widok Wykresu Doubles w Czasie -->
+                    <div id="doubles-widok-wykres" style="display: none">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul">Wykres Skuteczności Doubles w Czasie</h2>
+                                    <p class="chart-podtytul">Średnia skuteczność trafień w sektory podwójne z kolejnych meczów</p>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="doubles" data-metric="skutecznosc">Skuteczność %</button>
+                                    <button type="button" class="btn-metryka" data-chart="doubles" data-metric="trafienia">Trafione double</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats" style="margin: 0 0 16px 0; justify-content: flex-start">
+                                <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-dbl-ostatni">-</strong></span>
+                                <span class="quick-stat-chip">Rekord meczu: <strong id="chip-dbl-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-dbl-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-doubles"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Kafelek (Tooltip) dla heatmapy -->
+        <div id="heatmap-tooltip" class="heatmap-tooltip" style="display: none"></div>
+    </body>
+    <script>
+        // ==============================================================================
+        // 1. STRUKTURA DANYCH STATYSTYK (POBRANA Z BAZY DANYCH / PROFILU)
+        // ==============================================================================
+        const DANE_STATYSTYK = {
+            klasyczna: {
+                mecze: 10,
+                srednia: 58.42,
+                srednia_9: 64.18,
+                wygrane: 8,
+                ilosc_180: 4,
+                najwyzszy_checkout: 112,
+                historia_meczow: [
+                    { data: "28.09", srednia: 44.5, srednia9: 48.0, rywal: "Michal_Darter", format: "501 DO", wynik: "1:3", checkout: 52 },
+                    { data: "30.09", srednia: 47.8, srednia9: 51.5, rywal: "Bot Treningowy", format: "501 DO", wynik: "3:0", checkout: 64 },
+                    { data: "02.10", srednia: 49.8, srednia9: 54.0, rywal: "Kuba_180", format: "501 DO", wynik: "3:2", checkout: 76 },
+                    { data: "04.10", srednia: 48.5, srednia9: 52.0, rywal: "DartFanatic", format: "501 DO", wynik: "3:1", checkout: 82 },
+                    { data: "06.10", srednia: 52.1, srednia9: 58.4, rywal: "Tomek_Bull", format: "501 DO", wynik: "3:2", checkout: 90 },
+                    { data: "08.10", srednia: 55.4, srednia9: 60.1, rywal: "Turniej Jesienny R1", format: "501 DO", wynik: "3:0", checkout: 104 },
+                    { data: "10.10", srednia: 53.8, srednia9: 57.5, rywal: "Krzysiek_180", format: "501 DO", wynik: "2:3", checkout: 85 },
+                    { data: "11.10", srednia: 59.2, srednia9: 65.0, rywal: "Michal_Darter", format: "501 DO", wynik: "3:1", checkout: 110 },
+                    { data: "12.10", srednia: 57.6, srednia9: 62.3, rywal: "Półfinał Online", format: "501 DO", wynik: "3:2", checkout: 98 },
+                    { data: "13.10", srednia: 63.4, srednia9: 71.2, rywal: "Mistrz_Kalisza", format: "501 DO", wynik: "3:0", checkout: 112 },
+                ],
+            },
+            shanghai: {
+                mecze: 8,
+                wygrane: 7,
+                suma_punktow: 79,
+                rekord_punktow: 15,
+                srednia_na_gre: 9.9,
+                liczba_shanghai: 6,
+                suma_rzutow: 56,
+                suma_trafien: 34,
+                skutecznosc: 60.7,
+                rundy: {
+                    1: { rzuty: 3, trafienia: 3, punkty: 6, single: 1, double: 1, triple: 1, shanghai: true },
+                    2: { rzuty: 3, trafienia: 3, punkty: 6, single: 1, double: 1, triple: 1, shanghai: true },
+                    3: { rzuty: 4, trafienia: 2, punkty: 6, single: 2, double: 0, triple: 0, shanghai: false },
+                    4: { rzuty: 4, trafienia: 2, punkty: 8, single: 2, double: 0, triple: 0, shanghai: false },
+                    5: { rzuty: 4, trafienia: 2, punkty: 10, single: 1, double: 0, triple: 1, shanghai: false },
+                    6: { rzuty: 4, trafienia: 3, punkty: 12, single: 1, double: 1, triple: 1, shanghai: true },
+                    7: { rzuty: 4, trafienia: 2, punkty: 14, single: 1, double: 0, triple: 1, shanghai: false },
+                },
+                historia_meczow: [
+                    { data: "30.09", srednia: 5.5, punkty: 6, shanghai: 0, rywal: "Trening 1-7" },
+                    { data: "02.10", srednia: 6.8, punkty: 7, shanghai: 0, rywal: "Michal_Darter" },
+                    { data: "05.10", srednia: 7.0, punkty: 7, shanghai: 0, rywal: "Kuba_180" },
+                    { data: "07.10", srednia: 9.0, punkty: 9, shanghai: 1, rywal: "DartFanatic" },
+                    { data: "09.10", srednia: 10.0, punkty: 10, shanghai: 1, rywal: "Trening Solo" },
+                    { data: "11.10", srednia: 11.0, punkty: 11, shanghai: 1, rywal: "Tomek_Bull" },
+                    { data: "12.10", srednia: 13.5, punkty: 14, shanghai: 1, rywal: "Krzysiek_180" },
+                    { data: "13.10", srednia: 15.0, punkty: 15, shanghai: 2, rywal: "Mistrz_Kalisza" },
+                ],
+            },
+            around_the_world: {
+                mecze: 8,
+                wygrane: 7,
+                skutecznosc: 39.8,
+                suma_rzutow: 454,
+                suma_trafien: 168,
+                rekord_najmniej_lotek: 38,
+                sektory: {
+                    1: { rzuty: 2, trafienia: 2 },
+                    2: { rzuty: 2, trafienia: 2 },
+                    3: { rzuty: 2, trafienia: 2 },
+                    4: { rzuty: 2, trafienia: 1 },
+                    5: { rzuty: 2, trafienia: 1 },
+                    6: { rzuty: 3, trafienia: 2 },
+                    7: { rzuty: 2, trafienia: 1 },
+                    8: { rzuty: 2, trafienia: 1 },
+                    9: { rzuty: 2, trafienia: 1 },
+                    10: { rzuty: 2, trafienia: 1 },
+                    11: { rzuty: 3, trafienia: 1 },
+                    12: { rzuty: 2, trafienia: 1 },
+                    13: { rzuty: 2, trafienia: 1 },
+                    14: { rzuty: 3, trafienia: 1 },
+                    15: { rzuty: 2, trafienia: 1 },
+                    16: { rzuty: 2, trafienia: 2 },
+                    17: { rzuty: 3, trafienia: 1 },
+                    18: { rzuty: 2, trafienia: 1 },
+                    19: { rzuty: 3, trafienia: 1 },
+                    20: { rzuty: 2, trafienia: 2 },
+                    innerbull: { rzuty: 3, trafienia: 1 },
+                },
+                historia_meczow: [
+                    { data: "01.10", skutecznosc: 25.0, lotki: 84, rzuty: 84, trafienia: 21, rywal: "Trening Solo" },
+                    { data: "03.10", skutecznosc: 29.2, lotki: 72, rzuty: 72, trafienia: 21, rywal: "Michal_Darter" },
+                    { data: "05.10", skutecznosc: 32.3, lotki: 65, rzuty: 65, trafienia: 21, rywal: "Kuba_180" },
+                    { data: "07.10", skutecznosc: 38.9, lotki: 54, rzuty: 54, trafienia: 21, rywal: "DartFanatic" },
+                    { data: "09.10", skutecznosc: 43.8, lotki: 48, rzuty: 48, trafienia: 21, rywal: "Trening Solo" },
+                    { data: "11.10", skutecznosc: 42.0, lotki: 50, rzuty: 50, trafienia: 21, rywal: "Tomek_Bull" },
+                    { data: "12.10", skutecznosc: 48.8, lotki: 43, rzuty: 43, trafienia: 21, rywal: "Krzysiek_180" },
+                    { data: "13.10", skutecznosc: 55.3, lotki: 38, rzuty: 38, trafienia: 21, rywal: "Mistrz_Kalisza" },
+                ],
+            },
+            checkout_121: {
+                sukcesy: 47,
+                podejscia: 189,
+                max_poziom: 128,
+                najlepsza_seria: 4,
+                historia_meczow: [
+                    { data: "02.10", skutecznosc: 12.0, max_poziom: 121, sukcesy: 3, podejscia: 25, seria: 1 },
+                    { data: "04.10", skutecznosc: 16.7, max_poziom: 122, sukcesy: 4, podejscia: 24, seria: 1 },
+                    { data: "06.10", skutecznosc: 18.2, max_poziom: 122, sukcesy: 4, podejscia: 22, seria: 1 },
+                    { data: "08.10", skutecznosc: 22.7, max_poziom: 123, sukcesy: 5, podejscia: 22, seria: 2 },
+                    { data: "10.10", skutecznosc: 28.0, max_poziom: 124, sukcesy: 7, podejscia: 25, seria: 2 },
+                    { data: "11.10", skutecznosc: 26.1, max_poziom: 125, sukcesy: 6, podejscia: 23, seria: 3 },
+                    { data: "12.10", skutecznosc: 33.3, max_poziom: 126, sukcesy: 8, podejscia: 24, seria: 3 },
+                    { data: "13.10", skutecznosc: 41.7, max_poziom: 128, sukcesy: 10, podejscia: 24, seria: 4 },
+                ],
+            },
+            doubles: {
+                mecze: 8,
+                wygrane: 6,
+                skutecznosc: 35.8,
+                suma_rzutow: 192,
+                suma_trafien: 69,
+                sektory: {
+                    16: { rzuty: 10, trafienia: 9, procent: 90 },
+                    20: { rzuty: 12, trafienia: 7, procent: 58.3 },
+                    8: { rzuty: 11, trafienia: 6, procent: 54.5 },
+                    10: { rzuty: 10, trafienia: 5, procent: 50 },
+                    12: { rzuty: 10, trafienia: 5, procent: 50 },
+                    18: { rzuty: 9, trafienia: 4, procent: 44.4 },
+                    14: { rzuty: 8, trafienia: 3, procent: 37.5 },
+                    4: { rzuty: 6, trafienia: 2, procent: 33.3 },
+                    innerbull: { rzuty: 7, trafienia: 2, procent: 28.6 },
+                    3: { rzuty: 5, trafienia: 1, procent: 20 },
+                    1: { rzuty: 4, trafienia: 1, procent: 25 },
+                    5: { rzuty: 4, trafienia: 1, procent: 25 },
+                    15: { rzuty: 6, trafienia: 2, procent: 33.3 },
+                    2: { rzuty: 5, trafienia: 1, procent: 20 },
+                    17: { rzuty: 5, trafienia: 1, procent: 20 },
+                    19: { rzuty: 6, trafienia: 2, procent: 33.3 },
+                    7: { rzuty: 4, trafienia: 1, procent: 25 },
+                    6: { rzuty: 6, trafienia: 2, procent: 33.3 },
+                    13: { rzuty: 5, trafienia: 1, procent: 20 },
+                    11: { rzuty: 4, trafienia: 1, procent: 25 },
+                    9: { rzuty: 4, trafienia: 1, procent: 25 },
+                },
+                historia_meczow: [
+                    { data: "01.10", skutecznosc: 20.0, trafienia: 4, rzuty: 20, rywal: "Trening D1-D20" },
+                    { data: "03.10", skutecznosc: 24.0, trafienia: 6, rzuty: 25, rywal: "Michal_Darter" },
+                    { data: "05.10", skutecznosc: 28.0, trafienia: 7, rzuty: 25, rywal: "Kuba_180" },
+                    { data: "07.10", skutecznosc: 35.0, trafienia: 7, rzuty: 20, rywal: "DartFanatic" },
+                    { data: "09.10", skutecznosc: 33.3, trafienia: 8, rzuty: 24, rywal: "Trening D1-D20" },
+                    { data: "11.10", skutecznosc: 42.3, trafienia: 11, rzuty: 26, rywal: "Tomek_Bull" },
+                    { data: "12.10", skutecznosc: 46.2, trafienia: 12, rzuty: 26, rywal: "Krzysiek_180" },
+                    { data: "13.10", skutecznosc: 53.8, trafienia: 14, rzuty: 26, rywal: "Mistrz_Kalisza" },
+                ],
+            },
+        };
+
+        const sekwencjaTarczy = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+
+        // Formatowanie skuteczności: np. "50% (13/26)"
+        function formatujSkutecznosc(trafienia, rzuty) {
+            const t = Number(trafienia) || 0;
+            const r = Number(rzuty) || 0;
+            if (r === 0) return "0% (0/0)";
+            const proc = (t / r) * 100;
+            const procStr = Number.isInteger(proc) ? proc : proc.toFixed(1);
+            return `${procStr}% (${t}/${r})`;
+        }
+
+        // ==============================================================================
+        // 2. GENEROWANIE SIATEK SVG DLA TARCZY DARTA
+        // ==============================================================================
+        function generujSiatkeDlaSvg(svgElement, prefiks = "") {
+            if (!svgElement) return;
+
+            const R_DOUBLE_OUT = 37.3;
+            const R_DOUBLE_IN = 3.0;
+            const R_BULL = 3.0;
+
+            let html = "";
+            const polar = (radius, angle) => {
+                const rad = ((angle - 90) * Math.PI) / 180;
+                return { x: 50 + radius * Math.cos(rad), y: 50 + radius * Math.sin(rad) };
+            };
+
+            const generujSegment = (id, rWewn, rZewn, startKat, koniecKat) => {
+                const p1 = polar(rZewn, koniecKat);
+                const p2 = polar(rZewn, startKat);
+                const p3 = polar(rWewn, koniecKat);
+                const p4 = polar(rWewn, startKat);
+                const duzyLuk = koniecKat - startKat <= 180 ? "0" : "1";
+                const d = `M ${p1.x} ${p1.y} A ${rZewn} ${rZewn} 0 ${duzyLuk} 0 ${p2.x} ${p2.y} L ${p4.x} ${p4.y} A ${rWewn} ${rWewn} 0 ${duzyLuk} 1 ${p3.x} ${p3.y} Z`;
+                return `<path id="${id}" d="${d}" fill="transparent" stroke="transparent" stroke-width="0.1" />`;
+            };
+
+            sekwencjaTarczy.forEach((liczba, index) => {
+                const startKat = index * 18 - 9;
+                const koniecKat = startKat + 18;
+                html += generujSegment(`${prefiks}${liczba}`, R_DOUBLE_IN, R_DOUBLE_OUT, startKat, koniecKat);
+            });
+
+            // Środek tarczy (Bullseye)
+            html += `<circle id="${prefiks}innerbull" cx="50" cy="50" r="${R_BULL}" fill="transparent" stroke="transparent" stroke-width="0.1" />`;
+
+            svgElement.innerHTML = html;
+        }
+
+        // ==============================================================================
+        // 3. WSPÓLNA OBSŁUGA INTERAKCJI (TOOLTIP, BANER MOBILNY, KLIKNIĘCIE)
+        // ==============================================================================
+        let aktywnyWybor = { el: null, infoBoxId: null, defaultText: "" };
+
+        function odznaczWybranySektor() {
+            if (aktywnyWybor.el) {
+                aktywnyWybor.el.setAttribute("stroke", "transparent");
+                aktywnyWybor.el.setAttribute("stroke-width", "0.1");
+            }
+            const tooltip = document.getElementById("heatmap-tooltip");
+            if (tooltip) tooltip.style.display = "none";
+
+            if (aktywnyWybor.infoBoxId) {
+                const box = document.getElementById(aktywnyWybor.infoBoxId);
+                if (box) {
+                    box.classList.remove("aktywny");
+                    box.innerHTML = `<span>${aktywnyWybor.defaultText}</span>`;
+                }
+            }
+            aktywnyWybor = { el: null, infoBoxId: null, defaultText: "" };
+        }
+
+        function ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, x, y) {
+            const tooltip = document.getElementById("heatmap-tooltip");
+            const infoBox = document.getElementById(infoBoxId);
+
+            // Powtórne kliknięcie odznacza sektor
+            if (aktywnyWybor.el === el) {
+                odznaczWybranySektor();
+                return;
+            }
+
+            odznaczWybranySektor();
+
+            aktywnyWybor = { el, infoBoxId, defaultText };
+            el.setAttribute("stroke", "rgba(255, 255, 255, 0.95)");
+            el.setAttribute("stroke-width", "0.8");
+
+            if (!x || !y) {
+                const rect = el.getBoundingClientRect();
+                x = rect.left + rect.width / 2;
+                y = rect.top + rect.height / 2;
+            }
+
+            if (tooltip) {
+                tooltip.style.display = "block";
+                tooltip.innerHTML = tooltipHtml;
+                tooltip.style.left = x + "px";
+                tooltip.style.top = y + "px";
+            }
+
+            if (infoBox) {
+                infoBox.classList.add("aktywny");
+                infoBox.innerHTML = `<span>${banerHtml}</span>`;
+            }
+        }
+
+        function pokazTooltipLokalny(html, x, y) {
+            const tooltip = document.getElementById("heatmap-tooltip");
+            if (!tooltip) return;
+            tooltip.style.display = "block";
+            tooltip.innerHTML = html;
+            tooltip.style.left = x + "px";
+            tooltip.style.top = y + "px";
+        }
+
+        // Kliknięcie poza tarczę zdejmuje zaznaczenie
+        document.addEventListener("click", (e) => {
+            if (aktywnyWybor.el && !e.target.closest("svg") && !e.target.closest("#heatmap-tooltip")) {
+                odznaczWybranySektor();
+            }
+        });
+
+        // ==============================================================================
+        // 4. RENDERY HEATMAP DLA POSZCZEGÓLNYCH TRYBÓW
+        // ==============================================================================
+
+        // --- 4A. DOUBLES HEATMAP ---
+        function odswiezHeatmapeDoubles(daneDoubles) {
+            const svg = document.getElementById("dartboard-heatmap");
+            if (!svg) return;
+
+            const sektory = daneDoubles.sektory || {};
+            const elementy = svg.querySelectorAll("path, circle");
+            const infoBoxId = "wybrany-sektor-info";
+            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
+
+            let maxProc = -1,
+                minProc = 101,
+                maxNazwa = "-",
+                minNazwa = "-";
+            let maxTraf = 0,
+                maxRzut = 0,
+                minTraf = 0,
+                minRzut = 0;
+
+            elementy.forEach((el) => {
+                const rawId = el.id.replace(/^d/, "");
+                const daneSektora = sektory[rawId] || sektory[`d${rawId}`] || null;
+
+                const rzuty = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.rzuty) || 0 : 0;
+                const traf = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.trafienia) || 0 : Number(daneSektora) || 0;
+                const proc = rzuty > 0 ? (traf / rzuty) * 100 : daneSektora && typeof daneSektora === "object" ? Number(daneSektora.procent) || 0 : Number(daneSektora) || 0;
+
+                const nazwa = rawId === "innerbull" ? "Inner Bull (D25)" : `Double ${rawId}`;
+                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+
+                if (proc > maxProc) {
+                    maxProc = proc;
+                    maxNazwa = nazwa;
+                    maxTraf = traf;
+                    maxRzut = rzuty;
+                }
+                if (proc < minProc) {
+                    minProc = proc;
+                    minNazwa = nazwa;
+                    minTraf = traf;
+                    minRzut = rzuty;
+                }
+
+                // Cień: 0% = 0.85 (ciemno), 100% = 0 (czysta tarcza)
+                const alpha = (0.85 * (1 - proc / 100)).toFixed(2);
+                el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
+                el.className.baseVal = proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony";
+
+                const tooltipHtml = `
+                    <span style="color:#94a3b8; font-size:11px; display:block; margin-bottom:2px;">SEKTOR DOUBLE</span>
+                    <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
+                    <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
+                `;
+                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
+
+                el.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseenter", (e) => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
+                        el.setAttribute("stroke-width", "0.6");
+                    }
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mousemove", (e) => {
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseleave", () => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "transparent");
+                        el.setAttribute("stroke-width", "0.1");
+                    }
+                    if (!aktywnyWybor.el) {
+                        const tooltip = document.getElementById("heatmap-tooltip");
+                        if (tooltip) tooltip.style.display = "none";
+                    }
+                });
+            });
+
+            const chipNajlepszy = document.getElementById("chip-najlepszy");
+            const chipNajnizszy = document.getElementById("chip-najnizszy");
+            const chipSrednia = document.getElementById("chip-srednia");
+
+            if (chipNajlepszy && maxProc >= 0) chipNajlepszy.textContent = `${maxNazwa}: ${formatujSkutecznosc(maxTraf, maxRzut)}`;
+            if (chipNajnizszy && minProc <= 100) chipNajnizszy.textContent = `${minNazwa}: ${formatujSkutecznosc(minTraf, minRzut)}`;
+            if (chipSrednia) chipSrednia.textContent = formatujSkutecznosc(daneDoubles.suma_trafien, daneDoubles.suma_rzutow);
+
+            // Aktualizacja widoku rankingowego (listy)
+            odswiezRankingListeDoubles(daneDoubles);
+        }
+
+        // --- 4A-bis. RANKING LISTA DOUBLES (POSORTOWANA MALEJĄCO) ---
+        function odswiezRankingListeDoubles(daneDoubles) {
+            const kontener = document.getElementById("doubles-ranking-lista");
+            if (!kontener) return;
+
+            const sektory = daneDoubles.sektory || {};
+            const cele = [];
+            for (let i = 1; i <= 20; i++) {
+                cele.push(String(i));
+            }
+            cele.push("innerbull");
+
+            const lista = cele.map((rawId) => {
+                const daneSektora = sektory[rawId] || sektory[`d${rawId}`] || null;
+                const rzuty = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.rzuty) || 0 : 0;
+                const traf = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.trafienia) || 0 : Number(daneSektora) || 0;
+                const proc = rzuty > 0 ? (traf / rzuty) * 100 : daneSektora && typeof daneSektora === "object" ? Number(daneSektora.procent) || 0 : Number(daneSektora) || 0;
+                const nazwa = rawId === "innerbull" ? "Inner Bull (D25)" : `Double ${rawId}`;
+
+                return {
+                    id: rawId,
+                    nazwa,
+                    rzuty,
+                    trafienia: traf,
+                    procent: proc,
+                    tekstSkut: formatujSkutecznosc(traf, rzuty),
+                };
+            });
+
+            // Sortowanie malejąco:
+            // 1. Procent trafień
+            // 2. Liczba trafień
+            // 3. Liczba rzutów
+            // 4. Numer sektora
+            lista.sort((a, b) => {
+                if (b.procent !== a.procent) return b.procent - a.procent;
+                if (b.trafienia !== a.trafienia) return b.trafienia - a.trafienia;
+                if (b.rzuty !== a.rzuty) return b.rzuty - a.rzuty;
+                return (Number(b.id) || 25) - (Number(a.id) || 25);
+            });
+
+            let html = "";
+            lista.forEach((item, index) => {
+                const pozycja = index + 1;
+                const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
+                const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
+
+                html += `
+                    <div class="ranking-item ${topKlasa}">
+                        <div class="ranking-pozycja">#${pozycja}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-nazwa-row">
+                                <span class="ranking-nazwa">${item.nazwa}</span>
+                                <span class="ranking-wynik">${item.tekstSkut}</span>
+                            </div>
+                            <div class="ranking-pasek-tlo">
+                                <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            kontener.innerHTML = html;
+        }
+
+        // --- 4B. AROUND THE WORLD HEATMAP ---
+        function odswiezHeatmapeAround(daneATW) {
+            const svg = document.getElementById("dartboard-heatmap-around");
+            if (!svg) return;
+
+            const sektory = daneATW.sektory || {};
+            const elementy = svg.querySelectorAll("path, circle");
+            const infoBoxId = "wybrany-sektor-info-around";
+            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
+
+            let maxProc = -1,
+                minProc = 101,
+                najNazwa = "-",
+                mniejNazwa = "-";
+            let maxTraf = 0,
+                maxRzut = 0,
+                minTraf = 0,
+                minRzut = 0;
+
+            elementy.forEach((el) => {
+                const rawId = el.id.replace(/^atw_/, "");
+                const daneSektora = sektory[rawId];
+
+                const rzuty = typeof daneSektora === "object" ? Number(daneSektora.rzuty) || 0 : daneSektora > 0 ? Number(daneSektora) : 0;
+                const traf = typeof daneSektora === "object" ? Number(daneSektora.trafienia) || 0 : Number(daneSektora) || 0;
+                const proc = rzuty > 0 ? (traf / rzuty) * 100 : traf > 0 ? 100 : 0;
+
+                const nazwa = rawId === "innerbull" ? "Bullseye (25/50)" : `Cel ${rawId}`;
+                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+
+                if (proc > maxProc) {
+                    maxProc = proc;
+                    najNazwa = nazwa;
+                    maxTraf = traf;
+                    maxRzut = rzuty;
+                }
+                if (proc < minProc) {
+                    minProc = proc;
+                    mniejNazwa = nazwa;
+                    minTraf = traf;
+                    minRzut = rzuty;
+                }
+
+                // Cień: 0% = 0.85 (ciemno), 100% = 0 (czysta tarcza)
+                const alpha = (0.85 * (1 - proc / 100)).toFixed(2);
+                el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
+                el.className.baseVal = proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony";
+
+                const tooltipHtml = `
+                    <span style="color:#94a3b8; font-size:11px; display:block; margin-bottom:2px;">AROUND THE WORLD</span>
+                    <span style="color:; font-size:14px; font-weight:700;">${nazwa}</span>: 
+                    <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
+                `;
+                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
+
+                el.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseenter", (e) => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
+                        el.setAttribute("stroke-width", "0.6");
+                    }
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mousemove", (e) => {
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseleave", () => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "transparent");
+                        el.setAttribute("stroke-width", "0.1");
+                    }
+                    if (!aktywnyWybor.el) {
+                        const tooltip = document.getElementById("heatmap-tooltip");
+                        if (tooltip) tooltip.style.display = "none";
+                    }
+                });
+            });
+
+            const chipNajwiecej = document.getElementById("chip-around-najwiecej");
+            const chipNajmniej = document.getElementById("chip-around-najmniej");
+            const chipSuma = document.getElementById("chip-around-suma");
+
+            if (chipNajwiecej && maxProc >= 0) chipNajwiecej.textContent = `${najNazwa}: ${formatujSkutecznosc(maxTraf, maxRzut)}`;
+            if (chipNajmniej && minProc <= 100) chipNajmniej.textContent = `${mniejNazwa}: ${formatujSkutecznosc(minTraf, minRzut)}`;
+            if (chipSuma) chipSuma.textContent = formatujSkutecznosc(daneATW.suma_trafien, daneATW.suma_rzutow);
+        }
+
+        // --- 4C. SHANGHAI HEATMAP ---
+        function odswiezHeatmapeShanghai(daneShanghai) {
+            const svg = document.getElementById("dartboard-heatmap-shanghai");
+            if (!svg) return;
+
+            const rundy = daneShanghai.rundy || daneShanghai.sektory || {};
+            const elementy = svg.querySelectorAll("path, circle");
+            const infoBoxId = "wybrany-sektor-info-shanghai";
+            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy";
+
+            let maxPunkty = 1;
+            elementy.forEach((el) => {
+                const rawId = el.id.replace(/^sh_/, "");
+                const rDane = rundy[rawId];
+                if (rDane && Number(rDane.punkty) > maxPunkty) {
+                    maxPunkty = Number(rDane.punkty);
+                }
+            });
+
+            elementy.forEach((el) => {
+                const rawId = el.id.replace(/^sh_/, "");
+                const rDane = rundy[rawId] || { punkty: 0, rzuty: 0, trafienia: 0, single: 0, double: 0, triple: 0, shanghai: false };
+                const punkty = Number(rDane.punkty) || 0;
+                const rzuty = Number(rDane.rzuty) || ((rDane.single || 0) + (rDane.double || 0) + (rDane.triple || 0) > 0 ? 3 : 0);
+                const traf = Number(rDane.trafienia) || (rDane.single || 0) + (rDane.double || 0) + (rDane.triple || 0);
+                const czyShanghai = Boolean(rDane.shanghai);
+                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+
+                // Kontrast cienia bazujący na zdobytych punktach
+                const alpha = (0.85 * (1 - punkty / maxPunkty)).toFixed(2);
+                el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
+                el.className.baseVal = punkty > 0 ? "sektor-odkryty" : "sektor-zacieniony";
+                el.setAttribute("stroke", "transparent");
+                el.setAttribute("stroke-width", "0.1");
+
+                const nazwa = rawId === "innerbull" ? "Bullseye" : `Runda ${rawId}`;
+                const shanghaiInfo = czyShanghai ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">Ustrzelono Shanghai (S+D+T)</div>` : "";
+
+                const tooltipHtml = `
+                    <span style="color:#94a3b8; font-size:11px; display:block; margin-bottom:2px;">SHANGHAI</span>
+                    <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
+                    <strong style="color:#ffffff; font-size:14px;">${tekstSkut} | ${punkty} pkt</strong>
+                    <div style="font-size:12px; color:#cbd5e1; margin-top:2px;">S: ${rDane.single || 0}x | D: ${rDane.double || 0}x | T: ${rDane.triple || 0}x</div>
+                    ${shanghaiInfo}
+                `;
+
+                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong>${tekstSkut}</strong> | <strong>${punkty} pkt</strong> (S:${rDane.single || 0} D:${rDane.double || 0} T:${rDane.triple || 0}) ${czyShanghai ? "— Ustrzelono Shanghai!" : ""}`;
+
+                el.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseenter", (e) => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
+                        el.setAttribute("stroke-width", "0.6");
+                    }
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mousemove", (e) => {
+                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                });
+
+                el.addEventListener("mouseleave", () => {
+                    if (aktywnyWybor.el !== el) {
+                        el.setAttribute("stroke", "transparent");
+                        el.setAttribute("stroke-width", "0.1");
+                    }
+                    if (!aktywnyWybor.el) {
+                        const tooltip = document.getElementById("heatmap-tooltip");
+                        if (tooltip) tooltip.style.display = "none";
+                    }
+                });
+            });
+
+            const chipIlosc = document.getElementById("chip-shanghai-ilosc");
+            const chipRekord = document.getElementById("chip-shanghai-rekord");
+            const chipSkutecznosc = document.getElementById("chip-shanghai-skutecznosc");
+
+            if (chipIlosc) chipIlosc.textContent = `${daneShanghai.liczba_shanghai || 0}`;
+            if (chipRekord) chipRekord.textContent = `${daneShanghai.rekord_punktow || 0} pkt`;
+            if (chipSkutecznosc) chipSkutecznosc.textContent = formatujSkutecznosc(daneShanghai.suma_trafien, daneShanghai.suma_rzutow);
+        }
+
+        // ==============================================================================
+        // 5. WYPEŁNIENIE PÓL STATYSTYCZNYCH Z OBIEKTU JSON
+        // ==============================================================================
+        function zaktualizujWszystkieStatystyki(dane) {
+            // 1. Klasyczna
+            const klas = dane.klasyczna || {};
+            document.getElementById("stat-srednia").textContent = Number(klas.srednia || 0).toFixed(2);
+            document.getElementById("stat-9lotek").textContent = Number(klas.srednia_9 || 0).toFixed(2);
+            document.getElementById("stat-180").textContent = klas.ilosc_180 || 0;
+            document.getElementById("stat-mecze").textContent = klas.mecze || 0;
+            document.getElementById("stat-wygrane").textContent = klas.wygrane || 0;
+            document.getElementById("stat-porazki").textContent = Math.max(0, (klas.mecze || 0) - (klas.wygrane || 0));
+
+            // 3. Shanghai
+            const sh = dane.shanghai || {};
+            document.getElementById("stat-rekord").textContent = sh.rekord_punktow || 0;
+            document.getElementById("stat-sdt").textContent = sh.liczba_shanghai || 0;
+            document.getElementById("stat-shanghai-srednia").textContent = Number(sh.srednia_na_gre || 0).toFixed(1);
+            document.getElementById("stat-lacznie").textContent = sh.suma_punktow || 0;
+            document.getElementById("stat-shanghai-skutecznosc").textContent = formatujSkutecznosc(sh.suma_trafien, sh.suma_rzutow);
+            document.getElementById("stat-shanghai-mecze").textContent = sh.mecze || 0;
+            document.getElementById("stat-shanghai-wygrane").textContent = sh.wygrane || 0;
+            odswiezHeatmapeShanghai(sh);
+
+            // 4. Around The World
+            const atw = dane.around_the_world || {};
+            document.getElementById("stat-najmniej").textContent = atw.rekord_najmniej_lotek ?? "-";
+            document.getElementById("stat-around-skutecznosc").textContent = formatujSkutecznosc(atw.suma_trafien, atw.suma_rzutow);
+            document.getElementById("stat-wszystkie").textContent = atw.suma_rzutow || 0;
+            document.getElementById("stat-trafione").textContent = atw.suma_trafien || 0;
+            document.getElementById("stat-around-mecze").textContent = atw.mecze || 0;
+            document.getElementById("stat-around-wygrane").textContent = atw.wygrane || 0;
+            odswiezHeatmapeAround(atw);
+
+            // 5. 121 Checkout
+            const chk = dane.checkout_121 || {};
+            document.getElementById("stats-najwyzszy").textContent = chk.max_poziom || 121;
+            document.getElementById("stats-najlepsza").textContent = chk.najlepsza_seria || 0;
+            document.getElementById("stats-121-sukcesy").textContent = chk.sukcesy || 0;
+            document.getElementById("stats-121-podejscia").textContent = chk.podejscia || 0;
+            document.getElementById("stats-121-porazki").textContent = Math.max(0, (chk.podejscia || 0) - (chk.sukcesy || 0));
+            document.getElementById("stats-121-skutecznosc").textContent = formatujSkutecznosc(chk.sukcesy, chk.podejscia);
+
+            // 6. Doubles
+            const dbl = dane.doubles || {};
+            document.getElementById("stats-doubles-skutecznosc").textContent = formatujSkutecznosc(dbl.suma_trafien, dbl.suma_rzutow);
+            document.getElementById("stats-trafione").textContent = dbl.suma_trafien || 0;
+            document.getElementById("stats-rzuty").textContent = dbl.suma_rzutow || 0;
+            document.getElementById("stats-doubles-mecze").textContent = dbl.mecze || 0;
+            document.getElementById("stats-doubles-wygrane").textContent = dbl.wygrane || 0;
+            document.getElementById("stats-doubles-porazki").textContent = Math.max(0, (dbl.mecze || 0) - (dbl.wygrane || 0));
+            odswiezHeatmapeDoubles(dbl);
+
+            // 7. Wykresy formy
+            odswiezWykresFormy("klasyczna");
+            odswiezWykresFormy("shanghai");
+            odswiezWykresFormy("around_the_world");
+            odswiezWykresFormy("checkout_121");
+            odswiezWykresFormy("doubles");
+        }
+
+        // ==============================================================================
+        // 5B. OBSŁUGA WYKRESÓW FORMY I ŚREDNIEJ Z ROZMAITYCH DAT (CHART.JS)
+        // ==============================================================================
+        const wykresyInstancje = {};
+        const aktywneMetryki = {
+            klasyczna: "srednia",
+            shanghai: "srednia",
+            around_the_world: "skutecznosc",
+            checkout_121: "skutecznosc",
+            doubles: "skutecznosc",
+        };
+
+        const KONFIG_METRYK = {
+            klasyczna: {
+                canvasId: "chart-klasyczna",
+                prefixChip: "chip-klas",
+                metryki: {
+                    srednia: { nazwa: "Średnia 3 lotek", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
+                    srednia9: { nazwa: "Średnia 9 lotek", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
+                },
+            },
+            shanghai: {
+                canvasId: "chart-shanghai",
+                prefixChip: "chip-sh",
+                metryki: {
+                    srednia: { nazwa: "Średnia na rundę", jednostka: " pkt", odwrcony: false, format: (v) => Number(v).toFixed(1) + " pkt" },
+                    punkty: { nazwa: "Suma punktów", jednostka: " pkt", odwrcony: false, format: (v) => `${v} pkt` },
+                },
+            },
+            around_the_world: {
+                canvasId: "chart-around-the-world",
+                prefixChip: "chip-atw",
+                metryki: {
+                    skutecznosc: { nazwa: "Skuteczność", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    lotki: { nazwa: "Liczba lotek", jednostka: " lotek", odwrcony: true, format: (v) => `${v} lotek` },
+                },
+            },
+            checkout_121: {
+                canvasId: "chart-121checkout",
+                prefixChip: "chip-chk",
+                metryki: {
+                    skutecznosc: { nazwa: "Skuteczność checkoutu", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    max_poziom: { nazwa: "Osiągnięty poziom", jednostka: "", odwrcony: false, format: (v) => `${v}` },
+                },
+            },
+            doubles: {
+                canvasId: "chart-doubles",
+                prefixChip: "chip-dbl",
+                metryki: {
+                    skutecznosc: { nazwa: "Skuteczność na double", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    trafienia: { nazwa: "Trafione double", jednostka: "", odwrcony: false, format: (v) => `${v}` },
+                },
+            },
+        };
+
+        function odswiezWykresFormy(trybKlucz) {
+            const konfigTrybu = KONFIG_METRYK[trybKlucz];
+            if (!konfigTrybu) return;
+
+            const canvas = document.getElementById(konfigTrybu.canvasId);
+            if (!canvas) return;
+
+            const metrykaKlucz = aktywneMetryki[trybKlucz] || Object.keys(konfigTrybu.metryki)[0];
+            const metrykaInfo = konfigTrybu.metryki[metrykaKlucz] || { nazwa: "Wartość", format: (v) => v, jednostka: "" };
+
+            const daneTrybu = DANE_STATYSTYK[trybKlucz] || {};
+            const historia = Array.isArray(daneTrybu.historia_meczow) ? daneTrybu.historia_meczow : [];
+
+            // Pigułki podsumowania nad wykresem
+            const chipOstatni = document.getElementById(`${konfigTrybu.prefixChip}-ostatni`);
+            const chipMax = document.getElementById(`${konfigTrybu.prefixChip}-max`);
+            const chipTrend = document.getElementById(`${konfigTrybu.prefixChip}-trend`);
+
+            if (historia.length > 0) {
+                const wartosci = historia.map((m) => Number(m[metrykaKlucz]) || 0);
+                const ostatnia = wartosci[wartosci.length - 1];
+                const pierwsza = wartosci[0];
+                const minVal = Math.min(...wartosci);
+                const maxVal = Math.max(...wartosci);
+                const rekord = metrykaInfo.odwrcony ? minVal : maxVal;
+
+                const roznica = ostatnia - pierwsza;
+                let trendTxt = "0.0 ─";
+                if (roznica > 0) {
+                    trendTxt = metrykaInfo.odwrcony ? `+${roznica.toFixed(1)} ↘` : `+${roznica.toFixed(1)} ↗`;
+                } else if (roznica < 0) {
+                    trendTxt = metrykaInfo.odwrcony ? `${roznica.toFixed(1)} ↗` : `${roznica.toFixed(1)} ↘`;
+                }
+
+                if (chipOstatni) chipOstatni.textContent = metrykaInfo.format(ostatnia);
+                if (chipMax) chipMax.textContent = metrykaInfo.format(rekord);
+                if (chipTrend) chipTrend.textContent = trendTxt;
+            } else {
+                if (chipOstatni) chipOstatni.textContent = "-";
+                if (chipMax) chipMax.textContent = "-";
+                if (chipTrend) chipTrend.textContent = "-";
+            }
+
+            // Sprawdzenie dostępności Chart.js
+            if (typeof Chart === "undefined") {
+                console.warn("Chart.js nie jest jeszcze załadowany.");
+                return;
+            }
+
+            const labels = historia.map((m) => m.data || "Mecz");
+            const dataValues = historia.map((m) => Number(m[metrykaKlucz]) || 0);
+
+            const brandColor = getComputedStyle(document.documentElement).getPropertyValue("--secondary-color").trim() || "rgb(64, 218, 64)";
+            const darkNavyBg = "#090723";
+
+            const ctx = canvas.getContext("2d");
+            const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+            gradient.addColorStop(0, "rgba(64, 218, 64, 0.30)");
+            gradient.addColorStop(1, "rgba(64, 218, 64, 0.00)");
+
+            if (wykresyInstancje[trybKlucz]) {
+                const chart = wykresyInstancje[trybKlucz];
+                chart.data.labels = labels;
+                chart.data.datasets[0].label = metrykaInfo.nazwa;
+                chart.data.datasets[0].data = dataValues;
+                chart.data.datasets[0].borderColor = brandColor;
+                chart.data.datasets[0].backgroundColor = gradient;
+                chart.data.datasets[0].pointBorderColor = brandColor;
+                chart.data.datasets[0].pointBackgroundColor = darkNavyBg;
+                chart.data.datasets[0].pointHoverBackgroundColor = brandColor;
+                chart.update();
+                return;
+            }
+
+            wykresyInstancje[trybKlucz] = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: metrykaInfo.nazwa,
+                            data: dataValues,
+                            borderColor: brandColor,
+                            borderWidth: 3,
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: darkNavyBg,
+                            pointBorderColor: brandColor,
+                            pointBorderWidth: 2.5,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: brandColor,
+                            pointHoverBorderColor: "#ffffff",
+                            pointHoverBorderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: "index",
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            backgroundColor: "rgba(9, 7, 35, 0.96)",
+                            titleColor: brandColor,
+                            bodyColor: "#ffffff",
+                            borderColor: "rgba(64, 218, 64, 0.35)",
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            titleFont: { family: "Inter", size: 12, weight: "bold" },
+                            bodyFont: { family: "Inter", size: 13, weight: "bold" },
+                            callbacks: {
+                                title: (items) => {
+                                    const idx = items[0]?.dataIndex;
+                                    const mecz = historia[idx];
+                                    if (mecz) {
+                                        const rywalInfo = mecz.rywal ? ` (vs ${mecz.rywal})` : "";
+                                        const formatInfo = mecz.format ? ` [${mecz.format}]` : "";
+                                        return `📅 Data: ${mecz.data}${rywalInfo}${formatInfo}`;
+                                    }
+                                    return items[0]?.label || "";
+                                },
+                                label: (context) => {
+                                    const idx = context.dataIndex;
+                                    const mecz = historia[idx];
+                                    const val = context.parsed.y;
+                                    const formatted = metrykaInfo.format(val);
+                                    let extra = "";
+                                    if (mecz?.wynik) extra += ` | Wynik: ${mecz.wynik}`;
+                                    if (mecz?.punkty && metrykaKlucz !== "punkty") extra += ` | Pkt: ${mecz.punkty}`;
+                                    return ` ${metrykaInfo.nazwa}: ${formatted}${extra}`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: "rgba(255, 255, 255, 0.06)",
+                            },
+                            ticks: {
+                                color: "#cbd5e1",
+                                font: { family: "Inter", size: 11, weight: "600" },
+                            },
+                        },
+                        y: {
+                            grid: {
+                                color: "rgba(255, 255, 255, 0.06)",
+                            },
+                            ticks: {
+                                color: "#cbd5e1",
+                                font: { family: "Inter", size: 11, weight: "600" },
+                                callback: (value) => `${value}${metrykaInfo.jednostka || ""}`,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function zainicjalizujPrzelacznikiMetryk() {
+            const przyciski = document.querySelectorAll(".btn-metryka");
+            przyciski.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const tryb = btn.getAttribute("data-chart");
+                    const metryka = btn.getAttribute("data-metric");
+                    if (!tryb || !metryka) return;
+
+                    const rodzic = btn.closest(".chart-przelacznik-metryki");
+                    if (rodzic) {
+                        rodzic.querySelectorAll(".btn-metryka").forEach((b) => b.classList.remove("aktywny"));
+                    }
+                    btn.classList.add("aktywny");
+
+                    aktywneMetryki[tryb] = metryka;
+                    odswiezWykresFormy(tryb);
+                });
+            });
+        }
+
+        // ==============================================================================
+        // 6. OBSŁUGA ZAKŁADEK I INICJALIZACJA
+        // ==============================================================================
+        function zainicjalizujZakladki() {
+            const przyciski = document.querySelectorAll("#btn-container-stats .btn-stat-tab");
+            const sekcje = document.querySelectorAll(".stats-sekcja");
+
+            przyciski.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const targetId = btn.getAttribute("data-target");
+                    odznaczWybranySektor();
+
+                    przyciski.forEach((b) => b.classList.remove("aktywna"));
+                    btn.classList.add("aktywna");
+
+                    sekcje.forEach((sekcja) => {
+                        if (sekcja.id === targetId) {
+                            sekcja.classList.add("aktywna");
+                        } else {
+                            sekcja.classList.remove("aktywna");
+                        }
+                    });
+
+                    // Odświeżenie wymiarów wykresów po zmianie widocznej zakładki
+                    setTimeout(() => {
+                        Object.values(wykresyInstancje).forEach((chart) => {
+                            if (chart && typeof chart.resize === "function") {
+                                chart.resize();
+                            }
+                        });
+                    }, 20);
+                });
+            });
+        }
+
+        function zainicjalizujPrzelacznikTrybu(trybKlucz, idPrefix) {
+            const btnTarcza = document.getElementById(`btn-${idPrefix}-tarcza`);
+            const btnWykres = document.getElementById(`btn-${idPrefix}-wykres`);
+            const widokTarcza = document.getElementById(`${idPrefix}-widok-tarcza`);
+            const widokWykres = document.getElementById(`${idPrefix}-widok-wykres`);
+            if (!btnTarcza || !btnWykres || !widokTarcza || !widokWykres) return;
+
+            btnTarcza.addEventListener("click", () => {
+                btnWykres.classList.remove("aktywny");
+                btnTarcza.classList.add("aktywny");
+                widokWykres.style.display = "none";
+                widokTarcza.style.display = "block";
+                odznaczWybranySektor();
+            });
+
+            btnWykres.addEventListener("click", () => {
+                btnTarcza.classList.remove("aktywny");
+                btnWykres.classList.add("aktywny");
+                widokTarcza.style.display = "none";
+                widokWykres.style.display = "block";
+                odznaczWybranySektor();
+                odswiezWykresFormy(trybKlucz);
+                setTimeout(() => {
+                    if (wykresyInstancje[trybKlucz] && typeof wykresyInstancje[trybKlucz].resize === "function") {
+                        wykresyInstancje[trybKlucz].resize();
+                    }
+                }, 20);
+            });
+        }
+
+        function zainicjalizujPrzelacznikDoubles() {
+            const btnTarcza = document.getElementById("btn-doubles-tarcza");
+            const btnLista = document.getElementById("btn-doubles-lista");
+            const btnWykres = document.getElementById("btn-doubles-wykres");
+            const widokTarcza = document.getElementById("doubles-widok-tarcza");
+            const widokLista = document.getElementById("doubles-widok-lista");
+            const widokWykres = document.getElementById("doubles-widok-wykres");
+            if (!btnTarcza || !btnLista || !widokTarcza || !widokLista) return;
+
+            const ukryjWszystkie = () => {
+                btnTarcza.classList.remove("aktywny");
+                btnLista.classList.remove("aktywny");
+                if (btnWykres) btnWykres.classList.remove("aktywny");
+                widokTarcza.style.display = "none";
+                widokLista.style.display = "none";
+                if (widokWykres) widokWykres.style.display = "none";
+                odznaczWybranySektor();
+            };
+
+            btnTarcza.addEventListener("click", () => {
+                ukryjWszystkie();
+                btnTarcza.classList.add("aktywny");
+                widokTarcza.style.display = "block";
+            });
+
+            btnLista.addEventListener("click", () => {
+                ukryjWszystkie();
+                btnLista.classList.add("aktywny");
+                widokLista.style.display = "block";
+                odswiezRankingListeDoubles(DANE_STATYSTYK.doubles || {});
+            });
+
+            if (btnWykres && widokWykres) {
+                btnWykres.addEventListener("click", () => {
+                    ukryjWszystkie();
+                    btnWykres.classList.add("aktywny");
+                    widokWykres.style.display = "block";
+                    odswiezWykresFormy("doubles");
+                    setTimeout(() => {
+                        if (wykresyInstancje.doubles && typeof wykresyInstancje.doubles.resize === "function") {
+                            wykresyInstancje.doubles.resize();
+                        }
+                    }, 20);
+                });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            zainicjalizujZakladki();
+            zainicjalizujPrzelacznikTrybu("shanghai", "shanghai");
+            zainicjalizujPrzelacznikTrybu("around_the_world", "around");
+            zainicjalizujPrzelacznikDoubles();
+            zainicjalizujPrzelacznikiMetryk();
+
+            // Wygenerowanie siatek sektorów SVG
+            generujSiatkeDlaSvg(document.getElementById("dartboard-heatmap"), "d");
+            generujSiatkeDlaSvg(document.getElementById("dartboard-heatmap-around"), "atw_");
+            generujSiatkeDlaSvg(document.getElementById("dartboard-heatmap-shanghai"), "sh_");
+
+            // Wypełnienie wszystkimi statystykami z JSON oraz wyrysowanie wykresów
+            zaktualizujWszystkieStatystyki(DANE_STATYSTYK);
+        });
+    </script>
+</html>
