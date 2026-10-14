@@ -123,8 +123,22 @@ async function pobierzStoły() {
     return;
   }
 
-  // Odsiewamy pokoje prywatne bezpiecznie w JS
-  wszystkiePokoje = (data || []).filter((p) => p.czy_prywatny !== true);
+  const teraz = Date.now();
+  const LIMIT_BEZCYNNOSCI_MS = 5 * 60 * 1000;
+
+  // Odsiewamy pokoje prywatne oraz pokoje oczekujące dłużej niż 5 minut
+  wszystkiePokoje = (data || []).filter((p) => {
+    if (p.czy_prywatny === true) return false;
+    if (p.status === "waiting" && p.utworzono) {
+      const czasUtworzenia = new Date(p.utworzono).getTime();
+      if (!isNaN(czasUtworzenia) && (teraz - czasUtworzenia > LIMIT_BEZCYNNOSCI_MS)) {
+        // Próba usunięcia przeterminowanego pokoju w tle
+        supabaseClient.from("rooms").delete().eq("id", p.id).then().catch(() => {});
+        return false;
+      }
+    }
+    return true;
+  });
   renderujStoly(wszystkiePokoje);
 }
 

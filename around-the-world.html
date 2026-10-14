@@ -234,6 +234,7 @@
                         doubles: 0,
                         triples: 0,
                         pudla: 0,
+                        statystykiSektorow: {},
                         rzutyKolejki: ["-", "-", "-"],
                     });
 
@@ -297,17 +298,28 @@
                 gracz.rzuty++;
 
                 let aktualnyCel = gracz.sekwencja[gracz.aktualnyIndeksCelu];
+                let celKlucz = (aktualnyCel === 25 || aktualnyCel === 50) ? "innerbull" : String(aktualnyCel);
+                if (!gracz.statystykiSektorow) gracz.statystykiSektorow = {};
+                if (!gracz.statystykiSektorow[celKlucz]) {
+                    gracz.statystykiSektorow[celKlucz] = { rzuty: 0, trafienia: 0, single: 0, double: 0, triple: 0 };
+                }
+                gracz.statystykiSektorow[celKlucz].rzuty++;
+
                 let etykietaRzutu = "Pudło";
 
                 if (mnoznik > 0) {
+                    gracz.statystykiSektorow[celKlucz].trafienia++;
                     if (mnoznik === 1) {
                         gracz.singles++;
+                        gracz.statystykiSektorow[celKlucz].single++;
                         etykietaRzutu = "Single";
                     } else if (mnoznik === 2) {
                         gracz.doubles++;
+                        gracz.statystykiSektorow[celKlucz].double++;
                         etykietaRzutu = "Double";
                     } else if (mnoznik === 3) {
                         gracz.triples++;
+                        gracz.statystykiSektorow[celKlucz].triple++;
                         etykietaRzutu = "Triple";
                     }
 
@@ -429,7 +441,11 @@
                     </tr>
                     <tr>
                         <td>Skuteczność</td>
-                        ${gracze.map((g) => `<td>${g.rzuty > 0 ? Math.min(100, ((g.sekwencja.length / g.rzuty) * 100) / 3).toFixed(1) : 0}%</td>`).join("")}
+                        ${gracze.map((g) => {
+                            const trafienia = (g.singles || 0) + (g.doubles || 0) + (g.triples || 0);
+                            const proc = g.rzuty > 0 ? ((trafienia / g.rzuty) * 100).toFixed(1) : "0.0";
+                            return `<td>${proc}%</td>`;
+                        }).join("")}
                     </tr>
                     <tr>
                         <td>Single</td>
@@ -480,7 +496,8 @@
                                 czyWygrana: czyWygralem,
                                 czyUkonczyl: mojGracz.aktualnyIndeksCelu >= mojGracz.sekwencja.length,
                                 rzuty: mojGracz.rzuty || 0,
-                                trafienia: trafienia
+                                trafienia: trafienia,
+                                sektory: mojGracz.statystykiSektorow || {}
                             });
                         }
                     })().catch((err) => console.warn("Błąd zapisu statystyk Around The World:", err));

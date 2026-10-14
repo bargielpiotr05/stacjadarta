@@ -501,6 +501,21 @@
         if (rz2 > 0) gracz.iloscTrafien++;
         if (rz3 > 0) gracz.iloscTrafien++;
 
+        if (!gracz.statystykiRund) gracz.statystykiRund = {};
+        const rundaKlucz = String(aktualnaRundaCel);
+        gracz.statystykiRund[rundaKlucz] = {
+            rzuty: 3,
+            trafienia: (rz1 > 0 ? 1 : 0) + (rz2 > 0 ? 1 : 0) + (rz3 > 0 ? 1 : 0),
+            punkty: punktyZTurow,
+            single: [rz1, rz2, rz3].filter((r) => r === 1).length,
+            double: [rz1, rz2, rz3].filter((r) => r === 2).length,
+            triple: [rz1, rz2, rz3].filter((r) => r === 3).length,
+            shanghai:
+                [rz1, rz2, rz3].includes(1) &&
+                [rz1, rz2, rz3].includes(2) &&
+                [rz1, rz2, rz3].includes(3),
+        };
+
         if (
           biezaceRzutyTury.includes(1) &&
           biezaceRzutyTury.includes(2) &&
@@ -599,10 +614,24 @@
             if (!userId) return;
 
             if (window.StatsManager && mojGracz) {
+              const trybNazwa = chkOneToTwenty.checked ? "1-20" : (chkOneToSeven.checked ? "1-7" : `${rundaStartowa}-${rundaKoncowa}`);
+              const rywalNazwa = listaGraczy.length > 1
+                ? listaGraczy.filter((g) => g.id !== mojGracz.id).map((g) => g.nazwa).join(", ")
+                : `Trening ${trybNazwa}`;
+              const liczbaRozegranychRund = mojGracz.statystykiRund && Object.keys(mojGracz.statystykiRund).length > 0
+                ? Object.keys(mojGracz.statystykiRund).length
+                : (rundaKoncowa - rundaStartowa + 1);
+
               await StatsManager.zaktualizujShanghai(userId, {
                 czyWygrana: mojGracz.nazwa === zwyciezca.nazwa,
                 punkty: mojGracz.punkty || 0,
-                czyZrobilShanghai: mojGracz.zdobylShanghai || false
+                czyZrobilShanghai: mojGracz.zdobylShanghai || false,
+                rzuty: mojGracz.wszystkieRzuty || 0,
+                trafienia: mojGracz.iloscTrafien || 0,
+                rundy: mojGracz.statystykiRund || {},
+                tryb: trybNazwa,
+                rywal: rywalNazwa,
+                liczbaRund: liczbaRozegranychRund
               });
             }
           })().catch((err) => console.warn("Błąd zapisu statystyk Shanghai:", err));
