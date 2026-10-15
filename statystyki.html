@@ -56,6 +56,10 @@
                 margin: 0 auto !important;
                 padding: 0 !important;
                 box-sizing: border-box !important;
+                gap:0 !important;
+                background-color:var(--primary-color);
+                border-radius: 12px 12px 0 0 !important;
+                text-align:center;
             }
 
             .sekcje-gracza {
@@ -67,7 +71,10 @@
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
-                margin: 15px 0 25px 0;
+                background-color:var(--primary-color);
+                padding:20px;
+                justify-content:center;
+                border-bottom:1px solid rgba(255, 255, 255, 0.15) !important;
             }
 
             .btn-stat-tab {
@@ -97,6 +104,7 @@
 
             .stats-sekcja {
                 display: none;
+                border-radius: 0 0 12px 12px !important;
             }
 
             .stats-sekcja.aktywna {
@@ -417,8 +425,6 @@
             /* Karty wykresów formy */
             .chart-card {
                 background-color: var(--primary-color);
-                padding: 24px 22px;
-                margin-top: 25px;
                 text-align: left;
             }
 
@@ -429,6 +435,9 @@
                 flex-wrap: wrap;
                 gap: 14px;
                 margin-bottom: 18px;
+            }
+            .chart-header, .heatmap-quick-stats, .chart-canvas-kontener{
+                padding: 0 10px !important;
             }
 
             .chart-tytul {
@@ -816,10 +825,8 @@
     <body>
         <main>
             <div id="sekcja-statystyk" class="sekcje-gracza">
-                <h3>Statystyki</h3>
-                <p id="statystyki-podtytul" style="text-align: center; color: var(--secondary-color); font-size: 14px; margin: -4px 0 14px 0; font-weight: 600;">Ładowanie profilu: Piotr (admin)...</p>
-
-                <!-- Zakładki trybów -->
+                 
+                <h1>Wybierz tryb gry</h1>
                 <div id="btn-container-stats">
                     <button type="button" class="btn-stat-tab aktywna" data-target="stats-klasyczna">Klasyczna</button>
                     <button type="button" class="btn-stat-tab" data-target="stats-shanghai">Shanghai</button>
@@ -830,7 +837,7 @@
 
                 <!-- 1. Klasyczna -->
                 <div id="stats-klasyczna" class="stats-sekcja aktywna">
-                    <h1 class="stats-tytul">Klasyczna</h1>
+                    <h2 class="stats-tytul">Klasyczna</h2>
 
                     <!-- Karta Wykresu Klasyczna -->
                     <div class="chart-card">
@@ -900,7 +907,7 @@
 
                 <!-- 3. Shanghai -->
                 <div id="stats-shanghai" class="stats-sekcja">
-                    <h1 class="stats-tytul">Shanghai</h1>
+                    <h2 class="stats-tytul">Shanghai</h2>
 
                     <div id="bloki-statystyk-shanghai" class="bloki-sekcji">
                         <table>
@@ -1017,7 +1024,7 @@
 
                 <!-- 4. Around The World -->
                 <div id="stats-around-the-world" class="stats-sekcja">
-                    <h1 class="stats-tytul">Around The World</h1>
+                    <h2 class="stats-tytul">Around The World</h2>
                     <div id="bloki-statystyk-around" class="bloki-sekcji">
                         <table>
                             <tr>
@@ -1131,7 +1138,7 @@
 
                 <!-- 5. 121 Checkout -->
                 <div id="stats-121checkout" class="stats-sekcja">
-                    <h1 class="stats-tytul">121 Checkout</h1>
+                    <h2 class="stats-tytul">121 Checkout</h2>
 
                     <!-- Karta Wykresu 121 Checkout -->
                     <div class="chart-card">
@@ -1201,7 +1208,7 @@
 
                 <!-- 6. Doubles + Heatmapa -->
                 <div id="stats-doubles" class="stats-sekcja">
-                    <h1 class="stats-tytul">Doubles</h1>
+                    <h2 class="stats-tytul">Doubles</h2>
                     <div id="bloki-statystyk-doubles" class="bloki-sekcji">
                         <table>
                             <tr>
