@@ -203,6 +203,11 @@
                 border-radius: 50%;
                 overflow: hidden;
                 background-color: black;
+                /* Poprawka dla Safari iOS: maskowanie overflow przy transformowanych dzieciach */
+                -webkit-mask-image: -webkit-radial-gradient(white, black);
+                mask-image: radial-gradient(white, black);
+                isolation: isolate;
+                -webkit-tap-highlight-color: transparent;
                 /* Pierścień obudowy tarczy z cieniem 3D */
                 box-shadow:
                     0 25px 60px black,
@@ -221,18 +226,22 @@
                 transform: scale(1.065);
                 transform-origin: center center;
                 border-radius: 50%;
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
             }
 
             .tarcza-warstwa-img {
                 object-fit: cover;
                 z-index: 1;
                 user-select: none;
+                -webkit-user-select: none;
                 pointer-events: none;
             }
 
             .tarcza-warstwa-svg {
                 z-index: 2;
                 pointer-events: auto;
+                touch-action: manipulation;
             }
 
             /* Efekty cienia i kontrastu na SVG dla wszystkich trybów */
@@ -242,11 +251,14 @@
             #dartboard-heatmap-around circle,
             #dartboard-heatmap-shanghai path,
             #dartboard-heatmap-shanghai circle {
+                pointer-events: all !important;
+                cursor: pointer;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
                 transition:
                     fill 0.3s ease,
                     stroke 0.2s ease,
                     filter 0.3s ease;
-                cursor: pointer;
             }
 
             /* Sektory o wysokiej skuteczności (odkryte / żywe kolory tarczy) */
@@ -1390,36 +1402,47 @@
             const R_DOUBLE_IN = 3.0;
             const R_BULL = 3.0;
 
-            let html = "";
             const polar = (radius, angle) => {
                 const rad = ((angle - 90) * Math.PI) / 180;
                 return { x: 50 + radius * Math.cos(rad), y: 50 + radius * Math.sin(rad) };
             };
 
-            const generujSegment = (id, rWewn, rZewn, startKat, koniecKat) => {
-                const p1 = polar(rZewn, koniecKat);
-                const p2 = polar(rZewn, startKat);
-                const p3 = polar(rWewn, koniecKat);
-                const p4 = polar(rWewn, startKat);
-                const duzyLuk = koniecKat - startKat <= 180 ? "0" : "1";
-                const d = `M ${p1.x} ${p1.y} A ${rZewn} ${rZewn} 0 ${duzyLuk} 0 ${p2.x} ${p2.y} L ${p4.x} ${p4.y} A ${rWewn} ${rWewn} 0 ${duzyLuk} 1 ${p3.x} ${p3.y} Z`;
-                return `<path id="${id}" d="${d}" fill="transparent" stroke="transparent" stroke-width="0.1" />`;
-            };
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            svgElement.innerHTML = "";
 
             sekwencjaTarczy.forEach((liczba, index) => {
                 const startKat = index * 18 - 9;
                 const koniecKat = startKat + 18;
-                html += generujSegment(`${prefiks}${liczba}`, R_DOUBLE_IN, R_DOUBLE_OUT, startKat, koniecKat);
+                const p1 = polar(R_DOUBLE_OUT, koniecKat);
+                const p2 = polar(R_DOUBLE_OUT, startKat);
+                const p3 = polar(R_DOUBLE_IN, koniecKat);
+                const p4 = polar(R_DOUBLE_IN, startKat);
+                const duzyLuk = koniecKat - startKat <= 180 ? "0" : "1";
+                const d = `M ${p1.x} ${p1.y} A ${R_DOUBLE_OUT} ${R_DOUBLE_OUT} 0 ${duzyLuk} 0 ${p2.x} ${p2.y} L ${p4.x} ${p4.y} A ${R_DOUBLE_IN} ${R_DOUBLE_IN} 0 ${duzyLuk} 1 ${p3.x} ${p3.y} Z`;
+
+                const path = document.createElementNS(SVG_NS, "path");
+                path.setAttribute("id", `${prefiks}${liczba}`);
+                path.setAttribute("d", d);
+                path.setAttribute("fill", "transparent");
+                path.setAttribute("stroke", "transparent");
+                path.setAttribute("stroke-width", "0.1");
+                svgElement.appendChild(path);
             });
 
             // Środek tarczy (Bullseye)
-            html += `<circle id="${prefiks}innerbull" cx="50" cy="50" r="${R_BULL}" fill="transparent" stroke="transparent" stroke-width="0.1" />`;
-
-            svgElement.innerHTML = html;
+            const circle = document.createElementNS(SVG_NS, "circle");
+            circle.setAttribute("id", `${prefiks}innerbull`);
+            circle.setAttribute("cx", "50");
+            circle.setAttribute("cy", "50");
+            circle.setAttribute("r", String(R_BULL));
+            circle.setAttribute("fill", "transparent");
+            circle.setAttribute("stroke", "transparent");
+            circle.setAttribute("stroke-width", "0.1");
+            svgElement.appendChild(circle);
         }
 
         // ==============================================================================
-        // 3. WSPÓLNA OBSŁUGA INTERAKCJI (TOOLTIP, BANER MOBILNY, KLIKNIĘCIE)
+        // 3. WSPÓLNA OBSŁUGA INTERAKCJI (TOOLTIP, BANER MOBILNY, KLIKNIĘCIE, DOTYK)
         // ==============================================================================
         let aktywnyWybor = { el: null, infoBoxId: null, defaultText: "" };
 
@@ -1445,7 +1468,7 @@
             const tooltip = document.getElementById("heatmap-tooltip");
             const infoBox = document.getElementById(infoBoxId);
 
-            // Powtórne kliknięcie odznacza sektor
+            // Powtórne kliknięcie / dotknięcie odznacza sektor
             if (aktywnyWybor.el === el) {
                 odznaczWybranySektor();
                 return;
@@ -1466,8 +1489,9 @@
             if (tooltip) {
                 tooltip.style.display = "block";
                 tooltip.innerHTML = tooltipHtml;
-                tooltip.style.left = x + "px";
-                tooltip.style.top = y + "px";
+                const clampedX = Math.max(70, Math.min(window.innerWidth - 70, x));
+                tooltip.style.left = clampedX + "px";
+                tooltip.style.top = Math.max(40, y) + "px";
             }
 
             if (infoBox) {
@@ -1481,16 +1505,94 @@
             if (!tooltip) return;
             tooltip.style.display = "block";
             tooltip.innerHTML = html;
-            tooltip.style.left = x + "px";
-            tooltip.style.top = y + "px";
+            const clampedX = Math.max(70, Math.min(window.innerWidth - 70, x));
+            tooltip.style.left = clampedX + "px";
+            tooltip.style.top = Math.max(40, y) + "px";
         }
 
-        // Kliknięcie poza tarczę zdejmuje zaznaczenie
-        document.addEventListener("click", (e) => {
-            if (aktywnyWybor.el && !e.target.closest("svg") && !e.target.closest("#heatmap-tooltip")) {
-                odznaczWybranySektor();
+        function podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml) {
+            const aktywuj = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                }
+                let cx = null;
+                let cy = null;
+                if (e?.touches && e.touches[0]) {
+                    cx = e.touches[0].clientX;
+                    cy = e.touches[0].clientY;
+                } else if (e?.changedTouches && e.changedTouches[0]) {
+                    cx = e.changedTouches[0].clientX;
+                    cy = e.changedTouches[0].clientY;
+                } else if (e?.clientX) {
+                    cx = e.clientX;
+                    cy = e.clientY;
+                }
+                ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, cx, cy);
+            };
+
+            // Touch events dla iPhone / Safari / Android
+            el.ontouchstart = (e) => {
+                aktywuj(e);
+            };
+
+            // Pointerdown dla nowoczesnych ekranów dotykowych
+            el.onpointerdown = (e) => {
+                if (e.pointerType === "touch" || e.pointerType === "pen") {
+                    aktywuj(e);
+                }
+            };
+
+            // Standardowy click (PC)
+            el.onclick = (e) => {
+                aktywuj(e);
+            };
+
+            // Obsługa hover tylko dla urządzeń ze wskaźnikiem myszy (nie telefony)
+            el.onmouseenter = (e) => {
+                if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
+                if (aktywnyWybor.el !== el) {
+                    el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
+                    el.setAttribute("stroke-width", "0.6");
+                }
+                pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+            };
+
+            el.onmousemove = (e) => {
+                if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
+                pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+            };
+
+            el.onmouseleave = () => {
+                if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
+                if (aktywnyWybor.el !== el) {
+                    el.setAttribute("stroke", "transparent");
+                    el.setAttribute("stroke-width", "0.1");
+                }
+                if (!aktywnyWybor.el) {
+                    const tooltip = document.getElementById("heatmap-tooltip");
+                    if (tooltip) tooltip.style.display = "none";
+                }
+            };
+        }
+
+        // Bezpieczne odznaczanie po kliknięciu/tapnięciu poza tarczą i dymkiem
+        const usunZaznaczenieGdyPoza = (e) => {
+            if (!aktywnyWybor.el) return;
+            const target = e.target;
+            if (!target) return;
+            if (
+                target.closest(".tarcza-ramka") ||
+                target.closest("svg") ||
+                target.closest(".wybrany-sektor-info") ||
+                target.closest("#heatmap-tooltip")
+            ) {
+                return;
             }
-        });
+            odznaczWybranySektor();
+        };
+
+        document.addEventListener("click", usunZaznaczenieGdyPoza);
+        document.addEventListener("touchend", usunZaznaczenieGdyPoza);
 
         // ==============================================================================
         // 4. RENDERY HEATMAP DLA POSZCZEGÓLNYCH TRYBÓW
@@ -1546,7 +1648,7 @@
                 // Cień: 0% = 0.85 (ciemno), 100% = 0 (czysta tarcza)
                 const alpha = (0.85 * (1 - proc / 100)).toFixed(2);
                 el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
-                el.className.baseVal = proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony";
+                el.setAttribute("class", proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony");
 
                 const tooltipHtml = `
                     <span style="color:#94a3b8; font-size:11px; display:block; margin-bottom:2px;">SEKTOR DOUBLE</span>
@@ -1555,33 +1657,7 @@
                 `;
                 const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
 
-                el.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseenter", (e) => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
-                        el.setAttribute("stroke-width", "0.6");
-                    }
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mousemove", (e) => {
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseleave", () => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "transparent");
-                        el.setAttribute("stroke-width", "0.1");
-                    }
-                    if (!aktywnyWybor.el) {
-                        const tooltip = document.getElementById("heatmap-tooltip");
-                        if (tooltip) tooltip.style.display = "none";
-                    }
-                });
+                podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
 
             const chipNajlepszy = document.getElementById("chip-najlepszy");
@@ -1793,42 +1869,16 @@
                 // Cień: 0% = 0.85 (ciemno), 100% = 0 (czysta tarcza)
                 const alpha = (0.85 * (1 - proc / 100)).toFixed(2);
                 el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
-                el.className.baseVal = proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony";
+                el.setAttribute("class", proc >= 75 ? "sektor-odkryty" : "sektor-zacieniony");
 
                 const tooltipHtml = `
                     <span style="color:#94a3b8; font-size:11px; display:block; margin-bottom:2px;">AROUND THE WORLD</span>
-                    <span style="color:; font-size:14px; font-weight:700;">${nazwa}</span>: 
+                    <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
                     <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
                 `;
                 const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
 
-                el.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseenter", (e) => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
-                        el.setAttribute("stroke-width", "0.6");
-                    }
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mousemove", (e) => {
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseleave", () => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "transparent");
-                        el.setAttribute("stroke-width", "0.1");
-                    }
-                    if (!aktywnyWybor.el) {
-                        const tooltip = document.getElementById("heatmap-tooltip");
-                        if (tooltip) tooltip.style.display = "none";
-                    }
-                });
+                podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
 
             const chipNajwiecej = document.getElementById("chip-around-najwiecej");
@@ -1871,7 +1921,7 @@
                 // Kontrast cienia bazujący na zdobytych punktach
                 const alpha = (0.85 * (1 - punkty / maxPunkty)).toFixed(2);
                 el.setAttribute("fill", Number(alpha) > 0 ? `rgba(0, 0, 0, ${alpha})` : "transparent");
-                el.className.baseVal = punkty > 0 ? "sektor-odkryty" : "sektor-zacieniony";
+                el.setAttribute("class", punkty > 0 ? "sektor-odkryty" : "sektor-zacieniony");
                 el.setAttribute("stroke", "transparent");
                 el.setAttribute("stroke-width", "0.1");
 
@@ -1887,33 +1937,7 @@
 
                 const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong>${tekstSkut}</strong> | <strong>${punkty} pkt</strong> (S:${rDane.single || 0} D:${rDane.double || 0} T:${rDane.triple || 0}) ${czyShanghai ? "— Ustrzelono Shanghai!" : ""}`;
 
-                el.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseenter", (e) => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
-                        el.setAttribute("stroke-width", "0.6");
-                    }
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mousemove", (e) => {
-                    pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
-                });
-
-                el.addEventListener("mouseleave", () => {
-                    if (aktywnyWybor.el !== el) {
-                        el.setAttribute("stroke", "transparent");
-                        el.setAttribute("stroke-width", "0.1");
-                    }
-                    if (!aktywnyWybor.el) {
-                        const tooltip = document.getElementById("heatmap-tooltip");
-                        if (tooltip) tooltip.style.display = "none";
-                    }
-                });
+                podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
 
             const chipIlosc = document.getElementById("chip-shanghai-ilosc");
