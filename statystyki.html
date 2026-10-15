@@ -27,14 +27,17 @@
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
             /* Reset i pełna responsywność bazowa */
-            html, body {
+            html,
+            body {
                 width: 100%;
                 max-width: 100%;
                 overflow-x: hidden;
                 box-sizing: border-box;
             }
 
-            *, *::before, *::after {
+            *,
+            *::before,
+            *::after {
                 box-sizing: border-box;
             }
 
@@ -50,20 +53,33 @@
             }
 
             /* Główny kontener strony */
-            #sekcja-statystyk {
+            .blok-gracza {
+                background-color: var(--primary-color);
                 width: 100% !important;
                 max-width: 1050px !important;
                 margin: 0 auto !important;
+                border-radius: 16px;
                 padding: 0 !important;
+                border: 1px solid rgba(255, 255, 255, 0.05);
                 box-sizing: border-box !important;
-                gap:0 !important;
-                background-color:var(--primary-color);
-                border-radius: 12px 12px 0 0 !important;
-                text-align:center;
+            }
+            #header-uzytkownika {
+                padding: 40px 25px;
             }
 
             .sekcje-gracza {
-                margin-top: 10px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                gap: 0 !important;
+                text-align: center;
+                margin-top: 0 !important;
+            }
+            .sekcje-gracza:not(:last-child) {
+                padding-bottom: 50px !important;
+                border-bottom: 2px solid var(--secondary-color);
             }
 
             /* Przełącznik głównych zakładek */
@@ -71,19 +87,18 @@
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
-                background-color:var(--primary-color);
-                padding:20px;
-                justify-content:center;
-                border-bottom:1px solid rgba(255, 255, 255, 0.15) !important;
+                padding: 20px 0;
+                justify-content: center;
+                border-top: 2px solid rgba(255, 255, 255, 0.15);
             }
 
             .btn-stat-tab {
-                background-color: var(--primary-color);
+                background-color: transparent;
                 color: white;
                 border: 1px solid var(--primary-color-border);
                 padding: 10px 18px;
                 border-radius: 10px;
-                font-size: 14px;
+                font-size: 18px;
                 font-weight: 600;
                 cursor: pointer;
                 transition: all 0.25s ease;
@@ -125,7 +140,6 @@
 
             /* Karta sekcji Heatmapy */
             .heatmap-card {
-                background-color: var(--primary-form-color);
                 padding: 28px 20px;
                 text-align: center;
             }
@@ -138,7 +152,7 @@
                 flex-wrap: wrap;
                 margin: 16px 0 24px 0;
             }
-            .heatmap-quick-stats.heatmapa{
+            .heatmap-quick-stats.heatmapa {
                 justify-content: center;
             }
 
@@ -308,7 +322,7 @@
             }
 
             .btn-widok-przelacznik {
-                background-color: var(--primary-color);
+                background-color: transparent;
                 color: white;
                 border: 1px solid var(--primary-color-border);
                 padding: 10px 18px;
@@ -344,7 +358,7 @@
             }
 
             .ranking-item {
-                background: var(--primary-color);
+                background: rgba(255, 255, 255, 0.03);
                 border: 1px solid var(--primary-color-lighter);
                 border-radius: 12px;
                 padding: 10px 16px;
@@ -406,7 +420,6 @@
                 color: #cbd5e1;
             }
 
-
             .ranking-pasek-tlo {
                 width: 100%;
                 height: 5px;
@@ -424,8 +437,8 @@
 
             /* Karty wykresów formy */
             .chart-card {
-                background-color: var(--primary-color);
                 text-align: left;
+                padding: 0 !important;
             }
 
             .chart-header {
@@ -436,7 +449,9 @@
                 gap: 14px;
                 margin-bottom: 18px;
             }
-            .chart-header, .heatmap-quick-stats, .chart-canvas-kontener{
+            .chart-header,
+            .heatmap-quick-stats,
+            .chart-canvas-kontener {
                 padding: 0 10px !important;
             }
 
@@ -503,8 +518,8 @@
                 max-width: 100% !important;
                 table-layout: fixed !important;
                 border-collapse: collapse !important;
-                border-bottom: 2px solid var(--secondary-color) !important;
-                border-top: 2px solid var(--secondary-color) !important;
+                border-bottom: 2px solid rgba(255, 255, 255, 0.15) !important;
+                border-top: 2px solid rgba(255, 255, 255, 0.15) !important;
                 margin-bottom: 20px !important;
                 box-sizing: border-box !important;
             }
@@ -572,19 +587,199 @@
                 word-break: break-word !important;
             }
 
+            #bloki-sprzetu .wspolny-div p {
+                font-size: 15px;
+                font-weight: 600;
+            }
+
             .stats-sekcja {
-                background-color: var(--primary-color);
                 border-radius: 12px;
                 width: 100% !important;
                 max-width: 100% !important;
                 box-sizing: border-box !important;
                 overflow: hidden;
             }
-
-            .stats-tytul {
+            .stats-tytul-naglowek {
                 text-align: center;
             }
+            .stats-tytul-naglowek {
+                font-size: 40px;
+            }
+            #btn-container {
+                border: none !important;
+                margin: 0 !important;
+                padding: 25px !important;
+            }
+            /* --- LISTA OSTATNICH MECZÓW I TABLICA WYNIKÓW --- */
+            #lista-ostatnich-meczy {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                width: 100%;
+                padding: 0 10px;
+            }
 
+            .mecz {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 24px;
+                border: 1px solid var(--primary-color-border-hover);
+                border-radius: 12px;
+                background-color: var(--primary-color-lighter-darker);
+                gap: 20px;
+                transition:
+                    transform 0.2s ease,
+                    border-color 0.2s ease;
+                position: relative;
+                box-sizing: border-box;
+            }
+
+            /* Akcent zwycięstwa / porażki na lewej krawędzi i ramce */
+            .mecz.wygrana {
+                border-color: var(--secondary-color);
+                box-shadow: inset 4px 0 0 var(--secondary-color);
+            }
+
+            .mecz.porazka {
+                border-color: var(--color-red-text);
+                box-shadow: inset 4px 0 0 var(--color-red-text);
+            }
+
+            /* Data meczu po lewej stronie */
+            .mecz > p:first-child,
+            .mecz .mecz-data {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 600;
+                color: #cbd5e1;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 8px 14px;
+                border-radius: 8px;
+                white-space: nowrap;
+                text-align: center;
+                min-width: 95px;
+                letter-spacing: 0.3px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Środek: TABLICA WYNIKÓW (.dane-meczu) */
+            .dane-meczu {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+                column-gap: 18px;
+                row-gap: 4px;
+                flex: 1;
+                min-width: 0;
+                padding: 0 10px;
+            }
+
+            /* Pozycjonowanie i wyrównanie 3 kolumn */
+            .dane-meczu > :nth-child(3n + 1) {
+                text-align: right;
+                justify-self: end;
+            }
+
+            .dane-meczu > :nth-child(3n + 2) {
+                text-align: center;
+                justify-self: center;
+            }
+
+            .dane-meczu > :nth-child(3n) {
+                text-align: left;
+                justify-self: start;
+            }
+
+            /* Wiersz 1: Nazwy graczy i "vs" */
+            .dane-meczu h3,
+            .dane-meczu .gracz-nazwa {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 700;
+                color: #ffffff;
+                letter-spacing: 0.3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 170px;
+            }
+
+            .dane-meczu .mecz-vs,
+            .dane-meczu > p:nth-child(2) {
+                margin: 0;
+                font-size: 11px;
+                font-weight: 700;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 1.5px;
+            }
+
+            /* Wiersz 2: Wynik meczu (np. 0 : 2) */
+            .dane-meczu h4,
+            .dane-meczu .wynik-punkty {
+                margin: 0;
+                font-size: 26px;
+                font-weight: 800;
+                color: #ffffff;
+                line-height: 1.1;
+                letter-spacing: 0.5px;
+            }
+
+            .dane-meczu .wynik-separator,
+            .dane-meczu > p:nth-child(5) {
+                margin: 0;
+                font-size: 22px;
+                font-weight: 800;
+                color: var(--secondary-color);
+                line-height: 1.1;
+            }
+
+            /* Wiersz 3: Średnie (np. 45.08  Średnia  51.45) */
+            .dane-meczu .srednia-wartosc,
+            .dane-meczu > p:nth-child(7),
+            .dane-meczu > p:nth-child(9) {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 600;
+                color: #94a3b8;
+            }
+
+            .dane-meczu .srednia-etykieta,
+            .dane-meczu > p:nth-child(8) {
+                margin: 0;
+                font-size: 10.5px;
+                font-weight: 700;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+            }
+
+            /* Przycisk akcji meczu */
+            .btn-przebieg-profil {
+                background-color: var(--secondary-color);
+                color: #0b091f;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 18px;
+                font-weight: 700;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease,
+                    background-color 0.2s ease;
+            }
+
+            .btn-przebieg-profil:hover {
+                background-color: var(--secondary-color-hover);
+                transform: translateY(-2px);
+            }
             /* =====================================================
                RESPONSYWNOŚĆ MOBILNA (SMARTFONY I TABLETY)
                ===================================================== */
@@ -593,7 +788,12 @@
                     padding: 16px 10px !important;
                 }
 
-                #sekcja-statystyk {
+                .blok-gracza {
+                    padding: 24px 0px !important;
+                    border-radius: 12px;
+                }
+
+                .sekcje-gracza {
                     padding: 0 !important;
                 }
 
@@ -603,17 +803,21 @@
                     text-align: center;
                 }
 
-                .stats-tytul {
-                    font-size: 22px;
-                    margin: 8px 0 16px 0;
+                .stats-tytul-naglowek {
+                    margin: 4px 0 10px 0;
+                    font-size: 28px;
+                }
+                #sekcja-sprzetu .chart-card {
+                    padding-top: 0 !important;
                 }
 
                 #btn-container-stats {
                     display: grid;
                     grid-template-columns: repeat(2, 1fr);
                     gap: 8px;
-                    margin: 10px 0 18px 0;
+                    margin: 0 0 18px 0;
                     width: 100%;
+                    padding: 10px;
                 }
 
                 #btn-container-stats .btn-stat-tab:last-child:nth-child(odd) {
@@ -632,7 +836,7 @@
 
                 .chart-card,
                 .heatmap-card {
-                    padding: 16px 10px !important;
+                    padding: 16px 0 !important;
                     border-radius: 10px;
                 }
 
@@ -756,6 +960,46 @@
                 .ranking-detal-tag {
                     padding: 1px 5px;
                 }
+
+                .mecz {
+                    flex-direction: column;
+                    align-items: stretch;
+                    padding: 16px;
+                    gap: 4px;
+                }
+
+                .mecz > p:first-child,
+                .mecz .mecz-data {
+                    align-self: center;
+                    min-width: unset;
+                    padding: 5px 14px;
+                    font-size: 12px;
+                }
+
+                .dane-meczu {
+                    column-gap: 12px;
+                    padding: 0;
+                    width: 100%;
+                }
+
+                .dane-meczu h3,
+                .dane-meczu .gracz-nazwa {
+                    font-size: 15px;
+                    max-width: 130px;
+                }
+
+                .dane-meczu h4,
+                .dane-meczu .wynik-punkty {
+                    font-size: 24px;
+                }
+
+                .btn-przebieg-profil {
+                    width: 100%;
+                    margin-top: 4px;
+                    padding: 11px;
+                    font-size: 14px;
+                    text-align: center;
+                }
             }
 
             @media (max-width: 480px) {
@@ -763,19 +1007,21 @@
                     padding: 10px 6px !important;
                 }
 
+                .blok-gracza {
+                    padding: 14px 0px !important;
+                }
+
                 .btn-stat-tab {
                     padding: 8px 6px;
                     font-size: 12px;
                 }
 
-                .stats-tytul {
-                    font-size: 20px;
-                    margin: 6px 0 12px 0;
-                }
-
                 .chart-card,
                 .heatmap-card {
-                    padding: 14px 8px !important;
+                    padding: 14px 0px !important;
+                }
+                #sekcja-sprzetu .chart-card {
+                    padding-top: 0 !important;
                 }
 
                 .tarcza-ramka {
@@ -804,6 +1050,38 @@
                 .chart-canvas-kontener {
                     height: 200px;
                 }
+
+                .mecz {
+                    padding: 12px 10px;
+                    gap: 10px;
+                }
+
+                .dane-meczu {
+                    column-gap: 8px;
+                    row-gap: 3px;
+                }
+
+                .dane-meczu h3,
+                .dane-meczu .gracz-nazwa {
+                    font-size: 13px;
+                    max-width: 105px;
+                }
+
+                .dane-meczu h4,
+                .dane-meczu .wynik-punkty {
+                    font-size: 20px;
+                }
+
+                .dane-meczu .srednia-wartosc,
+                .dane-meczu > p:nth-child(7),
+                .dane-meczu > p:nth-child(9) {
+                    font-size: 11.5px;
+                }
+
+                .dane-meczu .srednia-etykieta,
+                .dane-meczu > p:nth-child(8) {
+                    font-size: 9px;
+                }
             }
 
             @media (max-width: 360px) {
@@ -824,499 +1102,632 @@
     </head>
     <body>
         <main>
-            <div id="sekcja-statystyk" class="sekcje-gracza">
-                 
-                <h1>Wybierz tryb gry</h1>
-                <div id="btn-container-stats">
-                    <button type="button" class="btn-stat-tab aktywna" data-target="stats-klasyczna">Klasyczna</button>
-                    <button type="button" class="btn-stat-tab" data-target="stats-shanghai">Shanghai</button>
-                    <button type="button" class="btn-stat-tab" data-target="stats-around-the-world">Around The World</button>
-                    <button type="button" class="btn-stat-tab" data-target="stats-121checkout">121 Checkout</button>
-                    <button type="button" class="btn-stat-tab" data-target="stats-doubles">Doubles</button>
+            <div class="blok-gracza">
+                <div id="header-uzytkownika">
+                    <div class="avatar-wrapper" id="avatar-container" title="Kliknij, aby zmienić zdjęcie">
+                        <img src="https://mjebhhagwxtvhggyjwue.supabase.co/storage/v1/object/public/avatary/bdd1461e-dca2-4596-8959-2da9a27b7288/avatar_1791444369774.jpg" alt="Zdjęcie użytkownika" id="zdjecie-uzytkownika">
+                        <div class="avatar-overlay">
+                            <span>📷 Zmień</span>
+                        </div>
+                        <input type="file" id="input-avatar" accept="image/png, image/jpeg, image/webp" style="display: none">
+                    </div>
+
+                    <!-- Lewa strona: Nick i Tagi -->
+                    <div class="user-info-box">
+                        <div class="nick-row">
+                            <h2 id="nazwa-uzytkownika">Piteroo</h2>
+                            <div class="ranga-wrapper">
+                                <span id="tag-ranga" class="tag-ranga" style="display: inline-flex; color: rgb(96, 165, 250); background-color: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);">💎 Mistrz</span>
+                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: inline-flex;">?</button>
+                            </div>
+                        </div>
+                        <span id="tag-data" class="tag-data">🗓️ W Stacji od: październik 2026</span>
+                        <span id="avatar-status" class="avatar-status"></span>
+                    </div>
+
+                    <!-- Prawa strona: Wypełnienie pustki (Win Rate + Przycisk) -->
+                    <div class="header-statystyki-szybkie">
+                        <div class="szybki-stat">
+                            <span>Win Rate</span>
+                            <strong id="header-winrate">69.6%</strong>
+                        </div>
+                        <button id="btn-edycja-profilu" type="button" style="display: inline-flex;">Edytuj profil</button>
+                    </div>
                 </div>
-
-                <!-- 1. Klasyczna -->
-                <div id="stats-klasyczna" class="stats-sekcja aktywna">
-                    <h2 class="stats-tytul">Klasyczna</h2>
-
-                    <!-- Karta Wykresu Klasyczna -->
-                    <div class="chart-card">
-                        <div id="bloki-statystyk" class="bloki-sekcji">
+                <div id="sekcja-sprzetu" class="sekcje-gracza" style="margin-top: 25px; width: 100%">
+                    <div class="chart-card" style="padding: 20px 14px 10px 14px; border-radius: 12px">
+                        <h1 class="stats-tytul-naglowek">Sprzęt</h1>
+                        <div id="bloki-sprzetu" class="bloki-sekcji">
                             <table>
                                 <tr>
                                     <td>
-                                        <div id="srednia-gracza" class="wspolny-div">
-                                            <h4>Średnia:</h4>
-                                            <p id="stat-srednia">0.00</p>
+                                        <div id="barele" class="wspolny-div">
+                                            <h4>Barele:</h4>
+                                            <p id="barele-gracza">-</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="srednia-9-lotek" class="wspolny-div">
-                                            <h4>Średnia 9-lotek:</h4>
-                                            <p id="stat-9lotek">0.00</p>
+                                        <div id="shaft" class="wspolny-div">
+                                            <h4>Shafty:</h4>
+                                            <p id="shafty-gracza">-</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="liczba-180" class="wspolny-div">
-                                            <h4>Liczba 180:</h4>
-                                            <p id="stat-180">0</p>
+                                        <div id="groty" class="wspolny-div">
+                                            <h4>Groty:</h4>
+                                            <p id="groty-gracza">-</p>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>
-                                        <div id="rozegrane-mecze" class="wspolny-div">
-                                            <h4>Rozegrane mecze:</h4>
-                                            <p id="stat-mecze">0</p>
+                                        <div id="tarcza" class="wspolny-div">
+                                            <h4>Tarcza:</h4>
+                                            <p id="tarcza-gracza">-</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="zwyciestwa" class="wspolny-div">
-                                            <h4>Zwycięstwa:</h4>
-                                            <p id="stat-wygrane">0</p>
+                                        <div id="autoscore" class="wspolny-div">
+                                            <h4>Auto-score:</h4>
+                                            <p id="autoscore-gracza">-</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="porażki" class="wspolny-div">
-                                            <h4>Porażki:</h4>
-                                            <p id="stat-porazki">0</p>
+                                        <div id="druzyna" class="wspolny-div">
+                                            <h4>Drużyna:</h4>
+                                            <p id="druzyna-gracza">-</p>
                                         </div>
                                     </td>
                                 </tr>
                             </table>
                         </div>
-                        <div class="chart-header">
-                            <div>
-                                <h2 class="chart-tytul">Wykres Średniej</h2>
-                            </div>
-                            <div class="chart-przelacznik-metryki">
-                                <button type="button" class="btn-metryka aktywny" data-chart="klasyczna" data-metric="srednia">Średnia 3 lotek</button>
-                                <button type="button" class="btn-metryka" data-chart="klasyczna" data-metric="srednia9">Średnia 9 lotek</button>
-                            </div>
-                        </div>
-                        <div class="heatmap-quick-stats">
-                            <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-klas-ostatni">-</strong></span>
-                            <span class="quick-stat-chip">Rekord meczu: <strong id="chip-klas-max">-</strong></span>
-                            <span class="quick-stat-chip">Trend: <strong id="chip-klas-trend">-</strong></span>
-                        </div>
-                        <div class="chart-canvas-kontener">
-                            <canvas id="chart-klasyczna"></canvas>
-                        </div>
                     </div>
                 </div>
-
-                <!-- 3. Shanghai -->
-                <div id="stats-shanghai" class="stats-sekcja">
-                    <h2 class="stats-tytul">Shanghai</h2>
-
-                    <div id="bloki-statystyk-shanghai" class="bloki-sekcji">
-                        <table>
-                            <tr>
-                                <td>
-                                    <div id="rekord-punktow" class="wspolny-div">
-                                        <h4>Rekord punktów:</h4>
-                                        <p id="stat-rekord">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="srednia-pkt" class="wspolny-div">
-                                        <h4>Średnia punktów:</h4>
-                                        <p id="stat-shanghai-srednia">0.0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="trafione-sdt" class="wspolny-div">
-                                        <h4>Trafione S+D+T:</h4>
-                                        <p id="stat-sdt">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Skuteczność:</h4>
-                                        <p id="stat-shanghai-skutecznosc">0% (0/0)</p>
-                                        <span id="stat-lacznie" style="display: none">0</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Rozegrane mecze:</h4>
-                                        <p id="stat-shanghai-mecze">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Zwycięstwa:</h4>
-                                        <p id="stat-shanghai-wygrane">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
+                <div id="sekcja-statystyk" class="sekcje-gracza">
+                    <h1 class="stats-tytul-naglowek">Statystyki</h1>
+                    <div id="btn-container-stats">
+                        <button type="button" class="btn-stat-tab aktywna" data-target="stats-klasyczna">Klasyczna</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-shanghai">Shanghai</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-around-the-world">Around The World</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-121checkout">121 Checkout</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-doubles">Doubles</button>
                     </div>
 
-                    <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
-                    <div class="widok-przelacznik-kontener">
-                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-shanghai-tarcza">Tarcza</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-lista">Lista</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-wykres">Wykres formy</button>
-                    </div>
-
-                    <!-- 1. Widok Tarczy (Domyślny) -->
-                    <div id="shanghai-widok-tarcza">
-                        <div class="heatmap-card">
-                            <h2>Tarcza Trafień</h2>
-
-                            <!-- Pigułki podsumowania Shanghai -->
-                            <div class="heatmap-quick-stats heatmapa">
-                                <span class="quick-stat-chip hot">Ustrzelone Shanghai: <strong id="chip-shanghai-ilosc">0</strong></span>
-                                <span class="quick-stat-chip">Rekord rundy: <strong id="chip-shanghai-rekord">-</strong></span>
-                                <span class="quick-stat-chip">Skuteczność rzutów: <strong id="chip-shanghai-skutecznosc">0% (0/0)</strong></span>
-                            </div>
-
-                            <!-- Informacja o wybranym sektorze -->
-                            <div id="wybrany-sektor-info-shanghai" class="wybrany-sektor-info">
-                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy</span>
-                            </div>
-
-                            <!-- Obudowa tarczy -->
-                            <div class="tarcza-ramka">
-                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
-                                <svg id="dartboard-heatmap-shanghai" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. Widok Listy (Ranking rund Shanghai posortowany malejąco od najwyższej skuteczności %) -->
-                    <div id="shanghai-widok-lista" style="display: none">
-                        <div class="heatmap-card">
-                            <h2>Ranking Skuteczności</h2>
-                            <div class="doubles-ranking-lista" id="shanghai-ranking-lista">
-                                <!-- Generowane dynamicznie w JS -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 3. Widok Wykresu -->
-                    <div id="shanghai-widok-wykres" style="display: none">
+                    <!-- 1. Klasyczna -->
+                    <div id="stats-klasyczna" class="stats-sekcja aktywna">
+                        <!-- Karta Wykresu Klasyczna -->
                         <div class="chart-card">
+                            <div id="bloki-statystyk" class="bloki-sekcji">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div id="srednia-gracza" class="wspolny-div">
+                                                <h4>Średnia:</h4>
+                                                <p id="stat-srednia">0.00</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="srednia-9-lotek" class="wspolny-div">
+                                                <h4>Średnia 9-lotek:</h4>
+                                                <p id="stat-9lotek">0.00</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="liczba-180" class="wspolny-div">
+                                                <h4>Liczba 180:</h4>
+                                                <p id="stat-180">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div id="rozegrane-mecze" class="wspolny-div">
+                                                <h4>Rozegrane mecze:</h4>
+                                                <p id="stat-mecze">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="zwyciestwa" class="wspolny-div">
+                                                <h4>Zwycięstwa:</h4>
+                                                <p id="stat-wygrane">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="porażki" class="wspolny-div">
+                                                <h4>Porażki:</h4>
+                                                <p id="stat-porazki">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                             <div class="chart-header">
                                 <div>
-                                    <h2 class="chart-tytul" id="tytul-wykres-sh">Wykres Formy</h2>
+                                    <h2 class="chart-tytul">Wykres Średniej</h2>
                                 </div>
                                 <div class="chart-przelacznik-metryki">
-                                    <button type="button" class="btn-metryka aktywny" data-chart="shanghai" data-metric="srednia">Średnia na rundę</button>
-                                    <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="punkty">Suma punktów</button>
-                                    <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="skutecznosc">Skuteczność</button>
+                                    <button type="button" class="btn-metryka aktywny" data-chart="klasyczna" data-metric="srednia">Średnia 3 lotek</button>
+                                    <button type="button" class="btn-metryka" data-chart="klasyczna" data-metric="srednia9">Średnia 9 lotek</button>
                                 </div>
                             </div>
                             <div class="heatmap-quick-stats">
-                                <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-sh-ostatni">-</strong></span>
-                                <span class="quick-stat-chip">Rekord: <strong id="chip-sh-max">-</strong></span>
-                                <span class="quick-stat-chip">Trend: <strong id="chip-sh-trend">-</strong></span>
+                                <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-klas-ostatni">-</strong></span>
+                                <span class="quick-stat-chip">Rekord meczu: <strong id="chip-klas-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-klas-trend">-</strong></span>
                             </div>
                             <div class="chart-canvas-kontener">
-                                <canvas id="chart-shanghai"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Around The World -->
-                <div id="stats-around-the-world" class="stats-sekcja">
-                    <h2 class="stats-tytul">Around The World</h2>
-                    <div id="bloki-statystyk-around" class="bloki-sekcji">
-                        <table>
-                            <tr>
-                                <td>
-                                    <div id="najmniej-lotek" class="wspolny-div">
-                                        <h4>Najmniej lotek:</h4>
-                                        <p id="stat-najmniej">-</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="srednia-skutecznosc" class="wspolny-div">
-                                        <h4>Skuteczność:</h4>
-                                        <p id="stat-around-skutecznosc">0% (0/0)</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="trafione-cele" class="wspolny-div">
-                                        <h4>Trafione cele:</h4>
-                                        <p id="stat-trafione">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div id="wszystkie-rzuty" class="wspolny-div">
-                                        <h4>Wszystkie rzuty:</h4>
-                                        <p id="stat-wszystkie">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Rozegrane mecze:</h4>
-                                        <p id="stat-around-mecze">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Zwycięstwa:</h4>
-                                        <p id="stat-around-wygrane">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
-                    <div class="widok-przelacznik-kontener">
-                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-around-tarcza">Tarcza</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-around-lista">Lista</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-around-wykres">Wykres formy</button>
-                    </div>
-
-                    <!-- 1. Widok Tarczy (Domyślny) -->
-                    <div id="around-widok-tarcza">
-                        <div class="heatmap-card">
-                            <h2>Tarcza Trafień</h2>
-
-                            <!-- Pigułki podsumowania Around The World -->
-                            <div class="heatmap-quick-stats heatmapa">
-                                <span class="quick-stat-chip hot">Najlepszy cel: <strong id="chip-around-najwiecej">-</strong></span>
-                                <span class="quick-stat-chip">Najsłabszy cel: <strong id="chip-around-najmniej">-</strong></span>
-                                <span class="quick-stat-chip">Łącznie: <strong id="chip-around-suma">0% (0/0)</strong></span>
-                            </div>
-
-                            <!-- Informacja o wybranym sektorze -->
-                            <div id="wybrany-sektor-info-around" class="wybrany-sektor-info">
-                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić liczbę trafień</span>
-                            </div>
-
-                            <!-- Obudowa tarczy -->
-                            <div class="tarcza-ramka">
-                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
-                                <svg id="dartboard-heatmap-around" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                <canvas id="chart-klasyczna"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Widok Listy (Ranking celów ze statystykami single / double / triple) -->
-                    <div id="around-widok-lista" style="display: none">
-                        <div class="heatmap-card">
-                            <h2>Ranking Trafień</h2>
-                            <div class="doubles-ranking-lista" id="around-ranking-lista">
-                                <!-- Generowane dynamicznie w JS -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 3. Widok Wykresu -->
-                    <div id="around-widok-wykres" style="display: none">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <div>
-                                    <h2 class="chart-tytul" id="tytul-wykres-atw">Wykres Skuteczności</h2>
-                                </div>
-                                <div class="chart-przelacznik-metryki">
-                                    <button type="button" class="btn-metryka aktywny" data-chart="around_the_world" data-metric="skutecznosc">Skuteczność %</button>
-                                    <button type="button" class="btn-metryka" data-chart="around_the_world" data-metric="lotki">Liczba lotek</button>
-                                </div>
-                            </div>
-                            <div class="heatmap-quick-stats">
-                                <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-atw-ostatni">-</strong></span>
-                                <span class="quick-stat-chip">Najlepszy wynik: <strong id="chip-atw-max">-</strong></span>
-                                <span class="quick-stat-chip">Trend: <strong id="chip-atw-trend">-</strong></span>
-                            </div>
-                            <div class="chart-canvas-kontener">
-                                <canvas id="chart-around-the-world"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. 121 Checkout -->
-                <div id="stats-121checkout" class="stats-sekcja">
-                    <h2 class="stats-tytul">121 Checkout</h2>
-
-                    <!-- Karta Wykresu 121 Checkout -->
-                    <div class="chart-card">
-                        <div id="bloki-statystyk-121" class="bloki-sekcji">
+                    <!-- 3. Shanghai -->
+                    <div id="stats-shanghai" class="stats-sekcja">
+                        <div id="bloki-statystyk-shanghai" class="bloki-sekcji">
                             <table>
                                 <tr>
                                     <td>
-                                        <div id="najwyzszy-poziom" class="wspolny-div">
-                                            <h4>Najwyższy poziom:</h4>
-                                            <p id="stats-najwyzszy">121</p>
+                                        <div id="rekord-punktow" class="wspolny-div">
+                                            <h4>Rekord punktów:</h4>
+                                            <p id="stat-rekord">0</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="najlepsza-seria" class="wspolny-div">
-                                            <h4>Najlepsza seria:</h4>
-                                            <p id="stats-najlepsza">0</p>
+                                        <div id="srednia-pkt" class="wspolny-div">
+                                            <h4>Średnia punktów:</h4>
+                                            <p id="stat-shanghai-srednia">0.0</p>
                                         </div>
                                     </td>
                                     <td>
-                                        <div id="skutecznosc-checkout" class="wspolny-div">
+                                        <div id="trafione-sdt" class="wspolny-div">
+                                            <h4>Trafione S+D+T:</h4>
+                                            <p id="stat-sdt">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="wspolny-div">
                                             <h4>Skuteczność:</h4>
-                                            <p id="stats-121-skutecznosc">0% (0/0)</p>
+                                            <p id="stat-shanghai-skutecznosc">0% (0/0)</p>
+                                            <span id="stat-lacznie" style="display: none">0</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stat-shanghai-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stat-shanghai-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-shanghai-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-wykres">Wykres formy</button>
+                        </div>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="shanghai-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Trafień</h2>
+
+                                <!-- Pigułki podsumowania Shanghai -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Ustrzelone Shanghai: <strong id="chip-shanghai-ilosc">0</strong></span>
+                                    <span class="quick-stat-chip">Rekord rundy: <strong id="chip-shanghai-rekord">-</strong></span>
+                                    <span class="quick-stat-chip">Skuteczność rzutów: <strong id="chip-shanghai-skutecznosc">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info-shanghai" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap-shanghai" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Widok Listy (Ranking rund Shanghai posortowany malejąco od najwyższej skuteczności %) -->
+                        <div id="shanghai-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Ranking Skuteczności</h2>
+                                <div class="doubles-ranking-lista" id="shanghai-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Widok Wykresu -->
+                        <div id="shanghai-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-sh">Wykres Formy</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="shanghai" data-metric="srednia">Średnia na rundę</button>
+                                        <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="punkty">Suma punktów</button>
+                                        <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="skutecznosc">Skuteczność</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-sh-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Rekord: <strong id="chip-sh-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-sh-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-shanghai"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Around The World -->
+                    <div id="stats-around-the-world" class="stats-sekcja">
+                        <div id="bloki-statystyk-around" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="najmniej-lotek" class="wspolny-div">
+                                            <h4>Najmniej lotek:</h4>
+                                            <p id="stat-najmniej">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="srednia-skutecznosc" class="wspolny-div">
+                                            <h4>Skuteczność:</h4>
+                                            <p id="stat-around-skutecznosc">0% (0/0)</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="trafione-cele" class="wspolny-div">
+                                            <h4>Trafione cele:</h4>
+                                            <p id="stat-trafione">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div id="wszystkie-rzuty" class="wspolny-div">
+                                            <h4>Wszystkie rzuty:</h4>
+                                            <p id="stat-wszystkie">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stat-around-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stat-around-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-around-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-around-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-around-wykres">Wykres formy</button>
+                        </div>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="around-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Trafień</h2>
+
+                                <!-- Pigułki podsumowania Around The World -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Najlepszy cel: <strong id="chip-around-najwiecej">-</strong></span>
+                                    <span class="quick-stat-chip">Najsłabszy cel: <strong id="chip-around-najmniej">-</strong></span>
+                                    <span class="quick-stat-chip">Łącznie: <strong id="chip-around-suma">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info-around" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić liczbę trafień</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap-around" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Widok Listy (Ranking celów ze statystykami single / double / triple) -->
+                        <div id="around-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Ranking Trafień</h2>
+                                <div class="doubles-ranking-lista" id="around-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Widok Wykresu -->
+                        <div id="around-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-atw">Wykres Skuteczności</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="around_the_world" data-metric="skutecznosc">Skuteczność %</button>
+                                        <button type="button" class="btn-metryka" data-chart="around_the_world" data-metric="lotki">Liczba lotek</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-atw-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Najlepszy wynik: <strong id="chip-atw-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-atw-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-around-the-world"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. 121 Checkout -->
+                    <div id="stats-121checkout" class="stats-sekcja">
+                        <!-- Karta Wykresu 121 Checkout -->
+                        <div class="chart-card">
+                            <div id="bloki-statystyk-121" class="bloki-sekcji">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div id="najwyzszy-poziom" class="wspolny-div">
+                                                <h4>Najwyższy poziom:</h4>
+                                                <p id="stats-najwyzszy">121</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="najlepsza-seria" class="wspolny-div">
+                                                <h4>Najlepsza seria:</h4>
+                                                <p id="stats-najlepsza">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="skutecznosc-checkout" class="wspolny-div">
+                                                <h4>Skuteczność:</h4>
+                                                <p id="stats-121-skutecznosc">0% (0/0)</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Liczba podejść:</h4>
+                                                <p id="stats-121-podejscia">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Sukcesy:</h4>
+                                                <p id="stats-121-sukcesy">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Porażki:</h4>
+                                                <p id="stats-121-porazki">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul" id="tytul-wykres-chk">Wykres Skuteczności Checkoutu</h2>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="checkout_121" data-metric="skutecznosc">Skuteczność %</button>
+                                    <button type="button" class="btn-metryka" data-chart="checkout_121" data-metric="max_poziom">Max Poziom</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Ostatnia sesja: <strong id="chip-chk-ostatni">-</strong></span>
+                                <span class="quick-stat-chip"><span id="lbl-chk-max">Najlepsza skut.</span>: <strong id="chip-chk-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-chk-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-121checkout"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Doubles + Heatmapa -->
+                    <div id="stats-doubles" class="stats-sekcja">
+                        <div id="bloki-statystyk-doubles" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="ogolna-skutecznosc" class="wspolny-div">
+                                            <h4>Ogólna skuteczność:</h4>
+                                            <p id="stats-doubles-skutecznosc">0% (0/0)</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="trafione-double" class="wspolny-div">
+                                            <h4>Trafione double:</h4>
+                                            <p id="stats-trafione">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="rzuty-double" class="wspolny-div">
+                                            <h4>Rzuty na double:</h4>
+                                            <p id="stats-rzuty">0</p>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>
                                         <div class="wspolny-div">
-                                            <h4>Liczba podejść:</h4>
-                                            <p id="stats-121-podejscia">0</p>
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stats-doubles-mecze">0</p>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="wspolny-div">
-                                            <h4>Sukcesy:</h4>
-                                            <p id="stats-121-sukcesy">0</p>
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stats-doubles-wygrane">0</p>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="wspolny-div">
                                             <h4>Porażki:</h4>
-                                            <p id="stats-121-porazki">0</p>
+                                            <p id="stats-doubles-porazki">0</p>
                                         </div>
                                     </td>
                                 </tr>
                             </table>
                         </div>
-                        <div class="chart-header">
-                            <div>
-                                <h2 class="chart-tytul" id="tytul-wykres-chk">Wykres Skuteczności Checkoutu</h2>
-                            </div>
-                            <div class="chart-przelacznik-metryki">
-                                <button type="button" class="btn-metryka aktywny" data-chart="checkout_121" data-metric="skutecznosc">Skuteczność %</button>
-                                <button type="button" class="btn-metryka" data-chart="checkout_121" data-metric="max_poziom">Max Poziom</button>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-doubles-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-doubles-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-doubles-wykres">Wykres formy</button>
+                        </div>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="doubles-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Skuteczności</h2>
+
+                                <!-- Pigułki podsumowania Doubles -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Najlepszy: <strong id="chip-najlepszy">-</strong></span>
+                                    <span class="quick-stat-chip">Najniższy: <strong id="chip-najnizszy">-</strong></span>
+                                    <span class="quick-stat-chip">Średnia: <strong id="chip-srednia">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
                             </div>
                         </div>
-                        <div class="heatmap-quick-stats">
-                            <span class="quick-stat-chip hot">Ostatnia sesja: <strong id="chip-chk-ostatni">-</strong></span>
-                            <span class="quick-stat-chip"><span id="lbl-chk-max">Najlepsza skut.</span>: <strong id="chip-chk-max">-</strong></span>
-                            <span class="quick-stat-chip">Trend: <strong id="chip-chk-trend">-</strong></span>
+
+                        <!-- 2. Widok Listy (Ranking malejąco) -->
+                        <div id="doubles-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Najlepszy Double</h2>
+                                <div class="doubles-ranking-lista" id="doubles-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="chart-canvas-kontener">
-                            <canvas id="chart-121checkout"></canvas>
+
+                        <!-- 3. Widok Wykresu Doubles w Czasie -->
+                        <div id="doubles-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-dbl">Wykres Skuteczności</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="doubles" data-metric="skutecznosc">Skuteczność %</button>
+                                        <button type="button" class="btn-metryka" data-chart="doubles" data-metric="trafienia">Trafione double</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-dbl-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Rekord meczu: <strong id="chip-dbl-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-dbl-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-doubles"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- Sekcja Sprzęt w układzie tabeli (analogicznie do bloków statystyk) -->
 
-                <!-- 6. Doubles + Heatmapa -->
-                <div id="stats-doubles" class="stats-sekcja">
-                    <h2 class="stats-tytul">Doubles</h2>
-                    <div id="bloki-statystyk-doubles" class="bloki-sekcji">
-                        <table>
-                            <tr>
-                                <td>
-                                    <div id="ogolna-skutecznosc" class="wspolny-div">
-                                        <h4>Ogólna skuteczność:</h4>
-                                        <p id="stats-doubles-skutecznosc">0% (0/0)</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="trafione-double" class="wspolny-div">
-                                        <h4>Trafione double:</h4>
-                                        <p id="stats-trafione">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="rzuty-double" class="wspolny-div">
-                                        <h4>Rzuty na double:</h4>
-                                        <p id="stats-rzuty">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Rozegrane mecze:</h4>
-                                        <p id="stats-doubles-mecze">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Zwycięstwa:</h4>
-                                        <p id="stats-doubles-wygrane">0</p>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="wspolny-div">
-                                        <h4>Porażki:</h4>
-                                        <p id="stats-doubles-porazki">0</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                <div id="sekcja-ostatnich-meczy" class="sekcje-gracza">
+                    <h2 class="stats-tytul-naglowek">Ostatnie mecze</h2>
+                    <div id="lista-ostatnich-meczy">
+                        <div class="mecz porazka">
+                            <p class="mecz-data">24.09.2026</p>
+                            <div class="dane-meczu">
+                                <h3 class="gracz-nazwa gracz-1">Piotr</h3>
+                                <p class="mecz-vs">vs</p>
+                                <h3 class="gracz-nazwa gracz-2">Senior</h3>
 
-                    <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
-                    <div class="widok-przelacznik-kontener">
-                        <button type="button" class="btn-widok-przelacznik aktywny" id="btn-doubles-tarcza">Tarcza</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-doubles-lista">Lista</button>
-                        <button type="button" class="btn-widok-przelacznik" id="btn-doubles-wykres">Wykres formy</button>
-                    </div>
+                                <h4 class="wynik-punkty wynik-1">0</h4>
+                                <p class="wynik-separator">:</p>
+                                <h4 class="wynik-punkty wynik-2">2</h4>
 
-                    <!-- 1. Widok Tarczy (Domyślny) -->
-                    <div id="doubles-widok-tarcza">
-                        <div class="heatmap-card">
-                            <h2>Tarcza Skuteczności</h2>
-
-                            <!-- Pigułki podsumowania Doubles -->
-                            <div class="heatmap-quick-stats heatmapa">
-                                <span class="quick-stat-chip hot">Najlepszy: <strong id="chip-najlepszy">-</strong></span>
-                                <span class="quick-stat-chip">Najniższy: <strong id="chip-najnizszy">-</strong></span>
-                                <span class="quick-stat-chip">Średnia: <strong id="chip-srednia">0% (0/0)</strong></span>
+                                <p class="srednia-wartosc srednia-1">45.08</p>
+                                <p class="srednia-etykieta">Średnia</p>
+                                <p class="srednia-wartosc srednia-2">51.45</p>
                             </div>
 
-                            <!-- Informacja o wybranym sektorze -->
-                            <div id="wybrany-sektor-info" class="wybrany-sektor-info">
-                                <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność</span>
+                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(0)">Zobacz mecz</button>
+                        </div>
+
+                        <div class="mecz wygrana">
+                            <p class="mecz-data">08.10.2026</p>
+                            <div class="dane-meczu">
+                                <h3 class="gracz-nazwa gracz-1">Piotr</h3>
+                                <p class="mecz-vs">vs</p>
+                                <h3 class="gracz-nazwa gracz-2">Senior</h3>
+
+                                <h4 class="wynik-punkty wynik-1">2</h4>
+                                <p class="wynik-separator">:</p>
+                                <h4 class="wynik-punkty wynik-2">0</h4>
+
+                                <p class="srednia-wartosc srednia-1">58.33</p>
+                                <p class="srednia-etykieta">Średnia</p>
+                                <p class="srednia-wartosc srednia-2">49.12</p>
                             </div>
 
-                            <!-- Obudowa tarczy -->
-                            <div class="tarcza-ramka">
-                                <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
-                                <svg id="dartboard-heatmap" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
-                            </div>
+                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(2)">Zobacz mecz</button>
                         </div>
                     </div>
+                    <div id="kontener-wiecej-meczy" style="display: none; text-align: center; margin-top: 15px">
+                        <button type="button" id="btn-zobacz-wszystkie-mecze" class="btn-zobacz-wszystkie">Zobacz wszystkie mecze</button>
+                    </div>
+                </div>
 
-                    <!-- 2. Widok Listy (Ranking malejąco) -->
-                    <div id="doubles-widok-lista" style="display: none">
-                        <div class="heatmap-card">
-                            <h2>Najlepszy Double</h2>
-                            <div class="doubles-ranking-lista" id="doubles-ranking-lista">
-                                <!-- Generowane dynamicznie w JS -->
-                            </div>
-                        </div>
+                <div id="btn-container">
+                    <!-- Przyciski właściciela profilu -->
+                    <div id="akcje-wlasciciela" style="display: flex; gap: 16px; width: 100%; justify-content: center">
+                        <button type="button" id="btn-usun-konto">Usuń konto</button>
+                        <button type="button" id="btn-wyloguj">Wyloguj się</button>
                     </div>
 
-                    <!-- 3. Widok Wykresu Doubles w Czasie -->
-                    <div id="doubles-widok-wykres" style="display: none">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <div>
-                                    <h2 class="chart-tytul" id="tytul-wykres-dbl">Wykres Skuteczności</h2>
-                                </div>
-                                <div class="chart-przelacznik-metryki">
-                                    <button type="button" class="btn-metryka aktywny" data-chart="doubles" data-metric="skutecznosc">Skuteczność %</button>
-                                    <button type="button" class="btn-metryka" data-chart="doubles" data-metric="trafienia">Trafione double</button>
-                                </div>
-                            </div>
-                            <div class="heatmap-quick-stats">
-                                <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-dbl-ostatni">-</strong></span>
-                                <span class="quick-stat-chip">Rekord meczu: <strong id="chip-dbl-max">-</strong></span>
-                                <span class="quick-stat-chip">Trend: <strong id="chip-dbl-trend">-</strong></span>
-                            </div>
-                            <div class="chart-canvas-kontener">
-                                <canvas id="chart-doubles"></canvas>
-                            </div>
-                        </div>
+                    <!-- Przyciski dla gościa odwiedzającego obcy profil -->
+                    <div id="akcje-goscia" style="display: none; width: 100%; justify-content: center">
+                        <button type="button" id="btn-dodaj-znajomego" class="btn-primary" style="padding: 12px 30px; font-size: 16px">Zaproś do znajomych</button>
                     </div>
                 </div>
             </div>
@@ -1386,6 +1797,14 @@
                 suma_trafien: 0,
                 sektory: {},
                 historia_meczow: [],
+            },
+            sprzet: {
+                barele: "-",
+                shafty: "-",
+                groty: "-",
+                tarcza: "-",
+                auto_score: "-",
+                druzyna: "-",
             },
         };
 
@@ -1589,12 +2008,7 @@
             if (!aktywnyWybor.el) return;
             const target = e.target;
             if (!target) return;
-            if (
-                target.closest(".tarcza-ramka") ||
-                target.closest("svg") ||
-                target.closest(".wybrany-sektor-info") ||
-                target.closest("#heatmap-tooltip")
-            ) {
+            if (target.closest(".tarcza-ramka") || target.closest("svg") || target.closest(".wybrany-sektor-info") || target.closest("#heatmap-tooltip")) {
                 return;
             }
             odznaczWybranySektor();
@@ -2069,11 +2483,9 @@
             odswiezRankingListeShanghai(sh);
 
             const atw = dane.around_the_world || {};
-            let rekordNajmniej = (atw.rekord_najmniej_lotek !== null && atw.rekord_najmniej_lotek !== undefined && Number(atw.rekord_najmniej_lotek) > 0)
-                ? Number(atw.rekord_najmniej_lotek)
-                : null;
+            let rekordNajmniej = atw.rekord_najmniej_lotek !== null && atw.rekord_najmniej_lotek !== undefined && Number(atw.rekord_najmniej_lotek) > 0 ? Number(atw.rekord_najmniej_lotek) : null;
             if (!rekordNajmniej && Array.isArray(atw.historia_meczow) && atw.historia_meczow.length > 0) {
-                const w = atw.historia_meczow.map(m => Number(m.lotki || m.rzuty) || 0).filter(v => v > 0);
+                const w = atw.historia_meczow.map((m) => Number(m.lotki || m.rzuty) || 0).filter((v) => v > 0);
                 if (w.length > 0) rekordNajmniej = Math.min(...w);
             }
             document.getElementById("stat-najmniej").textContent = rekordNajmniej !== null ? rekordNajmniej : "-";
@@ -2099,7 +2511,7 @@
             // Fallback: jeśli rozegrano mecze w doubles, ale historia_meczow była pusta ([]):
             if ((!Array.isArray(dbl.historia_meczow) || dbl.historia_meczow.length === 0) && (dbl.mecze || 0) > 0) {
                 const meczeCount = dbl.mecze;
-                const sumaRz = Number(dbl.suma_rzutow) || (meczeCount * 60);
+                const sumaRz = Number(dbl.suma_rzutow) || meczeCount * 60;
                 const sumaTr = Number(dbl.suma_trafien) || Math.round(sumaRz * ((dbl.skutecznosc || 50) / 100));
                 const rzutyNaMecz = Math.round(sumaRz / meczeCount);
                 const trafNaMecz = Math.round(sumaTr / meczeCount);
@@ -2113,7 +2525,7 @@
                         trafienia: trafNaMecz,
                         rzuty: rzutyNaMecz,
                         rywal: "Trening D1-D20",
-                        wynik: "W"
+                        wynik: "W",
                     });
                 }
             }
@@ -2126,7 +2538,20 @@
             odswiezHeatmapeDoubles(dbl);
             odswiezRankingListeDoubles(dbl);
 
-            // 7. Wykresy formy
+            // 7. Sprzęt
+            const sprzet = dane.sprzet || {};
+            const ustawSprzet = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val && String(val).trim() !== "" ? val : "-";
+            };
+            ustawSprzet("barele-gracza", sprzet.barele);
+            ustawSprzet("shafty-gracza", sprzet.shafty);
+            ustawSprzet("groty-gracza", sprzet.groty);
+            ustawSprzet("tarcza-gracza", sprzet.tarcza);
+            ustawSprzet("autoscore-gracza", sprzet.auto_score);
+            ustawSprzet("druzyna-gracza", sprzet.druzyna);
+
+            // 8. Wykresy formy
             odswiezWykresFormy("klasyczna");
             odswiezWykresFormy("shanghai");
             odswiezWykresFormy("around_the_world");
@@ -2268,7 +2693,7 @@
 
             const ctx = canvas.getContext("2d");
             const getGradient = (chartCtx) => {
-                const h = chartCtx?.chartArea ? chartCtx.chartArea.bottom - chartCtx.chartArea.top : (canvas.clientHeight || 240);
+                const h = chartCtx?.chartArea ? chartCtx.chartArea.bottom - chartCtx.chartArea.top : canvas.clientHeight || 240;
                 const g = ctx.createLinearGradient(0, 0, 0, h > 0 ? h : 240);
                 g.addColorStop(0, "rgba(64, 218, 64, 0.30)");
                 g.addColorStop(1, "rgba(64, 218, 64, 0.00)");
@@ -2293,7 +2718,7 @@
                 // Dynamiczna aktualizacja formatowania osi Y (brak % dla liczb i poziomu)
                 if (chart.options?.scales?.y?.ticks) {
                     chart.options.scales.y.ticks.precision = isIntegerMetric ? 0 : undefined;
-                    chart.options.scales.y.ticks.callback = function(value) {
+                    chart.options.scales.y.ticks.callback = function (value) {
                         const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
                         const curInfo = this.chart?.metrykaInfo || metrykaInfo;
                         if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
@@ -2420,7 +2845,7 @@
                                 color: "#cbd5e1",
                                 font: { family: "Inter", size: 11, weight: "600" },
                                 precision: isIntegerMetric ? 0 : undefined,
-                                callback: function(value) {
+                                callback: function (value) {
                                     const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
                                     const curInfo = this.chart?.metrykaInfo || metrykaInfo;
                                     if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
@@ -2716,23 +3141,18 @@
                 // Pobierz mecze z tabeli matches dla Klasycznej
                 let historiaKlasyczna = [];
                 try {
-                    const { data: matches, error: mErr } = await supaClient
-                        .from("matches")
-                        .select("*")
-                        .or(`host_id.eq.${profil.id},gosc_id.eq.${profil.id}`)
-                        .order("utworzono", { ascending: true })
-                        .limit(50);
+                    const { data: matches, error: mErr } = await supaClient.from("matches").select("*").or(`host_id.eq.${profil.id},gosc_id.eq.${profil.id}`).order("utworzono", { ascending: true }).limit(50);
 
                     if (!mErr && Array.isArray(matches) && matches.length > 0) {
                         historiaKlasyczna = matches.map((m) => {
                             const stats = Array.isArray(m.statystyki_graczy) ? m.statystyki_graczy : [];
-                            const mojStat = stats.find(s => (s?.nazwa || "").toLowerCase() === (profil.nazwa_gracza || "").toLowerCase()) || stats[0] || {};
-                            const rywalStat = stats.find(s => s !== mojStat) || stats[1] || {};
+                            const mojStat = stats.find((s) => (s?.nazwa || "").toLowerCase() === (profil.nazwa_gracza || "").toLowerCase()) || stats[0] || {};
+                            const rywalStat = stats.find((s) => s !== mojStat) || stats[1] || {};
 
                             let dataFmt = "-";
                             if (m.utworzono) {
                                 const d = new Date(m.utworzono);
-                                dataFmt = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+                                dataFmt = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
                             }
 
                             const czyHost = m.host_id === profil.id;
@@ -2745,7 +3165,7 @@
                                 rywal: rywalStat.nazwa || "Rywal",
                                 format: m.format_gry || "501 DO",
                                 wynik: wynikStr,
-                                checkout: mojStat.najlepszyRzut || mojStat.najwyzszyCheckout || 0
+                                checkout: mojStat.najlepszyRzut || mojStat.najwyzszyCheckout || 0,
                             };
                         });
                     }
@@ -2756,13 +3176,13 @@
                 // Klasyczna
                 const klasSbg = sbg.klasyczna || {};
                 DANE_STATYSTYK.klasyczna = {
-                    mecze: profil.rozegrane_mecze ?? (klasSbg.mecze ?? 0),
-                    srednia: parseFloat(profil.srednia ?? (klasSbg.srednia ?? 0)),
-                    srednia_9: parseFloat(profil.srednia_9_lotek ?? (klasSbg.srednia_9 ?? 0)),
-                    wygrane: profil.wygrane_mecze ?? (klasSbg.wygrane ?? 0),
-                    ilosc_180: profil.ilosc_180 ?? (klasSbg.ilosc_180 ?? 0),
-                    najwyzszy_checkout: profil.najwyzszy_checkout ?? (klasSbg.najwyzszy_checkout ?? 0),
-                    historia_meczow: historiaKlasyczna.length > 0 ? historiaKlasyczna : (klasSbg.historia_meczow || DANE_STATYSTYK.klasyczna.historia_meczow || [])
+                    mecze: profil.rozegrane_mecze ?? klasSbg.mecze ?? 0,
+                    srednia: parseFloat(profil.srednia ?? klasSbg.srednia ?? 0),
+                    srednia_9: parseFloat(profil.srednia_9_lotek ?? klasSbg.srednia_9 ?? 0),
+                    wygrane: profil.wygrane_mecze ?? klasSbg.wygrane ?? 0,
+                    ilosc_180: profil.ilosc_180 ?? klasSbg.ilosc_180 ?? 0,
+                    najwyzszy_checkout: profil.najwyzszy_checkout ?? klasSbg.najwyzszy_checkout ?? 0,
+                    historia_meczow: historiaKlasyczna.length > 0 ? historiaKlasyczna : klasSbg.historia_meczow || DANE_STATYSTYK.klasyczna.historia_meczow || [],
                 };
 
                 // Shanghai
@@ -2778,7 +3198,7 @@
                                 srednia: sr,
                                 punkty: pktNaMecz,
                                 shanghai: i <= (sbg.shanghai.liczba_shanghai || 0) ? 1 : 0,
-                                rywal: "Trening 1-7"
+                                rywal: "Trening 1-7",
                             });
                         }
                     }
@@ -2791,7 +3211,7 @@
                         let srednia = Number(m.srednia) || 0;
 
                         // Wykrycie gry 1-20 jeśli punkty > 252 (max w 1-7 to 252) lub jeśli rozegrano więcej niż 7 rund
-                        let rundyLiczba = Number(m.rundyLiczba) || (punkty > 252 ? 20 : (shanghai && punkty <= 24 ? 1 : 7));
+                        let rundyLiczba = Number(m.rundyLiczba) || (punkty > 252 ? 20 : shanghai && punkty <= 24 ? 1 : 7);
                         if (punkty > 252 && (rywal === "Trening 1-7" || !rywal)) {
                             rywal = "Trening 1-20";
                         }
@@ -2804,9 +3224,9 @@
                         }
 
                         // Skuteczność rzutów
-                        let rzuty = Number(m.rzuty) || (rundyLiczba * 3);
+                        let rzuty = Number(m.rzuty) || rundyLiczba * 3;
                         let trafienia = Number(m.trafienia) || 0;
-                        let skutecznosc = (m.skutecznosc !== null && m.skutecznosc !== undefined) ? Number(m.skutecznosc) : 0;
+                        let skutecznosc = m.skutecznosc !== null && m.skutecznosc !== undefined ? Number(m.skutecznosc) : 0;
 
                         if (rzuty > 0 && trafienia > 0) {
                             skutecznosc = parseFloat(((trafienia / rzuty) * 100).toFixed(1));
@@ -2836,14 +3256,14 @@
                             punkty,
                             shanghai: shanghai ? 1 : 0,
                             skutecznosc,
-                            rundyLiczba
+                            rundyLiczba,
                         };
                     });
                     let rundySh = sbg.shanghai.rundy || {};
                     if (Object.keys(rundySh).length === 0 && (sbg.shanghai.suma_punktow || 0) > 0) {
                         const m = sbg.shanghai.mecze || 1;
                         const cele = [1, 2, 3, 4, 5, 6, 7];
-                        const sumaPkt = sbg.shanghai.suma_punktow || (m * 21);
+                        const sumaPkt = sbg.shanghai.suma_punktow || m * 21;
                         const pktNaRunde = Math.max(1, Math.round(sumaPkt / 7));
                         rundySh = {};
                         cele.forEach((cel) => {
@@ -2856,7 +3276,7 @@
                                 single: traf,
                                 double: 0,
                                 triple: 0,
-                                shanghai: (sbg.shanghai.liczba_shanghai || 0) > 0 && cel === 7
+                                shanghai: (sbg.shanghai.liczba_shanghai || 0) > 0 && cel === 7,
                             };
                         });
                     }
@@ -2865,7 +3285,7 @@
                         ...DANE_STATYSTYK.shanghai,
                         ...sbg.shanghai,
                         rundy: rundySh,
-                        historia_meczow: histSh
+                        historia_meczow: histSh,
                     };
                 }
 
@@ -2884,7 +3304,7 @@
                                 lotki: rzutyNaMecz,
                                 rzuty: rzutyNaMecz,
                                 trafienia: trafNaMecz,
-                                rywal: "Trening 1-25"
+                                rywal: "Trening 1-25",
                             });
                         }
                     }
@@ -2895,8 +3315,8 @@
                         for (let i = 1; i <= 20; i++) cele.push(String(i));
                         cele.push("innerbull");
 
-                        const trafRazem = sbg.around_the_world.suma_trafien || (m * 21);
-                        const rzutRazem = sbg.around_the_world.suma_rzutow || (m * 39);
+                        const trafRazem = sbg.around_the_world.suma_trafien || m * 21;
+                        const rzutRazem = sbg.around_the_world.suma_rzutow || m * 39;
                         const bazoweTraf = Math.floor(trafRazem / cele.length);
                         const bazoweRzut = Math.floor(rzutRazem / cele.length);
                         let resztaTraf = trafRazem % cele.length;
@@ -2911,16 +3331,14 @@
                                 trafienia: traf,
                                 single: traf,
                                 double: 0,
-                                triple: 0
+                                triple: 0,
                             };
                         });
                     }
 
-                    let rekordAtw = (sbg.around_the_world.rekord_najmniej_lotek !== null && sbg.around_the_world.rekord_najmniej_lotek !== undefined && Number(sbg.around_the_world.rekord_najmniej_lotek) > 0)
-                        ? Number(sbg.around_the_world.rekord_najmniej_lotek)
-                        : null;
+                    let rekordAtw = sbg.around_the_world.rekord_najmniej_lotek !== null && sbg.around_the_world.rekord_najmniej_lotek !== undefined && Number(sbg.around_the_world.rekord_najmniej_lotek) > 0 ? Number(sbg.around_the_world.rekord_najmniej_lotek) : null;
                     if (!rekordAtw && histAtw.length > 0) {
-                        const w = histAtw.map(m => Number(m.lotki || m.rzuty) || 0).filter(v => v > 0);
+                        const w = histAtw.map((m) => Number(m.lotki || m.rzuty) || 0).filter((v) => v > 0);
                         if (w.length > 0) rekordAtw = Math.min(...w);
                     }
 
@@ -2929,7 +3347,7 @@
                         ...sbg.around_the_world,
                         rekord_najmniej_lotek: rekordAtw,
                         sektory: sektoryAtw,
-                        historia_meczow: histAtw
+                        historia_meczow: histAtw,
                     };
                 }
 
@@ -2946,13 +3364,13 @@
                             max_poziom: sbg.checkout_121.max_poziom || 121,
                             sukcesy: suk,
                             podejscia: pod,
-                            seria: sbg.checkout_121.najlepsza_seria || 0
+                            seria: sbg.checkout_121.najlepsza_seria || 0,
                         });
                     }
                     DANE_STATYSTYK.checkout_121 = {
                         ...DANE_STATYSTYK.checkout_121,
                         ...sbg.checkout_121,
-                        historia_meczow: histChk
+                        historia_meczow: histChk,
                     };
                 }
 
@@ -2971,7 +3389,7 @@
                                 trafienia: trafNaMecz,
                                 rzuty: rzutyNaMecz,
                                 rywal: "Trening D1-D20",
-                                wynik: "W"
+                                wynik: "W",
                             });
                         }
                     }
@@ -2979,9 +3397,19 @@
                         ...DANE_STATYSTYK.doubles,
                         ...sbg.doubles,
                         sektory: sbg.doubles.sektory || {},
-                        historia_meczow: histDbl
+                        historia_meczow: histDbl,
                     };
                 }
+
+                // Sprzęt z profilu gracza
+                DANE_STATYSTYK.sprzet = {
+                    barele: profil.barele,
+                    shafty: profil.shafty,
+                    groty: profil.groty,
+                    tarcza: profil.tarcza,
+                    auto_score: profil.auto_score,
+                    druzyna: profil.druzyna,
+                };
 
                 // Zaktualizuj wszystkie widoki danymi z Supabase
                 zaktualizujWszystkieStatystyki(DANE_STATYSTYK);
