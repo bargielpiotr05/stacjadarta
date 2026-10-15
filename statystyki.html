@@ -995,7 +995,7 @@
                         <div class="chart-card">
                             <div class="chart-header">
                                 <div>
-                                    <h2 class="chart-tytul">Wykres Formy</h2>
+                                    <h2 class="chart-tytul" id="tytul-wykres-sh">Wykres Formy</h2>
                                 </div>
                                 <div class="chart-przelacznik-metryki">
                                     <button type="button" class="btn-metryka aktywny" data-chart="shanghai" data-metric="srednia">Średnia na rundę</button>
@@ -1110,7 +1110,7 @@
                         <div class="chart-card">
                             <div class="chart-header">
                                 <div>
-                                    <h2 class="chart-tytul">Wykres Skuteczności</h2>
+                                    <h2 class="chart-tytul" id="tytul-wykres-atw">Wykres Skuteczności</h2>
                                 </div>
                                 <div class="chart-przelacznik-metryki">
                                     <button type="button" class="btn-metryka aktywny" data-chart="around_the_world" data-metric="skutecznosc">Skuteczność %</button>
@@ -1181,7 +1181,8 @@
                         </div>
                         <div class="chart-header">
                             <div>
-                                <h2 class="chart-tytul">Wykres Skuteczności Checkoutu</h2>                            </div>
+                                <h2 class="chart-tytul" id="tytul-wykres-chk">Wykres Skuteczności Checkoutu</h2>
+                            </div>
                             <div class="chart-przelacznik-metryki">
                                 <button type="button" class="btn-metryka aktywny" data-chart="checkout_121" data-metric="skutecznosc">Skuteczność %</button>
                                 <button type="button" class="btn-metryka" data-chart="checkout_121" data-metric="max_poziom">Max Poziom</button>
@@ -1189,7 +1190,7 @@
                         </div>
                         <div class="heatmap-quick-stats">
                             <span class="quick-stat-chip hot">Ostatnia sesja: <strong id="chip-chk-ostatni">-</strong></span>
-                            <span class="quick-stat-chip">Max poziom: <strong id="chip-chk-max">-</strong></span>
+                            <span class="quick-stat-chip"><span id="lbl-chk-max">Najlepsza skut.</span>: <strong id="chip-chk-max">-</strong></span>
                             <span class="quick-stat-chip">Trend: <strong id="chip-chk-trend">-</strong></span>
                         </div>
                         <div class="chart-canvas-kontener">
@@ -1293,7 +1294,8 @@
                         <div class="chart-card">
                             <div class="chart-header">
                                 <div>
-                                    <h2 class="chart-tytul">Wykres Skuteczności</h2>                                </div>
+                                    <h2 class="chart-tytul" id="tytul-wykres-dbl">Wykres Skuteczności</h2>
+                                </div>
                                 <div class="chart-przelacznik-metryki">
                                     <button type="button" class="btn-metryka aktywny" data-chart="doubles" data-metric="skutecznosc">Skuteczność %</button>
                                     <button type="button" class="btn-metryka" data-chart="doubles" data-metric="trafienia">Trafione double</button>
@@ -1655,7 +1657,7 @@
                     <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
                     <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
                 `;
-                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
+                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="color:black; font-size:15px;">${tekstSkut}</strong>`;
 
                 podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
@@ -1827,7 +1829,7 @@
             const sektory = daneATW.sektory || {};
             const elementy = svg.querySelectorAll("path, circle");
             const infoBoxId = "wybrany-sektor-info-around";
-            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
+            const defaultText = "Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
 
             let maxProc = -1,
                 minProc = 101,
@@ -1876,7 +1878,7 @@
                     <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
                     <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
                 `;
-                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong style="color:var(--secondary-color); font-size:15px;">${tekstSkut}</strong>`;
+                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="color:black; font-size:15px;">${tekstSkut}</strong>`;
 
                 podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
@@ -1898,7 +1900,7 @@
             const rundy = daneShanghai.rundy || daneShanghai.sektory || {};
             const elementy = svg.querySelectorAll("path, circle");
             const infoBoxId = "wybrany-sektor-info-shanghai";
-            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy";
+            const defaultText = "Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy";
 
             let maxPunkty = 1;
             elementy.forEach((el) => {
@@ -1935,7 +1937,7 @@
                     ${shanghaiInfo}
                 `;
 
-                const banerHtml = `🎯 <strong>${nazwa}</strong> — Skuteczność: <strong>${tekstSkut}</strong> | <strong>${punkty} pkt</strong> (S:${rDane.single || 0} D:${rDane.double || 0} T:${rDane.triple || 0}) ${czyShanghai ? "— Ustrzelono Shanghai!" : ""}`;
+                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong>${tekstSkut}</strong> | <strong>${punkty} pkt</strong> (S:${rDane.single || 0} D:${rDane.double || 0} T:${rDane.triple || 0}) ${czyShanghai ? "— Ustrzelono Shanghai!" : ""}`;
 
                 podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
@@ -2087,6 +2089,27 @@
 
             // 6. Doubles
             const dbl = dane.doubles || {};
+            // Fallback: jeśli rozegrano mecze w doubles, ale historia_meczow była pusta ([]):
+            if ((!Array.isArray(dbl.historia_meczow) || dbl.historia_meczow.length === 0) && (dbl.mecze || 0) > 0) {
+                const meczeCount = dbl.mecze;
+                const sumaRz = Number(dbl.suma_rzutow) || (meczeCount * 60);
+                const sumaTr = Number(dbl.suma_trafien) || Math.round(sumaRz * ((dbl.skutecznosc || 50) / 100));
+                const rzutyNaMecz = Math.round(sumaRz / meczeCount);
+                const trafNaMecz = Math.round(sumaTr / meczeCount);
+                const procMeczu = rzutyNaMecz > 0 ? parseFloat(((trafNaMecz / rzutyNaMecz) * 100).toFixed(1)) : Number(dbl.skutecznosc || 0);
+
+                dbl.historia_meczow = [];
+                for (let i = 1; i <= meczeCount; i++) {
+                    dbl.historia_meczow.push({
+                        data: `Mecz ${i}`,
+                        skutecznosc: procMeczu,
+                        trafienia: trafNaMecz,
+                        rzuty: rzutyNaMecz,
+                        rywal: "Trening D1-D20",
+                        wynik: "W"
+                    });
+                }
+            }
             document.getElementById("stats-doubles-skutecznosc").textContent = formatujSkutecznosc(dbl.suma_trafien, dbl.suma_rzutow);
             document.getElementById("stats-trafione").textContent = dbl.suma_trafien || 0;
             document.getElementById("stats-rzuty").textContent = dbl.suma_rzutow || 0;
@@ -2120,42 +2143,47 @@
             klasyczna: {
                 canvasId: "chart-klasyczna",
                 prefixChip: "chip-klas",
+                tytulId: null,
                 metryki: {
-                    srednia: { nazwa: "Średnia 3 lotek", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
-                    srednia9: { nazwa: "Średnia 9 lotek", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
+                    srednia: { nazwa: "Średnia 3 lotek", tytulWykresu: "Wykres Średniej", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
+                    srednia9: { nazwa: "Średnia 9 lotek", tytulWykresu: "Wykres Średniej 9 Lotek", jednostka: "", odwrcony: false, format: (v) => Number(v).toFixed(2) },
                 },
             },
             shanghai: {
                 canvasId: "chart-shanghai",
                 prefixChip: "chip-sh",
+                tytulId: "tytul-wykres-sh",
                 metryki: {
-                    srednia: { nazwa: "Średnia na rundę", jednostka: " pkt", odwrcony: false, format: (v) => Number(v).toFixed(1) + " pkt" },
-                    punkty: { nazwa: "Suma punktów", jednostka: " pkt", odwrcony: false, format: (v) => `${v} pkt` },
-                    skutecznosc: { nazwa: "Skuteczność rzutów", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    srednia: { nazwa: "Średnia na rundę", tytulWykresu: "Wykres Średniej na Rundę", jednostka: " pkt", odwrcony: false, format: (v) => Number(v).toFixed(1) + " pkt" },
+                    punkty: { nazwa: "Suma punktów", tytulWykresu: "Wykres Sumy Punktów", jednostka: " pkt", odwrcony: false, format: (v) => `${v} pkt` },
+                    skutecznosc: { nazwa: "Skuteczność rzutów", tytulWykresu: "Wykres Skuteczności", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
                 },
             },
             around_the_world: {
                 canvasId: "chart-around-the-world",
                 prefixChip: "chip-atw",
+                tytulId: "tytul-wykres-atw",
                 metryki: {
-                    skutecznosc: { nazwa: "Skuteczność", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
-                    lotki: { nazwa: "Liczba lotek", jednostka: " lotek", odwrcony: true, format: (v) => `${v} lotek` },
+                    skutecznosc: { nazwa: "Skuteczność", tytulWykresu: "Wykres Skuteczności", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    lotki: { nazwa: "Liczba lotek", tytulWykresu: "Wykres Liczby Lotek", jednostka: "", odwrcony: true, format: (v) => `${v}` },
                 },
             },
             checkout_121: {
                 canvasId: "chart-121checkout",
                 prefixChip: "chip-chk",
+                tytulId: "tytul-wykres-chk",
                 metryki: {
-                    skutecznosc: { nazwa: "Skuteczność checkoutu", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
-                    max_poziom: { nazwa: "Osiągnięty poziom", jednostka: "", odwrcony: false, format: (v) => `${v}` },
+                    skutecznosc: { nazwa: "Skuteczność checkoutu", tytulWykresu: "Wykres Skuteczności Checkoutu", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    max_poziom: { nazwa: "Osiągnięty poziom", tytulWykresu: "Wykres Poziomów Checkout", jednostka: "", odwrcony: false, format: (v) => `${v}` },
                 },
             },
             doubles: {
                 canvasId: "chart-doubles",
                 prefixChip: "chip-dbl",
+                tytulId: "tytul-wykres-dbl",
                 metryki: {
-                    skutecznosc: { nazwa: "Skuteczność na double", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
-                    trafienia: { nazwa: "Trafione double", jednostka: "", odwrcony: false, format: (v) => `${v}` },
+                    skutecznosc: { nazwa: "Skuteczność na double", tytulWykresu: "Wykres Skuteczności", jednostka: "%", odwrcony: false, format: (v) => Number(v).toFixed(1) + "%" },
+                    trafienia: { nazwa: "Trafione double", tytulWykresu: "Wykres Trafionych Double", jednostka: "", odwrcony: false, format: (v) => `${v}` },
                 },
             },
         };
@@ -2170,6 +2198,18 @@
             const metrykaKlucz = aktywneMetryki[trybKlucz] || Object.keys(konfigTrybu.metryki)[0];
             const metrykaInfo = konfigTrybu.metryki[metrykaKlucz] || { nazwa: "Wartość", format: (v) => v, jednostka: "" };
 
+            // Dynamiczna aktualizacja tytułu wykresu
+            if (konfigTrybu.tytulId && metrykaInfo.tytulWykresu) {
+                const tytulEl = document.getElementById(konfigTrybu.tytulId);
+                if (tytulEl) tytulEl.textContent = metrykaInfo.tytulWykresu;
+            }
+            if (trybKlucz === "checkout_121") {
+                const lblChkMax = document.getElementById("lbl-chk-max");
+                if (lblChkMax) {
+                    lblChkMax.textContent = metrykaKlucz === "max_poziom" ? "Max poziom" : "Najlepsza skut.";
+                }
+            }
+
             const daneTrybu = DANE_STATYSTYK[trybKlucz] || {};
             const historia = Array.isArray(daneTrybu.historia_meczow) ? daneTrybu.historia_meczow : [];
 
@@ -2177,6 +2217,8 @@
             const chipOstatni = document.getElementById(`${konfigTrybu.prefixChip}-ostatni`);
             const chipMax = document.getElementById(`${konfigTrybu.prefixChip}-max`);
             const chipTrend = document.getElementById(`${konfigTrybu.prefixChip}-trend`);
+
+            const isIntegerMetric = ["lotki", "max_poziom", "trafienia", "punkty"].includes(metrykaKlucz);
 
             if (historia.length > 0) {
                 const wartosci = historia.map((m) => Number(m[metrykaKlucz]) || 0);
@@ -2187,11 +2229,13 @@
                 const rekord = metrykaInfo.odwrcony ? minVal : maxVal;
 
                 const roznica = ostatnia - pierwsza;
-                let trendTxt = "0.0 ─";
+                let trendTxt = "0 ─";
                 if (roznica > 0) {
-                    trendTxt = metrykaInfo.odwrcony ? `+${roznica.toFixed(1)} ↘` : `+${roznica.toFixed(1)} ↗`;
+                    const diffStr = isIntegerMetric ? `+${Math.round(roznica)}` : `+${roznica.toFixed(1)}`;
+                    trendTxt = metrykaInfo.odwrcony ? `${diffStr} ↘` : `${diffStr} ↗`;
                 } else if (roznica < 0) {
-                    trendTxt = metrykaInfo.odwrcony ? `${roznica.toFixed(1)} ↗` : `${roznica.toFixed(1)} ↘`;
+                    const diffStr = isIntegerMetric ? `${Math.round(roznica)}` : `${roznica.toFixed(1)}`;
+                    trendTxt = metrykaInfo.odwrcony ? `${diffStr} ↗` : `${diffStr} ↘`;
                 }
 
                 if (chipOstatni) chipOstatni.textContent = metrykaInfo.format(ostatnia);
@@ -2238,6 +2282,23 @@
                 chart.data.datasets[0].pointBackgroundColor = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? "#f59e0b" : darkNavyBg);
                 chart.data.datasets[0].pointRadius = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? 7 : 5);
                 chart.data.datasets[0].pointHoverBackgroundColor = brandColor;
+
+                // Dynamiczna aktualizacja formatowania osi Y (brak % dla liczb i poziomu)
+                if (chart.options?.scales?.y?.ticks) {
+                    chart.options.scales.y.ticks.precision = isIntegerMetric ? 0 : undefined;
+                    chart.options.scales.y.ticks.callback = function(value) {
+                        const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
+                        const curInfo = this.chart?.metrykaInfo || metrykaInfo;
+                        if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
+                            return Number.isInteger(value) ? value : Math.round(value);
+                        }
+                        if (curInfo?.jednostka === "%") {
+                            return `${value}%`;
+                        }
+                        return value;
+                    };
+                }
+
                 chart.update();
                 return;
             }
@@ -2312,6 +2373,7 @@
                                     const mecz = aktualnaHistoria[idx];
                                     const val = context.parsed.y;
                                     const info = chart?.metrykaInfo || metrykaInfo;
+                                    const curKlucz = chart?.metrykaKlucz || metrykaKlucz;
                                     const formatted = info.format(val);
                                     let extra = "";
                                     if (mecz?.shanghai) {
@@ -2323,8 +2385,11 @@
                                         extra += ` | Rundy: ${mecz.rundyLiczba}`;
                                     }
                                     if (mecz?.checkout) extra += ` | HF: ${mecz.checkout}`;
-                                    if (mecz?.punkty && (chart?.metrykaKlucz || metrykaKlucz) !== "punkty") extra += ` | Pkt: ${mecz.punkty}`;
-                                    if (mecz?.skutecznosc !== undefined && (chart?.metrykaKlucz || metrykaKlucz) !== "skutecznosc") extra += ` | Skut.: ${mecz.skutecznosc}%`;
+                                    if (mecz?.punkty && curKlucz !== "punkty") extra += ` | Pkt: ${mecz.punkty}`;
+                                    if (mecz?.skutecznosc !== undefined && curKlucz !== "skutecznosc") extra += ` | Skut.: ${mecz.skutecznosc}%`;
+                                    if (mecz?.lotki !== undefined && curKlucz !== "lotki") extra += ` | Lotki: ${mecz.lotki}`;
+                                    if (mecz?.max_poziom !== undefined && curKlucz !== "max_poziom") extra += ` | Max: ${mecz.max_poziom}`;
+                                    if (mecz?.trafienia !== undefined && curKlucz !== "trafienia") extra += ` | Trafienia: ${mecz.trafienia}`;
                                     return ` ${info.nazwa}: ${formatted}${extra}`;
                                 },
                             },
@@ -2347,7 +2412,18 @@
                             ticks: {
                                 color: "#cbd5e1",
                                 font: { family: "Inter", size: 11, weight: "600" },
-                                callback: (value) => `${value}${metrykaInfo.jednostka || ""}`,
+                                precision: isIntegerMetric ? 0 : undefined,
+                                callback: function(value) {
+                                    const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
+                                    const curInfo = this.chart?.metrykaInfo || metrykaInfo;
+                                    if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
+                                        return Number.isInteger(value) ? value : Math.round(value);
+                                    }
+                                    if (curInfo?.jednostka === "%") {
+                                        return `${value}%`;
+                                    }
+                                    return value;
+                                },
                             },
                         },
                     },
