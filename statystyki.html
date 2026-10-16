@@ -824,7 +824,8 @@
                     padding: 10px;
                 }
 
-                #btn-container-stats .btn-stat-tab:last-child:nth-child(odd) {
+                #btn-container-stats .btn-stat-tab:first-child,
+                #btn-container-stats .btn-stat-tab[data-target="stats-klasyczna"] {
                     grid-column: span 2;
                 }
 
@@ -1119,13 +1120,13 @@
                     <!-- Lewa strona: Nick i Tagi -->
                     <div class="user-info-box">
                         <div class="nick-row">
-                            <h2 id="nazwa-uzytkownika">Piteroo</h2>
+                            <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
                             <div class="ranga-wrapper">
-                                <span id="tag-ranga" class="tag-ranga" style="display: inline-flex; color: rgb(96, 165, 250); background-color: rgba(96, 165, 250, 0.15); border: 1px solid rgba(96, 165, 250, 0.4);">💎 Mistrz</span>
-                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: inline-flex;">?</button>
+                                <span id="tag-ranga" class="tag-ranga" style="display: none"></span>
+                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: none;">?</button>
                             </div>
                         </div>
-                        <span id="tag-data" class="tag-data">🗓️ W Stacji od: październik 2026</span>
+                        <span id="tag-data" class="tag-data"></span>
                         <span id="avatar-status" class="avatar-status"></span>
                     </div>
 
@@ -1133,9 +1134,9 @@
                     <div class="header-statystyki-szybkie">
                         <div class="szybki-stat">
                             <span>Win Rate</span>
-                            <strong id="header-winrate">69.6%</strong>
+                            <strong id="header-winrate">0.0%</strong>
                         </div>
-                        <button id="btn-edycja-profilu" type="button" style="display: inline-flex;">Edytuj profil</button>
+                        <button id="btn-edycja-profilu" type="button" style="display: none;">Edytuj profil</button>
                     </div>
                 </div>
                 <div id="sekcja-sprzetu" class="sekcje-gracza" style="margin-top: 25px; width: 100%">
@@ -1679,43 +1680,7 @@
                 <div id="sekcja-ostatnich-meczy" class="sekcje-gracza">
                     <h2 class="stats-tytul-naglowek">Ostatnie mecze</h2>
                     <div id="lista-ostatnich-meczy">
-                        <div class="mecz porazka">
-                            <p class="mecz-data">24.09.2026</p>
-                            <div class="dane-meczu">
-                                <h3 class="gracz-nazwa gracz-1">Piotr</h3>
-                                <p class="mecz-vs">vs</p>
-                                <h3 class="gracz-nazwa gracz-2">Senior</h3>
-
-                                <h4 class="wynik-punkty wynik-1">0</h4>
-                                <p class="wynik-separator">:</p>
-                                <h4 class="wynik-punkty wynik-2">2</h4>
-
-                                <p class="srednia-wartosc srednia-1">45.08</p>
-                                <p class="srednia-etykieta">Średnia</p>
-                                <p class="srednia-wartosc srednia-2">51.45</p>
-                            </div>
-
-                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(0)">Zobacz mecz</button>
-                        </div>
-
-                        <div class="mecz wygrana">
-                            <p class="mecz-data">08.10.2026</p>
-                            <div class="dane-meczu">
-                                <h3 class="gracz-nazwa gracz-1">Piotr</h3>
-                                <p class="mecz-vs">vs</p>
-                                <h3 class="gracz-nazwa gracz-2">Senior</h3>
-
-                                <h4 class="wynik-punkty wynik-1">2</h4>
-                                <p class="wynik-separator">:</p>
-                                <h4 class="wynik-punkty wynik-2">0</h4>
-
-                                <p class="srednia-wartosc srednia-1">58.33</p>
-                                <p class="srednia-etykieta">Średnia</p>
-                                <p class="srednia-wartosc srednia-2">49.12</p>
-                            </div>
-
-                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(2)">Zobacz mecz</button>
-                        </div>
+                        <div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>
                     </div>
                     <div id="kontener-wiecej-meczy" style="display: none; text-align: center; margin-top: 15px">
                         <button type="button" id="btn-zobacz-wszystkie-mecze" class="btn-zobacz-wszystkie">Zobacz wszystkie mecze</button>
@@ -1883,7 +1848,6 @@
         // ==============================================================================
         const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
         const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-        const DOMYSLNY_GRACZ_ID = "bdd1461e-dca2-4596-8959-2da9a27b7288";
 
         let client = window.supabaseKlient || window.supabaseClient || null;
         let supaClient = client;
@@ -4084,17 +4048,20 @@
                     const klient = supaClient || client;
                     if (!klient) return;
 
-                    let graczId = typeof profilWejsciowy === "string" ? profilWejsciowy : DOMYSLNY_GRACZ_ID;
+                    let graczId = typeof profilWejsciowy === "string" ? profilWejsciowy : null;
                     const params = new URLSearchParams(window.location.search);
                     if (params.get("id")) graczId = params.get("id");
                     else if (params.get("gracz")) graczId = params.get("gracz");
                     else if (aktualnyUser?.id) graczId = aktualnyUser.id;
 
+                    if (!graczId) return;
+
                     let query = klient.from("profiles").select("*");
-                    if (graczId.includes("-") && graczId.length >= 32) {
+                    const isUUID = typeof graczId === "string" && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(graczId) || (graczId.includes("-") && graczId.length >= 32));
+                    if (isUUID) {
                         query = query.eq("id", graczId);
                     } else {
-                        query = query.or(`nazwa_gracza.eq.${graczId},id.eq.${DOMYSLNY_GRACZ_ID}`);
+                        query = query.ilike("nazwa_gracza", graczId);
                     }
 
                     const { data: pData, error: profErr } = await query.maybeSingle();
@@ -4441,7 +4408,17 @@
                 const paramIdRaw = params.get("id") || params.get("gracz");
                 const paramId = paramIdRaw ? decodeURIComponent(paramIdRaw).trim() : null;
 
-                const targetIdent = paramId || aktualnyUser?.id || DOMYSLNY_GRACZ_ID;
+                // Jeśli brak parametru w URL i brak zalogowanego usera -> przekierowanie do logowania
+                if (!paramId && !aktualnyUser) {
+                    window.location.href = "./logowanie.html";
+                    return;
+                }
+
+                const targetIdent = paramId || aktualnyUser?.id;
+                if (!targetIdent) {
+                    window.location.href = "./logowanie.html";
+                    return;
+                }
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetIdent);
 
                 let profil = null;
