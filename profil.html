@@ -490,7 +490,10 @@
                         if (poleEdycjaIp) poleEdycjaIp.value = mojeIp;
 
                         if (mojeIp !== zapisaneIp) {
-                            await wykonajZapisProfilu({ ostatnie_ip: mojeIp }, userId);
+                            await wykonajZapisProfilu({ 
+                                ostatnie_ip: mojeIp,
+                                zaktualizowano: new Date().toISOString()
+                            }, userId);
                         }
                     }
                 } catch (e) {

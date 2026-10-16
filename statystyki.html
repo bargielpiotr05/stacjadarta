@@ -3083,7 +3083,14 @@
                                     if (mecz?.rundyLiczba) {
                                         extra += ` | Rundy: ${mecz.rundyLiczba}`;
                                     }
-                                    if (mecz?.checkout) extra += ` | HF: ${mecz.checkout}`;
+                                    if (mecz?.highest_score || mecz?.hs) {
+                                        extra += ` | HS: ${mecz.highest_score || mecz.hs}`;
+                                    } else if (mecz?.checkout) {
+                                        extra += ` | HS: ${mecz.checkout}`;
+                                    }
+                                    if (mecz?.highest_finish || mecz?.hf) {
+                                        extra += ` | HF: ${mecz.highest_finish || mecz.hf}`;
+                                    }
                                     if (mecz?.punkty && curKlucz !== "punkty") extra += ` | Pkt: ${mecz.punkty}`;
                                     if (mecz?.skutecznosc !== undefined && curKlucz !== "skutecznosc") extra += ` | Skut.: ${mecz.skutecznosc}%`;
                                     if (mecz?.lotki !== undefined && curKlucz !== "lotki") extra += ` | Lotki: ${mecz.lotki}`;
@@ -3487,7 +3494,10 @@
                     if (poleEdycjaIp) poleEdycjaIp.value = mojeIp;
 
                     if (mojeIp !== zapisaneIp) {
-                        await wykonajZapisProfilu({ ostatnie_ip: mojeIp }, userId);
+                        await wykonajZapisProfilu({ 
+                            ostatnie_ip: mojeIp,
+                            zaktualizowano: new Date().toISOString()
+                        }, userId);
                     }
                 }
             } catch (e) {
@@ -4009,6 +4019,7 @@
                     { tytul: "Średnia 9 lotek", klucz: "srednia9" },
                     { tytul: "Najlepszy leg", klucz: "najlepszyLeg" },
                     { tytul: "Najlepszy rzut", klucz: "najlepszyRzut" },
+                    { tytul: "Najwyższy finisz", klucz: "najwyzszyCheckout" },
                     { tytul: "Liczba 180", klucz: "liczba180" },
                     { tytul: "Skuteczność Double", klucz: "skutecznoscDouble" },
                 ];
@@ -4016,7 +4027,17 @@
                 wiersze.forEach((w) => {
                     htmlStats += `<tr><td style="text-align: left; padding-left: 14px; font-weight: 600; color: #94a3b8;">${w.tytul}</td>`;
                     gracze.forEach((g) => {
-                        const wartosc = g[w.klucz] !== undefined && g[w.klucz] !== null ? g[w.klucz] : "-";
+                        let wartosc = g[w.klucz] !== undefined && g[w.klucz] !== null && g[w.klucz] !== 0 ? g[w.klucz] : "-";
+                        if (w.klucz === "najwyzszyCheckout" && (wartosc === "-" || wartosc === 0) && Array.isArray(legi)) {
+                            let maxChk = 0;
+                            legi.forEach((leg) => {
+                                const ost = Array.isArray(leg) && leg.length > 0 ? leg[leg.length - 1] : null;
+                                if (ost && ost.graczId === g.id && ost.punktyPrzed > 0 && ost.punktyPo === 0) {
+                                    if (ost.punktyPrzed > maxChk) maxChk = ost.punktyPrzed;
+                                }
+                            });
+                            if (maxChk > 0) wartosc = maxChk;
+                        }
                         htmlStats += `<td><strong>${wartosc}</strong></td>`;
                     });
                     htmlStats += `</tr>`;
@@ -4195,7 +4216,9 @@
                                     rywal: rywalStat.nazwa || "Rywal",
                                     format: m.format_gry || "501 DO",
                                     wynik: wynikStr,
-                                    checkout: mojStat.najlepszyRzut || mojStat.najwyzszyCheckout || 0,
+                                    highest_score: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
+                                    highest_finish: mojStat.najwyzszyCheckout || mojStat.highestFinish || mojStat.hf || 0,
+                                    checkout: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
                                 };
                             });
                         }

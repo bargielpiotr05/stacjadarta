@@ -335,7 +335,10 @@ async function sprawdzStanLogowania() {
                             if (mojeIp) {
                                 sessionStorage.setItem("sd_ip_zapisane", "1");
                                 if (!profil || profil.ostatnie_ip !== mojeIp) {
-                                    await supabaseKlient.from("profiles").update({ ostatnie_ip: mojeIp }).eq("id", user.id);
+                                    await supabaseKlient.from("profiles").update({ 
+                                        ostatnie_ip: mojeIp,
+                                        zaktualizowano: new Date().toISOString()
+                                    }).eq("id", user.id);
                                 }
                             }
                         } catch (_) {}
@@ -358,7 +361,10 @@ function podepnijNasluchLogowania() {
                     const mojeIp = await pobierzAdresIPMenu();
                     if (mojeIp) {
                         sessionStorage.setItem("sd_ip_zapisane", "1");
-                        supabaseKlient.from("profiles").update({ ostatnie_ip: mojeIp }).eq("id", session.user.id).then();
+                        supabaseKlient.from("profiles").update({ 
+                            ostatnie_ip: mojeIp,
+                            zaktualizowano: new Date().toISOString()
+                        }).eq("id", session.user.id).then();
                     }
                 } catch (_) {}
             }

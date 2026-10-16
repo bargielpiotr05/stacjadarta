@@ -1321,6 +1321,7 @@
                         wygraneLegi: 0,
                         rzuty: [],
                         najlepszyLeg: null,
+                        najwyzszyCheckout: 0,
                         lotkiNaDoubla: 0,
                         trafioneDouble: 0,
                         czyBot: czyTenToBot,
@@ -1573,10 +1574,20 @@
 
             function zakonczLeg(zwyciezcaId, uzyteLotki) {
                 let zwyciezca = gracze.find((g) => g.id === zwyciezcaId);
-                zwyciezca.wygraneLegi++;
+                if (zwyciezca) {
+                    zwyciezca.wygraneLegi++;
 
-                if (zwyciezca.najlepszyLeg === null || uzyteLotki < zwyciezca.najlepszyLeg) {
-                    zwyciezca.najlepszyLeg = uzyteLotki;
+                    if (zwyciezca.najlepszyLeg === null || uzyteLotki < zwyciezca.najlepszyLeg) {
+                        zwyciezca.najlepszyLeg = uzyteLotki;
+                    }
+
+                    const ostatniWpis = historiaAktualnegoLegu[historiaAktualnegoLegu.length - 1];
+                    if (ostatniWpis && ostatniWpis.graczId === zwyciezca.id && ostatniWpis.punktyPrzed > 0) {
+                        const checkout = ostatniWpis.punktyPrzed;
+                        if (checkout > (zwyciezca.najwyzszyCheckout || 0)) {
+                            zwyciezca.najwyzszyCheckout = checkout;
+                        }
+                    }
                 }
 
                 historiaMeczuLegi.push([...historiaAktualnegoLegu]);
@@ -2031,6 +2042,7 @@
                         srednia: typeof obliczSredniaGracza === "function" ? obliczSredniaGracza(g.id) : "0.00",
                         srednia9: typeof obliczSrednia9Lotek === "function" ? obliczSrednia9Lotek(g.id) : "0.00",
                         najlepszyRzut: g.rzuty && g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0,
+                        najwyzszyCheckout: g.najwyzszyCheckout || 0,
                         najlepszyLeg: g.najlepszyLeg || "-",
                         liczba180: g.rzuty ? g.rzuty.filter((r) => r === 180).length : 0,
                         skutecznoscDouble: g.lotkiNaDoubla > 0 ? `${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%` : "0%",
@@ -2268,12 +2280,15 @@
                     const dotychczasSrednia = parseFloat(obecnyProfil.srednia) || 0;
                     const dotychczasSrednia9 = parseFloat(obecnyProfil.srednia_9_lotek) || 0;
                     const dotychczas180 = parseInt(obecnyProfil.ilosc_180) || 0;
+                    const dotychczasCheckout = parseInt(obecnyProfil.najwyzszy_checkout) || 0;
 
                     const noweMecze = dotychczasMecze + 1;
                     const nowaSredniaOgolna = dotychczasMecze === 0 ? nowaMojaSrednia.toFixed(2) : ((dotychczasSrednia * dotychczasMecze + nowaMojaSrednia) / noweMecze).toFixed(2);
                     const nowaSrednia9Ogolna = dotychczasMecze === 0 ? nowaSrednia9.toFixed(2) : ((dotychczasSrednia9 * dotychczasMecze + nowaSrednia9) / noweMecze).toFixed(2);
                     const noweWygrane = czyWygralem ? dotychczasWygrane + 1 : dotychczasWygrane;
                     const nowe180 = dotychczas180 + moje180;
+                    const mojNajwyzszyCheckoutWMeczu = mojGracz.najwyzszyCheckout || 0;
+                    const nowyNajwyzszyCheckout = Math.max(dotychczasCheckout, mojNajwyzszyCheckoutWMeczu);
 
                     let zapisanoHosta = false;
                     try {
@@ -2307,7 +2322,7 @@
                         } catch (eSdkRpcHost) {}
                     }
 
-                    if (!zapisanoHosta && klientBazy) {
+                    if (klientBazy) {
                         try {
                             await klientBazy
                                 .from("profiles")
@@ -2317,10 +2332,20 @@
                                     srednia: nowaSredniaOgolna,
                                     srednia_9_lotek: nowaSrednia9Ogolna,
                                     ilosc_180: nowe180,
+                                    najwyzszy_checkout: nowyNajwyzszyCheckout,
                                 })
                                 .eq("id", userId);
                             zapisanoHosta = true;
                         } catch (eUpdateHost) {}
+                    }
+
+                    if (nowyNajwyzszyCheckout > dotychczasCheckout) {
+                        try {
+                            await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${userId}`, {
+                                method: "PATCH",
+                                body: { najwyzszy_checkout: nowyNajwyzszyCheckout },
+                            });
+                        } catch (_) {}
                     }
 
                     // ================================================================
@@ -2362,6 +2387,7 @@
                                 const dotychczasSredniaR = parseFloat(profRywal.srednia) || 0;
                                 const dotychczasSrednia9R = parseFloat(profRywal.srednia_9_lotek) || 0;
                                 const dotychczas180R = parseInt(profRywal.ilosc_180) || 0;
+                                const dotychczasCheckoutR = parseInt(profRywal.najwyzszy_checkout) || 0;
 
                                 const noweMeczeR = dotychczasMeczeR + 1;
                                 const nowaSredniaRywal = parseFloat(statyRywal.srednia) || 0;
@@ -2372,6 +2398,8 @@
                                 const czyTenRywalWygral = idZwyciezcy === idProfiluRywala || (zwyciezca && (zwyciezca.id === graczUczestnik.id || (zwyciezca.nazwa && graczUczestnik.nazwa && zwyciezca.nazwa.toLowerCase() === graczUczestnik.nazwa.toLowerCase())));
                                 const noweWygraneR = czyTenRywalWygral ? dotychczasWygraneR + 1 : dotychczasWygraneR;
                                 const nowe180R = dotychczas180R + (statyRywal.liczba180 || 0);
+                                const rywalNajwyzszyCheckoutWMeczu = statyRywal.najwyzszyCheckout || 0;
+                                const nowyNajwyzszyCheckoutR = Math.max(dotychczasCheckoutR, rywalNajwyzszyCheckoutWMeczu);
 
                                 let zaktualizowanoRywala = false;
 
@@ -2407,7 +2435,7 @@
                                     } catch (eRpc) {}
                                 }
 
-                                if (!zaktualizowanoRywala && klientBazy) {
+                                if (klientBazy) {
                                     try {
                                         const { data: updateRes, error: updateErr } = await klientBazy
                                             .from("profiles")
@@ -2417,6 +2445,7 @@
                                                 srednia: nowaSredniaOgolnaR,
                                                 srednia_9_lotek: nowaSrednia9OgolnaR,
                                                 ilosc_180: nowe180R,
+                                                najwyzszy_checkout: nowyNajwyzszyCheckoutR,
                                             })
                                             .eq("id", idProfiluRywala)
                                             .select("id");
@@ -2425,6 +2454,15 @@
                                             zaktualizowanoRywala = true;
                                         }
                                     } catch (eUpd) {}
+                                }
+
+                                if (nowyNajwyzszyCheckoutR > dotychczasCheckoutR) {
+                                    try {
+                                        await wyslijDoSupabase(`/rest/v1/profiles?id=eq.${idProfiluRywala}`, {
+                                            method: "PATCH",
+                                            body: { najwyzszy_checkout: nowyNajwyzszyCheckoutR },
+                                        });
+                                    } catch (_) {}
                                 }
 
                                 if (zaktualizowanoRywala) {
@@ -2639,6 +2677,7 @@
                 tbodyOgolne += dodajWiersz("Pierwsze 9-lotek", (g) => obliczSrednia9Lotek(g.id));
                 tbodyOgolne += dodajWiersz("Najlepszy leg", (g) => (g.najlepszyLeg === null ? "-" : `${g.najlepszyLeg} lotek`));
                 tbodyOgolne += dodajWiersz("Najlepszy rzut", (g) => (g.rzuty.length > 0 ? Math.max(...g.rzuty) : 0));
+                tbodyOgolne += dodajWiersz("Najwyższy finisz", (g) => (g.najwyzszyCheckout > 0 ? g.najwyzszyCheckout : "-"));
                 tbodyOgolne += dodajWiersz("Skuteczność Double", (g) => {
                     if (g.lotkiNaDoubla === 0) return "0/0 (0%)";
                     return `${g.trafioneDouble}/${g.lotkiNaDoubla} (${((g.trafioneDouble / g.lotkiNaDoubla) * 100).toFixed(1)}%)`;

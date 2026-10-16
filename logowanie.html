@@ -135,7 +135,10 @@
                         });
                         getIp().then((ip) => {
                             if (ip) {
-                                client.from("profiles").update({ ostatnie_ip: ip }).eq("id", data.user.id).then();
+                                client.from("profiles").update({ 
+                                    ostatnie_ip: ip,
+                                    zaktualizowano: new Date().toISOString()
+                                }).eq("id", data.user.id).then();
                             }
                         }).catch(() => {});
                     } catch (_) {}
