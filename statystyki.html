@@ -823,6 +823,9 @@
                 #sekcja-sprzetu .chart-card {
                     padding-top: 0 !important;
                 }
+                .sekcje-gracza:not(:last-child) {
+                    padding-bottom: 10px !important;
+                }
 
                 #btn-container-stats {
                     display: grid;
@@ -930,7 +933,7 @@
                 .quick-stat-chip {
                     padding: 5px 8px;
                     font-size: 11px;
-                    flex: 1 1 calc(50% - 6px);
+                    flex: 1;
                     justify-content: center;
                     text-align: center;
                     min-width: 0;
@@ -1362,6 +1365,9 @@
                                 <div class="doubles-ranking-lista" id="shanghai-ranking-lista">
                                     <!-- Generowane dynamicznie w JS -->
                                 </div>
+                                <div id="kontener-wiecej-shanghai" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-shanghai" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
+                                </div>
                             </div>
                         </div>
 
@@ -1475,6 +1481,9 @@
                                 <h2>Ranking Trafień</h2>
                                 <div class="doubles-ranking-lista" id="around-ranking-lista">
                                     <!-- Generowane dynamicznie w JS -->
+                                </div>
+                                <div id="kontener-wiecej-around" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-around" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
                                 </div>
                             </div>
                         </div>
@@ -1656,6 +1665,9 @@
                                 <h2>Najlepszy Double</h2>
                                 <div class="doubles-ranking-lista" id="doubles-ranking-lista">
                                     <!-- Generowane dynamicznie w JS -->
+                                </div>
+                                <div id="kontener-wiecej-doubles" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-doubles" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
                                 </div>
                             </div>
                         </div>
@@ -1866,6 +1878,12 @@
         let ostatnieMeczeCache = [];
         let pelnaHistoriaMeczowCache = null;
         let czyWszystkieMeczeRozwiniete = false;
+        let pelnyRankingDoublesCache = [];
+        let czyRankingDoublesRozwiniety = false;
+        let pelnyRankingAroundCache = [];
+        let czyRankingAroundRozwiniety = false;
+        let pelnyRankingShanghaiCache = [];
+        let czyRankingShanghaiRozwiniety = false;
 
         function odczytajZalogowanegoZStorage() {
             try {
@@ -2251,6 +2269,35 @@
             odswiezRankingListeDoubles(daneDoubles);
         }
 
+        function renderujRankingListeDoubles(lista) {
+            const kontener = document.getElementById("doubles-ranking-lista");
+            if (!kontener) return;
+
+            let html = "";
+            lista.forEach((item, index) => {
+                const pozycja = item.oryginalnaPozycja !== undefined ? item.oryginalnaPozycja : index + 1;
+                const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
+                const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
+
+                html += `
+                    <div class="ranking-item ${topKlasa}">
+                        <div class="ranking-pozycja">#${pozycja}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-nazwa-row">
+                                <span class="ranking-nazwa">${item.nazwa}</span>
+                                <span class="ranking-wynik">${item.tekstSkut}</span>
+                            </div>
+                            <div class="ranking-pasek-tlo">
+                                <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            kontener.innerHTML = html;
+        }
+
         // --- 4A-bis. RANKING LISTA DOUBLES (POSORTOWANA MALEJĄCO) ---
         function odswiezRankingListeDoubles(daneDoubles) {
             const kontener = document.getElementById("doubles-ranking-lista");
@@ -2294,9 +2341,40 @@
                 return idA - idB;
             });
 
+            lista.forEach((item, idx) => {
+                item.oryginalnaPozycja = idx + 1;
+            });
+
+            pelnyRankingDoublesCache = lista;
+
+            const kontenerWiecej = document.getElementById("kontener-wiecej-doubles");
+            const btnWiecej = document.getElementById("btn-zobacz-wszystkie-doubles");
+            if (kontenerWiecej && btnWiecej) {
+                if (lista.length > 5) {
+                    kontenerWiecej.style.display = "block";
+                    btnWiecej.textContent = czyRankingDoublesRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                    btnWiecej.onclick = () => {
+                        czyRankingDoublesRozwiniety = !czyRankingDoublesRozwiniety;
+                        btnWiecej.textContent = czyRankingDoublesRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                        const doPokazania = czyRankingDoublesRozwiniety ? pelnyRankingDoublesCache : pelnyRankingDoublesCache.slice(0, 5);
+                        renderujRankingListeDoubles(doPokazania);
+                    };
+                } else {
+                    kontenerWiecej.style.display = "none";
+                }
+            }
+
+            const doPokazania = czyRankingDoublesRozwiniety ? lista : lista.slice(0, 5);
+            renderujRankingListeDoubles(doPokazania);
+        }
+
+        function renderujRankingListeAround(lista) {
+            const kontener = document.getElementById("around-ranking-lista");
+            if (!kontener) return;
+
             let html = "";
             lista.forEach((item, index) => {
-                const pozycja = index + 1;
+                const pozycja = item.oryginalnaPozycja !== undefined ? item.oryginalnaPozycja : index + 1;
                 const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
                 const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
 
@@ -2307,6 +2385,11 @@
                             <div class="ranking-nazwa-row">
                                 <span class="ranking-nazwa">${item.nazwa}</span>
                                 <span class="ranking-wynik">${item.tekstSkut}</span>
+                            </div>
+                            <div class="ranking-detale">
+                                <span class="ranking-detal-tag">single: ${item.single}</span>
+                                <span class="ranking-detal-tag">double: ${item.double}</span>
+                                <span class="ranking-detal-tag">triple: ${item.triple}</span>
                             </div>
                             <div class="ranking-pasek-tlo">
                                 <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
@@ -2370,34 +2453,31 @@
                 return idA - idB;
             });
 
-            let html = "";
-            lista.forEach((item, index) => {
-                const pozycja = index + 1;
-                const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
-                const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
-
-                html += `
-                    <div class="ranking-item ${topKlasa}">
-                        <div class="ranking-pozycja">#${pozycja}</div>
-                        <div class="ranking-info">
-                            <div class="ranking-nazwa-row">
-                                <span class="ranking-nazwa">${item.nazwa}</span>
-                                <span class="ranking-wynik">${item.tekstSkut}</span>
-                            </div>
-                            <div class="ranking-detale">
-                                <span class="ranking-detal-tag">single: ${item.single}</span>
-                                <span class="ranking-detal-tag">double: ${item.double}</span>
-                                <span class="ranking-detal-tag">triple: ${item.triple}</span>
-                            </div>
-                            <div class="ranking-pasek-tlo">
-                                <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            lista.forEach((item, idx) => {
+                item.oryginalnaPozycja = idx + 1;
             });
 
-            kontener.innerHTML = html;
+            pelnyRankingAroundCache = lista;
+
+            const kontenerWiecej = document.getElementById("kontener-wiecej-around");
+            const btnWiecej = document.getElementById("btn-zobacz-wszystkie-around");
+            if (kontenerWiecej && btnWiecej) {
+                if (lista.length > 5) {
+                    kontenerWiecej.style.display = "block";
+                    btnWiecej.textContent = czyRankingAroundRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                    btnWiecej.onclick = () => {
+                        czyRankingAroundRozwiniety = !czyRankingAroundRozwiniety;
+                        btnWiecej.textContent = czyRankingAroundRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                        const doPokazania = czyRankingAroundRozwiniety ? pelnyRankingAroundCache : pelnyRankingAroundCache.slice(0, 5);
+                        renderujRankingListeAround(doPokazania);
+                    };
+                } else {
+                    kontenerWiecej.style.display = "none";
+                }
+            }
+
+            const doPokazania = czyRankingAroundRozwiniety ? lista : lista.slice(0, 5);
+            renderujRankingListeAround(doPokazania);
         }
         function odswiezHeatmapeAround(daneATW) {
             const svg = document.getElementById("dartboard-heatmap-around");
@@ -2528,6 +2608,40 @@
             if (chipSkutecznosc) chipSkutecznosc.textContent = formatujSkutecznosc(daneShanghai.suma_trafien, daneShanghai.suma_rzutow);
         }
 
+        function renderujRankingListeShanghai(lista) {
+            const kontener = document.getElementById("shanghai-ranking-lista");
+            if (!kontener) return;
+
+            let html = "";
+            lista.forEach((item, index) => {
+                const pozycja = item.oryginalnaPozycja !== undefined ? item.oryginalnaPozycja : index + 1;
+                const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
+                const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
+
+                html += `
+                    <div class="ranking-item ${topKlasa}">
+                        <div class="ranking-pozycja">#${pozycja}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-nazwa-row">
+                                <span class="ranking-nazwa">${item.nazwa}</span>
+                                <span class="ranking-wynik">${item.tekstSkut}</span>
+                            </div>
+                            <div class="ranking-detale">
+                                <span class="ranking-detal-tag">single: ${item.single}</span>
+                                <span class="ranking-detal-tag">double: ${item.double}</span>
+                                <span class="ranking-detal-tag">triple: ${item.triple}</span>
+                            </div>
+                            <div class="ranking-pasek-tlo">
+                                <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            kontener.innerHTML = html;
+        }
+
         function odswiezRankingListeShanghai(daneShanghai) {
             const kontener = document.getElementById("shanghai-ranking-lista");
             if (!kontener) return;
@@ -2583,34 +2697,31 @@
                 return (Number(a.id) || 0) - (Number(b.id) || 0);
             });
 
-            let html = "";
-            lista.forEach((item, index) => {
-                const pozycja = index + 1;
-                const topKlasa = pozycja === 1 ? "top-1" : pozycja === 2 ? "top-2" : pozycja === 3 ? "top-3" : "";
-                const szerokoscPaska = Math.max(0, Math.min(100, item.procent));
-
-                html += `
-                    <div class="ranking-item ${topKlasa}">
-                        <div class="ranking-pozycja">#${pozycja}</div>
-                        <div class="ranking-info">
-                            <div class="ranking-nazwa-row">
-                                <span class="ranking-nazwa">${item.nazwa}</span>
-                                <span class="ranking-wynik">${item.tekstSkut}</span>
-                            </div>
-                            <div class="ranking-detale">
-                                <span class="ranking-detal-tag">single: ${item.single}</span>
-                                <span class="ranking-detal-tag">double: ${item.double}</span>
-                                <span class="ranking-detal-tag">triple: ${item.triple}</span>
-                            </div>
-                            <div class="ranking-pasek-tlo">
-                                <div class="ranking-pasek-wypelnienie" style="width: ${szerokoscPaska}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            lista.forEach((item, idx) => {
+                item.oryginalnaPozycja = idx + 1;
             });
 
-            kontener.innerHTML = html;
+            pelnyRankingShanghaiCache = lista;
+
+            const kontenerWiecej = document.getElementById("kontener-wiecej-shanghai");
+            const btnWiecej = document.getElementById("btn-zobacz-wszystkie-shanghai");
+            if (kontenerWiecej && btnWiecej) {
+                if (lista.length > 5) {
+                    kontenerWiecej.style.display = "block";
+                    btnWiecej.textContent = czyRankingShanghaiRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                    btnWiecej.onclick = () => {
+                        czyRankingShanghaiRozwiniety = !czyRankingShanghaiRozwiniety;
+                        btnWiecej.textContent = czyRankingShanghaiRozwiniety ? "Zwiń" : "Zobacz wszystkie";
+                        const doPokazania = czyRankingShanghaiRozwiniety ? pelnyRankingShanghaiCache : pelnyRankingShanghaiCache.slice(0, 5);
+                        renderujRankingListeShanghai(doPokazania);
+                    };
+                } else {
+                    kontenerWiecej.style.display = "none";
+                }
+            }
+
+            const doPokazania = czyRankingShanghaiRozwiniety ? lista : lista.slice(0, 5);
+            renderujRankingListeShanghai(doPokazania);
         }
 
         // ==============================================================================
@@ -4583,7 +4694,7 @@
                         }
                     }
                 } else {
-                    if (btnEdycja) btnEdycja.style.display = "inline-flex";
+                    if (btnEdycja) btnEdycja.style.display = "block";
                     if (avatarOverlay) avatarOverlay.style.display = "flex";
                     if (avatarContainer) avatarContainer.style.pointerEvents = "auto";
                     if (akcjeWlasciciela) akcjeWlasciciela.style.display = "flex";
