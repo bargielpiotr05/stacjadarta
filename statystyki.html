@@ -22,7 +22,7 @@
         <link rel="stylesheet" href="./global.css" />
         <link rel="stylesheet" href="./profil-style.css" />
         <link rel="stylesheet" href="./formularz.css" />
-        <link rel="stylesheet" href="./klasyczna-style.css">
+        <link rel="stylesheet" href="./klasyczna-style.css" />
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
@@ -50,10 +50,10 @@
                 padding: 30px 16px !important;
                 box-sizing: border-box !important;
                 overflow-x: hidden !important;
-                background-color:var(--primary-color-lighter-darker);
+                background-color: var(--primary-color-lighter-darker);
             }
-            main::before{
-                background:none;
+            main::before {
+                background: none;
             }
 
             /* Główny kontener strony */
@@ -784,6 +784,9 @@
                 background-color: var(--secondary-color-hover);
                 transform: translateY(-2px);
             }
+            #sekcja-ostatnich-meczy h3 {
+                max-width: 100% !important;
+            }
             /* =====================================================
                RESPONSYWNOŚĆ MOBILNA (SMARTFONY I TABLETY)
                ===================================================== */
@@ -810,6 +813,12 @@
                 .stats-tytul-naglowek {
                     margin: 4px 0 10px 0;
                     font-size: 28px;
+                }
+                #sekcja-ostatnich-meczy h3 {
+                    font-size:16px !important;
+                }
+                #sekcja-ostatnich-meczy h4{
+                    font-size:20px !important;
                 }
                 #sekcja-sprzetu .chart-card {
                     padding-top: 0 !important;
@@ -1110,11 +1119,11 @@
             <div class="blok-gracza">
                 <div id="header-uzytkownika">
                     <div class="avatar-wrapper" id="avatar-container" title="Kliknij, aby zmienić zdjęcie">
-                        <img src="./loga/logo.png" alt="Zdjęcie użytkownika" id="zdjecie-uzytkownika">
+                        <img src="./loga/logo.png" alt="Zdjęcie użytkownika" id="zdjecie-uzytkownika" />
                         <div class="avatar-overlay">
                             <span>📷 Zmień</span>
                         </div>
-                        <input type="file" id="input-avatar" accept="image/png, image/jpeg, image/webp" style="display: none">
+                        <input type="file" id="input-avatar" accept="image/png, image/jpeg, image/webp" style="display: none" />
                     </div>
 
                     <!-- Lewa strona: Nick i Tagi -->
@@ -1123,7 +1132,7 @@
                             <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
                             <div class="ranga-wrapper">
                                 <span id="tag-ranga" class="tag-ranga" style="display: none"></span>
-                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: none;">?</button>
+                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: none">?</button>
                             </div>
                         </div>
                         <span id="tag-data" class="tag-data"></span>
@@ -1136,7 +1145,7 @@
                             <span>Win Rate</span>
                             <strong id="header-winrate">0.0%</strong>
                         </div>
-                        <button id="btn-edycja-profilu" type="button" style="display: none;">Edytuj profil</button>
+                        <button id="btn-edycja-profilu" type="button" style="display: none">Edytuj profil</button>
                     </div>
                 </div>
                 <div id="sekcja-sprzetu" class="sekcje-gracza" style="margin-top: 25px; width: 100%">
@@ -1776,16 +1785,12 @@
                     <!-- FORMULARZ USUNIĘCIA KONTA -->
                     <div id="usun-konto-blok" style="display: none">
                         <form id="form-usun-konto" class="modal-form">
-                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 10px 0; line-height: 1.5">
-                                <strong>⚠️ UWAGA:</strong> Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki, znajomości oraz mecze zostaną trwale skasowane.
-                            </p>
-                            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4">
-                                Aby zapobiec przypadkowemu usunięciu konta, wpisz poniżej słowo: <strong style="color: #f87171; letter-spacing: 1px;">USUŃ</strong>
-                            </p>
-                            <input type="text" id="potwierdzenie-usuniecia-input" class="wspolny-input" placeholder="Wpisz USUŃ..." autocomplete="off" style="margin-bottom: 18px; text-transform: uppercase; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 2px;" />
+                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 10px 0; line-height: 1.5"><strong>⚠️ UWAGA:</strong> Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki, znajomości oraz mecze zostaną trwale skasowane.</p>
+                            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4">Aby zapobiec przypadkowemu usunięciu konta, wpisz poniżej słowo: <strong style="color: #f87171; letter-spacing: 1px">USUŃ</strong></p>
+                            <input type="text" id="potwierdzenie-usuniecia-input" class="wspolny-input" placeholder="Wpisz USUŃ..." autocomplete="off" style="margin-bottom: 18px; text-transform: uppercase; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 2px" />
                             <div class="modal-akcje">
                                 <button type="button" class="btn-secondary btn-anuluj-modal">Anuluj</button>
-                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie" disabled style="opacity: 0.45; cursor: not-allowed;">Potwierdź usunięcie</button>
+                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie" disabled style="opacity: 0.45; cursor: not-allowed">Potwierdź usunięcie</button>
                             </div>
                         </form>
                     </div>
@@ -1890,7 +1895,7 @@
                                 return {
                                     token: parsed.access_token,
                                     user: parsed.user || null,
-                                    expiresAt: parsed.expires_at || 0
+                                    expiresAt: parsed.expires_at || 0,
                                 };
                             }
                         }
@@ -2180,7 +2185,7 @@
             const sektory = daneDoubles.sektory || {};
             const elementy = svg.querySelectorAll("path, circle");
             const infoBoxId = "wybrany-sektor-info";
-            const defaultText = "👆 Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
+            const defaultText = "Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność";
 
             let maxProc = -1,
                 minProc = 101,
@@ -3299,10 +3304,7 @@
 
             if (client) {
                 try {
-                    const { error: clientErr } = await Promise.race([
-                        client.from("profiles").update(profilData).eq("id", userId),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error("Limit czasu Supabase SDK")), 4000)),
-                    ]);
+                    const { error: clientErr } = await Promise.race([client.from("profiles").update(profilData).eq("id", userId), new Promise((_, reject) => setTimeout(() => reject(new Error("Limit czasu Supabase SDK")), 4000))]);
                     if (!clientErr) return true;
                 } catch (eSdk) {
                     if (!ostatniBlad) ostatniBlad = eSdk;
@@ -3383,11 +3385,7 @@
         }
 
         function normalizujMecz(m, profilId, nazwaGracza = "") {
-            const statystyki = Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 0
-                ? m.statystyki_graczy
-                : Array.isArray(m.gracze) && m.gracze.length > 0
-                  ? m.gracze
-                  : [];
+            const statystyki = Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 0 ? m.statystyki_graczy : Array.isArray(m.gracze) && m.gracze.length > 0 ? m.gracze : [];
 
             const legi = m.pelny_przebieg_meczu || m.historiaMeczuLegi || [];
             const nickLower = (nazwaGracza || "").trim().toLowerCase();
@@ -3417,7 +3415,7 @@
                 if (m.zwyciezca_id) {
                     czyWygrana = m.zwyciezca_id === profilId;
                 } else {
-                    czyWygrana = czyHost ? (m.wynik_host > m.wynik_gosc) : (m.wynik_gosc > m.wynik_host);
+                    czyWygrana = czyHost ? m.wynik_host > m.wynik_gosc : m.wynik_gosc > m.wynik_host;
                 }
                 mojWynik = czyHost ? (m.wynik_host ?? 0) : (m.wynik_gosc ?? 0);
                 rywalWynik = czyHost ? (m.wynik_gosc ?? 0) : (m.wynik_host ?? 0);
@@ -3425,11 +3423,14 @@
 
                 if (statystyki.length > 1) {
                     const nickLowerDb = (nazwaGracza || "").trim().toLowerCase();
-                    let mojStat = statystyki.find((s) => {
-                        if (s?.id && profilId && s.id === profilId) return true;
-                        if (nickLowerDb && (s?.nazwa || "").trim().toLowerCase() === nickLowerDb) return true;
-                        return false;
-                    }) || (czyHost ? statystyki[0] : statystyki[1]) || statystyki[0];
+                    let mojStat =
+                        statystyki.find((s) => {
+                            if (s?.id && profilId && s.id === profilId) return true;
+                            if (nickLowerDb && (s?.nazwa || "").trim().toLowerCase() === nickLowerDb) return true;
+                            return false;
+                        }) ||
+                        (czyHost ? statystyki[0] : statystyki[1]) ||
+                        statystyki[0];
 
                     let rywalStat = statystyki.find((s) => s !== mojStat) || (czyHost ? statystyki[1] : statystyki[0]);
 
@@ -3553,11 +3554,7 @@
 
             if (meczeZdalne.length === 0 && client) {
                 try {
-                    const { data, error } = await zLimitemCzasu(
-                        client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(limitLiczba),
-                        "odczyt meczy z Supabase SDK",
-                        4000
-                    );
+                    const { data, error } = await zLimitemCzasu(client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(limitLiczba), "odczyt meczy z Supabase SDK", 4000);
                     if (!error && Array.isArray(data) && data.length > 0) {
                         meczeZdalne = data;
                     }
@@ -3579,12 +3576,8 @@
             const znormalizowaneLokalne = meczeLokalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
 
             if (znormalizowaneZdalne.length > 0) {
-                const zdalneSygnatury = new Set(
-                    znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`)
-                );
-                const brakujaceLokalne = znormalizowaneLokalne.filter(
-                    (lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`)
-                );
+                const zdalneSygnatury = new Set(znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`));
+                const brakujaceLokalne = znormalizowaneLokalne.filter((lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`));
                 const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
                 return limit ? scalone.slice(0, limit) : scalone;
             }
@@ -3714,11 +3707,7 @@
 
                 if ((!relacje || !relacje.length) && client) {
                     try {
-                        const { data } = await zLimitemCzasu(
-                            client.from("znajomi").select("*").or(`and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId})`),
-                            "sprawdzanie relacji",
-                            3500
-                        );
+                        const { data } = await zLimitemCzasu(client.from("znajomi").select("*").or(`and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId})`), "sprawdzanie relacji", 3500);
                         if (data) relacje = data;
                     } catch (_) {}
                 }
@@ -3766,9 +3755,7 @@
                         if (resList.ok) {
                             const lista = await resList.json();
                             if (Array.isArray(lista)) {
-                                plikiDoUsuniecia = lista
-                                    .filter((item) => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                    .map((item) => `${cleanUserId}/${item.name}`);
+                                plikiDoUsuniecia = lista.filter((item) => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder").map((item) => `${cleanUserId}/${item.name}`);
                             }
                         }
                     } catch (_) {}
@@ -3776,9 +3763,7 @@
                     try {
                         const { data: lista, error } = await client.storage.from("avatary").list(cleanUserId);
                         if (!error && Array.isArray(lista)) {
-                            plikiDoUsuniecia = lista
-                                .filter((item) => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                .map((item) => `${cleanUserId}/${item.name}`);
+                            plikiDoUsuniecia = lista.filter((item) => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder").map((item) => `${cleanUserId}/${item.name}`);
                         }
                     } catch (_) {}
                 }
@@ -3798,7 +3783,10 @@
                         });
                     } catch (_) {}
                 } else if (client?.storage) {
-                    await client.storage.from("avatary").remove(plikiDoUsuniecia).catch(() => {});
+                    await client.storage
+                        .from("avatary")
+                        .remove(plikiDoUsuniecia)
+                        .catch(() => {});
                 }
             } catch (err) {
                 console.warn("Nie udało się usunąć starych avatarów:", err);
@@ -3832,15 +3820,11 @@
                                 if (blob) {
                                     resolve({ blob, ext: "webp", mime: "image/webp" });
                                 } else {
-                                    canvas.toBlob(
-                                        (jpegBlob) => resolve({ blob: jpegBlob, ext: "jpg", mime: "image/jpeg" }),
-                                        "image/jpeg",
-                                        jakosc
-                                    );
+                                    canvas.toBlob((jpegBlob) => resolve({ blob: jpegBlob, ext: "jpg", mime: "image/jpeg" }), "image/jpeg", jakosc);
                                 }
                             },
                             "image/webp",
-                            jakosc
+                            jakosc,
                         );
                     };
                     img.src = e.target.result;
@@ -3859,11 +3843,7 @@
             if (!modalPrzebiegu || !kontenerZakladek || !kontenerTabeleLegow) return;
 
             const legi = mecz.pelny_przebieg_meczu || mecz.historiaMeczuLegi || [];
-            const statystyki = Array.isArray(mecz.statystyki_graczy) && mecz.statystyki_graczy.length > 0
-                ? mecz.statystyki_graczy
-                : Array.isArray(mecz.gracze)
-                  ? mecz.gracze
-                  : [];
+            const statystyki = Array.isArray(mecz.statystyki_graczy) && mecz.statystyki_graczy.length > 0 ? mecz.statystyki_graczy : Array.isArray(mecz.gracze) ? mecz.gracze : [];
 
             if (legi.length === 0 && statystyki.length === 0) {
                 alert("Brak szczegółowych danych dla tego pojedynku.");
@@ -3876,12 +3856,13 @@
             kontenerZakladek.innerHTML = "";
             kontenerTabeleLegow.innerHTML = "";
 
-            const gracze = statystyki.length > 0
-                ? statystyki
-                : mecz.graczeInfo || [
-                      { id: 0, nazwa: "Gospodarz" },
-                      { id: 1, nazwa: "Gość" },
-                  ];
+            const gracze =
+                statystyki.length > 0
+                    ? statystyki
+                    : mecz.graczeInfo || [
+                          { id: 0, nazwa: "Gospodarz" },
+                          { id: 1, nazwa: "Gość" },
+                      ];
 
             const btnTabGlowneStats = document.createElement("button");
             btnTabGlowneStats.className = "przycisk-zakladki aktywna";
@@ -4079,12 +4060,7 @@
                 const klient = supaClient || client;
                 if (klient && profil.id) {
                     try {
-                        const { data: matches, error: mErr } = await klient
-                            .from("matches")
-                            .select("*")
-                            .or(`host_id.eq.${profil.id},gosc_id.eq.${profil.id}`)
-                            .order("utworzono", { ascending: true })
-                            .limit(50);
+                        const { data: matches, error: mErr } = await klient.from("matches").select("*").or(`host_id.eq.${profil.id},gosc_id.eq.${profil.id}`).order("utworzono", { ascending: true }).limit(50);
 
                         if (!mErr && Array.isArray(matches) && matches.length > 0) {
                             historiaKlasyczna = matches.map((m) => {
@@ -4768,20 +4744,13 @@
                     await wykonajZapisProfilu(profilUpdate, aktualnyUser.id);
 
                     if (noweHaslo && client?.auth) {
-                        const { error: passErr } = await zLimitemCzasu(
-                            client.auth.updateUser({ password: noweHaslo }),
-                            "aktualizacja hasła",
-                            8000
-                        );
+                        const { error: passErr } = await zLimitemCzasu(client.auth.updateUser({ password: noweHaslo }), "aktualizacja hasła", 8000);
                         if (passErr) throw passErr;
                     }
 
                     if (client?.auth) {
                         try {
-                            Promise.race([
-                                client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }),
-                                new Promise((r) => setTimeout(r, 2000))
-                            ]).catch(() => {});
+                            Promise.race([client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }), new Promise((r) => setTimeout(r, 2000))]).catch(() => {});
                         } catch (_) {}
                     }
 
@@ -4943,11 +4912,7 @@
                         this.textContent = "Akceptowanie...";
                         let sukces = false;
                         try {
-                            const { error } = await zLimitemCzasu(
-                                client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId),
-                                "akceptacja zaproszenia",
-                                4000
-                            );
+                            const { error } = await zLimitemCzasu(client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId), "akceptacja zaproszenia", 4000);
                             if (!error) sukces = true;
                         } catch (_) {}
 
@@ -4963,11 +4928,7 @@
                         let sukces = false;
                         let kodBledu = null;
                         try {
-                            const { error } = await zLimitemCzasu(
-                                client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]),
-                                "wysyłanie zaproszenia",
-                                4000
-                            );
+                            const { error } = await zLimitemCzasu(client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]), "wysyłanie zaproszenia", 4000);
                             if (!error) sukces = true;
                             else kodBledu = error.code;
                         } catch (_) {}
@@ -5048,9 +5009,7 @@
 
                     const isProd = window.location.hostname === "stacjadarta.pl";
                     const sciezkaZasobu = `/storage/v1/object/avatary/${encodeURI(nowaSciezka)}`;
-                    const uploadUrls = isProd
-                        ? [`/api/supabase${sciezkaZasobu}`, `${SUPA_URL}${sciezkaZasobu}`]
-                        : [`${SUPA_URL}${sciezkaZasobu}`];
+                    const uploadUrls = isProd ? [`/api/supabase${sciezkaZasobu}`, `${SUPA_URL}${sciezkaZasobu}`] : [`${SUPA_URL}${sciezkaZasobu}`];
 
                     const authTokensToTry = token ? [`Bearer ${token}`, `Bearer ${SUPA_KEY}`] : [`Bearer ${SUPA_KEY}`];
                     for (const uploadUrl of uploadUrls) {
