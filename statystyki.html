@@ -1701,6 +1701,7 @@
                 <div id="sekcja-ostatnich-meczy" class="sekcje-gracza">
                     <h2 class="stats-tytul-naglowek">Ostatnie mecze</h2>
                     <div id="lista-ostatnich-meczy">
+                        
                         <div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>
                     </div>
                     <div id="kontener-wiecej-meczy" style="display: none; text-align: center; margin-top: 15px">
@@ -2991,10 +2992,14 @@
                         if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
                             return Number.isInteger(value) ? value : Math.round(value);
                         }
+                        const cleanNum = typeof value === "number" ? Number(value.toFixed(2)) : value;
                         if (curInfo?.jednostka === "%") {
-                            return `${value}%`;
+                            return `${cleanNum}%`;
                         }
-                        return value;
+                        if (curInfo?.jednostka) {
+                            return `${cleanNum}${curInfo.jednostka}`;
+                        }
+                        return cleanNum;
                     };
                 }
 
@@ -3125,10 +3130,14 @@
                                     if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
                                         return Number.isInteger(value) ? value : Math.round(value);
                                     }
+                                    const cleanNum = typeof value === "number" ? Number(value.toFixed(2)) : value;
                                     if (curInfo?.jednostka === "%") {
-                                        return `${value}%`;
+                                        return `${cleanNum}%`;
                                     }
-                                    return value;
+                                    if (curInfo?.jednostka) {
+                                        return `${cleanNum}${curInfo.jednostka}`;
+                                    }
+                                    return cleanNum;
                                 },
                             },
                         },
@@ -3521,14 +3530,27 @@
             let mojaSrednia = "-";
             let rywalSrednia = "-";
 
+            let timestamp = 0;
             if (m.utworzono) {
                 try {
-                    dataMeczu = new Date(m.utworzono.replace(" ", "T")).toLocaleDateString("pl-PL");
+                    const parsedDate = new Date(m.utworzono.replace(" ", "T"));
+                    dataMeczu = parsedDate.toLocaleDateString("pl-PL");
+                    timestamp = parsedDate.getTime() || 0;
                 } catch (e) {
                     dataMeczu = "-";
                 }
             } else if (m.data) {
                 dataMeczu = m.data;
+                try {
+                    if (m.data.includes(".")) {
+                        const parts = m.data.split(".");
+                        if (parts.length === 3) {
+                            timestamp = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
+                        }
+                    } else {
+                        timestamp = new Date(m.data).getTime() || 0;
+                    }
+                } catch (_) {}
             }
 
             if (m.host_id || m.gosc_id) {
@@ -3591,6 +3613,7 @@
 
             return {
                 ...m,
+                _timestamp: timestamp,
                 _czyWygrana: czyWygrana,
                 _wynik: wynik,
                 _przeciwnikNazwa: przeciwnikNazwa,
@@ -3696,14 +3719,12 @@
             const znormalizowaneZdalne = meczeZdalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
             const znormalizowaneLokalne = meczeLokalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
 
-            if (znormalizowaneZdalne.length > 0) {
-                const zdalneSygnatury = new Set(znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`));
-                const brakujaceLokalne = znormalizowaneLokalne.filter((lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`));
-                const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
-                return limit ? scalone.slice(0, limit) : scalone;
-            }
+            const zdalneSygnatury = new Set(znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`));
+            const brakujaceLokalne = znormalizowaneLokalne.filter((lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`));
+            const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
+            scalone.sort((a, b) => (b._timestamp || 0) - (a._timestamp || 0));
 
-            return limit ? znormalizowaneLokalne.slice(0, limit) : znormalizowaneLokalne;
+            return limit ? scalone.slice(0, limit) : scalone;
         }
 
         function renderujListeMeczow(meczeDoWyswietlenia) {
