@@ -4,16 +4,302 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: calc(100vh - 120px);
-            padding: 40px 20px;
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
+            background-color: var(--primary-color-lighter-darker);
+            gap: 10px;
+            padding-bottom: 10px;
+
+        }
+        .main-content{
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .header-main {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--primary-form-color);
+            width: 100%;
+            margin: 0 auto;
+            justify-content: center;
+            align-items: center;
+
         }
 
-        main > * {
-            position: relative;
-            z-index: 2;
+        .header-main h1 {
+            text-align: center;
+            color: var(--secondary-color);
+            font-size: 48px;
+            margin: 0;
+
         }
-        @media (max-width: 1050px) {
+
+        .header-main p {
+            margin: 0;
+            color: #555555;
+            font-size: 14px;
+        }
+
+        .main-o-mnie {
+            display: flex;
+            flex-direction: row;
+            background-color: var(--primary-color);
+            gap: 50px;
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid var(--primary-color-border)
+        }
+
+        .main-o-mnie img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 50%;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .main-o-mnie h2 {
+            text-align: left;
+            font-size: 40px;
+            margin: 0;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .main-o-mnie p {
+            text-align: left;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .main-o-mnie .opis-stanowiska {
+            color: #717171;
+            padding-bottom: 10px;
+        }
+
+        .ja {
+            border-left: 1px solid #555555;
+            padding: 36px;
+        }
+
+        .nasze-cele {
+            width: 100%;
+            background-color: var(--primary-color);
+            border:1px solid var(--primary-color-border);
+            border-radius: 12px;
+        }
+
+        .nasze-cele h2 {
+            font-size: 32px;
+            text-align: center;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .cele {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            padding-bottom: 10px;
+            gap: 40px;
+        }
+        .cele h3{
+            color: var(--secondary-color);
+            text-align: center;
+            background-color: var(--primary-color-lighter-darker);
+            padding: 10px;
+            margin-top: 0;
+            border-radius: 12px 12px 0 0 ;
+        }
+        .cele div{
+            background-color: var(--primary-color-lighter);
+            width: 45%;
+            border-radius: 12px;
+            border: 1px solid var(--primary-color-border);
+        }
+        .cele li:not(:last-child){
+            margin-bottom:10px;
+            border-bottom: 1px solid #555555;
+        }
+        .main-kontener-dolny{
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            width: 100%;
+        }
+        .statystyki-live{
+            background-color: var(--primary-color);
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--primary-color-border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .statystyki-live h3{
+            background-color: var(--primary-color);
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            margin: 0;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        .bloki-statystyk{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            padding: 18px;
+            box-sizing: border-box;
+            flex: 1;
+            background-color: var(--primary-color);
+        }
+        .blok-statystyk{
+            border: 1px solid var(--primary-color-border);
+            background-color: var(--primary-color-lighter-darker);
+            border-radius: 12px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .blok-statystyk h4{
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            line-height: 1.3;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .blok-statystyk p{
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0;
+            color: var(--secondary-color);
+            letter-spacing: -0.5px;
+            font-variant-numeric: tabular-nums;
+            transition: transform 0.2s ease;
+        }
+        .blok-statystyk p.licznik-skonczony {
+            animation: licznikFinish 0.35s ease-out;
+        }
+        @keyframes licznikFinish {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.08); text-shadow: 0 0 24px rgba(64, 218, 64, 0.6); }
+            100% { transform: scale(1); }
+        }
+        .social-media-kontener{           
+            background-color: var(--primary-color); 
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--primary-color-border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .social-media-kontener h3{
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            margin: 0;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        .social-media{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 50px;
+            max-width: 80%;
+            margin: 0 auto;
+            padding: 10px 0;
+        }
+        .social-media img{
+            max-width: 100px;
+        }
+        .social-media a{
+            text-decoration: none;
+            color: white;
+            margin: 0;
+            text-align: center;
+            background-color: var(--primary-color-lighter-darker);
+            padding: 10px;
+            border-radius:12px;
+            border:1px solid var(--primary-color-border);
+            transition: all 0.3s ease;
+        }
+        .social-media a:hover{
+            transform: translateY(-3px);
+            scale: 1.04;
+        }
+
+
+        @media (max-width: 1150px) {
+            .main-kontener-dolny {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .main-o-mnie {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 24px;
+                padding: 24px;
+            }
+            .main-o-mnie h2 {
+                text-align: center;
+            }
+            .ja {
+                border-left: none;
+                border-top: 1px solid #555555;
+                padding: 24px 0 0 0;
+            }
+            .cele {
+                flex-direction: column;
+                gap: 16px;
+                align-items: center;
+            }
+            .cele div {
+                width: 90%;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .bloki-statystyk {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding: 12px;
+            }
+            .blok-statystyk {
+                padding: 12px 8px;
+            }
+            .blok-statystyk h4 {
+                font-size: 11px;
+                min-height: 28px;
+                letter-spacing: 0.4px;
+            }
+            .blok-statystyk p {
+                font-size: 32px;
+            }
+            .social-media {
+                gap: 20px;
+            }
+            .social-media img {
+                max-width: 60px;
+            }
         }

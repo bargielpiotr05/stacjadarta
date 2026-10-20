@@ -1,15 +1,17 @@
 <!doctype html>
 <html lang="pl">
     <head>
-                <!-- Google tag (gtag.js) -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
 
-                    gtag('config', 'G-6Q270446R2');
-                </script>
+            gtag("config", "G-6Q270446R2");
+        </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>O nas | Stacja Dart</title>
@@ -27,10 +29,234 @@
     <body>
         <header id="wspolny-header"></header>
         <main>
-            <h1>Wkrótce zostanie opublikowane</h1>
+            <div class="header-main">
+                <h1><i>"OD GRACZA DLA GRACZY..."</i></h1>
+                <p>(z takim motto jest tworzona ta strona)</p>
+            </div>
+            <div class="main-content">
+                <div class="main-o-mnie">
+                    <img src="./loga/logo.png" alt="zdjecie-reprezentatywne" />
+                    <div class="ja">
+                        <h2>Piotr</h2>
+                        <p class="opis-stanowiska">(Twórca, marketer, zarządca, tester i w sumie to wszystko co jest związane z tą stroną)</p>
+                        <p>
+                            Stacja Darta to dla mnie coś więcej niż projekt - to połączenie moich dwóch największych pasji: programowania i gry w darta. Zauważyłem, że w Polsce brakuje nowoczesnej, w pełni darmowej platformy, która nie tylko liczy punkty, ale też pozwala analizować grę w zaawansowany sposób. Cały kod, design i pomysły, które tu widzicie, to
+                            efekt setek godzin spędzonych przed monitorem (i kilku lotek rzuconych w ścianę ze złości podczas testów). Chcę, aby Stacja Darta rosła razem z Wami. Jeśli macie pomysł na nową funkcję - piszcie śmiało. Tworzymy to wspólnie!
+                        </p>
+                    </div>
+                </div>
+                <div class="nasze-cele">
+                    <h2>Nasze główne cele:</h2>
+                    <div class="cele">
+                        <div class="cele-strona">
+                            <h3>Cele na stronę</h3>
+                            <ul>
+                                <li>Płynne i czytelne systemy liczenia punktów, działające bez zacięć na telefonach i komputerach.</li>
+                                <li>Rozbudowa interaktywnych statystyk i heatmap, by każdy gracz mógł dokładnie analizować swoje postępy.</li>
+                                <li>Wprowadzenie nowych trybów treningowych i gier wieloosobowych online.</li>
+                                <li>Stworzenie stabilnego systemu rankingowego dla graczy na każdym poziomie.</li>
+                            </ul>
+                        </div>
+                        <div class="cele-marketing">
+                            <h3>Cele mediowe</h3>
+                            <ul>
+                                <li>Stworzenie najbardziej rozpoznawalnej i najchętniej używanej aplikacji do darta w Polsce.</li>
+                                <li>Aby organizatorzy lokalnych turniejów korzystali z naszego darmowego systemu.</li>
+                                <li>Zbudowanie największej, aktywnej społeczności darterów.</li>
+                                <li>Nawiązanie współpracy z polskimi klubami i zawodnikami.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-kontener-dolny">
+                    <div class="statystyki-live">
+                        <h3>Statystyki</h3>
+                        <div class="bloki-statystyk">
+                            <div id="aktywni-gracze" class="blok-statystyk">
+                                <h4>Aktywni gracze</h4>
+                                <p data-cel="19">19</p>
+                            </div>
+                            <div id="rozegrane-mecze" class="blok-statystyk">
+                                <h4>Rozegrane mecze</h4>
+                                <p data-cel="59">59</p>
+                            </div>
+                            <div id="rzucone-180" class="blok-statystyk">
+                                <h4>Rzucone 180</h4>
+                                <p data-cel="14">14</p>
+                            </div>
+                            <div id="mecze-online" class="blok-statystyk">
+                                <h4>Rozegrane mecze online</h4>
+                                <p data-cel="8">8</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="social-media-kontener">
+                        <h3>Obserwuj nas w sieci i wesprzyj rozwój!</h3>
+                        <div class="social-media">
+                            <a href="https://www.facebook.com/stacjadarta/">
+                                <img src="./ikony/facebook.png" />
+                                <p><b>Facebook</b></p>
+                            </a>
+                            <a href="https://www.instagram.com/stacjadarta/">
+                                <img src="./ikony/instagram.png" />
+                                <p><b>Instagram</b></p>
+                            </a>
+                            <a href="https://buycoffee.to/stacjadarta/">
+                                <img src="./ikony/buycoffee.png" />
+                                <p><b>Wesprzyj nas</b></p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
         <footer id="wspolny-footer"></footer>
     </body>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./menu.js" defer></script>
+    <script>
+        // Inicjalizacja i dynamiczne pobieranie statystyk z bazy Supabase wraz z animacją licznika
+        document.addEventListener("DOMContentLoaded", async () => {
+            const SUPA_URL = window.SUPABASE_URL || "https://mjebhhagwxtvhggyjwue.supabase.co";
+            const SUPA_KEY = window.SUPABASE_ANON_KEY || "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
+
+            const mapaBlokow = {
+                "aktywni-gracze": document.querySelector("#aktywni-gracze p"),
+                "rozegrane-mecze": document.querySelector("#rozegrane-mecze p"),
+                "rzucone-180": document.querySelector("#rzucone-180 p"),
+                "mecze-online": document.querySelector("#mecze-online p"),
+            };
+
+            // Struktura przechowująca bieżące i docelowe wartości dla każdego bloku
+            const stanLicznikow = {};
+            Object.keys(mapaBlokow).forEach((klucz) => {
+                const el = mapaBlokow[klucz];
+                if (!el) return;
+                const celDomyslny = parseInt(el.getAttribute("data-cel") || el.textContent.trim(), 10) || 0;
+                stanLicznikow[klucz] = {
+                    el,
+                    aktualnaWartosc: 0,
+                    cel: celDomyslny,
+                };
+                el.textContent = "0"; // Punkt startowy
+            });
+
+            let czyWidoczna = false;
+            let czyAnimowanoWstepnie = false;
+
+            // Funkcja animująca dany licznik od bieżącej wartości do celu
+            function animujLicznik(stan, czasTrwania = 600) {
+                if (!stan || !stan.el) return;
+                const el = stan.el;
+                const startWartosc = stan.aktualnaWartosc;
+                const docelowaWartosc = stan.cel;
+                if (startWartosc === docelowaWartosc) {
+                    el.textContent = docelowaWartosc;
+                    el.classList.add("licznik-skonczony");
+                    return;
+                }
+
+                const czasStart = performance.now();
+                el.classList.remove("licznik-skonczony");
+
+                function klatka(teraz) {
+                    const uplyw = teraz - czasStart;
+                    const postep = Math.min(uplyw / czasTrwania, 1);
+                    // Easing: szybki start, płynne wyhamowanie (ease-out cubic)
+                    const factor = 1 - Math.pow(1 - postep, 3);
+                    const wartosc = Math.round(startWartosc + (docelowaWartosc - startWartosc) * factor);
+                    el.textContent = wartosc;
+                    stan.aktualnaWartosc = wartosc;
+
+                    if (postep < 1) {
+                        requestAnimationFrame(klatka);
+                    } else {
+                        el.textContent = docelowaWartosc;
+                        stan.aktualnaWartosc = docelowaWartosc;
+                        el.classList.add("licznik-skonczony");
+                    }
+                }
+
+                requestAnimationFrame(klatka);
+            }
+
+            function odpalWszystkieAnimacje(czasTrwania = 600) {
+                Object.values(stanLicznikow).forEach((stan) => animujLicznik(stan, czasTrwania));
+            }
+
+            // Obsługa przewinięcia do sekcji (IntersectionObserver)
+            const sekcjaStatystyk = document.querySelector(".statystyki-live");
+            if (sekcjaStatystyk && "IntersectionObserver" in window) {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting && !czyWidoczna) {
+                                czyWidoczna = true;
+                                czyAnimowanoWstepnie = true;
+                                odpalWszystkieAnimacje(650);
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.25, rootMargin: "0px 0px -40px 0px" }
+                );
+                observer.observe(sekcjaStatystyk);
+            } else {
+                czyWidoczna = true;
+                czyAnimowanoWstepnie = true;
+                odpalWszystkieAnimacje(650);
+            }
+
+            // Asynchroniczne pobranie danych z bazy Supabase w tle
+            async function pobierzLiveZBazy() {
+                try {
+                    let klient = window.supabaseClient || window.supabaseKlient;
+                    if (!klient && window.supabase && typeof window.supabase.createClient === "function") {
+                        klient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+                    }
+                    if (!klient) return;
+
+                    const [resProf, resMat, res180, resRooms] = await Promise.allSettled([
+                        klient.from("profiles").select("*", { count: "exact", head: true }),
+                        klient.from("matches").select("*", { count: "exact", head: true }),
+                        klient.from("profiles").select("ilosc_180"),
+                        klient.from("rooms").select("*", { count: "exact", head: true }),
+                    ]);
+
+                    const swiezeDane = {};
+
+                    if (resProf.status === "fulfilled" && typeof resProf.value?.count === "number") {
+                        swiezeDane["aktywni-gracze"] = resProf.value.count;
+                    }
+                    if (resMat.status === "fulfilled" && typeof resMat.value?.count === "number") {
+                        swiezeDane["rozegrane-mecze"] = resMat.value.count;
+                    }
+                    if (res180.status === "fulfilled" && Array.isArray(res180.value?.data)) {
+                        swiezeDane["rzucone-180"] = res180.value.data.reduce((acc, p) => acc + (Number(p.ilosc_180) || 0), 0);
+                    }
+                    if (resRooms.status === "fulfilled" && typeof resRooms.value?.count === "number") {
+                        swiezeDane["mecze-online"] = resRooms.value.count;
+                    }
+
+                    // Aktualizacja wartości w stanie i płynne dokręcenie licznika
+                    Object.keys(swiezeDane).forEach((klucz) => {
+                        const nowaWartosc = swiezeDane[klucz];
+                        if (stanLicznikow[klucz] && typeof nowaWartosc === "number") {
+                            stanLicznikow[klucz].cel = nowaWartosc;
+                            stanLicznikow[klucz].el.setAttribute("data-cel", nowaWartosc);
+
+                            // Jeśli użytkownik już przewinął stronę i zobaczył licznik, płynnie przekręcamy do nowej wartości
+                            if (czyAnimowanoWstepnie) {
+                                animujLicznik(stanLicznikow[klucz], 450);
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn("Pobieranie statystyk Supabase:", e);
+                }
+            }
+
+            pobierzLiveZBazy();
+        });
+    </script>
 </html>
