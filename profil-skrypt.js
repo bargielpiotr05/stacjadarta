@@ -124,13 +124,23 @@
         const sekwencjaTarczy = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
 
         // Formatowanie skuteczności: np. "50% (13/26)"
-        function formatujSkutecznosc(trafienia, rzuty) {
+        function formatujSkutecznosc(trafienia, rzuty, procentWprost = null) {
             const t = Number(trafienia) || 0;
             const r = Number(rzuty) || 0;
-            if (r === 0) return "0% (0/0)";
-            const proc = (t / r) * 100;
-            const procStr = Number.isInteger(proc) ? proc : proc.toFixed(1);
-            return `${procStr}% (${t}/${r})`;
+            if (r > 0) {
+                const proc = (t / r) * 100;
+                const procStr = Number.isInteger(proc) ? proc : proc.toFixed(1);
+                return `${procStr}% (${t}/${r})`;
+            }
+            if (procentWprost !== null && procentWprost !== undefined && Number(procentWprost) > 0) {
+                const p = Number(procentWprost);
+                const pStr = Number.isInteger(p) ? p : p.toFixed(1);
+                return t > 0 ? `${pStr}% (${t} traf.)` : `${pStr}%`;
+            }
+            if (t > 0) {
+                return `${t} trafień`;
+            }
+            return "0% (0/0)";
         }
 
         // ==============================================================================
@@ -296,17 +306,45 @@
         }
 
         function podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml) {
+            if (!el) return;
+
+            // Zawsze zapisujemy najświeższe dane dla elementu SVG
+            el._heatmapData = {
+                infoBoxId,
+                defaultText,
+                tooltipHtml,
+                banerHtml,
+            };
+
+            // Jeśli dany sektor jest w tej chwili zaznaczony, od razu odświeżamy baner najnowszymi danymi
+            if (aktywnyWybor.el === el) {
+                const infoBox = document.getElementById(infoBoxId);
+                if (infoBox) {
+                    infoBox.classList.add("aktywny");
+                    infoBox.innerHTML = `<span>${banerHtml}</span>`;
+                }
+                const tooltip = document.getElementById("heatmap-tooltip");
+                if (tooltip && tooltip.style.display !== "none") {
+                    tooltip.innerHTML = tooltipHtml;
+                }
+            }
+
+            // Zapobiegamy duplikowaniu nasłuchiwaczy zdarzeń przy ponownych renderach danych
+            if (el._interakcjaPodlaczona) return;
+            el._interakcjaPodlaczona = true;
+
             let ostatnieTapniecie = 0;
 
             const aktywuj = (e) => {
-                if (e) {
-                    if (typeof e.stopPropagation === "function") {
-                        e.stopPropagation();
-                    }
+                if (e && typeof e.stopPropagation === "function") {
+                    e.stopPropagation();
                 }
                 const teraz = Date.now();
                 if (teraz - ostatnieTapniecie < 350) return;
                 ostatnieTapniecie = teraz;
+
+                const data = el._heatmapData;
+                if (!data) return;
 
                 let cx = null;
                 let cy = null;
@@ -320,7 +358,7 @@
                     cx = e.clientX;
                     cy = e.clientY;
                 }
-                ustawWybranySektor(el, infoBoxId, defaultText, tooltipHtml, banerHtml, cx, cy);
+                ustawWybranySektor(el, data.infoBoxId, data.defaultText, data.tooltipHtml, data.banerHtml, cx, cy);
             };
 
             // Touch events dla iPhone / iPad (iOS Safari)
@@ -347,12 +385,16 @@
                     el.setAttribute("stroke", "rgba(255, 255, 255, 0.85)");
                     el.setAttribute("stroke-width", "0.6");
                 }
-                pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                if (el._heatmapData) {
+                    pokazTooltipLokalny(el._heatmapData.tooltipHtml, e.clientX, e.clientY);
+                }
             });
 
             el.addEventListener("mousemove", (e) => {
                 if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
-                pokazTooltipLokalny(tooltipHtml, e.clientX, e.clientY);
+                if (el._heatmapData) {
+                    pokazTooltipLokalny(el._heatmapData.tooltipHtml, e.clientX, e.clientY);
+                }
             });
 
             el.addEventListener("mouseleave", () => {
@@ -410,14 +452,14 @@
 
             elementy.forEach((el) => {
                 const rawId = el.id.replace(/^d/, "");
-                const daneSektora = sektory[rawId] || sektory[`d${rawId}`] || null;
+                const daneSektora = sektory[rawId] || sektory[String(rawId)] || sektory[`d${rawId}`] || null;
 
                 const rzuty = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.rzuty) || 0 : 0;
                 const traf = daneSektora && typeof daneSektora === "object" ? Number(daneSektora.trafienia) || 0 : Number(daneSektora) || 0;
                 const proc = rzuty > 0 ? (traf / rzuty) * 100 : daneSektora && typeof daneSektora === "object" ? Number(daneSektora.procent) || 0 : Number(daneSektora) || 0;
 
                 const nazwa = rawId === "innerbull" ? "Inner Bull (D25)" : `Double ${rawId}`;
-                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+                const tekstSkut = formatujSkutecznosc(traf, rzuty, proc);
 
                 if (rzuty > 0) {
                     maRzuty = true;
@@ -445,7 +487,7 @@
                     <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
                     <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
                 `;
-                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="color:black; font-size:15px;">${tekstSkut}</strong>`;
+                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="font-size:15px;">${tekstSkut}</strong>`;
 
                 podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
@@ -693,14 +735,14 @@
 
             elementy.forEach((el) => {
                 const rawId = el.id.replace(/^atw_/, "");
-                const daneSektora = sektory[rawId];
+                const daneSektora = sektory[rawId] || sektory[String(rawId)] || sektory[`atw_${rawId}`] || null;
 
                 const rzuty = typeof daneSektora === "object" ? Number(daneSektora.rzuty) || 0 : daneSektora > 0 ? Number(daneSektora) : 0;
                 const traf = typeof daneSektora === "object" ? Number(daneSektora.trafienia) || 0 : Number(daneSektora) || 0;
-                const proc = rzuty > 0 ? (traf / rzuty) * 100 : traf > 0 ? 100 : 0;
+                const proc = rzuty > 0 ? (traf / rzuty) * 100 : traf > 0 ? 100 : (typeof daneSektora === "object" ? Number(daneSektora.procent) || 0 : 0);
 
                 const nazwa = rawId === "innerbull" ? "Bullseye (25/50)" : `Sektor ${rawId}`;
-                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+                const tekstSkut = formatujSkutecznosc(traf, rzuty, proc);
 
                 if (rzuty > 0) {
                     maRzuty = true;
@@ -728,7 +770,7 @@
                     <span style="color:var(--secondary-color); font-size:14px; font-weight:700;">${nazwa}</span>: 
                     <strong style="color:#ffffff; font-size:14px;">${tekstSkut}</strong>
                 `;
-                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="color:black; font-size:15px;">${tekstSkut}</strong>`;
+                const banerHtml = `<strong>${nazwa}</strong> — Skuteczność: <strong style="font-size:15px;">${tekstSkut}</strong>`;
 
                 podlaczInterakcjeSektora(el, infoBoxId, defaultText, tooltipHtml, banerHtml);
             });
@@ -763,12 +805,13 @@
 
             elementy.forEach((el) => {
                 const rawId = el.id.replace(/^sh_/, "");
-                const rDane = rundy[rawId] || { punkty: 0, rzuty: 0, trafienia: 0, single: 0, double: 0, triple: 0, shanghai: false };
+                const rDane = rundy[rawId] || rundy[String(rawId)] || rundy[`sh_${rawId}`] || { punkty: 0, rzuty: 0, trafienia: 0, single: 0, double: 0, triple: 0, shanghai: false };
                 const punkty = Number(rDane.punkty) || 0;
                 const rzuty = Number(rDane.rzuty) || ((rDane.single || 0) + (rDane.double || 0) + (rDane.triple || 0) > 0 ? 3 : 0);
                 const traf = Number(rDane.trafienia) || (rDane.single || 0) + (rDane.double || 0) + (rDane.triple || 0);
                 const czyShanghai = Boolean(rDane.shanghai);
-                const tekstSkut = formatujSkutecznosc(traf, rzuty);
+                const procSh = rzuty > 0 ? (traf / rzuty) * 100 : (punkty > 0 ? 100 : 0);
+                const tekstSkut = formatujSkutecznosc(traf, rzuty, procSh);
 
                 // Kontrast cienia bazujący na zdobytych punktach
                 const alpha = (0.85 * (1 - punkty / maxPunkty)).toFixed(2);
