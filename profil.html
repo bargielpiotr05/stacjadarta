@@ -18,7 +18,8 @@
         <meta name="description" content="Profil gracza na platformie Stacja Dart." />
         <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <link rel="stylesheet" href="./global.css" />
         <link rel="stylesheet" href="./profil-style.css" />
         <link rel="stylesheet" href="./formularz.css" />
@@ -26,46 +27,7 @@
 
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="./menu.js" defer></script>
-        <script>
-            const SUPA_URL = "https://mjebhhagwxtvhggyjwue.supabase.co";
-            const SUPA_KEY = "sb_publishable_1n3SqWhrrIzojpyFgnmaTw_a1pfzi5R";
-
-            function supabaseProxyFetch(input, init) {
-                const isLocal =
-                    window.location.hostname === "localhost" ||
-                    window.location.hostname === "127.0.0.1" ||
-                    window.location.hostname.startsWith("192.168.") ||
-                    window.location.hostname.startsWith("10.") ||
-                    window.location.hostname.endsWith(".local") ||
-                    window.location.port !== "" ||
-                    window.location.protocol === "file:";
-
-                if (isLocal) {
-                    return fetch(input, init);
-                }
-
-                const sharedProxy = window.supabaseProxyFetch;
-                if (sharedProxy && sharedProxy !== supabaseProxyFetch) return sharedProxy(input, init);
-                return fetch(input, init);
-            }
-
-            if (!window.supabaseClient && window.supabase) {
-                window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-                    global: {
-                        fetch: supabaseProxyFetch,
-                    },
-                    auth: {
-                        persistSession: true,
-                        autoRefreshToken: true,
-                        detectSessionInUrl: true,
-                        lock: async (name, acquireTimeout, fn) => await fn(),
-                    },
-                });
-            }
-
-            window.supabaseKlient = window.supabaseClient;
-        </script>
-    </head>
+        </head>
     <body>
         <header id="wspolny-header"></header>
         <main>
@@ -85,7 +47,7 @@
                             <h2 id="nazwa-uzytkownika">Ładowanie...</h2>
                             <div class="ranga-wrapper">
                                 <span id="tag-ranga" class="tag-ranga" style="display: none"></span>
-                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?">?</button>
+                                <button type="button" id="btn-info-rangi" class="btn-info-rangi" title="Jak działają rangi?" style="display: none">?</button>
                             </div>
                         </div>
                         <span id="tag-data" class="tag-data"></span>
@@ -98,73 +60,560 @@
                             <span>Win Rate</span>
                             <strong id="header-winrate">0.0%</strong>
                         </div>
-                        <button id="btn-edycja-profilu" type="button">Edytuj profil</button>
+                        <button id="btn-edycja-profilu" type="button" style="display: none">Edytuj profil</button>
                     </div>
                 </div>
-
+                <div id="sekcja-sprzetu" class="sekcje-gracza" style="margin-top: 25px; width: 100%">
+                    <div class="chart-card" style="padding: 20px 14px 10px 14px; border-radius: 12px">
+                        <h1 class="stats-tytul-naglowek">Sprzęt</h1>
+                        <div id="bloki-sprzetu" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="barele" class="wspolny-div">
+                                            <h4>Barele:</h4>
+                                            <p id="barele-gracza">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="shaft" class="wspolny-div">
+                                            <h4>Shafty:</h4>
+                                            <p id="shafty-gracza">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="groty" class="wspolny-div">
+                                            <h4>Groty:</h4>
+                                            <p id="groty-gracza">-</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div id="tarcza" class="wspolny-div">
+                                            <h4>Tarcza:</h4>
+                                            <p id="tarcza-gracza">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="autoscore" class="wspolny-div">
+                                            <h4>Auto-score:</h4>
+                                            <p id="autoscore-gracza">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="druzyna" class="wspolny-div">
+                                            <h4>Drużyna:</h4>
+                                            <p id="druzyna-gracza">-</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <div id="sekcja-statystyk" class="sekcje-gracza">
-                    <h3>Statystyki</h3>
-                    <div id="bloki-statystyk" class="bloki-sekcji">
-                        <div id="srednia-gracza" class="wspolny-div">
-                            <h4>Średnia:</h4>
-                            <p id="stat-srednia">0.00</p>
+                    <h1 class="stats-tytul-naglowek">Statystyki</h1>
+                    <div id="btn-container-stats">
+                        <button type="button" class="btn-stat-tab aktywna" data-target="stats-klasyczna">Klasyczna</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-shanghai">Shanghai</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-around-the-world">Around The World</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-121checkout">121 Checkout</button>
+                        <button type="button" class="btn-stat-tab" data-target="stats-doubles">Doubles</button>
+                    </div>
+
+                    <!-- 1. Klasyczna -->
+                    <div id="stats-klasyczna" class="stats-sekcja aktywna">
+                        <!-- Karta Wykresu Klasyczna -->
+                        <div class="chart-card">
+                            <div id="bloki-statystyk" class="bloki-sekcji">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div id="srednia-gracza" class="wspolny-div">
+                                                <h4>Średnia:</h4>
+                                                <p id="stat-srednia">0.00</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="srednia-9-lotek" class="wspolny-div">
+                                                <h4>Średnia 9-lotek:</h4>
+                                                <p id="stat-9lotek">0.00</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="liczba-180" class="wspolny-div">
+                                                <h4>Liczba 180:</h4>
+                                                <p id="stat-180">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div id="rozegrane-mecze" class="wspolny-div">
+                                                <h4>Rozegrane mecze:</h4>
+                                                <p id="stat-mecze">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="zwyciestwa" class="wspolny-div">
+                                                <h4>Zwycięstwa:</h4>
+                                                <p id="stat-wygrane">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="porażki" class="wspolny-div">
+                                                <h4>Porażki:</h4>
+                                                <p id="stat-porazki">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul">Wykres Średniej</h2>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="klasyczna" data-metric="srednia">Średnia 3 lotek</button>
+                                    <button type="button" class="btn-metryka" data-chart="klasyczna" data-metric="srednia9">Średnia 9 lotek</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-klas-ostatni">-</strong></span>
+                                <span class="quick-stat-chip">Rekord meczu: <strong id="chip-klas-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-klas-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-klasyczna"></canvas>
+                            </div>
                         </div>
-                        <div id="srednia-9-lotek" class="wspolny-div">
-                            <h4>Średnia 9-lotek:</h4>
-                            <p id="stat-9lotek">0.00</p>
+                    </div>
+
+                    <!-- 3. Shanghai -->
+                    <div id="stats-shanghai" class="stats-sekcja">
+                        <div id="bloki-statystyk-shanghai" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="rekord-punktow" class="wspolny-div">
+                                            <h4>Rekord punktów:</h4>
+                                            <p id="stat-rekord">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="srednia-pkt" class="wspolny-div">
+                                            <h4>Średnia punktów:</h4>
+                                            <p id="stat-shanghai-srednia">0.0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="trafione-sdt" class="wspolny-div">
+                                            <h4>Trafione S+D+T:</h4>
+                                            <p id="stat-sdt">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Skuteczność:</h4>
+                                            <p id="stat-shanghai-skutecznosc">0% (0/0)</p>
+                                            <span id="stat-lacznie" style="display: none">0</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stat-shanghai-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stat-shanghai-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
-                        <div id="liczba-180" class="wspolny-div">
-                            <h4>Liczba 180:</h4>
-                            <p id="stat-180">0</p>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-shanghai-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-shanghai-wykres">Wykres formy</button>
                         </div>
-                        <div id="rozegrane-mecze" class="wspolny-div">
-                            <h4>Rozegrane mecze:</h4>
-                            <p id="stat-mecze">0</p>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="shanghai-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Trafień</h2>
+
+                                <!-- Pigułki podsumowania Shanghai -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Ustrzelone Shanghai: <strong id="chip-shanghai-ilosc">0</strong></span>
+                                    <span class="quick-stat-chip">Rekord rundy: <strong id="chip-shanghai-rekord">-</strong></span>
+                                    <span class="quick-stat-chip">Skuteczność rzutów: <strong id="chip-shanghai-skutecznosc">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info-shanghai" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić statystyki rundy</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap-shanghai" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
+                            </div>
                         </div>
-                        <div id="zwyciestwa" class="wspolny-div">
-                            <h4>Zwycięstwa:</h4>
-                            <p id="stat-wygrane">0</p>
+
+                        <!-- 2. Widok Listy (Ranking rund Shanghai posortowany malejąco od najwyższej skuteczności %) -->
+                        <div id="shanghai-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Ranking Skuteczności</h2>
+                                <div class="doubles-ranking-lista" id="shanghai-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                                <div id="kontener-wiecej-shanghai" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-shanghai" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
+                                </div>
+                            </div>
                         </div>
-                        <div id="porażki" class="wspolny-div">
-                            <h4>Porażki:</h4>
-                            <p id="stat-porazki">0</p>
+
+                        <!-- 3. Widok Wykresu -->
+                        <div id="shanghai-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-sh">Wykres Formy</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="shanghai" data-metric="srednia">Średnia na rundę</button>
+                                        <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="punkty">Suma punktów</button>
+                                        <button type="button" class="btn-metryka" data-chart="shanghai" data-metric="skutecznosc">Skuteczność</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-sh-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Rekord: <strong id="chip-sh-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-sh-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-shanghai"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Around The World -->
+                    <div id="stats-around-the-world" class="stats-sekcja">
+                        <div id="bloki-statystyk-around" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="najmniej-lotek" class="wspolny-div">
+                                            <h4>Najmniej lotek:</h4>
+                                            <p id="stat-najmniej">-</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="srednia-skutecznosc" class="wspolny-div">
+                                            <h4>Skuteczność:</h4>
+                                            <p id="stat-around-skutecznosc">0% (0/0)</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="trafione-cele" class="wspolny-div">
+                                            <h4>Trafione cele:</h4>
+                                            <p id="stat-trafione">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div id="wszystkie-rzuty" class="wspolny-div">
+                                            <h4>Wszystkie rzuty:</h4>
+                                            <p id="stat-wszystkie">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stat-around-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stat-around-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-around-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-around-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-around-wykres">Wykres formy</button>
+                        </div>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="around-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Trafień</h2>
+
+                                <!-- Pigułki podsumowania Around The World -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Najlepszy cel: <strong id="chip-around-najwiecej">-</strong></span>
+                                    <span class="quick-stat-chip">Najsłabszy cel: <strong id="chip-around-najmniej">-</strong></span>
+                                    <span class="quick-stat-chip">Łącznie: <strong id="chip-around-suma">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info-around" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić liczbę trafień</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap-around" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Widok Listy (Ranking celów ze statystykami single / double / triple) -->
+                        <div id="around-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Ranking Trafień</h2>
+                                <div class="doubles-ranking-lista" id="around-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                                <div id="kontener-wiecej-around" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-around" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Widok Wykresu -->
+                        <div id="around-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-atw">Wykres Skuteczności</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="around_the_world" data-metric="skutecznosc">Skuteczność %</button>
+                                        <button type="button" class="btn-metryka" data-chart="around_the_world" data-metric="lotki">Liczba lotek</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatnia gra: <strong id="chip-atw-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Najlepszy wynik: <strong id="chip-atw-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-atw-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-around-the-world"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. 121 Checkout -->
+                    <div id="stats-121checkout" class="stats-sekcja">
+                        <!-- Karta Wykresu 121 Checkout -->
+                        <div class="chart-card">
+                            <div id="bloki-statystyk-121" class="bloki-sekcji">
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <div id="najwyzszy-poziom" class="wspolny-div">
+                                                <h4>Najwyższy poziom:</h4>
+                                                <p id="stats-najwyzszy">121</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="najlepsza-seria" class="wspolny-div">
+                                                <h4>Najlepsza seria:</h4>
+                                                <p id="stats-najlepsza">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div id="skutecznosc-checkout" class="wspolny-div">
+                                                <h4>Skuteczność:</h4>
+                                                <p id="stats-121-skutecznosc">0% (0/0)</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Liczba podejść:</h4>
+                                                <p id="stats-121-podejscia">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Sukcesy:</h4>
+                                                <p id="stats-121-sukcesy">0</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="wspolny-div">
+                                                <h4>Porażki:</h4>
+                                                <p id="stats-121-porazki">0</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="chart-header">
+                                <div>
+                                    <h2 class="chart-tytul" id="tytul-wykres-chk">Wykres Skuteczności Checkoutu</h2>
+                                </div>
+                                <div class="chart-przelacznik-metryki">
+                                    <button type="button" class="btn-metryka aktywny" data-chart="checkout_121" data-metric="skutecznosc">Skuteczność %</button>
+                                    <button type="button" class="btn-metryka" data-chart="checkout_121" data-metric="max_poziom">Max Poziom</button>
+                                </div>
+                            </div>
+                            <div class="heatmap-quick-stats">
+                                <span class="quick-stat-chip hot">Ostatnia sesja: <strong id="chip-chk-ostatni">-</strong></span>
+                                <span class="quick-stat-chip"><span id="lbl-chk-max">Najlepsza skut.</span>: <strong id="chip-chk-max">-</strong></span>
+                                <span class="quick-stat-chip">Trend: <strong id="chip-chk-trend">-</strong></span>
+                            </div>
+                            <div class="chart-canvas-kontener">
+                                <canvas id="chart-121checkout"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Doubles + Heatmapa -->
+                    <div id="stats-doubles" class="stats-sekcja">
+                        <div id="bloki-statystyk-doubles" class="bloki-sekcji">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <div id="ogolna-skutecznosc" class="wspolny-div">
+                                            <h4>Ogólna skuteczność:</h4>
+                                            <p id="stats-doubles-skutecznosc">0% (0/0)</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="trafione-double" class="wspolny-div">
+                                            <h4>Trafione double:</h4>
+                                            <p id="stats-trafione">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div id="rzuty-double" class="wspolny-div">
+                                            <h4>Rzuty na double:</h4>
+                                            <p id="stats-rzuty">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Rozegrane mecze:</h4>
+                                            <p id="stats-doubles-mecze">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Zwycięstwa:</h4>
+                                            <p id="stats-doubles-wygrane">0</p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="wspolny-div">
+                                            <h4>Porażki:</h4>
+                                            <p id="stats-doubles-porazki">0</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Przełącznik widoku: Tarcza / Lista / Wykres -->
+                        <div class="widok-przelacznik-kontener">
+                            <button type="button" class="btn-widok-przelacznik aktywny" id="btn-doubles-tarcza">Tarcza</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-doubles-lista">Lista</button>
+                            <button type="button" class="btn-widok-przelacznik" id="btn-doubles-wykres">Wykres formy</button>
+                        </div>
+
+                        <!-- 1. Widok Tarczy (Domyślny) -->
+                        <div id="doubles-widok-tarcza">
+                            <div class="heatmap-card">
+                                <h2>Tarcza Skuteczności</h2>
+
+                                <!-- Pigułki podsumowania Doubles -->
+                                <div class="heatmap-quick-stats heatmapa">
+                                    <span class="quick-stat-chip hot">Najlepszy: <strong id="chip-najlepszy">-</strong></span>
+                                    <span class="quick-stat-chip">Najniższy: <strong id="chip-najnizszy">-</strong></span>
+                                    <span class="quick-stat-chip">Średnia: <strong id="chip-srednia">0% (0/0)</strong></span>
+                                </div>
+
+                                <!-- Informacja o wybranym sektorze -->
+                                <div id="wybrany-sektor-info" class="wybrany-sektor-info">
+                                    <span> Dotknij lub kliknij sektor na tarczy, aby sprawdzić skuteczność</span>
+                                </div>
+
+                                <!-- Obudowa tarczy -->
+                                <div class="tarcza-ramka">
+                                    <img src="./tla/tarcza_statystyki.jpg" alt="Realna tarcza" class="tarcza-warstwa-img" />
+                                    <svg id="dartboard-heatmap" viewBox="0 0 100 100" class="tarcza-warstwa-svg"></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Widok Listy (Ranking malejąco) -->
+                        <div id="doubles-widok-lista" style="display: none">
+                            <div class="heatmap-card">
+                                <h2>Najlepszy Double</h2>
+                                <div class="doubles-ranking-lista" id="doubles-ranking-lista">
+                                    <!-- Generowane dynamicznie w JS -->
+                                </div>
+                                <div id="kontener-wiecej-doubles" style="display: none; text-align: center; margin-top: 15px">
+                                    <button type="button" id="btn-zobacz-wszystkie-doubles" class="btn-zobacz-wszystkie">Zobacz wszystkie</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Widok Wykresu Doubles w Czasie -->
+                        <div id="doubles-widok-wykres" style="display: none">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h2 class="chart-tytul" id="tytul-wykres-dbl">Wykres Skuteczności</h2>
+                                    </div>
+                                    <div class="chart-przelacznik-metryki">
+                                        <button type="button" class="btn-metryka aktywny" data-chart="doubles" data-metric="skutecznosc">Skuteczność %</button>
+                                        <button type="button" class="btn-metryka" data-chart="doubles" data-metric="trafienia">Trafione double</button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-quick-stats">
+                                    <span class="quick-stat-chip hot">Ostatni mecz: <strong id="chip-dbl-ostatni">-</strong></span>
+                                    <span class="quick-stat-chip">Rekord meczu: <strong id="chip-dbl-max">-</strong></span>
+                                    <span class="quick-stat-chip">Trend: <strong id="chip-dbl-trend">-</strong></span>
+                                </div>
+                                <div class="chart-canvas-kontener">
+                                    <canvas id="chart-doubles"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- Sekcja Sprzęt w układzie tabeli (analogicznie do bloków statystyk) -->
 
-                <div id="sekcja-sprzetu" class="sekcje-gracza">
-                    <h3>Sprzęt</h3>
-                    <div id="bloki-sprzetu" class="bloki-sekcji">
-                        <div id="barele" class="wspolny-div">
-                            <h4>Barele:</h4>
-                            <p id="barele-gracza">-</p>
-                        </div>
-                        <div id="shaft" class="wspolny-div">
-                            <h4>Shafty:</h4>
-                            <p id="shafty-gracza">-</p>
-                        </div>
-                        <div id="groty" class="wspolny-div">
-                            <h4>Groty:</h4>
-                            <p id="groty-gracza">-</p>
-                        </div>
-                        <div id="tarcza" class="wspolny-div">
-                            <h4>Tarcza:</h4>
-                            <p id="tarcza-gracza">-</p>
-                        </div>
-                        <div id="autoscore" class="wspolny-div">
-                            <h4>Auto-score:</h4>
-                            <p id="autoscore-gracza">-</p>
-                        </div>
-                        <div id="druzyna" class="wspolny-div">
-                            <h4>Drużyna:</h4>
-                            <p id="druzyna-gracza">-</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="sekcja-ostatnich-meczy">
-                    <h3>Ostatnie mecze</h3>
+                <div id="sekcja-ostatnich-meczy" class="sekcje-gracza">
+                    <h2 class="stats-tytul-naglowek">Ostatnie mecze</h2>
                     <div id="lista-ostatnich-meczy">
+                        
                         <div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>
                     </div>
                     <div id="kontener-wiecej-meczy" style="display: none; text-align: center; margin-top: 15px">
@@ -261,16 +710,12 @@
                     <!-- FORMULARZ USUNIĘCIA KONTA -->
                     <div id="usun-konto-blok" style="display: none">
                         <form id="form-usun-konto" class="modal-form">
-                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 10px 0; line-height: 1.5">
-                                <strong>⚠️ UWAGA:</strong> Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki, znajomości oraz mecze zostaną trwale skasowane.
-                            </p>
-                            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4">
-                                Aby zapobiec przypadkowemu usunięciu konta, wpisz poniżej słowo: <strong style="color: #f87171; letter-spacing: 1px;">USUŃ</strong>
-                            </p>
-                            <input type="text" id="potwierdzenie-usuniecia-input" class="wspolny-input" placeholder="Wpisz USUŃ..." autocomplete="off" style="margin-bottom: 18px; text-transform: uppercase; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 2px;" />
+                            <p style="color: var(--color-red-text); font-size: 14px; margin: 0 0 10px 0; line-height: 1.5"><strong>⚠️ UWAGA:</strong> Usunięcie konta jest nieodwracalne. Wszystkie Twoje statystyki, znajomości oraz mecze zostaną trwale skasowane.</p>
+                            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4">Aby zapobiec przypadkowemu usunięciu konta, wpisz poniżej słowo: <strong style="color: #f87171; letter-spacing: 1px">USUŃ</strong></p>
+                            <input type="text" id="potwierdzenie-usuniecia-input" class="wspolny-input" placeholder="Wpisz USUŃ..." autocomplete="off" style="margin-bottom: 18px; text-transform: uppercase; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 2px" />
                             <div class="modal-akcje">
                                 <button type="button" class="btn-secondary btn-anuluj-modal">Anuluj</button>
-                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie" disabled style="opacity: 0.45; cursor: not-allowed;">Potwierdź usunięcie</button>
+                                <button type="submit" class="btn-danger" id="btn-potwierdz-usuniecie" disabled style="opacity: 0.45; cursor: not-allowed">Potwierdź usunięcie</button>
                             </div>
                         </form>
                     </div>
@@ -287,6 +732,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- MODAL INFO O RANGACH -->
             <div id="modal-info-rangi" class="modal-overlay" style="display: none">
                 <div class="modal-zawartosc">
@@ -322,1751 +768,11 @@
                 </div>
             </div>
         </main>
+
+        <!-- Kafelek (Tooltip) dla heatmapy -->
+        <div id="heatmap-tooltip" class="heatmap-tooltip" style="display: none"></div>
         <footer id="wspolny-footer"></footer>
 
-        <script>
-            // Szybki, synchroniczny odczyt zalogowanego użytkownika z localStorage
-            function odczytajZalogowanegoZStorage() {
-                try {
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const klucz = localStorage.key(i);
-                        if (klucz && ((klucz.startsWith("sb-") && klucz.endsWith("-auth-token")) || klucz === "supabase.auth.token")) {
-                            const raw = localStorage.getItem(klucz);
-                            if (raw) {
-                                const parsed = JSON.parse(raw);
-                                if (parsed?.user) return parsed.user;
-                            }
-                        }
-                    }
-                } catch (e) {}
-                return null;
-            }
-
-            function pobierzSesjeZStorage() {
-                try {
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const klucz = localStorage.key(i);
-                        if (klucz && ((klucz.startsWith("sb-") && klucz.includes("-auth-token")) || klucz === "supabase.auth.token")) {
-                            const raw = localStorage.getItem(klucz);
-                            if (raw) {
-                                const parsed = JSON.parse(raw);
-                                if (parsed?.access_token) {
-                                    return {
-                                        token: parsed.access_token,
-                                        user: parsed.user || null,
-                                        expiresAt: parsed.expires_at || 0
-                                    };
-                                }
-                            }
-                        }
-                    }
-                } catch (e) {}
-                return { token: null, user: null, expiresAt: 0 };
-            }
-
-            async function wykonajZapisProfilu(profilData, userId) {
-                const sesja = pobierzSesjeZStorage();
-                const token = sesja.token;
-
-                // 1. Bezpośredni, świeży fetch z no-store (odporny na uśpione sockety WebKit / Safari na iOS)
-                const naglowki = {
-                    "apikey": SUPA_KEY,
-                    "Content-Type": "application/json",
-                    "Prefer": "return=minimal",
-                };
-                if (token) {
-                    naglowki["Authorization"] = `Bearer ${token}`;
-                }
-
-                const payloadStr = JSON.stringify(profilData);
-                const directUrl = `${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`;
-                let ostatniBlad = null;
-
-                try {
-                    const controller = new AbortController();
-                    const timerId = setTimeout(() => controller.abort(), 4000);
-                    const res = await fetch(directUrl, {
-                        method: "PATCH",
-                        headers: naglowki,
-                        body: payloadStr,
-                        cache: "no-store",
-                        signal: controller.signal
-                    }).finally(() => clearTimeout(timerId));
-
-                    if (res.ok || res.status === 204) {
-                        return true;
-                    }
-                    if (res.status !== 401) {
-                        let errJson = {};
-                        try { errJson = await res.json(); } catch (_) {}
-                        throw new Error(errJson.message || `Błąd serwera bazy (HTTP ${res.status})`);
-                    }
-                } catch (eDirect) {
-                    console.warn("Direct fetch profilu pominięty:", eDirect.message);
-                    ostatniBlad = eDirect;
-                }
-
-                // 2. Jeśli direct fetch napotkał 401 lub błąd sieci, próba przez klienta Supabase
-                try {
-                    const klient = window.supabaseKlient || window.supabaseClient;
-                    if (klient) {
-                        const { error: clientErr } = await Promise.race([
-                            klient.from("profiles").update(profilData).eq("id", userId),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("Limit czasu Supabase SDK")), 4000))
-                        ]);
-                        if (clientErr) throw clientErr;
-                        return true;
-                    }
-                } catch (eSdk) {
-                    console.warn("Supabase SDK update profilu pominięty:", eSdk.message);
-                    if (!ostatniBlad) ostatniBlad = eSdk;
-                }
-
-                // 3. Fallback dla środowiska produkcyjnego (Cloudflare Worker proxy)
-                if (window.location.hostname === "stacjadarta.pl") {
-                    try {
-                        const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 4000);
-                        const resProxy = await fetch("/api/supabase-request", {
-                            method: "POST",
-                            headers: {
-                                apikey: SUPA_KEY,
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                                path: `/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
-                                method: "PATCH",
-                                headers: { "content-type": "application/json", "prefer": "return=minimal" },
-                                body: payloadStr,
-                                accessToken: token
-                            }),
-                            cache: "no-store",
-                            signal: controller.signal
-                        }).finally(() => clearTimeout(timer));
-
-                        if (resProxy.ok || resProxy.status === 204) {
-                            return true;
-                        }
-                    } catch (eProxy) {}
-                }
-
-                throw new Error(ostatniBlad?.message || "Nie udało się zapisać zmian w bazie danych. Spróbuj ponownie.");
-            }
-
-            async function pobierzAdresIP() {
-                // 1. Serwer lokalny / Cloudflare Worker (najszybszy, same-origin)
-                try {
-                    const controller = new AbortController();
-                    const tId = setTimeout(() => controller.abort(), 2000);
-                    const res = await fetch("/api/my-ip", { signal: controller.signal });
-                    clearTimeout(tId);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data?.ip) return data.ip;
-                    }
-                } catch (_) {}
-
-                // 2. Fallback na publiczne API ipify
-                try {
-                    const controller = new AbortController();
-                    const tId = setTimeout(() => controller.abort(), 2500);
-                    const res = await fetch("https://api64.ipify.org?format=json", { signal: controller.signal });
-                    clearTimeout(tId);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data?.ip) return data.ip;
-                    }
-                } catch (_) {}
-
-                return null;
-            }
-
-            async function zsynchronizujOstatnieIp(userId, zapisaneIp) {
-                try {
-                    const mojeIp = await pobierzAdresIP();
-                    if (mojeIp) {
-                        if (aktualnyProfil) aktualnyProfil.ostatnie_ip = mojeIp;
-                        const poleEdycjaIp = document.getElementById("edycja-ip");
-                        if (poleEdycjaIp) poleEdycjaIp.value = mojeIp;
-
-                        if (mojeIp !== zapisaneIp) {
-                            await wykonajZapisProfilu({ 
-                                ostatnie_ip: mojeIp,
-                                zaktualizowano: new Date().toISOString()
-                            }, userId);
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Błąd synchronizacji ostatnie_ip:", e);
-                }
-            }
-
-            function normalizujMecz(m, profilId, nazwaGracza = "") {
-                const statystyki = Array.isArray(m.statystyki_graczy) && m.statystyki_graczy.length > 0
-                    ? m.statystyki_graczy
-                    : (Array.isArray(m.gracze) && m.gracze.length > 0 ? m.gracze : []);
-
-                const legi = m.pelny_przebieg_meczu || m.historiaMeczuLegi || [];
-                const nickLower = (nazwaGracza || "").trim().toLowerCase();
-
-                let czyWygrana = false;
-                let wynik = "- : -";
-                let przeciwnikNazwa = "Przeciwnik";
-                let dataMeczu = "-";
-
-                // Formatowanie daty
-                if (m.utworzono) {
-                    try {
-                        dataMeczu = new Date(m.utworzono.replace(" ", "T")).toLocaleDateString("pl-PL");
-                    } catch (e) {
-                        dataMeczu = "-";
-                    }
-                } else if (m.data) {
-                    dataMeczu = m.data;
-                }
-
-                if (m.host_id || m.gosc_id) {
-                    // Mecz z bazy Supabase
-                    const czyHost = m.host_id === profilId;
-                    if (m.zwyciezca_id) {
-                        czyWygrana = m.zwyciezca_id === profilId;
-                    } else {
-                        czyWygrana = czyHost ? (m.wynik_host > m.wynik_gosc) : (m.wynik_gosc > m.wynik_host);
-                    }
-                    wynik = czyHost ? `${m.wynik_host ?? 0} : ${m.wynik_gosc ?? 0}` : `${m.wynik_gosc ?? 0} : ${m.wynik_host ?? 0}`;
-
-                    if (statystyki.length > 1) {
-                        // Szukaj gracza który NIE jest aktualnie przeglądanym profilem (po nazwie lub ID)
-                        const nickLowerDb = (nazwaGracza || "").trim().toLowerCase();
-                        let rywal = statystyki.find((s) => {
-                            const sNazwa = (s?.nazwa || "").trim().toLowerCase();
-                            if (s?.id && profilId && s.id === profilId) return false;
-                            if (nickLowerDb && sNazwa === nickLowerDb) return false;
-                            return true;
-                        });
-                        // Fallback: jeśli nie znaleziono (np. obu ma taką samą nazwę) — wybierz przeciwną stronę po indeksie
-                        if (!rywal) {
-                            rywal = czyHost ? statystyki[1] : statystyki[0];
-                        }
-                        przeciwnikNazwa = rywal?.nazwa || "Rywal";
-                    } else if (m.format_gry) {
-                        przeciwnikNazwa = m.format_gry;
-                    }
-                } else {
-                    // Mecz lokalny z sd_historia_meczow
-                    let mojIdx = 0;
-                    if (statystyki.length > 1 && nickLower) {
-                        if (statystyki[1]?.nazwa?.trim().toLowerCase() === nickLower) {
-                            mojIdx = 1;
-                        }
-                    }
-                    const rywalIdx = mojIdx === 0 ? 1 : 0;
-                    const ja = statystyki[mojIdx] || { wygraneLegi: 0, nazwa: nazwaGracza };
-                    const rywal = statystyki[rywalIdx] || null;
-
-                    przeciwnikNazwa = rywal?.nazwa || "Rywal";
-                    wynik = `${ja.wygraneLegi ?? 0} : ${rywal ? (rywal.wygraneLegi ?? 0) : 0}`;
-
-                    if (m.zwyciezca) {
-                        czyWygrana = m.zwyciezca.trim().toLowerCase() === (ja.nazwa || "").trim().toLowerCase();
-                    } else {
-                        czyWygrana = (ja.wygraneLegi || 0) > (rywal?.wygraneLegi || 0);
-                    }
-                }
-
-                return {
-                    ...m,
-                    _czyWygrana: czyWygrana,
-                    _wynik: wynik,
-                    _przeciwnikNazwa: przeciwnikNazwa,
-                    _dataMeczu: dataMeczu,
-                    statystyki_graczy: statystyki,
-                    pelny_przebieg_meczu: legi,
-                    format_gry: m.format_gry || (m.punktyStartowe ? `${m.punktyStartowe} DO` : "Klasyczny")
-                };
-            }
-
-            async function pobierzHistorieMeczow(profilId, nazwaGracza = "", czyMojProfil = false, limit = 5) {
-                let meczeZdalne = [];
-                const naglowki = {
-                    apikey: SUPA_KEY,
-                };
-                const limitLiczba = limit && Number(limit) > 0 ? Number(limit) : 100;
-                const limitStr = String(limitLiczba);
-                const limitQuery = `&limit=${limitLiczba}`;
-
-                // 1. Serwer Cloudflare Worker /api/supabase-read (Niezawodny same-origin na iOS Safari)
-                try {
-                    const resWorker = await fetch("/api/supabase-read", {
-                        method: "POST",
-                        headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            table: "matches",
-                            params: {
-                                select: "*",
-                                or: `(host_id.eq.${profilId},gosc_id.eq.${profilId})`,
-                                order: "utworzono.desc",
-                                limit: limitStr
-                            }
-                        })
-                    });
-                    if (resWorker.ok) {
-                        const data = await resWorker.json();
-                        if (Array.isArray(data) && data.length > 0) {
-                            meczeZdalne = data;
-                        }
-                    }
-                } catch (eWorker) {}
-
-                // 2. Próba przez /api/supabase-request (Proxy PostgREST)
-                if (meczeZdalne.length === 0) {
-                    try {
-                        const resProxy = await fetch("/api/supabase-request", {
-                            method: "POST",
-                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                path: `/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc${limitQuery}`,
-                                method: "GET"
-                            })
-                        });
-                        if (resProxy.ok) {
-                            const data = await resProxy.json();
-                            if (Array.isArray(data) && data.length > 0) {
-                                meczeZdalne = data;
-                            }
-                        }
-                    } catch (eProxy) {}
-                }
-
-                // 3. BEZPOŚREDNI REST FETCH DO SUPABASE (Fallback na localhost lub bezpośrednie połączenie)
-                if (meczeZdalne.length === 0) {
-                    try {
-                        const controller = new AbortController();
-                        const timerId = setTimeout(() => controller.abort(), 4000);
-                        const url = `${SUPA_URL}/rest/v1/matches?select=*&or=(host_id.eq.${encodeURIComponent(profilId)},gosc_id.eq.${encodeURIComponent(profilId)})&order=utworzono.desc${limitQuery}`;
-                        const res = await fetch(url, {
-                            headers: naglowki,
-                            cache: "no-store",
-                            signal: controller.signal,
-                        }).finally(() => clearTimeout(timerId));
-
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (Array.isArray(data) && data.length > 0) {
-                                meczeZdalne = data;
-                            }
-                        }
-                    } catch (eRest) {
-                        console.warn("Direct REST fetch meczy pominięty:", eRest);
-                    }
-                }
-
-                // 4. Próba przez klienta Supabase SDK z limitem czasu
-                if (meczeZdalne.length === 0 && client) {
-                    try {
-                        const { data, error } = await zLimitemCzasu(
-                            client.from("matches").select("*").or(`host_id.eq.${profilId},gosc_id.eq.${profilId}`).order("utworzono", { ascending: false }).limit(limitLiczba),
-                            "odczyt meczy z Supabase SDK",
-                            4000
-                        );
-                        if (!error && Array.isArray(data) && data.length > 0) {
-                            meczeZdalne = data;
-                        }
-                    } catch (eSdk) {
-                        console.warn("Supabase SDK fetch meczy pominięty:", eSdk);
-                    }
-                }
-
-                // 3. Odczyt z pamięci lokalnej urządzenia (sd_historia_meczow) — TYLKO własny profil
-                let meczeLokalne = [];
-                if (czyMojProfil) {
-                    try {
-                        const rawLocal = localStorage.getItem("sd_historia_meczow");
-                        if (rawLocal) {
-                            const parsed = JSON.parse(rawLocal);
-                            if (Array.isArray(parsed)) {
-                                meczeLokalne = parsed;
-                            }
-                        }
-                    } catch (eLoc) {
-                        console.warn("Lokalna historia meczy błąd:", eLoc);
-                    }
-                }
-
-                // 4. Normalizacja danych
-                const znormalizowaneZdalne = meczeZdalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
-                const znormalizowaneLokalne = meczeLokalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
-
-                // 5. Scalenie
-                if (znormalizowaneZdalne.length > 0) {
-                    const zdalneSygnatury = new Set(
-                        znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`)
-                    );
-                    const brakujaceLokalne = znormalizowaneLokalne.filter(
-                        (lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`)
-                    );
-                    const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
-                    return limit ? scalone.slice(0, limit) : scalone;
-                }
-
-                return limit ? znormalizowaneLokalne.slice(0, limit) : znormalizowaneLokalne;
-            }
-
-            let client = window.supabaseKlient || window.supabaseClient || null;
-            let aktualnyUser = odczytajZalogowanegoZStorage();
-            let aktualnyProfil = null;
-            let ostatnieMeczeCache = [];
-            let pelnaHistoriaMeczowCache = null;
-            let czyWszystkieMeczeRozwiniete = false;
-
-            function renderujListeMeczow(meczeDoWyswietlenia) {
-                const listaMeczy = document.getElementById("lista-ostatnich-meczy");
-                ostatnieMeczeCache = meczeDoWyswietlenia || [];
-
-                if (!meczeDoWyswietlenia || meczeDoWyswietlenia.length === 0) {
-                    listaMeczy.innerHTML = `<div style="text-align: center; padding: 15px; color: #94a3b8">Brak historii rozegranych pojedynków.</div>`;
-                    return;
-                }
-
-                listaMeczy.innerHTML = meczeDoWyswietlenia
-                    .map((m, idx) => `
-                        <div class="mecz ${m._czyWygrana ? "wygrana" : "porazka"}">
-                            <p class="przeciwnik">Przeciwnik: <strong>${m._przeciwnikNazwa}</strong></p>
-                            <p class="wynik">Wynik: <strong>${m._wynik}</strong></p>
-                            <p class="data">Data: ${m._dataMeczu}</p>
-                            <button type="button" class="btn-przebieg-profil" onclick="otworzSzczegolyMeczu(${idx})">Zobacz mecz</button>
-                        </div>`)
-                    .join("");
-            }
-
-            function podepnijObslugeWszystkichMeczow(profilId, nazwaGracza, czyMojProfil) {
-                const kontenerWiecej = document.getElementById("kontener-wiecej-meczy");
-                const btnWiecej = document.getElementById("btn-zobacz-wszystkie-mecze");
-                if (!kontenerWiecej || !btnWiecej) return;
-
-                btnWiecej.onclick = async () => {
-                    if (btnWiecej.disabled) return;
-
-                    // Jeśli pełna historia jest już w cache, przełączamy widok lokalnie bez zapytań do bazy!
-                    if (pelnaHistoriaMeczowCache) {
-                        if (czyWszystkieMeczeRozwiniete) {
-                            renderujListeMeczow(pelnaHistoriaMeczowCache.slice(0, 5));
-                            btnWiecej.textContent = "Zobacz wszystkie mecze";
-                            czyWszystkieMeczeRozwiniete = false;
-                        } else {
-                            renderujListeMeczow(pelnaHistoriaMeczowCache);
-                            btnWiecej.textContent = "Zwiń mecze";
-                            czyWszystkieMeczeRozwiniete = true;
-                        }
-                        return;
-                    }
-
-                    // Pierwsze kliknięcie — jednorazowe pobranie wszystkich meczów z bazy
-                    btnWiecej.disabled = true;
-                    const staryTekst = btnWiecej.textContent;
-                    btnWiecej.textContent = "Ładowanie meczów...";
-
-                    try {
-                        const wszystkieMecze = await pobierzHistorieMeczow(profilId, nazwaGracza, czyMojProfil, 0);
-                        pelnaHistoriaMeczowCache = wszystkieMecze || [];
-                        renderujListeMeczow(pelnaHistoriaMeczowCache);
-
-                        if (pelnaHistoriaMeczowCache.length > 5) {
-                            btnWiecej.textContent = "Zwiń mecze";
-                            btnWiecej.disabled = false;
-                            czyWszystkieMeczeRozwiniete = true;
-                        } else {
-                            kontenerWiecej.style.display = "none";
-                        }
-                    } catch (err) {
-                        console.error("Błąd pobierania wszystkich meczów:", err);
-                        btnWiecej.disabled = false;
-                        btnWiecej.textContent = staryTekst;
-                        alert("Nie udało się pobrać wszystkich meczów. Spróbuj ponownie.");
-                    }
-                };
-            }
-
-            function zLimitemCzasu(obietnica, etap, czasMs = 12000) {
-                let timerId;
-                const timeout = new Promise((resolve, reject) => {
-                    timerId = setTimeout(() => reject(new Error(`Przekroczono czas oczekiwania: ${etap}`)), czasMs);
-                });
-
-                return Promise.race([obietnica, timeout]).finally(() => clearTimeout(timerId));
-            }
-
-            const btnSprzet = document.getElementById("sprzet-gracza");
-            const strefaSprzetu = document.querySelector(".strefa-sprzetu");
-
-            btnSprzet?.addEventListener("click", (e) => {
-                e.preventDefault();
-                btnSprzet.classList.toggle("aktywny");
-                strefaSprzetu.classList.toggle("otwarta");
-            });
-
-            // Asynchroniczne sprawdzenie statusu relacji w tle (nigdy nie blokuje ładowania strony profilu)
-            async function sprawdzRelacjeZnajomego(mojId, celId, token = null) {
-                if (!mojId || !celId || mojId === celId) return;
-                const btnDodaj = document.getElementById("btn-dodaj-znajomego");
-                if (!btnDodaj) return;
-
-                try {
-                    let relacje = null;
-
-                    // Pobierz świeży token jeśli nie przekazano
-                    let accessToken = token;
-                    if (!accessToken && client?.auth) {
-                        try {
-                            const { data: sd } = await client.auth.getSession();
-                            accessToken = sd?.session?.access_token || null;
-                            if (!accessToken) {
-                                const { data: rd } = await client.auth.refreshSession();
-                                accessToken = rd?.session?.access_token || null;
-                            }
-                        } catch (eTok) {}
-                    }
-
-                    // 1. Worker /api/supabase-read (same-origin, iOS-safe)
-                    try {
-                        const orFilter = `or=(and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId}))`;
-                        const resWorker = await fetch("/api/supabase-read", {
-                            method: "POST",
-                            headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                table: "znajomi",
-                                params: { select: "id,zapraszajacy_id,zapraszany_id,status", or: `(and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId}))` },
-                                accessToken
-                            }),
-                            cache: "no-store"
-                        });
-                        if (resWorker.ok) {
-                            const data = await resWorker.json();
-                            if (Array.isArray(data)) relacje = data;
-                        }
-                    } catch (eWorker) {}
-
-                    // 2. Supabase SDK fallback
-                    if ((!relacje || !relacje.length) && client) {
-                        try {
-                            const { data } = await zLimitemCzasu(
-                                client.from("znajomi").select("*").or(`and(zapraszajacy_id.eq.${mojId},zapraszany_id.eq.${celId}),and(zapraszajacy_id.eq.${celId},zapraszany_id.eq.${mojId})`),
-                                "sprawdzanie relacji",
-                                3500
-                            );
-                            if (data) relacje = data;
-                        } catch (eSdk) {}
-                    }
-
-                    const relacja = Array.isArray(relacje) && relacje.length > 0 ? relacje[0] : null;
-                    if (relacja) {
-                        if (relacja.status === "zaakceptowane") {
-                            btnDodaj.textContent = "✓ Twój znajomy";
-                            btnDodaj.className = "btn-zaakceptowane-zaproszenie";
-                            btnDodaj.disabled = true;
-                        } else if (relacja.status === "oczekujace") {
-                            if (relacja.zapraszajacy_id === mojId) {
-                                btnDodaj.textContent = "⏳ Wysłano zaproszenie";
-                                btnDodaj.className = "btn-wyslano-zaproszenie";
-                                btnDodaj.disabled = true;
-                            } else {
-                                btnDodaj.textContent = "Oczekuje! Akceptuj";
-                                btnDodaj.className = "btn-primary";
-                                btnDodaj.setAttribute("data-relacja-id", relacja.id);
-                            }
-                        }
-                    }
-                } catch (eRel) {
-                    console.warn("Sprawdzanie relacji znajomego pominięte:", eRel);
-                }
-            }
-
-            async function zaladujProfil() {
-                try {
-                    // 1. NIEZAWODNE CZEKANIE NA BAZĘ (Safari często odpala skrypty za wcześnie)
-                    let proby = 0;
-                    while (!client && proby < 30) {
-                        client = window.supabaseKlient || window.supabaseClient;
-                        if (client) break;
-                        await new Promise((r) => setTimeout(r, 50));
-                        proby++;
-                    }
-
-                    if (!client) {
-                        document.getElementById("nazwa-uzytkownika").textContent = "Błąd: Brak połączenia z bazą";
-                        return;
-                    }
-
-                    // 2. Ustalenie zalogowanego użytkownika (szybko, bez długich zawieszeń na iOS)
-                    let session = null;
-                    try {
-                        const { data } = await zLimitemCzasu(client.auth.getSession(), "odczyt sesji", 2500);
-                        session = data?.session;
-                    } catch (eSess) {}
-
-                    if (!session) {
-                        try {
-                            const { data: userData } = await zLimitemCzasu(client.auth.getUser(), "weryfikacja użytkownika", 2500);
-                            if (userData?.user) {
-                                session = { user: userData.user };
-                            }
-                        } catch (eUsr) {}
-                    }
-
-                    if (!session?.user) {
-                        const localUser = odczytajZalogowanegoZStorage();
-                        if (localUser) {
-                            session = { user: localUser };
-                        }
-                    }
-
-                    aktualnyUser = session?.user || null;
-
-                    // 3. DETEKCJA PROFILU
-                    const paramIdRaw = new URLSearchParams(window.location.search).get("id");
-                    const paramId = paramIdRaw ? decodeURIComponent(paramIdRaw).trim() : null;
-
-                    // Jeśli brak parametru w URL i brak zalogowanego usera -> przekierowanie do logowania
-                    if (!paramId && !aktualnyUser) {
-                        window.location.href = "./logowanie.html";
-                        return;
-                    }
-
-                    const targetIdent = paramId || aktualnyUser?.id;
-                    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetIdent);
-
-                    // 4. GŁÓWNE ZAPYTANIE DO BAZY DANYCH (odporne na uśpione sockety i zawieszenia iOS Safari)
-                    let profil = null;
-
-                    // A. Serwer strony / Cloudflare Worker /api/profiles (najszybszy na stacjadarta.pl)
-                    try {
-                        const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 4000);
-                        const resProxy = await fetch(`/api/profiles?id=${encodeURIComponent(targetIdent)}`, {
-                            headers: { apikey: SUPA_KEY },
-                            cache: "no-store",
-                            signal: controller.signal
-                        }).finally(() => clearTimeout(timer));
-                        if (resProxy.ok) {
-                            const profiles = await resProxy.json();
-                            const p = Array.isArray(profiles) ? profiles[0] : profiles;
-                            if (p && p.id) profil = p;
-                        }
-                    } catch (eProxy) {}
-
-                    // A2. Cloudflare Worker /api/supabase-read (same-origin, 100% bezpieczny na iOS Safari)
-                    if (!profil) {
-                        try {
-                            const params = isUUID ? { id: `eq.${targetIdent}` } : { nazwa_gracza: `ilike.${targetIdent}` };
-                            const resRead = await fetch("/api/supabase-read", {
-                                method: "POST",
-                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                                body: JSON.stringify({ table: "profiles", params })
-                            });
-                            if (resRead.ok) {
-                                const rows = await resRead.json();
-                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
-                                    profil = rows[0];
-                                }
-                            }
-                        } catch (eRead) {}
-                    }
-
-                    // A3. Cloudflare Worker /api/supabase-request (Proxy PostgREST)
-                    if (!profil) {
-                        try {
-                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}`;
-                            const resReq = await fetch("/api/supabase-request", {
-                                method: "POST",
-                                headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    path: `/rest/v1/profiles?${filterParam}&select=*`,
-                                    method: "GET"
-                                })
-                            });
-                            if (resReq.ok) {
-                                const rows = await resReq.json();
-                                if (Array.isArray(rows) && rows.length > 0 && rows[0].id) {
-                                    profil = rows[0];
-                                }
-                            }
-                        } catch (eReq) {}
-                    }
-
-                    // B. Bezpośredni REST fetch do Supabase (anonimowy apikey – fallback na localhost)
-                    if (!profil) {
-                        try {
-                            const controller = new AbortController();
-                            const timerId = setTimeout(() => controller.abort(), 4000);
-                            const filterParam = isUUID ? `id=eq.${encodeURIComponent(targetIdent)}` : `nazwa_gracza=ilike.${encodeURIComponent(targetIdent)}`;
-                            const resDirect = await fetch(`${SUPA_URL}/rest/v1/profiles?${filterParam}&select=*`, {
-                                headers: {
-                                    apikey: SUPA_KEY,
-                                },
-                                cache: "no-store",
-                                signal: controller.signal,
-                            }).finally(() => clearTimeout(timerId));
-
-                            if (resDirect.ok) {
-                                const rows = await resDirect.json();
-                                if (Array.isArray(rows) && rows.length > 0) {
-                                    profil = rows[0];
-                                }
-                            }
-                        } catch (eDirect) {
-                            console.warn("Direct fetch profilu pominięty:", eDirect);
-                        }
-                    }
-
-                    // C. Fallback na Supabase SDK jeśli bezpośredni REST nie zwrócił danych
-                    if (!profil && client) {
-                        try {
-                            const query = isUUID
-                                ? client.from("profiles").select("*").eq("id", targetIdent).maybeSingle()
-                                : client.from("profiles").select("*").ilike("nazwa_gracza", targetIdent).maybeSingle();
-                            const { data: dbProfil, error: dbErr } = await zLimitemCzasu(
-                                query,
-                                "bezpośredni odczyt profilu z bazy",
-                                3500
-                            );
-                            if (!dbErr && dbProfil) {
-                                profil = dbProfil;
-                            }
-                        } catch (eDb) {
-                            console.warn("Supabase SDK odczyt profilu pominięty:", eDb);
-                        }
-                    }
-
-                    // D. Awaryjny profil dla zalogowanego gracza (gdy baza jest chwilowo nieosiągalna)
-                    const czyMojProfilWstepny = !paramId || (aktualnyUser && targetIdent === aktualnyUser.id);
-                    if (!profil && czyMojProfilWstepny && aktualnyUser) {
-                        profil = {
-                            id: aktualnyUser.id,
-                            nazwa_gracza: aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "Gracz"),
-                            srednia: 0,
-                            srednia_9_lotek: 0,
-                            ilosc_180: 0,
-                            rozegrane_mecze: 0,
-                            wygrane_mecze: 0,
-                            barele: "-",
-                            shafty: "-",
-                            groty: "-",
-                            tarcza: "-",
-                            auto_score: "-",
-                            druzyna: "-",
-                            ostatnie_ip: "-",
-                            avatar_url: aktualnyUser.user_metadata?.avatar_url || "./loga/logo.png"
-                        };
-                    }
-
-                    if (!profil) {
-                        document.querySelector(".blok-gracza").innerHTML = `<h2 style="text-align:center; padding: 50px;">Nie znaleziono gracza.</h2>`;
-                        return;
-                    }
-
-                    const finalProfilId = profil.id;
-                    const czyMojProfil = Boolean(aktualnyUser && finalProfilId === aktualnyUser.id);
-                    aktualnyProfil = profil;
-
-                    // Ustalanie Nicku
-                    const metaNick = czyMojProfil ? aktualnyUser?.user_metadata?.username : null;
-                    const nazwaGracza = profil?.nazwa_gracza || metaNick || (czyMojProfil && aktualnyUser?.email ? aktualnyUser.email.split("@")[0] : "Gracz");
-
-                    if (czyMojProfil && metaNick && profil && profil.nazwa_gracza !== metaNick && client) {
-                        client.from("profiles").update({ nazwa_gracza: metaNick }).eq("id", aktualnyUser.id).then();
-                    }
-
-                    // Synchronizacja ostatniego IP gracza z profilem
-                    if (czyMojProfil && finalProfilId) {
-                        zsynchronizujOstatnieIp(finalProfilId, profil?.ostatnie_ip);
-                    }
-
-                    // WYPEŁNIENIE CAŁEGO UI NATYCHMIAST (Nagłówek, Ranga, Statystyki, Sprzęt)
-                    document.getElementById("nazwa-uzytkownika").textContent = nazwaGracza;
-                    document.getElementById("zdjecie-uzytkownika").src = profil?.avatar_url || "./loga/logo.png";
-
-                    const sr = parseFloat(profil?.srednia || 0);
-                    const tagRanga = document.getElementById("tag-ranga");
-                    if (tagRanga) {
-                        let ranga = { nazwa: "Amator", ikona: "🌱", color: "#a3e635", border: "rgba(163, 230, 53, 0.3)" };
-                        if (sr >= 70) ranga = { nazwa: "Mistrz", ikona: "💎", color: "#60a5fa", border: "rgba(96, 165, 250, 0.4)" };
-                        else if (sr >= 55) ranga = { nazwa: "Ekspert", ikona: "🔥", color: "#f87171", border: "rgba(248, 113, 113, 0.4)" };
-                        else if (sr >= 45) ranga = { nazwa: "Półzawodowiec", ikona: "🏆", color: "#fbbf24", border: "rgba(251, 191, 36, 0.4)" };
-                        else if (sr >= 35) ranga = { nazwa: "Gracz Klubowy", ikona: "🎯", color: "#e2e8f0", border: "rgba(226, 232, 240, 0.3)" };
-
-                        tagRanga.innerHTML = `${ranga.ikona} ${ranga.nazwa}`;
-                        tagRanga.style.color = ranga.color;
-                        tagRanga.style.backgroundColor = ranga.border.replace("0.3)", "0.1)").replace("0.4)", "0.15)");
-                        tagRanga.style.border = `1px solid ${ranga.border}`;
-                        tagRanga.style.display = "inline-flex";
-                        const btnInfo = document.getElementById("btn-info-rangi");
-                        if (btnInfo) btnInfo.style.display = "inline-flex";
-                    }
-
-                    if (profil?.utworzono) {
-                        try {
-                            const bezpiecznaData = profil.utworzono.replace(" ", "T");
-                            const dataDolaczenia = new Date(bezpiecznaData).toLocaleDateString("pl-PL", { year: "numeric", month: "long" });
-                            document.getElementById("tag-data").innerHTML = `🗓️ W Stacji od: ${dataDolaczenia}`;
-                        } catch (e) {}
-                    }
-
-                    // Statystyki
-                    const rozegrane = profil?.rozegrane_mecze || 0;
-                    const wygrane = profil?.wygrane_mecze || 0;
-                    const winRate = rozegrane > 0 ? ((wygrane / rozegrane) * 100).toFixed(1) : "0.0";
-
-                    const headerWinrate = document.getElementById("header-winrate");
-                    if (headerWinrate) headerWinrate.textContent = `${winRate}%`;
-
-                    document.getElementById("stat-srednia").textContent = Number(profil?.srednia || 0).toFixed(2);
-                    document.getElementById("stat-9lotek").textContent = Number(profil?.srednia_9_lotek || 0).toFixed(2);
-                    document.getElementById("stat-180").textContent = profil?.ilosc_180 || 0;
-                    document.getElementById("stat-mecze").textContent = rozegrane;
-                    document.getElementById("stat-wygrane").textContent = wygrane;
-                    document.getElementById("stat-porazki").textContent = Math.max(0, rozegrane - wygrane);
-
-                    // Sprzęt
-                    document.getElementById("barele-gracza").textContent = profil?.barele || "-";
-                    document.getElementById("shafty-gracza").textContent = profil?.shafty || "-";
-                    document.getElementById("groty-gracza").textContent = profil?.groty || "-";
-                    document.getElementById("tarcza-gracza").textContent = profil?.tarcza || "-";
-                    document.getElementById("autoscore-gracza").textContent = profil?.auto_score || "-";
-                    document.getElementById("druzyna-gracza").textContent = profil?.druzyna || "-";
-
-                    // Obsługa UI obcego profilu vs profilu właściciela
-                    if (!czyMojProfil) {
-                        const btnEdycja = document.getElementById("btn-edycja-profilu");
-                        if (btnEdycja) btnEdycja.style.display = "none";
-
-                        const avatarOverlay = document.querySelector(".avatar-overlay");
-                        if (avatarOverlay) avatarOverlay.style.display = "none";
-                        document.getElementById("avatar-container").style.pointerEvents = "none";
-
-                        document.getElementById("akcje-wlasciciela").style.display = "none";
-                        document.getElementById("akcje-goscia").style.display = "flex";
-
-                        const btnDodaj = document.getElementById("btn-dodaj-znajomego");
-                        if (btnDodaj) {
-                            btnDodaj.setAttribute("data-rywal-id", finalProfilId);
-                            if (aktualnyUser && aktualnyUser.id) {
-                                // Sprawdzenie relacji w tle bez blokowania widoku strony!
-                                sprawczRelacjeWtle(aktualnyUser.id, finalProfilId, session?.access_token);
-                            } else {
-                                btnDodaj.textContent = "Zaloguj się";
-                                btnDodaj.onclick = () => window.location.href = "./logowanie.html";
-                            }
-                        }
-                    } else {
-                        const btnEdycja = document.getElementById("btn-edycja-profilu");
-                        if (btnEdycja) btnEdycja.style.display = "inline-flex";
-
-                        document.getElementById("akcje-wlasciciela").style.display = "flex";
-                        document.getElementById("akcje-goscia").style.display = "none";
-                    }
-
-                    // Pomocnicza funkcja wywołująca sprawdzanie relacji w tle
-                    function sprawczRelacjeWtle(mId, cId, tok) {
-                        sprawdzRelacjeZnajomego(mId, cId, tok).catch((err) => console.warn(err));
-                    }
-
-                    // 5. Pobranie historii gier — domyślnie tylko 5 ostatnich meczy, aby oszczędzać bazę danych
-                    const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil, 5);
-                    renderujListeMeczow(mecze);
-
-                    const kontenerWiecej = document.getElementById("kontener-wiecej-meczy");
-                    const btnWiecej = document.getElementById("btn-zobacz-wszystkie-mecze");
-                    if (kontenerWiecej && btnWiecej) {
-                        const maWiecejMeczow = (mecze && mecze.length >= 5) || (profil?.rozegrane_mecze && profil.rozegrane_mecze > 5);
-                        if (maWiecejMeczow) {
-                            kontenerWiecej.style.display = "block";
-                            btnWiecej.textContent = "Zobacz wszystkie mecze";
-                            podepnijObslugeWszystkichMeczow(finalProfilId, nazwaGracza, czyMojProfil);
-                        } else {
-                            kontenerWiecej.style.display = "none";
-                        }
-                    }
-                } catch (error) {
-                    // TARCZA OCHRONNA - WYŚWIETLA DOKŁADNY BŁĄD W UI NA IPHONIE
-                    console.error("Błąd krytyczny ładowania profilu:", error);
-                    document.getElementById("nazwa-uzytkownika").textContent = "Błąd: " + (error.message || "Skrypt przerwany");
-                    document.getElementById("tag-data").textContent = "Odśwież stronę.";
-                }
-            }
-
-            // --- PRZEGLĄDANIE PRZEBIEGU MECZU ---
-            const modalPrzebiegu = document.getElementById("modal-przebiegu");
-            const btnZamknijPrzebieg = document.getElementById("zamknij-przebieg");
-            const kontenerZakladek = document.getElementById("kontener-zakladek");
-            const kontenerTabeleLegow = document.getElementById("kontener-tabele-legow");
-
-            window.otworzSzczegolyMeczu = function (index) {
-                const mecz = ostatnieMeczeCache[index];
-                if (!mecz) return;
-
-                const legi = mecz.pelny_przebieg_meczu || mecz.historiaMeczuLegi || [];
-                const statystyki = (Array.isArray(mecz.statystyki_graczy) && mecz.statystyki_graczy.length > 0)
-                    ? mecz.statystyki_graczy
-                    : (Array.isArray(mecz.gracze) ? mecz.gracze : []);
-
-                if (legi.length === 0 && statystyki.length === 0) {
-                    alert("Brak szczegółowych danych dla tego pojedynku.");
-                    return;
-                }
-
-                const tytulModala = document.querySelector("#modal-przebiegu h2");
-                if (tytulModala) tytulModala.textContent = `Mecz: ${mecz.format_gry || "Klasyczny"}`;
-
-                kontenerZakladek.innerHTML = "";
-                kontenerTabeleLegow.innerHTML = "";
-
-                const gracze =
-                    statystyki.length > 0
-                        ? statystyki
-                        : mecz.graczeInfo || [
-                              { id: 0, nazwa: "Gospodarz" },
-                              { id: 1, nazwa: "Gość" },
-                          ];
-
-                // ==========================================
-                // 1. GŁÓWNE ZAKŁADKI: STATYSTYKI vs PRZEBIEG
-                // ==========================================
-                const btnTabGlowneStats = document.createElement("button");
-                btnTabGlowneStats.className = "przycisk-zakladki aktywna";
-                btnTabGlowneStats.textContent = "Statystyki";
-
-                const btnTabGlownePrzebieg = document.createElement("button");
-                btnTabGlownePrzebieg.className = "przycisk-zakladki";
-                btnTabGlownePrzebieg.textContent = "Przebieg";
-
-                kontenerZakladek.appendChild(btnTabGlowneStats);
-                kontenerZakladek.appendChild(btnTabGlownePrzebieg);
-
-                // ==========================================
-                // 2. WIDOK 1: TABELA STATYSTYK MECZU
-                // ==========================================
-                const divWidokStats = document.createElement("div");
-                divWidokStats.className = "zawartosc-zakladki aktywna";
-                divWidokStats.id = "widok-statystyki-meczu";
-
-                if (statystyki.length > 0) {
-                    const szerokoscKol = Math.floor(70 / gracze.length);
-                    let htmlStats = `
-            <table class="tabela-przebiegu" style="margin-top: 10px;">
-                <thead>
-                    <tr>
-                        <th style="width: 30%; text-align: left; padding-left: 14px;">Metryka</th>
-        `;
-                    gracze.forEach((g) => {
-                        htmlStats += `<th style="width: ${szerokoscKol}%; color: #38bdf8; font-size: 15px;">${g.nazwa}</th>`;
-                    });
-                    htmlStats += `</tr></thead><tbody>`;
-
-                    const wiersze = [
-                        { tytul: "Wygrane Legi", klucz: "wygraneLegi" },
-                        { tytul: "Średnia meczu", klucz: "srednia" },
-                        { tytul: "Średnia 9 lotek", klucz: "srednia9" },
-                        { tytul: "Najlepszy leg", klucz: "najlepszyLeg" },
-                        { tytul: "Najlepszy rzut", klucz: "najlepszyRzut" },
-                        { tytul: "Liczba 180", klucz: "liczba180" },
-                        { tytul: "Skuteczność Double", klucz: "skutecznoscDouble" },
-                    ];
-
-                    wiersze.forEach((w) => {
-                        htmlStats += `<tr><td style="text-align: left; padding-left: 14px; font-weight: 600; color: #94a3b8;">${w.tytul}</td>`;
-                        gracze.forEach((g) => {
-                            const wartosc = g[w.klucz] !== undefined && g[w.klucz] !== null ? g[w.klucz] : "-";
-                            htmlStats += `<td><strong>${wartosc}</strong></td>`;
-                        });
-                        htmlStats += `</tr>`;
-                    });
-
-                    htmlStats += `</tbody></table>`;
-                    divWidokStats.innerHTML = htmlStats;
-                } else {
-                    divWidokStats.innerHTML = `<div style="text-align: center; padding: 30px; color: #94a3b8;">Brak zapisanych statystyk sumarycznych dla tego pojedynku.</div>`;
-                }
-
-                // ==========================================
-                // 3. WIDOK 2: PRZEBIEG RZUTÓW Z PODZIAŁEM NA LEGI
-                // ==========================================
-                const divWidokPrzebieg = document.createElement("div");
-                divWidokPrzebieg.className = "zawartosc-zakladki";
-                divWidokPrzebieg.id = "widok-przebieg-meczu";
-
-                if (legi.length > 0) {
-                    // Kontener pod-zakładek z legami
-                    const subPasekLegow = document.createElement("div");
-                    subPasekLegow.className = "kontener-zakladek";
-                    subPasekLegow.style.marginTop = "10px";
-                    subPasekLegow.style.borderBottom = "1px solid rgba(255, 255, 255, 0.1)";
-
-                    const subKontenerTabel = document.createElement("div");
-
-                    legi.forEach((legData, legIdx) => {
-                        const btnLeg = document.createElement("button");
-                        btnLeg.className = `przycisk-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
-                        btnLeg.textContent = `Leg ${legIdx + 1}`;
-                        btnLeg.style.fontSize = "13px";
-                        btnLeg.style.padding = "6px 14px";
-
-                        btnLeg.addEventListener("click", () => {
-                            subPasekLegow.querySelectorAll(".przycisk-zakladki").forEach((b) => b.classList.remove("aktywna"));
-                            subKontenerTabel.querySelectorAll(".zawartosc-zakladki").forEach((t) => t.classList.remove("aktywna"));
-                            btnLeg.classList.add("aktywna");
-                            document.getElementById(`sub-leg-${legIdx}`).classList.add("aktywna");
-                        });
-                        subPasekLegow.appendChild(btnLeg);
-
-                        // Tabela konkretnego lega
-                        const divTabelaLega = document.createElement("div");
-                        divTabelaLega.className = `zawartosc-zakladki ${legIdx === 0 ? "aktywna" : ""}`;
-                        divTabelaLega.id = `sub-leg-${legIdx}`;
-
-                        const szerokoscKolumny = Math.floor(90 / gracze.length);
-                        const srednieWLegu = {};
-
-                        gracze.forEach((g) => {
-                            const rzutyGracza = legData.filter((r) => r.graczId === g.id);
-                            const sumaPkt = rzutyGracza.reduce((sum, r) => sum + r.rzut, 0);
-                            const iloscKolejek = rzutyGracza.length;
-                            srednieWLegu[g.id] = iloscKolejek > 0 ? (sumaPkt / iloscKolejek).toFixed(2) : "0.00";
-                        });
-
-                        let htmlTabeli = `
-                <table class="tabela-przebiegu">
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Kolejka</th>
-            `;
-                        gracze.forEach((g) => {
-                            htmlTabeli += `<th style="width: ${szerokoscKolumny}%; color: #fff;">
-                    ${g.nazwa}<br>
-                    <span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Śr: ${srednieWLegu[g.id]}</span>
-                </th>`;
-                        });
-                        htmlTabeli += `</tr></thead><tbody>`;
-
-                        const rundyMap = {};
-                        legData.forEach((rekord) => {
-                            if (!rundyMap[rekord.kolejka]) rundyMap[rekord.kolejka] = {};
-                            rundyMap[rekord.kolejka][rekord.graczId] = rekord;
-                        });
-
-                        Object.keys(rundyMap).forEach((kol) => {
-                            htmlTabeli += `<tr><td><strong>${kol}</strong></td>`;
-                            gracze.forEach((g) => {
-                                const rzutG = rundyMap[kol][g.id];
-                                const cel = rzutG ? `<strong>${rzutG.punktyPo}</strong><br><span style="color:#888;">${rzutG.szczegoly === "0" ? '<span class="fura-tekst">0</span>' : "Zdobyte: " + rzutG.szczegoly}</span>` : "-";
-                                htmlTabeli += `<td>${cel}</td>`;
-                            });
-                            htmlTabeli += `</tr>`;
-                        });
-
-                        htmlTabeli += `</tbody></table>`;
-                        divTabelaLega.innerHTML = htmlTabeli;
-                        subKontenerTabel.appendChild(divTabelaLega);
-                    });
-
-                    divWidokPrzebieg.appendChild(subPasekLegow);
-                    divWidokPrzebieg.appendChild(subKontenerTabel);
-                } else {
-                    divWidokPrzebieg.innerHTML = `<div style="text-align: center; padding: 30px; color: #94a3b8;">Brak szczegółowego zapisu rzutów dla tego pojedynku.</div>`;
-                }
-
-                kontenerTabeleLegow.appendChild(divWidokStats);
-                kontenerTabeleLegow.appendChild(divWidokPrzebieg);
-
-                // ==========================================
-                // 4. OBSŁUGA PRZEŁĄCZANIA GŁÓWNYCH ZAKŁADEK
-                // ==========================================
-                btnTabGlowneStats.addEventListener("click", () => {
-                    btnTabGlowneStats.classList.add("aktywna");
-                    btnTabGlownePrzebieg.classList.remove("aktywna");
-                    divWidokStats.classList.add("aktywna");
-                    divWidokPrzebieg.classList.remove("aktywna");
-                });
-
-                btnTabGlownePrzebieg.addEventListener("click", () => {
-                    btnTabGlownePrzebieg.classList.add("aktywna");
-                    btnTabGlowneStats.classList.remove("aktywna");
-                    divWidokPrzebieg.classList.add("aktywna");
-                    divWidokStats.classList.remove("aktywna");
-                });
-
-                modalPrzebiegu.style.display = "flex";
-            };
-
-            btnZamknijPrzebieg?.addEventListener("click", () => {
-                modalPrzebiegu.style.display = "none";
-            });
-
-            // Usuwanie poprzednich avatarów użytkownika ze Storage
-            async function usunStareAvatary(userId, zachowajPlikNazwa = null) {
-                try {
-                    const cleanUserId = String(userId).trim();
-                    const isProd = window.location.hostname === "stacjadarta.pl";
-                    let plikiDoUsuniecia = [];
-
-                    // 1. Na produkcji pobieramy listę przez Cloudflare Workera (bez zbędnych błędów SDK)
-                    if (isProd) {
-                        try {
-                            const resList = await fetch(`/api/supabase/storage/v1/object/list/avatary`, {
-                                method: "POST",
-                                headers: {
-                                    "apikey": SUPA_KEY,
-                                    "Authorization": `Bearer ${SUPA_KEY}`,
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({ prefix: cleanUserId, limit: 100 })
-                            });
-                            if (resList.ok) {
-                                const lista = await resList.json();
-                                if (Array.isArray(lista)) {
-                                    plikiDoUsuniecia = lista
-                                        .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                        .map(item => `${cleanUserId}/${item.name}`);
-                                }
-                            }
-                        } catch (_) {}
-                    } else {
-                        // 2. W środowisku lokalnym pobieramy listę przez klienta Supabase
-                        let klient = window.supabaseKlient || window.supabaseClient;
-                        if (klient?.storage) {
-                            try {
-                                const { data: lista, error } = await klient.storage.from("avatary").list(cleanUserId);
-                                if (!error && Array.isArray(lista)) {
-                                    plikiDoUsuniecia = lista
-                                        .filter(item => item.name && item.name !== zachowajPlikNazwa && item.name !== ".emptyFolderPlaceholder")
-                                        .map(item => `${cleanUserId}/${item.name}`);
-                                }
-                            } catch (_) {}
-                        }
-                    }
-
-                    if (plikiDoUsuniecia.length === 0) return;
-
-                    // 3. Usuwanie starych plików ze Storage
-                    if (isProd) {
-                        try {
-                            await fetch(`/api/supabase/storage/v1/object/avatary`, {
-                                method: "DELETE",
-                                headers: {
-                                    "apikey": SUPA_KEY,
-                                    "Authorization": `Bearer ${SUPA_KEY}`,
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({ prefixes: plikiDoUsuniecia })
-                            });
-                        } catch (_) {}
-                    } else {
-                        let klient = window.supabaseKlient || window.supabaseClient;
-                        if (klient?.storage) {
-                            await klient.storage.from("avatary").remove(plikiDoUsuniecia).catch(() => {});
-                        } else {
-                            await fetch(`${SUPA_URL}/storage/v1/object/avatary`, {
-                                method: "DELETE",
-                                headers: {
-                                    "apikey": SUPA_KEY,
-                                    "Authorization": `Bearer ${SUPA_KEY}`,
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({ prefixes: plikiDoUsuniecia })
-                            }).catch(() => {});
-                        }
-                    }
-                } catch (err) {
-                    console.warn("Nie udało się usunąć starych avatarów:", err);
-                }
-            }
-
-            // Funkcja do automatycznej mikro-kompresji awatara w przeglądarce przed wysłaniem do bazy
-            // Skaluje do kwadratu max 320x320 px (idealne dla ekranów Retina) i konwertuje na lekki WebP/JPEG (~20-40 KB)
-            async function kompresujAwatar(plikZrodlowy, maxRozmiar = 320, jakosc = 0.85) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onerror = () => reject(new Error("Błąd odczytu pliku"));
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onerror = () => reject(new Error("Nieprawidłowy format obrazu"));
-                        img.onload = () => {
-                            let { width, height } = img;
-                            // Wycinamy idealny kwadrat ze środka zdjęcia (center crop)
-                            const minBok = Math.min(width, height);
-                            const startX = (width - minBok) / 2;
-                            const startY = (height - minBok) / 2;
-
-                            const docelowyRozmiar = Math.min(minBok, maxRozmiar);
-
-                            const canvas = document.createElement("canvas");
-                            canvas.width = docelowyRozmiar;
-                            canvas.height = docelowyRozmiar;
-                            const ctx = canvas.getContext("2d");
-
-                            // Wygładzanie wysokiej jakości
-                            ctx.imageSmoothingEnabled = true;
-                            ctx.imageSmoothingQuality = "high";
-
-                            ctx.drawImage(img, startX, startY, minBok, minBok, 0, 0, docelowyRozmiar, docelowyRozmiar);
-
-                            // Preferujemy nowoczesny format WebP, a jeśli przeglądarka nie wspiera - JPEG
-                            const mimeType = "image/webp";
-                            canvas.toBlob(
-                                (blob) => {
-                                    if (blob) {
-                                        resolve({ blob, ext: "webp", mime: mimeType });
-                                    } else {
-                                        // Fallback na jpeg
-                                        canvas.toBlob(
-                                            (jpegBlob) => resolve({ blob: jpegBlob, ext: "jpg", mime: "image/jpeg" }),
-                                            "image/jpeg",
-                                            jakosc
-                                        );
-                                    }
-                                },
-                                mimeType,
-                                jakosc
-                            );
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(plikZrodlowy);
-                });
-            }
-
-            // --- OBSŁUGA AVATARA ---
-            const avatarContainer = document.getElementById("avatar-container");
-            const inputAvatar = document.getElementById("input-avatar");
-            const avatarStatus = document.getElementById("avatar-status");
-            const imgAvatar = document.getElementById("zdjecie-uzytkownika");
-
-            avatarContainer.addEventListener("click", () => inputAvatar.click());
-
-            inputAvatar.addEventListener("change", async (e) => {
-                const plik = e.target.files[0];
-                if (!plik) return;
-
-                if (!aktualnyUser) {
-                    aktualnyUser = odczytajZalogowanegoZStorage();
-                }
-                if (!aktualnyUser && client?.auth) {
-                    const { data: sessionData } = await client.auth.getSession();
-                    aktualnyUser = sessionData?.session?.user;
-                }
-
-                if (!aktualnyUser) {
-                    avatarStatus.textContent = "Zaloguj się ponownie!";
-                    avatarStatus.style.color = "#f87171";
-                    return;
-                }
-
-                avatarStatus.textContent = "Optymalizacja zdjęcia...";
-                avatarStatus.style.color = "#38bdf8";
-
-                let skompresowanyPlik;
-                try {
-                    skompresowanyPlik = await kompresujAwatar(plik, 320, 0.85);
-                } catch (eKomp) {
-                    console.warn("Fallback na oryginalny plik:", eKomp);
-                    skompresowanyPlik = { blob: plik, ext: (plik.name.split(".").pop() || "png").toLowerCase(), mime: plik.type || "image/png" };
-                }
-
-                avatarStatus.textContent = "Wgrywanie zdjęcia...";
-                avatarStatus.style.color = "#38bdf8";
-
-                try {
-                    const userId = aktualnyUser.id;
-                    const sesja = pobierzSesjeZStorage();
-                    let token = sesja.token;
-                    if (!token && client?.auth) {
-                        try {
-                            const { data: sd } = await client.auth.getSession();
-                            token = sd?.session?.access_token || null;
-                        } catch (_) {}
-                    }
-                    if (!token && typeof window.pobierzAktywnaSesjeSupabase === "function") {
-                        try {
-                            const actSes = await window.pobierzAktywnaSesjeSupabase();
-                            token = actSes?.access_token || null;
-                        } catch (_) {}
-                    }
-
-                    const cleanUserId = String(userId).trim();
-                    const nazwaNowegoPliku = `avatar_${Date.now()}.${skompresowanyPlik.ext}`;
-                    const nowaSciezka = `${cleanUserId}/${nazwaNowegoPliku}`;
-                    let uploadSukces = false;
-                    let bladSzczegoly = "";
-
-                    // 1. Metoda główna: REST upload (przez Cloudflare Worker na produkcji lub bezpośrednio)
-                    const isProd = window.location.hostname === "stacjadarta.pl";
-                    const sciezkaZasobu = `/storage/v1/object/avatary/${encodeURI(nowaSciezka)}`;
-                    const uploadUrls = isProd
-                        ? [`/api/supabase${sciezkaZasobu}`, `${SUPA_URL}${sciezkaZasobu}`]
-                        : [`${SUPA_URL}${sciezkaZasobu}`];
-
-                    const authTokensToTry = token ? [`Bearer ${token}`, `Bearer ${SUPA_KEY}`] : [`Bearer ${SUPA_KEY}`];
-                    for (const uploadUrl of uploadUrls) {
-                        if (uploadSukces) break;
-                        for (const authHdr of authTokensToTry) {
-                            if (uploadSukces) break;
-                            try {
-                                const resDirect = await fetch(uploadUrl, {
-                                    method: "POST",
-                                    headers: {
-                                        "apikey": SUPA_KEY,
-                                        "Authorization": authHdr,
-                                        "Content-Type": skompresowanyPlik.mime,
-                                        "x-upsert": "true"
-                                    },
-                                    body: skompresowanyPlik.blob
-                                });
-
-                                if (resDirect.ok) {
-                                    uploadSukces = true;
-                                    break;
-                                } else {
-                                    const errText = await resDirect.text();
-                                    let errJson = {};
-                                    try { errJson = JSON.parse(errText); } catch (_) {}
-                                    bladSzczegoly = errJson.message || errJson.error || errText || `HTTP ${resDirect.status}`;
-                                    console.warn("Upload nie powiódł się na " + uploadUrl + ":", errText, errJson);
-                                }
-                            } catch (eDir) {
-                                bladSzczegoly = eDir.message;
-                            }
-                        }
-                    }
-
-                    // 2. Metoda zapasowa: SDK Supabase Storage
-                    if (!uploadSukces) {
-                        if (!client) client = window.supabaseKlient || window.supabaseClient;
-                        if (client?.storage) {
-                            const { error: uploadErr } = await client.storage.from("avatary").upload(nowaSciezka, skompresowanyPlik.blob, {
-                                contentType: skompresowanyPlik.mime,
-                                upsert: true,
-                            });
-                            if (uploadErr) {
-                                const realError = (bladSzczegoly && bladSzczegoly !== `HTTP 400`) ? bladSzczegoly : (uploadErr.message || "Błąd zapisu pliku w Storage");
-                                throw new Error(realError);
-                            }
-                            uploadSukces = true;
-                        } else {
-                            throw new Error(bladSzczegoly || "Brak połączenia z Supabase Storage.");
-                        }
-                    }
-
-                    // 3. Pobranie adresu publicznego
-                    const publicUrl = `${SUPA_URL}/storage/v1/object/public/avatary/${encodeURI(nowaSciezka)}`;
-
-                    // 4. Aktualizacja tabeli public.profiles (odporna na uśpione sockety i locki iOS)
-                    await wykonajZapisProfilu({ avatar_url: publicUrl }, userId);
-
-                    // 4b. Usunięcie starych plików awatara tego użytkownika ze Storage (w tle)
-                    usunStareAvatary(cleanUserId, nazwaNowegoPliku).catch(() => {});
-
-                    // 5. Kopia zapasowa w sesji użytkownika (w tle)
-                    try {
-                        if (client?.auth) {
-                            Promise.race([
-                                client.auth.updateUser({ data: { avatar_url: publicUrl } }),
-                                new Promise((r) => setTimeout(r, 2000))
-                            ]).catch(() => {});
-                        }
-                    } catch (eAuth) {}
-
-                    // 6. Aktualizacja UI
-                    imgAvatar.src = publicUrl;
-                    if (aktualnyProfil) aktualnyProfil.avatar_url = publicUrl;
-                    const headerAvatarWrap = document.querySelector(".user-avatar-wrap");
-                    if (headerAvatarWrap) {
-                        headerAvatarWrap.innerHTML = `<img src="${publicUrl}" alt="Avatar" class="header-avatar-img" />`;
-                    }
-
-                    avatarStatus.textContent = "Zdjęcie zaktualizowane!";
-                    avatarStatus.style.color = "#4ade80";
-                    setTimeout(() => (avatarStatus.textContent = ""), 3000);
-                } catch (err) {
-                    console.error("Błąd zapisu zdjęcia:", err);
-                    let opis = err.message || "Nie udało się zapisać zdjęcia.";
-                    if (opis.includes("violates row-level security") || opis.includes("Unauthorized") || opis.includes("AccessDenied") || opis.includes("400")) {
-                        opis = "Błąd uprawnień Supabase (RLS). Uruchom zapytanie SQL w panelu Supabase.";
-                    }
-                    avatarStatus.textContent = opis;
-                    avatarStatus.style.color = "#f87171";
-                } finally {
-                    inputAvatar.value = "";
-                }
-            });
-
-            // --- ZARZĄDZANIE MODALAMI ---
-            const modal = document.getElementById("modal-edycja-profilu");
-            const modalTytul = document.getElementById("modal-tytul");
-            const formEdycja = document.getElementById("form-edycja-profilu");
-            const blokUsunKonto = document.getElementById("usun-konto-blok");
-            const blokWyloguj = document.getElementById("wyloguj-blok");
-            const btnZamknijModal = document.getElementById("btn-zamknij-edycje");
-            const przyciskiAnuluj = document.querySelectorAll(".btn-anuluj-modal");
-
-            // 4. Modal z opisem rang
-            const modalInfoRangi = document.getElementById("modal-info-rangi");
-            const btnInfoRangi = document.getElementById("btn-info-rangi");
-            const btnZamknijInfoRangi = document.getElementById("btn-zamknij-info-rangi");
-
-            btnInfoRangi?.addEventListener("click", () => {
-                if (modalInfoRangi) modalInfoRangi.style.display = "flex";
-            });
-
-            btnZamknijInfoRangi?.addEventListener("click", () => {
-                if (modalInfoRangi) modalInfoRangi.style.display = "none";
-            });
-
-            modalInfoRangi?.addEventListener("click", (e) => {
-                if (e.target === modalInfoRangi) modalInfoRangi.style.display = "none";
-            });
-
-            const zamknijWszystkieSekcjeModala = () => {
-                modal.style.display = "none";
-                formEdycja.style.display = "none";
-                blokUsunKonto.style.display = "none";
-                blokWyloguj.style.display = "none";
-            };
-
-            btnZamknijModal?.addEventListener("click", zamknijWszystkieSekcjeModala);
-            przyciskiAnuluj.forEach((btn) => btn.addEventListener("click", zamknijWszystkieSekcjeModala));
-
-            modal?.addEventListener("click", (e) => {
-                if (e.target === modal) zamknijWszystkieSekcjeModala();
-            });
-
-            // 1. Otwieranie edycji profilu
-            document.getElementById("btn-edycja-profilu")?.addEventListener("click", () => {
-                if (!aktualnyUser) {
-                    aktualnyUser = odczytajZalogowanegoZStorage();
-                }
-                if (!aktualnyUser) {
-                    alert("Zaloguj się, aby edytować profil.");
-                    return;
-                }
-                const obecnyNick = aktualnyProfil?.nazwa_gracza || aktualnyUser.user_metadata?.username || (aktualnyUser.email ? aktualnyUser.email.split("@")[0] : "");
-
-                document.getElementById("edycja-nick").value = obecnyNick;
-                document.getElementById("edycja-haslo").value = "";
-                const poleEdycjaIp = document.getElementById("edycja-ip");
-                if (poleEdycjaIp) poleEdycjaIp.value = aktualnyProfil?.ostatnie_ip || "-";
-
-                // --- NOWE: Wypełnianie inputów sprzętu ---
-                document.getElementById("edycja-barele").value = aktualnyProfil?.barele || "";
-                document.getElementById("edycja-shafty").value = aktualnyProfil?.shafty || "";
-                document.getElementById("edycja-groty").value = aktualnyProfil?.groty || "";
-                document.getElementById("edycja-tarczy").value = aktualnyProfil?.tarcza || "";
-                document.getElementById("edycja-auto-score").value = aktualnyProfil?.auto_score || "";
-                document.getElementById("edycja-druzyny").value = aktualnyProfil?.druzyna || "";
-
-                const statusDiv = document.getElementById("edycja-status");
-                if (statusDiv) statusDiv.style.display = "none";
-
-                modalTytul.textContent = "Edytuj profil";
-                blokUsunKonto.style.display = "none";
-                blokWyloguj.style.display = "none";
-                formEdycja.style.display = "flex";
-                modal.style.display = "flex";
-            });
-
-            formEdycja?.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const nowyNick = document.getElementById("edycja-nick").value.trim();
-                const noweHaslo = document.getElementById("edycja-haslo").value;
-
-                // --- NOWE: Pobieranie wartości sprzętu z formularza ---
-                const noweBarele = document.getElementById("edycja-barele").value.trim();
-                const noweShafty = document.getElementById("edycja-shafty").value.trim();
-                const noweGroty = document.getElementById("edycja-groty").value.trim();
-                const nowaTarcza = document.getElementById("edycja-tarczy").value.trim();
-                const nowyAutoScore = document.getElementById("edycja-auto-score").value.trim();
-                const nowaDruzyna = document.getElementById("edycja-druzyny").value.trim();
-
-                const btnZapisz = document.getElementById("btn-zapisz-edycje");
-                const statusDiv = document.getElementById("edycja-status");
-
-                if (!nowyNick) {
-                    if (statusDiv) {
-                        statusDiv.textContent = "Nick nie może być pusty.";
-                        statusDiv.style.color = "#f87171";
-                        statusDiv.style.display = "block";
-                    }
-                    return;
-                }
-
-                btnZapisz.disabled = true;
-                btnZapisz.textContent = "Zapisywanie...";
-                if (statusDiv) {
-                    statusDiv.textContent = "";
-                    statusDiv.style.display = "none";
-                }
-
-                try {
-                    if (!aktualnyUser) aktualnyUser = odczytajZalogowanegoZStorage();
-                    if (!aktualnyUser) throw new Error("Musisz być zalogowany, aby zapisać profil.");
-
-                    const profilUpdate = {
-                        nazwa_gracza: nowyNick,
-                        barele: noweBarele,
-                        shafty: noweShafty,
-                        groty: noweGroty,
-                        tarcza: nowaTarcza,
-                        auto_score: nowyAutoScore,
-                        druzyna: nowaDruzyna,
-                    };
-
-                    // 1. Zapis nazwy gracza ORAZ SPRZĘTU (odporny na uśpione sockety i locki iOS)
-                    await wykonajZapisProfilu(profilUpdate, aktualnyUser.id);
-
-                    // 2. Jeśli podano hasło, aktualizacja w Auth
-                    if (noweHaslo) {
-                        if (!client) client = window.supabaseKlient || window.supabaseClient;
-                        if (client?.auth) {
-                            const { error: passErr } = await zLimitemCzasu(
-                                client.auth.updateUser({ password: noweHaslo }),
-                                "aktualizacja hasła",
-                                8000
-                            );
-                            if (passErr) throw passErr;
-                        }
-                    }
-
-                    // 3. Kopia zapasowa w metadanych sesji (w tle, bez blokowania)
-                    if (client?.auth) {
-                        try {
-                            Promise.race([
-                                client.auth.updateUser({ data: { username: nowyNick, nazwa_gracza: nowyNick } }),
-                                new Promise((r) => setTimeout(r, 2000))
-                            ]).catch(() => {});
-                        } catch (eMeta) {}
-                    }
-
-                    // Aktualizacja UI bez odświeżania strony
-                    const elNick = document.getElementById("nazwa-uzytkownika");
-                    if (elNick) elNick.textContent = nowyNick;
-
-                    const setEl = (id, val) => {
-                        const el = document.getElementById(id);
-                        if (el) el.textContent = val || "-";
-                    };
-                    setEl("barele-gracza", noweBarele);
-                    setEl("shafty-gracza", noweShafty);
-                    setEl("groty-gracza", noweGroty);
-                    setEl("tarcza-gracza", nowaTarcza);
-                    setEl("autoscore-gracza", nowyAutoScore);
-                    setEl("druzyna-gracza", nowaDruzyna);
-
-                    // Aktualizacja lokalnego obiektu pamięci
-                    if (aktualnyProfil) {
-                        aktualnyProfil.nazwa_gracza = nowyNick;
-                        aktualnyProfil.barele = noweBarele;
-                        aktualnyProfil.shafty = noweShafty;
-                        aktualnyProfil.groty = noweGroty;
-                        aktualnyProfil.tarcza = nowaTarcza;
-                        aktualnyProfil.auto_score = nowyAutoScore;
-                        aktualnyProfil.druzyna = nowaDruzyna;
-                    }
-
-                    if (aktualnyUser?.user_metadata) {
-                        aktualnyUser.user_metadata.username = nowyNick;
-                        aktualnyUser.user_metadata.nazwa_gracza = nowyNick;
-                    }
-
-                    const headerNick = document.querySelector(".user-name");
-                    if (headerNick) headerNick.textContent = nowyNick;
-
-                    zamknijWszystkieSekcjeModala();
-                } catch (err) {
-                    console.error("Błąd zapisu profilu:", err);
-                    if (statusDiv) {
-                        statusDiv.textContent = err.message || "Błąd zapisu zmian.";
-                        statusDiv.style.color = "#f87171";
-                        statusDiv.style.display = "block";
-                    } else {
-                        alert(`Błąd zapisu: ${err.message || "Spróbuj ponownie"}`);
-                    }
-                } finally {
-                    btnZapisz.disabled = false;
-                    btnZapisz.textContent = "Zapisz zmiany";
-                }
-            });
-
-            // 2. Otwieranie okna wylogowania
-            document.getElementById("btn-wyloguj")?.addEventListener("click", () => {
-                modalTytul.textContent = "Wyloguj się";
-                formEdycja.style.display = "none";
-                blokUsunKonto.style.display = "none";
-                blokWyloguj.style.display = "block";
-                modal.style.display = "flex";
-            });
-
-            document.getElementById("wyloguj-sie")?.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                await client.auth.signOut();
-                window.location.href = "./index.html";
-            });
-
-            // 3. Otwieranie okna usunięcia konta
-            const inputPotwierdzUsun = document.getElementById("potwierdzenie-usuniecia-input");
-            const btnPotwierdzUsun = document.getElementById("btn-potwierdz-usuniecie");
-
-            inputPotwierdzUsun?.addEventListener("input", () => {
-                const wpisane = (inputPotwierdzUsun.value || "").trim().toUpperCase();
-                if (wpisane === "USUŃ") {
-                    btnPotwierdzUsun.disabled = false;
-                    btnPotwierdzUsun.style.opacity = "1";
-                    btnPotwierdzUsun.style.cursor = "pointer";
-                } else {
-                    btnPotwierdzUsun.disabled = true;
-                    btnPotwierdzUsun.style.opacity = "0.45";
-                    btnPotwierdzUsun.style.cursor = "not-allowed";
-                }
-            });
-
-            document.getElementById("btn-usun-konto")?.addEventListener("click", () => {
-                modalTytul.textContent = "Usuń konto";
-                formEdycja.style.display = "none";
-                blokWyloguj.style.display = "none";
-                blokUsunKonto.style.display = "block";
-                if (inputPotwierdzUsun) inputPotwierdzUsun.value = "";
-                if (btnPotwierdzUsun) {
-                    btnPotwierdzUsun.disabled = true;
-                    btnPotwierdzUsun.style.opacity = "0.45";
-                    btnPotwierdzUsun.style.cursor = "not-allowed";
-                    btnPotwierdzUsun.textContent = "Potwierdź usunięcie";
-                }
-                modal.style.display = "flex";
-                setTimeout(() => inputPotwierdzUsun?.focus(), 100);
-            });
-
-            document.getElementById("form-usun-konto")?.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                if (!aktualnyUser) return;
-                const wpisane = (inputPotwierdzUsun?.value || "").trim().toUpperCase();
-                if (wpisane !== "USUŃ") {
-                    alert("Wpisz słowo USUŃ, aby potwierdzić.");
-                    return;
-                }
-
-                const btnUsun = document.getElementById("btn-potwierdz-usuniecie");
-                btnUsun.disabled = true;
-                btnUsun.textContent = "Usuwanie...";
-
-                try {
-                    const folderUsera = aktualnyUser.id;
-                    const { data: pliki } = await client.storage.from("avatary").list(folderUsera);
-                    if (pliki && pliki.length > 0) {
-                        const sciezki = pliki.map((p) => `${folderUsera}/${p.name}`);
-                        await client.storage.from("avatary").remove(sciezki);
-                    }
-
-                    const { error: rpcErr } = await client.rpc("usun_konto_uzytkownika");
-                    if (rpcErr) {
-                        await client.auth.updateUser({
-                            data: {
-                                username: "Konto Usunięte",
-                                avatar_url: null,
-                                ostatnie_mecze: [],
-                            },
-                        });
-                    }
-
-                    await client.auth.signOut();
-                    alert("Konto zostało usunięte.");
-                    window.location.href = "./index.html";
-                } catch (err) {
-                    console.error("Błąd usuwania konta:", err);
-                    alert("Wystąpił błąd podczas usuwania konta.");
-                    btnUsun.disabled = false;
-                    btnUsun.textContent = "Potwierdź usunięcie";
-                }
-            });
-            // --- OBSŁUGA WYSYŁANIA / AKCEPTOWANIA ZAPROSZENIA ---
-            const btnDodajZnajomego = document.getElementById("btn-dodaj-znajomego");
-            if (btnDodajZnajomego) {
-                btnDodajZnajomego.addEventListener("click", async function () {
-                    if (!aktualnyUser) return;
-
-                    const relacjaId = this.getAttribute("data-relacja-id");
-                    const rywalId = this.getAttribute("data-rywal-id");
-
-                    this.disabled = true;
-
-                    if (relacjaId) {
-                        // Ktoś nas zaprosił, więc akceptujemy
-                        this.textContent = "Akceptowanie...";
-                        let sukces = false;
-                        try {
-                            const { error } = await zLimitemCzasu(
-                                client.from("znajomi").update({ status: "zaakceptowane" }).eq("id", relacjaId),
-                                "akceptacja zaproszenia",
-                                4000
-                            );
-                            if (!error) sukces = true;
-                        } catch (e) {}
-
-                        if (sukces) {
-                            this.textContent = "✓ Twój znajomy";
-                            this.className = "btn-secondary";
-                        } else {
-                            this.disabled = false;
-                            this.textContent = "Błąd akceptacji.";
-                        }
-                    } else if (rywalId) {
-                        // Wysyłamy nowe zaproszenie
-                        this.textContent = "Wysyłanie...";
-                        let sukces = false;
-                        let kodBledu = null;
-                        try {
-                            const { error } = await zLimitemCzasu(
-                                client.from("znajomi").insert([{ zapraszajacy_id: aktualnyUser.id, zapraszany_id: rywalId }]),
-                                "wysyłanie zaproszenia",
-                                4000
-                            );
-                            if (!error) sukces = true;
-                            else kodBledu = error.code;
-                        } catch (e) {}
-
-                        if (sukces) {
-                            this.textContent = "⏳ Wysłano zaproszenie";
-                            this.className = "btn-wyslane-zaproszenie";
-                        } else {
-                            if (kodBledu === "23505") {
-                                this.textContent = "Zaproszenie już istnieje";
-                            } else {
-                                this.textContent = "Błąd wysyłania";
-                                this.disabled = false;
-                            }
-                        }
-                    }
-                });
-            }
-            // Uruchomienie ładowania profilu od razu
-            zaladujProfil();
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", zaladujProfil);
-            }
-
-            // KLUCZOWE DLA iOS SAFARI: obsługa powrotu z bfcache
-            window.addEventListener("pageshow", () => {
-                zaladujProfil();
-            });
-
-            // Nasłuchiwanie na zmiany sesji (np. logowanie/odświeżenie z menu.js)
-            try {
-                const k = window.supabaseKlient || window.supabaseClient;
-                if (k?.auth?.onAuthStateChange) {
-                    k.auth.onAuthStateChange((event, session) => {
-                        if (session?.user && (!aktualnyUser || aktualnyUser.id !== session.user.id)) {
-                            zaladujProfil();
-                        }
-                    });
-                }
-            } catch (e) {}
-        </script>
+        <script src="./profil-skrypt.js"></script>
     </body>
 </html>

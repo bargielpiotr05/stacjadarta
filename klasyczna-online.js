@@ -41,12 +41,12 @@ function zresetujTimerBezczynnosciGry() {
         event: "pokoj-zamkniety-brak-aktywnosci",
         payload: {}
       });
-    } catch (_) {}
+    } catch (_) { }
 
     if (mojIndeksOnline === 0) {
       try {
         await usunAktualnyPokoj();
-      } catch (_) {}
+      } catch (_) { }
     }
 
     wyczyscCzatZBazy();
@@ -292,90 +292,123 @@ async function inicjalizujPoczekalnieOnline(kod) {
   };
 
   try {
-  if (formOffline) formOffline.style.display = "none";
-  if (tytul) tytul.style.display = "none";
-  if (menuBelka) menuBelka.style.display = "none";
-  if (btnPowrot) btnPowrot.style.display = "none";
+    if (formOffline) formOffline.style.display = "none";
+    if (tytul) tytul.style.display = "none";
+    if (menuBelka) menuBelka.style.display = "none";
+    if (btnPowrot) btnPowrot.style.display = "none";
 
-  ustawStatusStartu("Sprawdzanie sesji gracza...");
-  const { data: { session }, error: sessionError } = await onlineZLimitemCzasu(supabaseClient.auth.getSession(), "odczyt sesji");
-  if (sessionError) throw sessionError;
-  const user = session?.user;
-  if (user) {
-    window.aktualnyUserOnline = user;
-    mojNickOnline = user.user_metadata?.username || user.email?.split("@")[0] || "Gracz";
-    if (user.user_metadata?.avatar_url) {
-      mojAwatarOnline = user.user_metadata.avatar_url;
-    }
-    pobierzWierszeOnline("profiles", {
-      select: "id,nazwa_gracza,avatar_url",
-      id: `eq.${user.id}`,
-      limit: "1"
-    }, session?.access_token || null, "pobieranie profilu gracza").then((profile) => {
-      if (profile && profile[0]) {
-        if (profile[0].nazwa_gracza) mojNickOnline = profile[0].nazwa_gracza;
-        if (profile[0].avatar_url) mojAwatarOnline = profile[0].avatar_url;
+    ustawStatusStartu("Sprawdzanie sesji gracza...");
+    const { data: { session }, error: sessionError } = await onlineZLimitemCzasu(supabaseClient.auth.getSession(), "odczyt sesji");
+    if (sessionError) throw sessionError;
+    const user = session?.user;
+    if (user) {
+      window.aktualnyUserOnline = user;
+      mojNickOnline = user.user_metadata?.username || user.email?.split("@")[0] || "Gracz";
+      if (user.user_metadata?.avatar_url) {
+        mojAwatarOnline = user.user_metadata.avatar_url;
       }
-    }).catch(() => {});
-  }
+      pobierzWierszeOnline("profiles", {
+        select: "id,nazwa_gracza,avatar_url",
+        id: `eq.${user.id}`,
+        limit: "1"
+      }, session?.access_token || null, "pobieranie profilu gracza").then((profile) => {
+        if (profile && profile[0]) {
+          if (profile[0].nazwa_gracza) mojNickOnline = profile[0].nazwa_gracza;
+          if (profile[0].avatar_url) mojAwatarOnline = profile[0].avatar_url;
+        }
+      }).catch(() => { });
+    }
 
   ustawStatusStartu("Pobieranie danych stołu...");
   const pokoje = await pobierzWierszeOnline("rooms", {
-    select: "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
+    select: "id,kod_pokoju,host_id,gosc_id,host_token,gosc_token,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
     kod_pokoju: `eq.${kod}`,
     limit: "1",
   }, session?.access_token || null, "pobieranie danych stołu");
   const pokoj = pokoje[0] || null;
 
-  if (!pokoj) {
-    statusStartu.remove();
-    pokazModalSystemowyOnline("Błąd stołu", "Ten stół nie istnieje lub został już usunięty.", "alert", () => {
-      window.location.href = "./online.html";
-    });
-    return;
-  }
+    if (!pokoj) {
+      statusStartu.remove();
+      pokazModalSystemowyOnline("Błąd stołu", "Ten stół nie istnieje lub został już usunięty.", "alert", () => {
+        window.location.href = "./online.html";
+      });
+      return;
+    }
 
-  // --- KRYTYCZNA ZMIANA: ROZPOZNAWANIE GRACZA (ZAMIAST TOKENÓW) ---
-  if (onlineTryb === "widz" || !user) {
+  // --- ROZPOZNAWANIE GRACZA (ZALOGOWANY LUB GOŚĆ) VS WIDZ ---
+  const rolaURL = parametryURL.get("rola");
+  const nickURL = parametryURL.get("nick");
+  const lokalnyToken = sessionStorage.getItem(`sd_token_${kod}`);
+  const zapisanyIndeks = sessionStorage.getItem(`sd_gracz_index_${kod}`);
+
+  // Widz: jawny tryb widza
+  if (onlineTryb === "widz" || rolaURL === "widz") {
     czyWidz = true;
     mojIndeksOnline = -1;
   } else {
-    // 1. Sprawdzamy czy jestem Hostem
-    if (pokoj.host_id === user.id) {
+    // 1. Sprawdzamy czy jestem Hostem (zalogowany po user.id, token z sesji lub rola)
+    if ((user && pokoj.host_id === user.id) || (lokalnyToken && pokoj.host_token === lokalnyToken) || (zapisanyIndeks === "0") || (rolaURL === "host")) {
       mojIndeksOnline = 0;
       czyWidz = false;
-      if (pokoj.host_nazwa && pokoj.host_nazwa !== "Gracz" && mojNickOnline === "Gracz") {
+      sessionStorage.setItem(`sd_gracz_index_${kod}`, "0");
+      if (pokoj.host_nazwa && pokoj.host_nazwa !== "Gracz" && (!user || mojNickOnline === "Gracz")) {
         mojNickOnline = pokoj.host_nazwa;
       }
     } 
-    // 2. Sprawdzamy czy byłem już przypisany jako gość (odświeżenie strony)
-    else if (pokoj.gosc_id === user.id) {
+    // 2. Sprawdzamy czy byłem już przypisany jako gość (zalogowany, token, rola=gosc)
+    else if ((user && pokoj.gosc_id === user.id) || (lokalnyToken && pokoj.gosc_token === lokalnyToken) || (zapisanyIndeks === "1") || (rolaURL === "gosc" && pokoj.gosc_nazwa && (!pokoj.gosc_token || pokoj.gosc_token === lokalnyToken))) {
       mojIndeksOnline = 1;
       czyWidz = false;
-      if (pokoj.gosc_nazwa && pokoj.gosc_nazwa !== "Gracz" && mojNickOnline === "Gracz") {
+      sessionStorage.setItem(`sd_gracz_index_${kod}`, "1");
+      if (pokoj.gosc_nazwa && pokoj.gosc_nazwa !== "Gracz" && (!user || mojNickOnline === "Gracz")) {
         mojNickOnline = pokoj.gosc_nazwa;
+      } else if (nickURL && (!user || mojNickOnline === "Gracz")) {
+        mojNickOnline = decodeURIComponent(nickURL);
       }
     } 
-    // 3. JESTEM GOŚCIEM Z ZAPROSZENIA - Wchodzę i ZAJMUJĘ STÓŁ!
+    // 3. JESTEM GOŚCIEM Z ZAPROSZENIA - Wchodzę i ZAJMUJĘ WOLNY STÓŁ!
     else if (pokoj.gosc_id === null && pokoj.status === 'waiting') {
       mojIndeksOnline = 1;
       czyWidz = false;
+      sessionStorage.setItem(`sd_gracz_index_${kod}`, "1");
       
       ustawStatusStartu("Dołączanie do stołu...");
-      const profileData = await pobierzWierszeOnline("profiles", {
-        select: "id,nazwa_gracza,avatar_url",
-        id: `eq.${user.id}`,
-        limit: "1",
-      }, null, "pobieranie profilu gościa");
-      const mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email.split('@')[0];
-      mojNickOnline = mojNick;
-      if (profileData[0]?.avatar_url) mojAwatarOnline = profileData[0].avatar_url;
-      
-      // Claim the empty room and start it in one guarded update; the host observes this state change.
-      const pokojPoDolaczeniu = await przypiszGosciaDoPokoju(kod, user, mojNick, pokoj.host_id, session.access_token);
-      Object.assign(pokoj, pokojPoDolaczeniu);
+      let mojNick = nickURL ? decodeURIComponent(nickURL) : "Gość";
+
+      if (user) {
+        const profileData = await pobierzWierszeOnline("profiles", {
+          select: "id,nazwa_gracza,avatar_url",
+          id: `eq.${user.id}`,
+          limit: "1",
+        }, null, "pobieranie profilu gościa");
+        mojNick = profileData[0]?.nazwa_gracza || user.user_metadata?.username || user.email?.split('@')[0] || mojNick;
+        if (profileData[0]?.avatar_url) mojAwatarOnline = profileData[0].avatar_url;
+        mojNickOnline = mojNick;
+        
+        // Claim the empty room and start it in one guarded update; the host observes this state change.
+        const pokojPoDolaczeniu = await przypiszGosciaDoPokoju(kod, user, mojNick, pokoj.host_id, session?.access_token || null);
+        Object.assign(pokoj, pokojPoDolaczeniu);
+      } else {
+        // Gość niezalogowany
+        mojNickOnline = mojNick;
+        const goscToken = lokalnyToken || ("usr_" + Math.random().toString(36).substring(2, 15));
+        sessionStorage.setItem(`sd_token_${kod}`, goscToken);
+        await supabaseClient
+          .from("rooms")
+          .update({
+            gosc_nazwa: mojNick,
+            gosc_token: goscToken,
+            status: "in_progress",
+            aktualny_gracz_id: pokoj.host_id || null,
+            stan_meczu: { tura: 1, pozostale_rzuty: 3 }
+          })
+          .eq("kod_pokoju", kod);
+        pokoj.gosc_nazwa = mojNick;
+        pokoj.gosc_token = goscToken;
+        pokoj.status = "in_progress";
+      }
     } 
-    // 4. Stół pełny - mogę być tylko widzem
+    // 4. Stół pełny - mogę być tylko widzem (i wtedy widz nie ma dostępu do czatu!)
     else {
       mojIndeksOnline = -1;
       czyWidz = true;
@@ -393,14 +426,14 @@ async function inicjalizujPoczekalnieOnline(kod) {
   }
 
   const poczekalnia = document.createElement("div");
-  poczekalnia.id = "poczekalnia-online";
-  poczekalnia.style.width = "100%";
-  poczekalnia.style.display = "flex";
-  poczekalnia.style.justifyContent = "center";
-  poczekalnia.style.alignItems = "center";
-  poczekalnia.style.minHeight = "60vh";
+    poczekalnia.id = "poczekalnia-online";
+    poczekalnia.style.width = "100%";
+    poczekalnia.style.display = "flex";
+    poczekalnia.style.justifyContent = "center";
+    poczekalnia.style.alignItems = "center";
+    poczekalnia.style.minHeight = "60vh";
 
-  poczekalnia.innerHTML = `
+    poczekalnia.innerHTML = `
     <div style="background: rgba(17, 24, 39, 0.95); border: 1px solid #22c55e; border-radius: 16px; padding: 32px; max-width: 480px; width: 90%; margin: auto; text-align: center; color: #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.6); backdrop-filter: blur(10px);">
       <h2 style="color: #22c55e; margin: 0 0 10px 0; font-size: 24px;">Stół: ${kod}</h2>
       <p style="color: #94a3b8; font-size: 14px; margin: 0 0 20px 0;">Gospodarz: <strong>${pokoj.host_nazwa}</strong> | Format: <strong>${pokoj.format_gry}</strong></p>
@@ -421,252 +454,252 @@ async function inicjalizujPoczekalnieOnline(kod) {
     </div>
   `;
 
-  const kontenerMain = document.querySelector("main") || document.body;
-  kontenerMain.prepend(poczekalnia);
-  statusStartu.remove();
+    const kontenerMain = document.querySelector("main") || document.body;
+    kontenerMain.prepend(poczekalnia);
+    statusStartu.remove();
 
-  // Uruchomienie limitu 5 minut na dołączenie gracza do poczekalni
-  if (timerBezczynnosciPoczekalni) clearTimeout(timerBezczynnosciPoczekalni);
-  timerBezczynnosciPoczekalni = setTimeout(async () => {
-    if (czyMeczJuzWystartowal) return;
-    if (timerSprawdzaniaPoczekalni) {
-      clearInterval(timerSprawdzaniaPoczekalni);
-      timerSprawdzaniaPoczekalni = null;
-    }
-    if (kanalCzekaniaPoczekalni) {
-      supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
-      kanalCzekaniaPoczekalni = null;
-    }
-    if (window.kanalOdrzuceniaPoczekalni) {
-      supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
-      window.kanalOdrzuceniaPoczekalni = null;
-    }
-
-    try {
-      if (mojIndeksOnline === 0) {
-        await usunAktualnyPokoj();
+    // Uruchomienie limitu 5 minut na dołączenie gracza do poczekalni
+    if (timerBezczynnosciPoczekalni) clearTimeout(timerBezczynnosciPoczekalni);
+    timerBezczynnosciPoczekalni = setTimeout(async () => {
+      if (czyMeczJuzWystartowal) return;
+      if (timerSprawdzaniaPoczekalni) {
+        clearInterval(timerSprawdzaniaPoczekalni);
+        timerSprawdzaniaPoczekalni = null;
       }
-    } catch (_) {}
+      if (kanalCzekaniaPoczekalni) {
+        supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+        kanalCzekaniaPoczekalni = null;
+      }
+      if (window.kanalOdrzuceniaPoczekalni) {
+        supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+        window.kanalOdrzuceniaPoczekalni = null;
+      }
 
-    if (typeof pokazModalSystemowyOnline === "function") {
-      pokazModalSystemowyOnline(
-        "Pokój wygasł",
-        "Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.",
-        "alert",
-        () => {
-          window.location.href = "./online.html";
+      try {
+        if (mojIndeksOnline === 0) {
+          await usunAktualnyPokoj();
         }
-      );
-    } else {
-      alert("Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.");
-      window.location.href = "./online.html";
-    }
-  }, LIMIT_BEZCYNNOSCI_ONLINE_MS);
+      } catch (_) { }
 
-  document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
-    navigator.clipboard.writeText(kod);
-    if (typeof pokazCustomowyAlert === "function") {
-      pokazCustomowyAlert(`Skopiowano kod stołu: ${kod}`);
-    } else {
-      alert(`Skopiowano kod: ${kod}`);
-    }
-  });
-
-  document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
-    e.preventDefault();
-    if (timerBezczynnosciPoczekalni) {
-      clearTimeout(timerBezczynnosciPoczekalni);
-      timerBezczynnosciPoczekalni = null;
-    }
-    ukryjPrzyciskCzatuOnline();
-    if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
-    window.location.href = "./online.html";
-  });
-
-  function pokazOdrzucenieZaproszenia() {
-    if (czyMeczJuzWystartowal) return;
-    if (timerBezczynnosciPoczekalni) {
-      clearTimeout(timerBezczynnosciPoczekalni);
-      timerBezczynnosciPoczekalni = null;
-    }
-    if (timerSprawdzaniaPoczekalni) {
-      clearInterval(timerSprawdzaniaPoczekalni);
-      timerSprawdzaniaPoczekalni = null;
-    }
-    if (kanalCzekaniaPoczekalni) {
-      supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
-      kanalCzekaniaPoczekalni = null;
-    }
-    if (window.kanalOdrzuceniaPoczekalni) {
-      supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
-      window.kanalOdrzuceniaPoczekalni = null;
-    }
-
-    const statusBox = document.getElementById("status-oczekiwania");
-    if (statusBox) {
-      statusBox.innerHTML = "";
-      const komunikat = document.createElement("span");
-      komunikat.textContent = "Znajomy odrzucił zaproszenie do gry.";
-      komunikat.style.color = "#fca5a5";
-      komunikat.style.fontWeight = "bold";
-      komunikat.style.fontSize = "16px";
-      statusBox.appendChild(komunikat);
-
-      const przyciskPowrotu = document.createElement("button");
-      przyciskPowrotu.type = "button";
-      przyciskPowrotu.textContent = "Wróć do lobby";
-      przyciskPowrotu.style.cssText = "display:block;margin:16px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700;cursor:pointer";
-      przyciskPowrotu.onclick = async () => {
-        await usunAktualnyPokoj();
+      if (typeof pokazModalSystemowyOnline === "function") {
+        pokazModalSystemowyOnline(
+          "Pokój wygasł",
+          "Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.",
+          "alert",
+          () => {
+            window.location.href = "./online.html";
+          }
+        );
+      } else {
+        alert("Stół został usunięty z powodu 5 minut braku aktywności w poczekalni.");
         window.location.href = "./online.html";
-      };
-      statusBox.appendChild(przyciskPowrotu);
-    }
-  }
-
-  // Drugi kanał broadcastowy poczekalni (gwarantuje odbiór broadcastu z menu.js)
-  window.kanalOdrzuceniaPoczekalni = supabaseClient
-    .channel(`poczekalnia-${kod}`)
-    .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
-      pokazOdrzucenieZaproszenia();
-    })
-    .subscribe();
-
-  kanalCzekaniaPoczekalni = supabaseClient
-    .channel(`room-wait-${kod}`)
-    .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
-      pokazOdrzucenieZaproszenia();
-    })
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "game_invites",
-        filter: `kod_pokoju=eq.${kod}`,
-      },
-      (payload) => {
-        if (payload.new?.status === "odrzucone") {
-          pokazOdrzucenieZaproszenia();
-        }
       }
-    )
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
-      (payload) => {
-        const zaktualizowanyPokoj = payload.new;
-        
-        // Host zauważa gościa i odpala mecz
-        if (mojIndeksOnline === 0 && zaktualizowanyPokoj.status === "waiting" && zaktualizowanyPokoj.gosc_id) {
-            supabaseClient.from("rooms").update({ 
-                status: "in_progress",
-                aktualny_gracz_id: zaktualizowanyPokoj.host_id,
-                stan_meczu: { tura: 1, pozostale_rzuty: 3 }
+    }, LIMIT_BEZCYNNOSCI_ONLINE_MS);
+
+    document.getElementById("btn-kopiuj-kod")?.addEventListener("click", () => {
+      navigator.clipboard.writeText(kod);
+      if (typeof pokazCustomowyAlert === "function") {
+        pokazCustomowyAlert(`Skopiowano kod stołu: ${kod}`);
+      } else {
+        alert(`Skopiowano kod: ${kod}`);
+      }
+    });
+
+    document.getElementById("btn-opusc-poczekalnie")?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (timerBezczynnosciPoczekalni) {
+        clearTimeout(timerBezczynnosciPoczekalni);
+        timerBezczynnosciPoczekalni = null;
+      }
+      ukryjPrzyciskCzatuOnline();
+      if (mojIndeksOnline === 0 && !(await usunAktualnyPokoj())) return;
+      window.location.href = "./online.html";
+    });
+
+    function pokazOdrzucenieZaproszenia() {
+      if (czyMeczJuzWystartowal) return;
+      if (timerBezczynnosciPoczekalni) {
+        clearTimeout(timerBezczynnosciPoczekalni);
+        timerBezczynnosciPoczekalni = null;
+      }
+      if (timerSprawdzaniaPoczekalni) {
+        clearInterval(timerSprawdzaniaPoczekalni);
+        timerSprawdzaniaPoczekalni = null;
+      }
+      if (kanalCzekaniaPoczekalni) {
+        supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+        kanalCzekaniaPoczekalni = null;
+      }
+      if (window.kanalOdrzuceniaPoczekalni) {
+        supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+        window.kanalOdrzuceniaPoczekalni = null;
+      }
+
+      const statusBox = document.getElementById("status-oczekiwania");
+      if (statusBox) {
+        statusBox.innerHTML = "";
+        const komunikat = document.createElement("span");
+        komunikat.textContent = "Znajomy odrzucił zaproszenie do gry.";
+        komunikat.style.color = "#fca5a5";
+        komunikat.style.fontWeight = "bold";
+        komunikat.style.fontSize = "16px";
+        statusBox.appendChild(komunikat);
+
+        const przyciskPowrotu = document.createElement("button");
+        przyciskPowrotu.type = "button";
+        przyciskPowrotu.textContent = "Wróć do lobby";
+        przyciskPowrotu.style.cssText = "display:block;margin:16px auto 0;padding:10px 18px;border:0;border-radius:8px;background:#22c55e;color:#07120a;font-weight:700;cursor:pointer";
+        przyciskPowrotu.onclick = async () => {
+          await usunAktualnyPokoj();
+          window.location.href = "./online.html";
+        };
+        statusBox.appendChild(przyciskPowrotu);
+      }
+    }
+
+    // Drugi kanał broadcastowy poczekalni (gwarantuje odbiór broadcastu z menu.js)
+    window.kanalOdrzuceniaPoczekalni = supabaseClient
+      .channel(`poczekalnia-${kod}`)
+      .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
+        pokazOdrzucenieZaproszenia();
+      })
+      .subscribe();
+
+    kanalCzekaniaPoczekalni = supabaseClient
+      .channel(`room-wait-${kod}`)
+      .on("broadcast", { event: "odrzucono-zaproszenie" }, () => {
+        pokazOdrzucenieZaproszenia();
+      })
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_invites",
+          filter: `kod_pokoju=eq.${kod}`,
+        },
+        (payload) => {
+          if (payload.new?.status === "odrzucone") {
+            pokazOdrzucenieZaproszenia();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rooms", filter: `kod_pokoju=eq.${kod}` },
+        (payload) => {
+          const zaktualizowanyPokoj = payload.new;
+
+          // Host zauważa gościa i odpala mecz
+          if (mojIndeksOnline === 0 && zaktualizowanyPokoj.status === "waiting" && zaktualizowanyPokoj.gosc_id) {
+            supabaseClient.from("rooms").update({
+              status: "in_progress",
+              aktualny_gracz_id: zaktualizowanyPokoj.host_id,
+              stan_meczu: { tura: 1, pozostale_rzuty: 3 }
             }).eq("kod_pokoju", kod).then();
+          }
+
+          // Gdy status zmieni się na in_progress (odpala u obu)
+          if (zaktualizowanyPokoj.status === "in_progress" && !czyMeczJuzWystartowal) {
+            if (kanalCzekaniaPoczekalni) {
+              supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
+              kanalCzekaniaPoczekalni = null;
+            }
+            if (window.kanalOdrzuceniaPoczekalni) {
+              supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
+              window.kanalOdrzuceniaPoczekalni = null;
+            }
+
+            const statusBox = document.getElementById("status-oczekiwania");
+            if (statusBox) {
+              statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Startujemy...</span>`;
+            }
+            setTimeout(() => {
+              document.getElementById("poczekalnia-online")?.remove();
+              startMeczuOnline(zaktualizowanyPokoj);
+            }, 600);
+          }
+        }
+      )
+      .subscribe();
+
+    timerSprawdzaniaPoczekalni = window.setInterval(async () => {
+      if (czyMeczJuzWystartowal) {
+        clearInterval(timerSprawdzaniaPoczekalni);
+        timerSprawdzaniaPoczekalni = null;
+        return;
+      }
+      if (sprawdzaniePoczekalni) return;
+
+      sprawdzaniePoczekalni = true;
+      try {
+        const { data: aktualnyPokoj, error: bladPobierania } = await supabaseClient
+          .from("rooms")
+          .select("*")
+          .eq("kod_pokoju", kod)
+          .maybeSingle();
+
+        if (bladPobierania || !aktualnyPokoj) return;
+
+        if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting") {
+          try {
+            let token = session?.access_token || null;
+            if (!token) {
+              try {
+                const fresh = await supabaseClient.auth.getSession();
+                token = fresh?.data?.session?.access_token || null;
+              } catch (_) { }
+            }
+
+            const zaproszenia = await pobierzWierszeOnline("game_invites", {
+              select: "status,kod_pokoju",
+              kod_pokoju: `eq.${kod}`,
+              od_kogo_id: `eq.${aktualnyPokoj.host_id}`,
+              limit: "1",
+            }, token, "sprawdzanie odpowiedzi na zaproszenie");
+
+            if (zaproszenia[0]?.status === "odrzucone") {
+              pokazOdrzucenieZaproszenia();
+              return;
+            }
+          } catch (error) {
+            console.warn("Błąd sprawdzania statusu zaproszenia:", error);
+          }
         }
 
-        // Gdy status zmieni się na in_progress (odpala u obu)
-        if (zaktualizowanyPokoj.status === "in_progress" && !czyMeczJuzWystartowal) {
+        if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting" && aktualnyPokoj.gosc_id) {
+          const { error: bladStartu } = await supabaseClient
+            .from("rooms")
+            .update({
+              status: "in_progress",
+              aktualny_gracz_id: aktualnyPokoj.host_id,
+              stan_meczu: { tura: 1, pozostale_rzuty: 3 },
+            })
+            .eq("kod_pokoju", kod)
+            .eq("status", "waiting");
+
+          if (bladStartu) return;
+          aktualnyPokoj.status = "in_progress";
+          aktualnyPokoj.aktualny_gracz_id = aktualnyPokoj.host_id;
+          aktualnyPokoj.stan_meczu = { tura: 1, pozostale_rzuty: 3 };
+        }
+
+        if (aktualnyPokoj.status === "in_progress" || aktualnyPokoj.status === "finished") {
+          if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
+          timerSprawdzaniaPoczekalni = null;
           if (kanalCzekaniaPoczekalni) {
             supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
             kanalCzekaniaPoczekalni = null;
           }
-          if (window.kanalOdrzuceniaPoczekalni) {
-            supabaseClient.removeChannel(window.kanalOdrzuceniaPoczekalni);
-            window.kanalOdrzuceniaPoczekalni = null;
-          }
-
-          const statusBox = document.getElementById("status-oczekiwania");
-          if (statusBox) {
-            statusBox.innerHTML = `<span style="color:#22c55e; font-weight:bold;">🎮 Rywal (${zaktualizowanyPokoj.gosc_nazwa}) dołączył! Startujemy...</span>`;
-          }
-          setTimeout(() => {
-            document.getElementById("poczekalnia-online")?.remove();
-            startMeczuOnline(zaktualizowanyPokoj);
-          }, 600);
+          document.getElementById("poczekalnia-online")?.remove();
+          startMeczuOnline(aktualnyPokoj);
         }
+      } catch (blad) {
+        console.warn("Błąd sprawdzania statusu stołu:", blad);
+      } finally {
+        sprawdzaniePoczekalni = false;
       }
-    )
-    .subscribe();
-
-  timerSprawdzaniaPoczekalni = window.setInterval(async () => {
-    if (czyMeczJuzWystartowal) {
-      clearInterval(timerSprawdzaniaPoczekalni);
-      timerSprawdzaniaPoczekalni = null;
-      return;
-    }
-    if (sprawdzaniePoczekalni) return;
-
-    sprawdzaniePoczekalni = true;
-    try {
-      const { data: aktualnyPokoj, error: bladPobierania } = await supabaseClient
-        .from("rooms")
-        .select("*")
-        .eq("kod_pokoju", kod)
-        .maybeSingle();
-
-      if (bladPobierania || !aktualnyPokoj) return;
-
-      if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting") {
-        try {
-          let token = session?.access_token || null;
-          if (!token) {
-            try {
-              const fresh = await supabaseClient.auth.getSession();
-              token = fresh?.data?.session?.access_token || null;
-            } catch (_) {}
-          }
-
-          const zaproszenia = await pobierzWierszeOnline("game_invites", {
-            select: "status,kod_pokoju",
-            kod_pokoju: `eq.${kod}`,
-            od_kogo_id: `eq.${aktualnyPokoj.host_id}`,
-            limit: "1",
-          }, token, "sprawdzanie odpowiedzi na zaproszenie");
-
-          if (zaproszenia[0]?.status === "odrzucone") {
-            pokazOdrzucenieZaproszenia();
-            return;
-          }
-        } catch (error) {
-          console.warn("Błąd sprawdzania statusu zaproszenia:", error);
-        }
-      }
-
-      if (mojIndeksOnline === 0 && aktualnyPokoj.status === "waiting" && aktualnyPokoj.gosc_id) {
-        const { error: bladStartu } = await supabaseClient
-          .from("rooms")
-          .update({
-            status: "in_progress",
-            aktualny_gracz_id: aktualnyPokoj.host_id,
-            stan_meczu: { tura: 1, pozostale_rzuty: 3 },
-          })
-          .eq("kod_pokoju", kod)
-          .eq("status", "waiting");
-
-        if (bladStartu) return;
-        aktualnyPokoj.status = "in_progress";
-        aktualnyPokoj.aktualny_gracz_id = aktualnyPokoj.host_id;
-        aktualnyPokoj.stan_meczu = { tura: 1, pozostale_rzuty: 3 };
-      }
-
-      if (aktualnyPokoj.status === "in_progress" || aktualnyPokoj.status === "finished") {
-        if (timerSprawdzaniaPoczekalni) clearInterval(timerSprawdzaniaPoczekalni);
-        timerSprawdzaniaPoczekalni = null;
-        if (kanalCzekaniaPoczekalni) {
-          supabaseClient.removeChannel(kanalCzekaniaPoczekalni);
-          kanalCzekaniaPoczekalni = null;
-        }
-        document.getElementById("poczekalnia-online")?.remove();
-        startMeczuOnline(aktualnyPokoj);
-      }
-    } catch (blad) {
-      console.warn("Błąd sprawdzania statusu stołu:", blad);
-    } finally {
-      sprawdzaniePoczekalni = false;
-    }
-  }, 3000);
+    }, 3000);
   } catch (error) {
     console.error("Błąd uruchamiania stołu online:", error);
     ustawStatusStartu(`Nie udało się uruchomić stołu: ${error.message || "nieznany błąd"}`);
@@ -1394,7 +1427,7 @@ function dodajWiadomoscDoWidoku(wiadomosc, czyNowa = false) {
   const czyCzatOtwarty = blokChatu && blokChatu.style.display !== "none";
 
   const czyJa = Boolean(
-    (window.aktualnyUserOnline && wiadomosc.senderId === window.aktualnyUserOnline.id) ||
+    (window.aktualnyUserOnline?.id && wiadomosc.senderId === window.aktualnyUserOnline.id) ||
     (mojIndeksOnline !== -1 && wiadomosc.senderIndex === mojIndeksOnline)
   );
   const czyGracz2 = wiadomosc.senderIndex === 1;
@@ -1545,7 +1578,7 @@ function wyslijWiadomoscCzatu() {
 
   const nowaWiadomosc = {
     id: msgId,
-    senderId: window.aktualnyUserOnline?.id || null,
+    senderId: window.aktualnyUserOnline?.id || (mojIndeksOnline === 0 ? "host" : "gosc"),
     senderIndex: mojIndeksOnline,
     senderName: mojNickOnline || (mojIndeksOnline === 0 ? "Gospodarz" : "Gość"),
     senderAvatar: mojAwatarOnline || "./loga/logo.png",

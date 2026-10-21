@@ -622,7 +622,7 @@ form h4 {
     flex: 1 1 calc(50% - 10px);
     max-width: calc(50% - 10px);
     padding: 12px 8px;
-    margin: 2px;
+    margin: auto;
   }
   .karta-rozgrywki h2,
   .karta-gracza h2 {

@@ -1661,7 +1661,7 @@ form h4 {
     flex: 1 1 calc(50% - 10px);
     max-width: calc(50% - 10px);
     padding: 12px 8px;
-    margin: 2px;
+    margin: auto;
   }
 
   .karta-gracza h2 {
@@ -1769,11 +1769,21 @@ form h4 {
   .open-chat-btn {
     left: 5%;
   }
+    #kontener-nazw-graczy{
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 550px) {
   .open-chat-btn {
     left: 7%;
+  }
+  #kontener-nazw-graczy{
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: wrap;
   }
 }
 

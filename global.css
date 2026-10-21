@@ -981,7 +981,7 @@ header a {
     flex: 1 1 calc(50% - 10px);
     max-width: calc(50% - 10px);
     padding: 12px 8px;
-    margin: 2px;
+    margin: auto;
   }
   .karta-gracza h2,
   .karta-rozgrywki h2 {
