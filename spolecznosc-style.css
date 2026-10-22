@@ -200,3 +200,8 @@
         grid-template-columns: 1fr;
     }
 }
+@media (max-width: 768px) {
+    .karta-gracza, .karta-rozgrywki {
+        min-width: 100% !important;
+    }
+}
