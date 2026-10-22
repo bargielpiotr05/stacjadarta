@@ -1188,23 +1188,6 @@
                 return;
             }
 
-            // Jeśli brak danych w historii, nie tworzymy pustego/uszkodzonego wykresu
-            if (historia.length === 0) {
-                if (wykresyInstancje[trybKlucz]) {
-                    try {
-                        wykresyInstancje[trybKlucz].destroy();
-                    } catch (_) {}
-                    delete wykresyInstancje[trybKlucz];
-                }
-                const existingOnCanvas = Chart.getChart(canvas);
-                if (existingOnCanvas) {
-                    try {
-                        existingOnCanvas.destroy();
-                    } catch (_) {}
-                }
-                return;
-            }
-
             const labels = historia.map((m) => m.data || "Mecz");
             const dataValues = historia.map((m) => Number(m[metrykaKlucz]) || 0);
 
@@ -1222,59 +1205,41 @@
 
             if (wykresyInstancje[trybKlucz]) {
                 const chart = wykresyInstancje[trybKlucz];
-                // Jeśli istniejący wykres miał 0 punktów danych, niszczymy go i tworzymy od nowa
-                if (!chart.data?.datasets?.[0]?.data?.length) {
-                    try {
-                        chart.destroy();
-                    } catch (_) {}
-                    delete wykresyInstancje[trybKlucz];
-                } else {
-                    chart.historiaMeczow = historia;
-                    chart.metrykaInfo = metrykaInfo;
-                    chart.metrykaKlucz = metrykaKlucz;
-                    chart.data.labels = labels;
-                    chart.data.datasets[0].label = metrykaInfo.nazwa;
-                    chart.data.datasets[0].data = dataValues;
-                    chart.data.datasets[0].borderColor = brandColor;
-                    chart.data.datasets[0].backgroundColor = (context) => getGradient(context.chart);
-                    chart.data.datasets[0].pointBorderColor = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? "#fbbf24" : brandColor);
-                    chart.data.datasets[0].pointBackgroundColor = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? "#f59e0b" : darkNavyBg);
-                    chart.data.datasets[0].pointRadius = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? 7 : 5);
-                    chart.data.datasets[0].pointHoverBackgroundColor = brandColor;
+                chart.historiaMeczow = historia;
+                chart.metrykaInfo = metrykaInfo;
+                chart.metrykaKlucz = metrykaKlucz;
+                chart.data.labels = labels;
+                chart.data.datasets[0].label = metrykaInfo.nazwa;
+                chart.data.datasets[0].data = dataValues;
+                chart.data.datasets[0].borderColor = brandColor;
+                chart.data.datasets[0].backgroundColor = (context) => getGradient(context.chart);
+                chart.data.datasets[0].pointBorderColor = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? "#fbbf24" : brandColor);
+                chart.data.datasets[0].pointBackgroundColor = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? "#f59e0b" : darkNavyBg);
+                chart.data.datasets[0].pointRadius = (c) => (trybKlucz === "shanghai" && historia[c.dataIndex]?.shanghai ? 7 : 5);
+                chart.data.datasets[0].pointHoverBackgroundColor = brandColor;
 
-                    // Dynamiczna aktualizacja formatowania osi Y (brak % dla liczb i poziomu)
-                    if (chart.options?.scales?.y?.ticks) {
-                        chart.options.scales.y.ticks.precision = isIntegerMetric ? 0 : undefined;
-                        chart.options.scales.y.ticks.callback = function (value) {
-                            const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
-                            const curInfo = this.chart?.metrykaInfo || metrykaInfo;
-                            if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
-                                return Number.isInteger(value) ? value : Math.round(value);
-                            }
-                            const cleanNum = typeof value === "number" ? Number(value.toFixed(2)) : value;
-                            if (curInfo?.jednostka === "%") {
-                                return `${cleanNum}%`;
-                            }
-                            if (curInfo?.jednostka) {
-                                return `${cleanNum}${curInfo.jednostka}`;
-                            }
-                            return cleanNum;
-                        };
-                    }
-
-                    if (typeof chart.resize === "function") {
-                        chart.resize();
-                    }
-                    chart.update();
-                    return;
+                // Dynamiczna aktualizacja formatowania osi Y (brak % dla liczb i poziomu)
+                if (chart.options?.scales?.y?.ticks) {
+                    chart.options.scales.y.ticks.precision = isIntegerMetric ? 0 : undefined;
+                    chart.options.scales.y.ticks.callback = function (value) {
+                        const curKlucz = this.chart?.metrykaKlucz || metrykaKlucz;
+                        const curInfo = this.chart?.metrykaInfo || metrykaInfo;
+                        if (["lotki", "max_poziom", "trafienia", "punkty"].includes(curKlucz)) {
+                            return Number.isInteger(value) ? value : Math.round(value);
+                        }
+                        const cleanNum = typeof value === "number" ? Number(value.toFixed(2)) : value;
+                        if (curInfo?.jednostka === "%") {
+                            return `${cleanNum}%`;
+                        }
+                        if (curInfo?.jednostka) {
+                            return `${cleanNum}${curInfo.jednostka}`;
+                        }
+                        return cleanNum;
+                    };
                 }
-            }
 
-            const existingOnCanvas = Chart.getChart(canvas);
-            if (existingOnCanvas) {
-                try {
-                    existingOnCanvas.destroy();
-                } catch (_) {}
+                chart.update();
+                return;
             }
 
             wykresyInstancje[trybKlucz] = new Chart(ctx, {
@@ -2445,7 +2410,7 @@
         // ==============================================================================
         // 7. ASYNCHRONICZNE POBIERANIE STATYSTYK Z BAZY DANYCH SUPABASE
         // ==============================================================================
-        async function zaladujStatystykiGracza(profilWejsciowy = null, meczeWejsciowe = null) {
+        async function zaladujStatystykiGracza(profilWejsciowy = null) {
             try {
                 let profil = profilWejsciowy;
                 if (!profil || typeof profil !== "object") {
@@ -2480,55 +2445,42 @@
 
                 // Pobierz mecze z tabeli matches dla Klasycznej
                 let historiaKlasyczna = [];
-                let rawMatches = meczeWejsciowe;
-                if (!rawMatches || !Array.isArray(rawMatches) || rawMatches.length === 0) {
+                const klient = supaClient || client;
+                if (klient && profil.id) {
                     try {
-                        rawMatches = await pobierzHistorieMeczow(profil.id, profil.nazwa_gracza, Boolean(aktualnyUser && profil.id === aktualnyUser.id), 50);
-                    } catch (_) {}
-                }
+                        const { data: matches, error: mErr } = await klient.from("matches").select("*").or(`host_id.eq.${profil.id},gosc_id.eq.${profil.id}`).order("utworzono", { ascending: true }).limit(50);
 
-                if (Array.isArray(rawMatches) && rawMatches.length > 0) {
-                    // Posortuj mecze chronologicznie (od najstarszego do najnowszego) na potrzeby osi czasu wykresu
-                    const meczeChronologicznie = [...rawMatches].sort((a, b) => {
-                        const tA = a._timestamp || (a.utworzono ? new Date(a.utworzono).getTime() : 0);
-                        const tB = b._timestamp || (b.utworzono ? new Date(b.utworzono).getTime() : 0);
-                        return tA - tB;
-                    });
+                        if (!mErr && Array.isArray(matches) && matches.length > 0) {
+                            historiaKlasyczna = matches.map((m) => {
+                                const stats = Array.isArray(m.statystyki_graczy) ? m.statystyki_graczy : [];
+                                const mojStat = stats.find((s) => (s?.nazwa || "").toLowerCase() === (profil.nazwa_gracza || "").toLowerCase()) || stats[0] || {};
+                                const rywalStat = stats.find((s) => s !== mojStat) || stats[1] || {};
 
-                    historiaKlasyczna = meczeChronologicznie.map((m) => {
-                        const stats = Array.isArray(m.statystyki_graczy) ? m.statystyki_graczy : [];
-                        const nickLower = (profil.nazwa_gracza || "").trim().toLowerCase();
-                        const mojStat = stats.find((s) => {
-                            if (s?.id && profil.id && String(s.id) === String(profil.id)) return true;
-                            if (nickLower && (s?.nazwa || "").trim().toLowerCase() === nickLower) return true;
-                            return false;
-                        }) || (m.host_id === profil.id ? stats[0] : stats[1]) || stats[0] || {};
-                        const rywalStat = stats.find((s) => s !== mojStat) || (m.host_id === profil.id ? stats[1] : stats[0]) || {};
+                                let dataFmt = "-";
+                                if (m.utworzono) {
+                                    const d = new Date(m.utworzono);
+                                    dataFmt = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+                                }
 
-                        let dataFmt = m._dataMeczu || "-";
-                        if (dataFmt === "-" && m.utworzono) {
-                            const d = new Date(m.utworzono);
-                            dataFmt = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+                                const czyHost = m.host_id === profil.id;
+                                const wynikStr = czyHost ? `${m.wynik_host ?? 0}:${m.wynik_gosc ?? 0}` : `${m.wynik_gosc ?? 0}:${m.wynik_host ?? 0}`;
+
+                                return {
+                                    data: dataFmt,
+                                    srednia: parseFloat(mojStat.srednia) || 0,
+                                    srednia9: parseFloat(mojStat.srednia9) || 0,
+                                    rywal: rywalStat.nazwa || "Rywal",
+                                    format: m.format_gry || "501 DO",
+                                    wynik: wynikStr,
+                                    highest_score: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
+                                    highest_finish: mojStat.najwyzszyCheckout || mojStat.highestFinish || mojStat.hf || 0,
+                                    checkout: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
+                                };
+                            });
                         }
-
-                        const czyHost = m.host_id === profil.id;
-                        const wynikStr = m._wynik || (czyHost ? `${m.wynik_host ?? 0}:${m.wynik_gosc ?? 0}` : `${m.wynik_gosc ?? 0}:${m.wynik_host ?? 0}`);
-
-                        const sr3 = parseFloat(mojStat.srednia) || parseFloat(m._jaSrednia) || 0;
-                        const sr9 = parseFloat(mojStat.srednia9) || 0;
-
-                        return {
-                            data: dataFmt,
-                            srednia: sr3,
-                            srednia9: sr9,
-                            rywal: m._przeciwnikNazwa || rywalStat.nazwa || "Rywal",
-                            format: m.format_gry || "501 DO",
-                            wynik: wynikStr,
-                            highest_score: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
-                            highest_finish: mojStat.najwyzszyCheckout || mojStat.highestFinish || mojStat.hf || 0,
-                            checkout: mojStat.najlepszyRzut || mojStat.highestScore || mojStat.hs || 0,
-                        };
-                    });
+                    } catch (eMatches) {
+                        console.warn("Błąd pobierania meczów dla wykresu:", eMatches);
+                    }
                 }
 
                 // 1. Klasyczna
@@ -2777,10 +2729,7 @@
         // ==============================================================================
         // 8. GŁÓWNA FUNKCJA ŁADOWANIA PROFILU GRACZA
         // ==============================================================================
-        let czyLadujeProfil = false;
         async function zaladujProfil() {
-            if (czyLadujeProfil) return;
-            czyLadujeProfil = true;
             try {
                 let proby = 0;
                 while (!client && proby < 30) {
@@ -3031,15 +2980,14 @@
                     if (akcjeGoscia) akcjeGoscia.style.display = "none";
                 }
 
-                // Historia meczów (pobieramy do 50 meczów od razu dla listy i wykresu)
-                const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil, 50);
-                pelnaHistoriaMeczowCache = mecze || [];
-                renderujListeMeczow(mecze.slice(0, 5));
+                // Historia meczów
+                const mecze = await pobierzHistorieMeczow(finalProfilId, nazwaGracza, czyMojProfil, 5);
+                renderujListeMeczow(mecze);
 
                 const kontenerWiecej = document.getElementById("kontener-wiecej-meczy");
                 const btnWiecej = document.getElementById("btn-zobacz-wszystkie-mecze");
                 if (kontenerWiecej && btnWiecej) {
-                    const maWiecejMeczow = (mecze && mecze.length > 5) || (profil?.rozegrane_mecze && profil.rozegrane_mecze > 5);
+                    const maWiecejMeczow = (mecze && mecze.length >= 5) || (profil?.rozegrane_mecze && profil.rozegrane_mecze > 5);
                     if (maWiecejMeczow) {
                         kontenerWiecej.style.display = "block";
                         btnWiecej.textContent = "Zobacz wszystkie mecze";
@@ -3049,12 +2997,10 @@
                     }
                 }
 
-                // Wypełnienie wszystkich zakładek i wykresów z przekazaniem pobranych meczów
-                await zaladujStatystykiGracza(profil, mecze);
+                // Wypełnienie wszystkich zakładek i wykresów
+                await zaladujStatystykiGracza(profil);
             } catch (error) {
                 console.error("Błąd krytyczny ładowania profilu:", error);
-            } finally {
-                czyLadujeProfil = false;
             }
         }
 
@@ -3555,21 +3501,17 @@
         });
 
         // Obsługa powrotu z bfcache na urządzeniach mobilnych (iOS Safari)
-        window.addEventListener("pageshow", (e) => {
-            if (e.persisted) {
-                zaladujProfil();
-            }
+        window.addEventListener("pageshow", () => {
+            zaladujProfil();
         });
 
-        // Nasłuchiwanie na zmiany stanu sesji (tylko rzeczywiste zalogowanie / wylogowanie)
+        // Nasłuchiwanie na zmiany stanu sesji
         try {
             const k = window.supabaseKlient || window.supabaseClient;
             if (k?.auth?.onAuthStateChange) {
                 k.auth.onAuthStateChange((event, session) => {
-                    if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-                        if (session?.user && (!aktualnyUser || aktualnyUser.id !== session.user.id)) {
-                            zaladujProfil();
-                        }
+                    if (session?.user && (!aktualnyUser || aktualnyUser.id !== session.user.id)) {
+                        zaladujProfil();
                     }
                 });
             }
