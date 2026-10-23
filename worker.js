@@ -5,7 +5,8 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/dart-live") {
-      const matchId = url.searchParams.get("matchId") || url.searchParams.get("id") || "I78ccYfE";
+      const feedParam = url.searchParams.get("feed");
+      const matchId = url.searchParams.get("matchId") || url.searchParams.get("id") || "tvPx1evh";
       const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -17,6 +18,13 @@ export default {
         return new Response(null, { headers: corsHeaders });
       }
       try {
+        if (feedParam) {
+          const res = await fetch(`https://46.flashscore.ninja/46/x/feed/${feedParam}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          });
+          const text = res.ok ? await res.text() : "";
+          return Response.json({ ok: true, feed: feedParam, data: text }, { headers: corsHeaders });
+        }
         const [resMhn, resDc] = await Promise.all([
           fetch(`https://46.flashscore.ninja/46/x/feed/df_mhn_1_${matchId}`, {
             headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }

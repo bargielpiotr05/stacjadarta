@@ -423,6 +423,35 @@
                 border-color: var(--secondary-color);
                 box-shadow: 0 0 16px rgba(64, 218, 64, 0.5);
             }
+            .fs-avatar-initials {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background: radial-gradient(circle at 35% 35%, #1e1b4b, #090723);
+                border: 2px solid var(--primary-color-border);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Rajdhani', sans-serif;
+                font-size: 22px;
+                font-weight: 800;
+                color: #ffffff;
+                position: relative;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            }
+            .fs-avatar-box.is-serving .fs-avatar-initials {
+                border-color: var(--secondary-color);
+                box-shadow: 0 0 16px rgba(64, 218, 64, 0.5);
+            }
+            .fs-avatar-flag {
+                position: absolute;
+                bottom: 2px;
+                right: 2px;
+                font-size: 14px;
+                line-height: 1;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+            }
             .fs-service-badge {
                 position: absolute;
                 bottom: -8px;
@@ -1166,21 +1195,41 @@
                     endpointStatus.textContent = "Szukanie meczów LIVE...";
                     try {
                         let liveId = null;
-                        let liveName = null;
 
-                        // 1. Sprawdzenie bezpośredniego feedu Flashscore Ninja (100% darmowy, CORS *)
+                        // 1. Sprawdzenie feedu przez szybki lokalny proxy 5050 lub Cloudflare
                         try {
-                            const res = await fetch("https://46.flashscore.ninja/46/x/feed/f_14_0_1_en_1", {
-                                headers: { "x-fsign": "SW9D1eZo" }
-                            });
-                            if (res.ok) {
-                                const text = await res.text();
-                                const matches = text.split("~AA\u00f7");
+                            let feedTxt = "";
+                            try {
+                                const locRes = await fetch("http://127.0.0.1:5050/live?feed=f_14_0_1_en_1", { cache: "no-store" });
+                                if (locRes.ok) {
+                                    const locJ = await locRes.json();
+                                    if (locJ.ok && locJ.data) feedTxt = locJ.data;
+                                }
+                            } catch (e) {}
+
+                            if (!feedTxt) {
+                                const cfRes = await fetch("https://stacjadarta.pl/api/dart-live?feed=f_14_0_1_en_1", { cache: "no-store" });
+                                if (cfRes.ok) {
+                                    const cfJ = await cfRes.json();
+                                    if (cfJ.ok && cfJ.data) feedTxt = cfJ.data;
+                                }
+                            }
+
+                            if (!feedTxt) {
+                                const ninjaRes = await fetch("https://46.flashscore.ninja/46/x/feed/f_14_0_1_en_1", {
+                                    headers: { "x-fsign": "SW9D1eZo" }
+                                });
+                                if (ninjaRes.ok) feedTxt = await ninjaRes.text();
+                            }
+
+                            if (feedTxt) {
+                                const matches = feedTxt.split("~AA\u00f7");
                                 for (const m of matches) {
                                     if (m.includes("\u00acAB\u00f72\u00ac") || m.includes("AB\u00f72")) {
                                         const idMatch = m.match(/^([a-zA-Z0-9]+)/);
                                         if (idMatch && !liveId) {
                                             liveId = idMatch[1];
+                                            break;
                                         }
                                     }
                                 }
@@ -1191,7 +1240,7 @@
 
                         // Jeśli feed nie zwrócił meczu live, domyślnie bierzemy aktywny mecz wieczoru
                         if (!liveId) {
-                            liveId = "I78ccYfE"; // Littler L. vs O'Connor W.
+                            liveId = "tvPx1evh"; // Nijman W. vs Schindler M.
                         }
 
                         window.otworzTablice501(liveId);
@@ -1200,8 +1249,25 @@
                     }
                 };
 
-                // Baza metadanych meczów turnieju PDC (Dortmund) do oficjalnej tablicy Flashscore
+                // Baza metadanych meczów turnieju PDC European Championship (Dortmund) do oficjalnej tablicy Flashscore
                 const FLASH_DARTS_METADATA = {
+                    "tvPx1evh": {
+                        homeName: "Nijman W.",
+                        awayName: "Schindler M.",
+                        homeCountry: "Holandia",
+                        awayCountry: "Niemcy",
+                        homeFlag: "🇳🇱",
+                        awayFlag: "🇩🇪",
+                        homeRanking: "34",
+                        awayRanking: "21",
+                        homeImg: "https://r2.thesportsdb.com/images/media/player/cutout/20ofoi1722510302.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/of39eq1657824614.png",
+                        tournament: "PDC European Championship",
+                        round: "1/16 finału (Dortmund)",
+                        format: "Best of 11 legs (do 6 wygranych)",
+                        date: "23.10.2026",
+                        time: "22:15"
+                    },
                     "I78ccYfE": {
                         homeName: "Littler L.",
                         awayName: "O'Connor W.",
@@ -1211,8 +1277,8 @@
                         awayFlag: "🇮🇪",
                         homeRanking: "2",
                         awayRanking: "38",
-                        homeImg: "https://static.flashscore.com/res/image/data/n7tKInXH-nivcv4U0.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/UTxabYQq-2JdiYhZp.png",
+                        homeImg: "https://r2.thesportsdb.com/images/media/player/cutout/ymntrt1704290632.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/6wto8r1598976553.png",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
@@ -1228,30 +1294,13 @@
                         awayFlag: "🇩🇪",
                         homeRanking: "5",
                         awayRanking: "36",
-                        homeImg: "https://static.flashscore.com/res/image/data/6N7ct0kC-ttQNaTVQ.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/8lcZgmPq-SprKY4eC.png",
+                        homeImg: "https://r2.thesportsdb.com/images/media/player/cutout/x4p8g81598976198.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/qm4fji1758533232.png",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
                         date: "23.10.2026",
                         time: "20:55"
-                    },
-                    "tvPx1evh": {
-                        homeName: "Nijman W.",
-                        awayName: "Schindler M.",
-                        homeCountry: "Holandia",
-                        awayCountry: "Niemcy",
-                        homeFlag: "🇳🇱",
-                        awayFlag: "🇩🇪",
-                        homeRanking: "34",
-                        awayRanking: "21",
-                        homeImg: "https://static.flashscore.com/res/image/data/men.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/men.png",
-                        tournament: "PDC European Championship",
-                        round: "1/16 finału (Dortmund)",
-                        format: "Best of 11 legs (do 6 wygranych)",
-                        date: "23.10.2026",
-                        time: "22:15"
                     },
                     "08LhcDwH": {
                         homeName: "Doets K.",
@@ -1262,8 +1311,8 @@
                         awayFlag: "🇳🇱",
                         homeRanking: "45",
                         awayRanking: "3",
-                        homeImg: "https://static.flashscore.com/res/image/data/men.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/men.png",
+                        homeImg: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Kevin_Doets_2026.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/avo7ay1598972255.png",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
@@ -1279,8 +1328,8 @@
                         awayFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
                         homeRanking: "16",
                         awayRanking: "12",
-                        homeImg: "https://static.flashscore.com/res/image/data/men.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/men.png",
+                        homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/2026-03-26_Premier_League_Darts_%E2%80%93_Night_8_%E2%80%93_Berlin_2026_by_Sandro_Halank%E2%80%93130.jpg/330px-2026-03-26_Premier_League_Darts_%E2%80%93_Night_8_%E2%80%93_Berlin_2026_by_Sandro_Halank%E2%80%93130.jpg",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/ho2g4o1598977636.png",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
@@ -1296,13 +1345,47 @@
                         awayFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
                         homeRanking: "24",
                         awayRanking: "7",
-                        homeImg: "https://static.flashscore.com/res/image/data/pnbwwVhT-6iqa9w4h.png",
-                        awayImg: "https://static.flashscore.com/res/image/data/U3gvOSUH-QFdtDWCk.png",
+                        homeImg: "https://r2.thesportsdb.com/images/media/player/cutout/a3i6ed1644848338.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/k4q6kn1598972468.png",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
                         date: "23.10.2026",
                         time: "19:40"
+                    },
+                    "8fScg4xq": {
+                        homeName: "Smith R.",
+                        awayName: "Sedlacek K.",
+                        homeCountry: "Anglia",
+                        awayCountry: "Czechy",
+                        homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+                        awayFlag: "🇨🇿",
+                        homeRanking: "13",
+                        awayRanking: "62",
+                        homeImg: "https://upload.wikimedia.org/wikipedia/commons/b/bf/RossSmithEC25.png",
+                        awayImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Karel_Sedlacek_2025.png/330px-Karel_Sedlacek_2025.png",
+                        tournament: "PDC European Championship",
+                        round: "1/16 finału (Dortmund)",
+                        format: "Best of 11 legs (do 6 wygranych)",
+                        date: "23.10.2026",
+                        time: "20:15"
+                    },
+                    "GKV5ir7e": {
+                        homeName: "Joyce R.",
+                        awayName: "Wattimena J.",
+                        homeCountry: "Anglia",
+                        awayCountry: "Holandia",
+                        homeFlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+                        awayFlag: "🇳🇱",
+                        homeRanking: "35",
+                        awayRanking: "39",
+                        homeImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Ryan_Joyce_2025_European_Championship.png/330px-Ryan_Joyce_2025_European_Championship.png",
+                        awayImg: "https://r2.thesportsdb.com/images/media/player/cutout/99rphu1598983565.png",
+                        tournament: "PDC European Championship",
+                        round: "1/16 finału (Dortmund)",
+                        format: "Best of 11 legs (do 6 wygranych)",
+                        date: "23.10.2026",
+                        time: "18:45"
                     },
                     "67mQv5Nk": {
                         homeName: "Aspinall N.",
@@ -1313,13 +1396,13 @@
                         awayFlag: "🇪🇸",
                         homeRanking: "10",
                         awayRanking: "64",
-                        homeImg: "./ikony/zdjecie_reprezentatywne.jpeg",
+                        homeImg: "https://r2.thesportsdb.com/images/media/player/cutout/be0r4s1598972811.png",
                         awayImg: "./ikony/zdjecie_reprezentatywne.jpeg",
                         tournament: "PDC European Championship",
                         round: "1/16 finału (Dortmund)",
                         format: "Best of 11 legs (do 6 wygranych)",
                         date: "23.10.2026",
-                        time: "19:00"
+                        time: "18:15"
                     }
                 };
 
@@ -1369,6 +1452,46 @@
                     return cMap[pkt] || `🎯 Checkout: ${pkt} pkt`;
                 }
 
+                // Generator bezpiecznego avatara gracza z fallbackiem inicjałów i flagi
+                function generujAvatarHtml(imgSrc, imieNazwisko, flaga, czySerwuje, prefixId) {
+                    const inicjaly = (imieNazwisko || "DART").split(" ").map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+                    const maZdjecie = Boolean(imgSrc && imgSrc.length > 5);
+                    return `
+                        <div class="fs-avatar-box ${czySerwuje ? 'is-serving' : ''}" id="${prefixId}-avatar">
+                            <img id="${prefixId}-img" 
+                                 src="${maZdjecie ? imgSrc : ''}" 
+                                 style="${maZdjecie ? '' : 'display: none;'}" 
+                                 referrerpolicy="no-referrer" 
+                                 onerror="this.style.display='none'; const b = document.getElementById('${prefixId}-initials'); if (b) b.style.display='flex';" 
+                                 alt="${imieNazwisko}" />
+                            <div id="${prefixId}-initials" class="fs-avatar-initials" style="${maZdjecie ? 'display: none;' : 'display: flex;'}">
+                                <span>${inicjaly}</span>
+                                <span class="fs-avatar-flag">${flaga}</span>
+                            </div>
+                            <div class="fs-service-badge" id="${prefixId}-service" style="display: ${czySerwuje ? 'flex' : 'none'};">
+                                SERWIS
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Ekstrakcja oficjalnego wyniku w legach z feedu MHN (RWS/RWC)
+                function extractLegScoreFromMhn(mhn) {
+                    if (!mhn) return null;
+                    const div = "\u00f7";
+                    const not = "\u00ac";
+                    const regex = new RegExp(`(?:TS${div}RWS|TS${div}RWC)${not}[\\s\\S]*?TS${div}SC${not}PT${div}PT${not}PV${div}1${not}PT${div}VA${not}PV${div}(\\d+)[\\s\\S]*?TS${div}SC${not}PT${div}PT${not}PV${div}2${not}PT${div}VA${not}PV${div}(\\d+)`, "g");
+                    let lastMatch = null;
+                    let match;
+                    while ((match = regex.exec(mhn)) !== null) {
+                        lastMatch = match;
+                    }
+                    if (lastMatch) {
+                        return { home: parseInt(lastMatch[1], 10), away: parseInt(lastMatch[2], 10) };
+                    }
+                    return null;
+                }
+
                 // Parser bezpośredniego oficjalnego strumienia CDN Flashscore (df_mhn_1 & dc_14)
                 function parseFlashscoreDartFeed(feedMhn, feedDc, homeName = "Zawodnik 1", awayName = "Zawodnik 2") {
                     const div = "\u00f7";
@@ -1382,25 +1505,38 @@
                         if (parts.length >= 2) dc[parts[0]] = parts[1];
                     }
 
-                    const isLive = (dc.DA === "2" || dc.DB === "17" || dc.DB === "2");
-                    const isFinished = (dc.DA === "3" || dc.DB === "3");
-                    let homeLegs = parseInt(dc.DE || "0", 10);
-                    let awayLegs = parseInt(dc.DF || "0", 10);
+                    const hasRWC = Boolean(feedMhn && feedMhn.includes("TS" + div + "RWC" + not));
+                    const isLive = Boolean(dc.DA === "2" || dc.DB === "17" || dc.DB === "2" || hasRWC);
 
-                    // 2. Parsowanie feedMhn (szczegóły rzutów i stanów w legach)
+                    // Wynik w legach: wyłącznie oficjalne liczniki legów (dc.DE/DF lub z bloków RWS/RWC w MHN)
+                    let homeLegs = (dc.DE !== undefined && dc.DE !== "") ? parseInt(dc.DE, 10) : null;
+                    let awayLegs = (dc.DF !== undefined && dc.DF !== "") ? parseInt(dc.DF, 10) : null;
+
+                    if (homeLegs === null || awayLegs === null || isNaN(homeLegs) || isNaN(awayLegs)) {
+                        const mhnScore = extractLegScoreFromMhn(feedMhn);
+                        if (mhnScore) {
+                            homeLegs = mhnScore.home;
+                            awayLegs = mhnScore.away;
+                        } else {
+                            homeLegs = 0;
+                            awayLegs = 0;
+                        }
+                    }
+
+                    const isFinished = Boolean(!isLive && (dc.DA === "3" || dc.DB === "3" || homeLegs >= 6 || awayLegs >= 6));
+                    const isScheduled = Boolean(!isLive && !isFinished);
+
+                    // 2. Parsowanie feedMhn (szczegóły rzutów i stanów w legach od 501 w dół)
                     let p1 = 501;
                     let p2 = 501;
                     let server = 1;
-                    let currentLegNum = homeLegs + awayLegs + (isLive ? 1 : 0);
+                    let currentLegNum = isLive ? (homeLegs + awayLegs + 1) : (isFinished ? (homeLegs + awayLegs) : 1);
                     if (currentLegNum === 0) currentLegNum = 1;
 
                     let historyChips = [];
-                    let lastThrowText = isLive ? "Mecz trwa na żywo" : (isFinished ? "Mecz zakończony" : "Oczekiwanie na mecz");
                     let activeThrower = server;
 
                     if (feedMhn && feedMhn.length > 10) {
-                        // Rozdzielenie legów rozegranych (RWS) i aktualnego trwającego (RWC)
-                        const hasRWC = feedMhn.includes("TS" + div + "RWC" + not);
                         let activeBlock = "";
 
                         if (hasRWC) {
@@ -1419,17 +1555,10 @@
                         }
 
                         if (activeBlock) {
-                            // Kto serwuje w tym legu (SPT÷1 lub SPT÷2)
                             const sMatch = activeBlock.match(new RegExp(`SPT${not}PV${div}([12])`));
                             if (sMatch) server = parseInt(sMatch[1], 10);
 
-                            // Wynik w legach z nagłówka lega (jeśli dostępne)
-                            const s1Match = activeBlock.match(new RegExp(`PT${not}PV${div}1${not}PT${div}VA${not}PV${div}(\\d+)`));
-                            const s2Match = activeBlock.match(new RegExp(`PT${not}PV${div}2${not}PT${div}VA${not}PV${div}(\\d+)`));
-                            if (s1Match) homeLegs = parseInt(s1Match[1], 10);
-                            if (s2Match) awayLegs = parseInt(s2Match[1], 10);
-
-                            // Parsowanie kroków rzutów w sekcji punktów RWP
+                            // Parsowanie kroków rzutów w sekcji punktów RWP (tylko punkty, NIGDY legi!)
                             const steps = activeBlock.split("TS" + div);
                             let inRWP = false;
 
@@ -1441,14 +1570,11 @@
                                 if (!inRWP) continue;
 
                                 if (st.startsWith("TXS")) {
-                                    // Wyróżnienie punktowe (np. 140, 180)
                                     const txMatch = st.match(new RegExp(`VA${not}PV${div}(\\d+)`));
                                     if (txMatch && historyChips.length > 0) {
-                                        const hlVal = txMatch[1];
-                                        historyChips[historyChips.length - 1].hl = hlVal;
+                                        historyChips[historyChips.length - 1].hl = txMatch[1];
                                     }
                                 } else if (st.startsWith("SC")) {
-                                    // Nowy stan punktowy
                                     const isChange = st.includes(`CH${not}PV${div}1`) || st.includes(`CH${div}1`);
                                     const scMatch = st.match(new RegExp(`PT${not}PV${div}([12])${not}PT${div}VA${not}PV${div}(\\d+)`));
                                     if (scMatch) {
@@ -1467,10 +1593,6 @@
                                                 diff: diff > 0 ? diff : null,
                                                 hl: null
                                             });
-
-                                            const throwerName = (plr === 1 ? homeName : awayName);
-                                            const nextName = (plr === 1 ? awayName : homeName);
-                                            lastThrowText = `${throwerName} rzucił ${diff > 0 ? diff + ' pkt' : 'kolejkę'} (${prevVal} ➔ ${val}). Przy tarczy ${nextName}`;
                                         }
                                     }
                                 }
@@ -1478,11 +1600,27 @@
                         }
                     }
 
-                    // Jeśli feedDc ma DP i DQ - nadpisz aktualne punkty
-                    if (dc.DP !== undefined) p1 = parseInt(dc.DP, 10);
-                    if (dc.DQ !== undefined) p2 = parseInt(dc.DQ, 10);
+                    // Jeśli feedDc ma bezpośrednie punkty DP i DQ (szybsza aktualizacja live)
+                    if (dc.DP !== undefined && dc.DP !== "") p1 = parseInt(dc.DP, 10);
+                    if (dc.DQ !== undefined && dc.DQ !== "") p2 = parseInt(dc.DQ, 10);
 
-                    // Generowanie chipów historii rzutów dla BIEŻĄCEGO LEGA
+                    let lastThrowText = "";
+                    if (isFinished) {
+                        const winner = homeLegs > awayLegs ? homeName : awayName;
+                        lastThrowText = `Koniec meczu! ${winner} wygrywa ${Math.max(homeLegs, awayLegs)} - ${Math.min(homeLegs, awayLegs)}`;
+                    } else if (isScheduled) {
+                        lastThrowText = "Oczekiwanie na rozpoczęcie meczu";
+                    } else {
+                        if (historyChips.length > 0) {
+                            const lastChip = historyChips[historyChips.length - 1];
+                            const throwerName = (lastChip.plr === 1 ? homeName : awayName);
+                            const nextName = (lastChip.plr === 1 ? awayName : homeName);
+                            lastThrowText = `${throwerName} rzucił ${lastChip.diff > 0 ? lastChip.diff + ' pkt' : 'kolejkę'}. Przy tarczy ${nextName} (${p1} : ${p2})`;
+                        } else {
+                            lastThrowText = `Mecz na żywo • Leg ${currentLegNum} (${p1} : ${p2})`;
+                        }
+                    }
+
                     let chipsHtml = "";
                     if (historyChips.length > 0) {
                         chipsHtml = historyChips.map(ch => {
@@ -1494,12 +1632,13 @@
                             return `${ch.p1}:${ch.p2}${badge}`;
                         }).join(", ");
                     } else {
-                        chipsHtml = isLive ? `${p1}:${p2} (Początek lega)` : (isFinished ? "Leg zakończony" : "Oczekiwanie na rzut");
+                        chipsHtml = isLive ? `${p1}:${p2} (Początek lega)` : (isFinished ? "Koniec meczu" : "Oczekiwanie na pierwszy rzut");
                     }
 
                     return {
                         isLive: isLive,
                         isFinished: isFinished,
+                        isScheduled: isScheduled,
                         homeLegs: homeLegs,
                         awayLegs: awayLegs,
                         currentLegNum: currentLegNum,
@@ -1509,8 +1648,8 @@
                         activeThrower: activeThrower,
                         lastThrowText: lastThrowText,
                         chipsHtml: chipsHtml,
-                        homeFinish: obliczCheckoutDarta(p1),
-                        awayFinish: obliczCheckoutDarta(p2)
+                        homeFinish: isFinished ? null : obliczCheckoutDarta(p1),
+                        awayFinish: isFinished ? null : obliczCheckoutDarta(p2)
                     };
                 }
 
@@ -1520,9 +1659,9 @@
                         aktualnyMeczId501 = wybranyId;
                     }
 
-                    // Domyślnie bierzemy mecz na żywo (Littler L. vs O'Connor W.)
+                    // Domyślnie bierzemy aktywny mecz na żywo (Nijman vs Schindler)
                     if (!aktualnyMeczId501 || aktualnyMeczId501 === "auto") {
-                        aktualnyMeczId501 = "I78ccYfE";
+                        aktualnyMeczId501 = "tvPx1evh";
                     }
 
                     const terazCzas = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1535,8 +1674,8 @@
                         awayFlag: "🎯",
                         homeRanking: "",
                         awayRanking: "",
-                        homeImg: "./ikony/zdjecie_reprezentatywne.jpeg",
-                        awayImg: "./ikony/zdjecie_reprezentatywne.jpeg",
+                        homeImg: "",
+                        awayImg: "",
                         tournament: "PDC Darts Championship",
                         round: "Faza pucharowa",
                         format: "Best of 11 legs (do 6 wygranych)",
@@ -1622,6 +1761,7 @@
                         const parsed = parseFlashscoreDartFeed(rawMhn, rawDc, meta.homeName, meta.awayName);
                         const isLive = parsed.isLive;
                         const isFinished = parsed.isFinished;
+                        const isScheduled = parsed.isScheduled;
                         const homeScore = parsed.homeLegs;
                         const awayScore = parsed.awayLegs;
                         const homePts = parsed.p1;
@@ -1635,9 +1775,10 @@
                             SOURCE: "Flashscore Official CDN (x-fsign: SW9D1eZo)",
                             EVENT_ID: aktualnyMeczId501,
                             MATCH: meta,
+                            STATUS: isLive ? "LIVE IN-PLAY" : (isFinished ? "FINISHED" : "SCHEDULED"),
+                            SCORE: `${homeScore} - ${awayScore}`,
                             LIVE_LEG: {
                                 leg: legNumer,
-                                score: `${homeScore} - ${awayScore}`,
                                 points: `${homePts} : ${awayPts}`,
                                 homeServing: homeServing,
                                 awayServing: awayServing,
@@ -1648,34 +1789,35 @@
                             RAW_DC_SNIPPET: rawDc.substring(0, 160)
                         }, null, 2);
 
-                        naglowekSekcji.textContent = `Prawdziwa belka Flashscore: ${meta.homeName} vs ${meta.awayName} (Leg ${legNumer}: ${homePts} : ${awayPts})`;
+                        naglowekSekcji.textContent = `Prawdziwa belka Flashscore: ${meta.homeName} vs ${meta.awayName} (${isLive ? 'Leg ' + legNumer + ': ' + homePts + ' : ' + awayPts : (isFinished ? 'Koniec ' + homeScore + ':' + awayScore : 'Zaplanowany')})`;
 
-                        // Pasek wyboru meczów PDC Dortmund
+                        // Pasek wyboru meczów PDC European Championship Dortmund
                         const meczeEuropejskiej = [
-                            { id: "I78ccYfE", name: "Littler L. vs O'Connor W.", score: "🔴 NA ŻYWO", note: "1/16 finału - Trwa na żywo!" },
+                            { id: "tvPx1evh", name: "Nijman W. vs Schindler M.", score: "🔴 NA ŻYWO", note: "PDC European Championship - Trwa teraz na żywo!" },
+                            { id: "I78ccYfE", name: "Littler L. vs O'Connor W.", score: "6:3", note: "Zakończony (1/16)" },
                             { id: "rktLrEON", name: "Clayton J. vs Springer N.", score: "6:3", note: "Zakończony (1/16)" },
-                            { id: "tvPx1evh", name: "Nijman W. vs Schindler M.", score: "22:15", note: "PDC European Championship" },
-                            { id: "08LhcDwH", name: "Doets K. vs van Gerwen M.", score: "22:50", note: "PDC European Championship" },
+                            { id: "08LhcDwH", name: "Doets K. vs van Gerwen M.", score: "22:50", note: "Następny mecz wieczoru (1/16)" },
                             { id: "OpZDkMy8", name: "Rock J. vs Dobey C.", score: "23:25", note: "PDC European Championship" },
                             { id: "jZL4eCPQ", name: "Ratajski K. vs Chisnall D.", score: "6:2", note: "Zakończony (1/16)" },
                             { id: "8fScg4xq", name: "Smith R. vs Sedlacek K.", score: "6:4", note: "Zakończony (1/16)" },
                             { id: "GKV5ir7e", name: "Joyce R. vs Wattimena J.", score: "3:6", note: "Zakończony (1/16)" },
-                            { id: "67mQv5Nk", name: "Aspinall N. vs Reyes C.", score: "2:3", note: "Mecz ze zrzutu Flashscore" }
+                            { id: "67mQv5Nk", name: "Aspinall N. vs Reyes C.", score: "6:3", note: "Zakończony (1/16)" }
                         ];
 
-                        // Cicha aktualizacja istniejącej karty w DOM (bez mrugania ekranu)
+                        // Cicha aktualizacja istniejącej karty w DOM (bez mrugania ekranu tylko jeśli to ten sam mecz)
                         const istniejacaKarta = document.getElementById("fs-karta-meczu");
-                        if (cichyRefresh && istniejacaKarta) {
+                        if (cichyRefresh && istniejacaKarta && istniejacaKarta.getAttribute("data-match-id") === aktualnyMeczId501) {
                             const elDateTime = document.getElementById("fs-val-datetime");
                             const elHomeScore = document.getElementById("fs-val-home-score");
                             const elAwayScore = document.getElementById("fs-val-away-score");
                             const elLegBadge = document.getElementById("fs-val-current-leg-badge");
                             const elLegPointsCenter = document.getElementById("fs-val-leg-points-center");
-                            const elLivePill = document.getElementById("fs-val-live-pill");
                             const elHomeAvatar = document.getElementById("fs-val-home-avatar");
                             const elAwayAvatar = document.getElementById("fs-val-away-avatar");
                             const elHomeDartIcon = document.getElementById("fs-val-home-dart-icon");
                             const elAwayDartIcon = document.getElementById("fs-val-away-dart-icon");
+                            const elHomeService = document.getElementById("fs-val-home-service");
+                            const elAwayService = document.getElementById("fs-val-away-service");
                             const elOstatniaAkt = document.getElementById("fs-ostatnia-akt");
 
                             // Pola tabeli Flashscore
@@ -1690,18 +1832,20 @@
                             if (elDateTime) elDateTime.textContent = `${meta.date} ${meta.time}`;
                             if (elHomeScore) elHomeScore.textContent = homeScore;
                             if (elAwayScore) elAwayScore.textContent = awayScore;
-                            if (elLegBadge) elLegBadge.textContent = isLive ? `LEG ${legNumer}` : (isFinished ? "KONIEC" : "OCZEKUJE");
-                            if (elLegPointsCenter) elLegPointsCenter.textContent = `${homePts} : ${awayPts}`;
+                            if (elLegBadge) elLegBadge.textContent = isLive ? `LEG ${legNumer}` : (isFinished ? "KONIEC" : "ZAPLANOWANY");
+                            if (elLegPointsCenter) elLegPointsCenter.textContent = isLive ? `${homePts} : ${awayPts}` : (isFinished ? `${homeScore} - ${awayScore}` : `START ${meta.time}`);
 
                             if (elTabHomeScore) elTabHomeScore.textContent = homeScore;
                             if (elTabAwayScore) elTabAwayScore.textContent = awayScore;
-                            if (elTabHomePts) elTabHomePts.textContent = homePts;
-                            if (elTabAwayPts) elTabAwayPts.textContent = awayPts;
+                            if (elTabHomePts) elTabHomePts.textContent = isScheduled ? 501 : homePts;
+                            if (elTabAwayPts) elTabAwayPts.textContent = isScheduled ? 501 : awayPts;
                             if (elTabLegHistory) elTabLegHistory.innerHTML = parsed.chipsHtml;
                             if (elLastThrowText) elLastThrowText.textContent = parsed.lastThrowText;
 
                             if (elHomeDartIcon) elHomeDartIcon.style.display = homeServing ? "inline-block" : "none";
                             if (elAwayDartIcon) elAwayDartIcon.style.display = awayServing ? "inline-block" : "none";
+                            if (elHomeService) elHomeService.style.display = homeServing ? "flex" : "none";
+                            if (elAwayService) elAwayService.style.display = awayServing ? "flex" : "none";
                             if (elHomeAvatar) elHomeAvatar.className = `fs-avatar-box ${homeServing ? 'is-serving' : ''}`;
                             if (elAwayAvatar) elAwayAvatar.className = `fs-avatar-box ${awayServing ? 'is-serving' : ''}`;
                             if (elOstatniaAkt) elOstatniaAkt.textContent = terazCzas;
@@ -1752,7 +1896,7 @@
                             </div>
 
                             <!-- PRAWDZIWA BELKA FLASHSCORE (1:1 JAK NA FLASHSCORE) -->
-                            <div class="flashscore-match-card" id="fs-karta-meczu">
+                            <div class="flashscore-match-card" id="fs-karta-meczu" data-match-id="${aktualnyMeczId501}">
                                 <!-- Pasek górny: Turniej, runda, status i auto-odświeżanie 5s -->
                                 <div class="fs-top-bar">
                                     <div class="fs-tournament-info">
@@ -1779,12 +1923,7 @@
                                 <div class="fs-scoreboard-main">
                                     <!-- GRACZ 1 (Gospodarz) -->
                                     <div class="fs-player-col left">
-                                        <div class="fs-avatar-box ${homeServing ? 'is-serving' : ''}" id="fs-val-home-avatar">
-                                            <img src="${meta.homeImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='./ikony/zdjecie_reprezentatywne.jpeg';" alt="${meta.homeName}" />
-                                            <div class="fs-service-badge" id="fs-val-home-service" style="display: ${homeServing ? 'flex' : 'none'};">
-                                                SERWIS
-                                            </div>
-                                        </div>
+                                        ${generujAvatarHtml(meta.homeImg, meta.homeName, meta.homeFlag, homeServing, "fs-val-home")}
                                         <div class="fs-player-meta">
                                             <div style="display: flex; align-items: center; gap: 8px;">
                                                 <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #fff;">${meta.homeName}</h3>
@@ -1805,19 +1944,14 @@
                                             <span class="fs-score-dash">-</span>
                                             <span id="fs-val-away-score">${awayScore}</span>
                                         </div>
-                                        <div class="fs-match-current-leg" id="fs-val-current-leg-badge">${isLive ? `LEG ${legNumer}` : (isFinished ? 'KONIEC' : 'OCZEKUJE')}</div>
-                                        <div class="fs-match-leg-points-live" id="fs-val-leg-points-center">${homePts} : ${awayPts}</div>
-                                        <div class="fs-stream-badge">▶ STREAM</div>
+                                        <div class="fs-match-current-leg" id="fs-val-current-leg-badge">${isLive ? `LEG ${legNumer}` : (isFinished ? 'KONIEC' : 'ZAPLANOWANY')}</div>
+                                        <div class="fs-match-leg-points-live" id="fs-val-leg-points-center">${isLive ? `${homePts} : ${awayPts}` : (isFinished ? `${homeScore} - ${awayScore}` : `START ${meta.time}`)}</div>
+                                        <div class="fs-stream-badge">${isFinished ? 'SKRÓT MECZU' : '▶ STREAM'}</div>
                                     </div>
 
                                     <!-- GRACZ 2 (Gość) -->
                                     <div class="fs-player-col right">
-                                        <div class="fs-avatar-box ${awayServing ? 'is-serving' : ''}" id="fs-val-away-avatar">
-                                            <img src="${meta.awayImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='./ikony/zdjecie_reprezentatywne.jpeg';" alt="${meta.awayName}" />
-                                            <div class="fs-service-badge" id="fs-val-away-service" style="display: ${awayServing ? 'flex' : 'none'};">
-                                                SERWIS
-                                            </div>
-                                        </div>
+                                        ${generujAvatarHtml(meta.awayImg, meta.awayName, meta.awayFlag, awayServing, "fs-val-away")}
                                         <div class="fs-player-meta" style="text-align: right;">
                                             <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
                                                 <span class="fs-dart-icon-pulse" id="fs-val-away-dart-icon" style="display: ${awayServing ? 'inline-block' : 'none'};">🎯</span>
@@ -1852,7 +1986,7 @@
                                         <div class="fs-tr-cols">
                                             <span class="fs-td-col muted">-</span>
                                             <span class="fs-td-col bold" id="fs-tab-home-score">${homeScore}</span>
-                                            <span class="fs-td-col points" id="fs-tab-home-pts">${homePts}</span>
+                                            <span class="fs-td-col points" id="fs-tab-home-pts">${isScheduled ? 501 : homePts}</span>
                                         </div>
                                     </div>
 
@@ -1866,7 +2000,7 @@
                                         <div class="fs-tr-cols">
                                             <span class="fs-td-col muted">-</span>
                                             <span class="fs-td-col bold" id="fs-tab-away-score">${awayScore}</span>
-                                            <span class="fs-td-col points" id="fs-tab-away-pts">${awayPts}</span>
+                                            <span class="fs-td-col points" id="fs-tab-away-pts">${isScheduled ? 501 : awayPts}</span>
                                         </div>
                                     </div>
 
@@ -1936,8 +2070,8 @@
 
                         const p1ImgPath = p1.PARTICIPANT?.IMAGES?.[0]?.PATH;
                         const p2ImgPath = p2.PARTICIPANT?.IMAGES?.[0]?.PATH;
-                        const p1Photo = p1ImgPath ? `https://static.flashscore.com/res/image/data/${p1ImgPath}` : "./ikony/zdjecie_reprezentatywne.jpeg";
-                        const p2Photo = p2ImgPath ? `https://static.flashscore.com/res/image/data/${p2ImgPath}` : "./ikony/zdjecie_reprezentatywne.jpeg";
+                        const p1Photo = p1ImgPath ? `https://static.flashscore.com/res/image/data/${p1ImgPath}` : "";
+                        const p2Photo = p2ImgPath ? `https://static.flashscore.com/res/image/data/${p2ImgPath}` : "";
 
                         naglowekSekcji.textContent = `Szczegóły meczu: ${p1Name} vs ${p2Name}`;
 
@@ -2272,8 +2406,8 @@
                             const homeRzuca = isLive && (m.SERVICE === 1 || m.SERVICE === "1");
                             const awayRzuca = isLive && (m.SERVICE === 2 || m.SERVICE === "2");
 
-                            const homeImg = (m.HOME_IMAGES && m.HOME_IMAGES[0]) ? m.HOME_IMAGES[0] : "./ikony/zdjecie_reprezentatywne.jpeg";
-                            const awayImg = (m.AWAY_IMAGES && m.AWAY_IMAGES[0]) ? m.AWAY_IMAGES[0] : "./ikony/zdjecie_reprezentatywne.jpeg";
+                            const homeImg = (m.HOME_IMAGES && m.HOME_IMAGES[0]) ? m.HOME_IMAGES[0] : "";
+                            const awayImg = (m.AWAY_IMAGES && m.AWAY_IMAGES[0]) ? m.AWAY_IMAGES[0] : "";
 
                             const homeWynik = m.HOME_SCORE_CURRENT !== undefined ? m.HOME_SCORE_CURRENT : "-";
                             const awayWynik = m.AWAY_SCORE_CURRENT !== undefined ? m.AWAY_SCORE_CURRENT : "-";
@@ -2298,7 +2432,7 @@
 
                                 <div class="mecz-zawodnicy-row">
                                     <div class="gracz-box">
-                                        <img src="${homeImg}" alt="${m.HOME_NAME || 'Gracz 1'}" />
+                                        <img src="${homeImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='';" alt="${m.HOME_NAME || 'Gracz 1'}" />
                                         <span>${m.HOME_NAME || 'Gracz 1'}</span>
                                         ${homeRzuca ? `<span class="aktualnie-rzuca-live" title="Ten zawodnik rzuca teraz do tarczy!"><img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" alt="Rzuca" /></span>` : ""}
                                     </div>
@@ -2306,7 +2440,7 @@
                                         ${homeWynik} : ${awayWynik}
                                     </div>
                                     <div class="gracz-box" style="flex-direction: row-reverse; text-align: right;">
-                                        <img src="${awayImg}" alt="${m.AWAY_NAME || 'Gracz 2'}" />
+                                        <img src="${awayImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='';" alt="${m.AWAY_NAME || 'Gracz 2'}" />
                                         <span>${m.AWAY_NAME || 'Gracz 2'}</span>
                                         ${awayRzuca ? `<span class="aktualnie-rzuca-live" title="Ten zawodnik rzuca teraz do tarczy!"><img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" alt="Rzuca" /></span>` : ""}
                                     </div>
@@ -2377,7 +2511,7 @@
                 if (startBtn) {
                     startBtn.click();
                 } else {
-                    pobierzStatystyki501("I78ccYfE");
+                    pobierzStatystyki501("tvPx1evh");
                 }
             })();
         </script>

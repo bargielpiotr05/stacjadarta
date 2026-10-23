@@ -20,28 +20,43 @@ while ($listener.IsListening) {
             continue
         }
 
+        $feed = $request.QueryString["feed"]
         $id = $request.QueryString["id"]
-        if (-not $id) { $id = "I78ccYfE" }
+        if (-not $id -and -not $feed) { $id = "tvPx1evh" }
 
         $wc = New-Object System.Net.WebClient
         $wc.Encoding = [System.Text.Encoding]::UTF8
         $wc.Headers.Add("x-fsign", "SW9D1eZo")
-        
-        $mhn = ""
-        $dc = ""
-        try {
-            $mhn = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/df_mhn_1_$id")
-        } catch {}
-        try {
-            $dc = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/dc_14_$id")
-        } catch {}
+        $wc.Headers.Add("User-Agent", "Mozilla/5.0")
 
-        $obj = @{
-            ok = $true
-            matchId = $id
-            mhn = $mhn
-            dc = $dc
+        if ($feed) {
+            $feedData = ""
+            try {
+                $feedData = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/$feed")
+            } catch {}
+            $obj = @{
+                ok = $true
+                feed = $feed
+                data = $feedData
+            }
+        } else {
+            $mhn = ""
+            $dc = ""
+            try {
+                $mhn = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/df_mhn_1_$id")
+            } catch {}
+            try {
+                $dc = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/dc_14_$id")
+            } catch {}
+
+            $obj = @{
+                ok = $true
+                matchId = $id
+                mhn = $mhn
+                dc = $dc
+            }
         }
+
         $json = $obj | ConvertTo-Json -Compress
         $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
         $response.ContentType = "application/json; charset=utf-8"
@@ -49,6 +64,6 @@ while ($listener.IsListening) {
         $response.OutputStream.Write($buffer, 0, $buffer.Length)
         $response.Close()
     } catch {
-        # pętla działa dalej
+        # Kontynuacja pętli w razie błędu
     }
 }
