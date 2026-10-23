@@ -897,7 +897,17 @@
                 let timerSekundnik = null;
                 let sekundyDoOdswiezenia = 5;
                 let autoOdswiezanieWlaczone = true;
-                let aktualnyMeczId501 = "67mQv5Nk";
+                let aktualnyMeczId501 = "rktLrEON";
+                let aktualneZrodloApi = "rapidapi";
+                let zrodloEtykieta = "⚡ RapidAPI Flashlive";
+
+                window.zmienZrodloApi = function (nowe) {
+                    aktualneZrodloApi = nowe;
+                    if (nowe === "demo") zrodloEtykieta = "🎯 Live Leg Engine";
+                    else if (nowe === "cloudflare") zrodloEtykieta = "🌐 Cloudflare Proxy";
+                    else zrodloEtykieta = "⚡ RapidAPI Flashlive";
+                    pobierzStatystyki501(aktualnyMeczId501, true);
+                };
 
                 function formatujPasekStatystyki(valHomeRaw, valAwayRaw, category) {
                     const valHome = valHomeRaw || "-";
