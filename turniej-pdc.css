@@ -1,0 +1,437 @@
+main {
+    background-color: var(--primary-color-lighter-darker);
+    min-height: calc(100vh - 120px);
+    color: white;
+    padding: 30px 20px 60px 20px;
+    box-sizing: border-box;
+}
+
+.main-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+/* =========================================
+   PASEK NAWIGACYJNY (POWRÓT)
+   ========================================= */
+.powrot-pasek {
+    display: flex;
+    align-items: center;
+}
+
+.btn-powrot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.btn-powrot:hover {
+    color: var(--secondary-color);
+}
+
+/* =========================================
+   NAGŁÓWEK TURNIEJU PDC (DYNAMICZNY Z URL)
+   ========================================= */
+.turniej-info-karta {
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.turniej-info-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.turniej-naglowek-dane h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.3px;
+}
+
+.turniej-tagi {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.turniej-tag {
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.turniej-tag.akcent {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+.turniej-szczegoly-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--primary-color-border);
+}
+
+.turniej-szczegol-pozycja {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+.turniej-szczegol-pozycja:last-child{
+    justify-content: flex-end;
+}
+.turniej-szczegol-pozycja:first-child{
+    justify-content: flex-start;
+}
+
+.turniej-szczegol-pozycja svg {
+    color: var(--secondary-color);
+    flex-shrink: 0;
+}
+
+.turniej-szczegol-pozycja strong {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* =========================================
+   SEKCJA MECZÓW NA ŻYWO (LIVE)
+   ========================================= */
+.mecze-live-sekcja {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.mecze-live-naglowek-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--primary-color-border);
+    padding-bottom: 14px;
+}
+
+.mecze-live-naglowek-row h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.3px;
+}
+
+/* =========================================
+   KARTA POJEDYNCZEGO MECZU NA ŻYWO
+   ========================================= */
+.lista-meczow-live {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.mecz-live-karta {
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.mecz-top-bar {
+    background-color: var(--primary-color);
+    border-bottom: 1px solid var(--primary-color-border);
+    padding: 10px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #94a3b8;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mecz-turniej-info {
+    font-weight: 700;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mecz-format-badge {
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    color: var(--secondary-color);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Arena starcia graczy */
+.mecz-arena {
+    display: grid;
+    grid-template-columns: 2fr auto 2fr;
+    align-items: center;
+    padding: 24px;
+    gap: 20px;
+}
+
+.zawodnik-panel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+}
+
+.zawodnik-panel.lewy {
+    justify-content: flex-start;
+}
+
+.zawodnik-panel.prawy {
+    justify-content: flex-start;
+    flex-direction: row-reverse;
+}
+
+.zawodnik-avatar-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+.zawodnik-avatar-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color-border);
+    background-color: var(--primary-color-lighter-darker);
+    display: block;
+}
+
+.aktualnie-rzuca {
+    display: none;
+    flex-shrink: 0;
+}
+
+.zawodnik-panel.przy-tarczy .aktualnie-rzuca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+}
+
+.aktualnie-rzuca img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+}
+
+.zawodnik-panel.lewy .aktualnie-rzuca img {
+    transform: scaleX(-1);
+}
+
+.zawodnik-dane {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.zawodnik-panel.prawy .zawodnik-dane {
+    text-align: right;
+}
+
+.zawodnik-nazwisko {
+    font-size: 18px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.25;
+}
+
+.zawodnik-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.zawodnik-panel.prawy .zawodnik-meta {
+    justify-content: flex-end;
+}
+
+.zawodnik-srednia {
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Centrum - Wynik meczu */
+.mecz-centrum-wynik {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.wynik-glowne-cyfry {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    padding: 8px 18px;
+    border-radius: 12px;
+}
+
+.wynik-cyfra {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    min-width: 24px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.wynik-cyfra.lider {
+    color: var(--secondary-color);
+}
+
+.wynik-dwukropek {
+    font-size: 22px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.mecz-stan-tekst {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Dolna sekcja akcji (Oglądaj) */
+.sekcja-dolna {
+    display: flex;
+    justify-content: center;
+    padding: 14px 20px 20px 20px;
+    border-top: 1px solid var(--primary-color-border);
+    background-color: rgba(9, 7, 35, 0.4);
+}
+
+.sekcja-dolna button {
+    background-color: var(--secondary-color);
+    color: #090723;
+    border: none;
+    padding: 11px 44px;
+    border-radius: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.sekcja-dolna button:hover {
+    background-color: var(--secondary-color-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(64, 218, 64, 0.3);
+}
+
+/* =========================================
+   RESPONSYWNOŚĆ (MEDIA QUERIES)
+   ========================================= */
+@media (max-width: 768px) {
+    main {
+        padding: 20px 14px 40px 14px;
+    }
+
+    .turniej-info-karta {
+        padding: 18px;
+    }
+
+    .turniej-naglowek-dane h1 {
+        font-size: 22px;
+    }
+
+    .mecz-arena {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 18px;
+    }
+
+    .zawodnik-panel.lewy {
+        justify-content: flex-start;
+    }
+
+    .zawodnik-panel.prawy {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+
+    .zawodnik-panel.prawy .zawodnik-dane {
+        text-align: left;
+    }
+
+    .zawodnik-panel.prawy .zawodnik-meta {
+        justify-content: flex-start;
+    }
+
+    .mecz-centrum-wynik {
+        order: -1;
+        width: 100%;
+    }
+
+    .wynik-glowne-cyfry {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+

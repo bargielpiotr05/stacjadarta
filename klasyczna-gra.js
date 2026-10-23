@@ -1298,9 +1298,18 @@
                     let profilIdGracza = null;
                     if (!czyTenToBot) {
                         const zalogowanyStorage = odczytajZalogowanegoZStorage();
-                        const isMojeKonto = (zalogowanyNickGlobalny && nazwa.toLowerCase() === zalogowanyNickGlobalny.toLowerCase()) || (zalogowanyStorage?.nick && nazwa.toLowerCase() === zalogowanyStorage.nick.toLowerCase()) || (i === 0 && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id));
-                        if (isMojeKonto && (zalogowanyUserIdGlobalny || zalogowanyStorage?.id)) {
-                            profilIdGracza = zalogowanyUserIdGlobalny || zalogowanyStorage?.id;
+                        const zalogowanyId = zalogowanyUserIdGlobalny || zalogowanyStorage?.id || null;
+                        const mojOficjalnyNick = (zalogowanyNickGlobalny || zalogowanyStorage?.nick || "").trim().toLowerCase();
+                        const nazwaLower = nazwa.trim().toLowerCase();
+
+                        // Sprawdzamy czy ten gracz to zalogowany użytkownik (właściciel konta)
+                        const isMojeKonto = zalogowanyId && (
+                            (mojOficjalnyNick && nazwaLower === mojOficjalnyNick) ||
+                            (i === 0 && (!window.idZnajomychWGrze || !window.idZnajomychWGrze[nazwaLower]) && (nazwaLower === "ja" || nazwaLower.startsWith("gracz 1") || nazwaLower === mojOficjalnyNick))
+                        );
+
+                        if (isMojeKonto) {
+                            profilIdGracza = zalogowanyId;
                         } else {
                             if (!window.idZnajomychWGrze || Object.keys(window.idZnajomychWGrze).length === 0) {
                                 try {
@@ -1308,7 +1317,21 @@
                                 } catch (e) {}
                             }
                             if (window.idZnajomychWGrze) {
-                                profilIdGracza = window.idZnajomychWGrze[nazwa] || window.idZnajomychWGrze[nazwa.toLowerCase()] || window.idZnajomychWGrze[nazwa.trim()] || null;
+                                profilIdGracza = window.idZnajomychWGrze[nazwa] || 
+                                                 window.idZnajomychWGrze[nazwaLower] || 
+                                                 window.idZnajomychWGrze[nazwa.trim()] || 
+                                                 null;
+                            }
+                            if (!profilIdGracza && window.znajomiPopupMap) {
+                                const matchZn = Object.values(window.znajomiPopupMap).find(
+                                    (z) => (z.nazwa_gracza || "").trim().toLowerCase() === nazwaLower
+                                );
+                                if (matchZn && matchZn.id) {
+                                    profilIdGracza = matchZn.id;
+                                    if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
+                                    window.idZnajomychWGrze[nazwa] = matchZn.id;
+                                    window.idZnajomychWGrze[nazwaLower] = matchZn.id;
+                                }
                             }
                         }
                     }
@@ -2150,16 +2173,38 @@
 
                     for (const g of gracze) {
                         if (g.czyBot) continue;
-                        if (userId && (g.id === (typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0 ? mojIndeksOnline : 0) || g.profilId === userId || (mojNick && g.nazwa.trim().toLowerCase() === mojNick) || (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase()))) {
+
+                        const czyToMojeKonto = userId && (
+                            g.profilId === userId ||
+                            (mojNick && g.nazwa.trim().toLowerCase() === mojNick) ||
+                            (zalogowanyNickGlobalny && g.nazwa.trim().toLowerCase() === zalogowanyNickGlobalny.trim().toLowerCase())
+                        );
+
+                        if (czyToMojeKonto) {
                             g.profilId = userId;
                             continue;
                         }
+
                         if (g.profilId && /^[0-9a-f-]{36}$/i.test(g.profilId)) continue;
-                        let pid = g.profilId || (window.idZnajomychWGrze && (window.idZnajomychWGrze[g.nazwa] || window.idZnajomychWGrze[g.nazwa.trim()] || window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]));
+
+                        let pid = g.profilId || (window.idZnajomychWGrze && (
+                            window.idZnajomychWGrze[g.nazwa] || 
+                            window.idZnajomychWGrze[g.nazwa.trim()] || 
+                            window.idZnajomychWGrze[g.nazwa.trim().toLowerCase()]
+                        ));
+
+                        if (!pid && window.znajomiPopupMap) {
+                            const matchZn = Object.values(window.znajomiPopupMap).find(
+                                (z) => (z.nazwa_gracza || "").trim().toLowerCase() === g.nazwa.trim().toLowerCase()
+                            );
+                            if (matchZn && matchZn.id) pid = matchZn.id;
+                        }
+
                         if (!pid && czyOnline) {
                             if (g.id === 1 && gosc_id_db) pid = gosc_id_db;
                             else if (g.id === 0 && host_id_db) pid = host_id_db;
                         }
+
                         if (!pid || !/^[0-9a-f-]{36}$/i.test(pid)) {
                             try {
                                 const rows = await wyslijDoSupabase(`/rest/v1/profiles?nazwa_gracza=ilike.${encodeURIComponent(g.nazwa.trim())}&select=id`);
@@ -2168,6 +2213,7 @@
                                 }
                             } catch (eLook) {}
                         }
+
                         if (pid && /^[0-9a-f-]{36}$/i.test(pid)) {
                             g.profilId = pid;
                             if (!window.idZnajomychWGrze) window.idZnajomychWGrze = {};
@@ -2210,11 +2256,22 @@
                         return;
                     }
 
-                    if (czyOnline && rywalGracz && !rywalGracz.profilId) {
-                        rywalGracz.profilId = mojIndeksOnline === 0 ? gosc_id_db : host_id_db;
-                    }
-                    if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
-                        gosc_id_db = mojIndeksOnline === 0 ? rywalGracz.profilId : userId;
+                    if (czyOnline) {
+                        if (rywalGracz && !rywalGracz.profilId) {
+                            rywalGracz.profilId = mojIndeksOnline === 0 ? gosc_id_db : host_id_db;
+                        }
+                        if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
+                            gosc_id_db = mojIndeksOnline === 0 ? rywalGracz.profilId : userId;
+                        }
+                        if (!host_id_db) {
+                            host_id_db = mojIndeksOnline === 0 ? userId : (rywalGracz?.profilId || null);
+                        }
+                    } else {
+                        // Gra lokalna / klasyczna ze wstawionym rywalem (znajomy z listy lub gość)
+                        host_id_db = userId;
+                        gosc_id_db = (rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId) && rywalGracz.profilId !== userId)
+                            ? rywalGracz.profilId
+                            : null;
                     }
 
                     let idZwyciezcy = null;
@@ -2226,15 +2283,24 @@
                             else if (zwyciezca.id === 1) idZwyciezcy = gosc_id_db || gracze[1]?.profilId || null;
                         }
                         if (!idZwyciezcy) {
-                            if (mojGracz && (zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa)) {
+                            const zwycId = zwyciezca.id;
+                            const zwycNazwa = (zwyciezca.nazwa || "").trim().toLowerCase();
+
+                            const czyZwyciezcaToJa = mojGracz && (zwycId === mojGracz.id || (zwycNazwa && (mojGracz.nazwa || "").trim().toLowerCase() === zwycNazwa));
+                            const czyZwyciezcaToRywal = rywalGracz && (zwycId === rywalGracz.id || (zwycNazwa && (rywalGracz.nazwa || "").trim().toLowerCase() === zwycNazwa));
+
+                            if (czyZwyciezcaToJa) {
                                 idZwyciezcy = userId;
-                            } else if (gosc_id_db && rywalGracz && (zwyciezca.id === rywalGracz.id || zwyciezca.nazwa === rywalGracz.nazwa)) {
-                                idZwyciezcy = gosc_id_db;
+                            } else if (czyZwyciezcaToRywal) {
+                                idZwyciezcy = (rywalGracz.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) ? rywalGracz.profilId : gosc_id_db;
                             }
                         }
                     }
 
-                    const czyWygralem = zwyciezca ? zwyciezca.id === mojGracz.id || zwyciezca.nazwa === mojGracz.nazwa || idZwyciezcy === userId : false;
+                    const czyWygralem = zwyciezca ? (
+                        (mojGracz && (zwyciezca.id === mojGracz.id || ((zwyciezca.nazwa || "").trim().toLowerCase() === (mojGracz.nazwa || "").trim().toLowerCase()))) ||
+                        (idZwyciezcy && idZwyciezcy === userId)
+                    ) : false;
                     const statyMojGracz = podsumowanieMeczu.gracze.find((g) => g.id === mojGracz.id);
                     const nowaMojaSrednia = parseFloat(statyMojGracz?.srednia) || 0;
                     const nowaSrednia9 = parseFloat(statyMojGracz?.srednia9) || 0;
@@ -2415,6 +2481,7 @@
                                             p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
                                             p_nowe_180: nowe180R,
                                         },
+                                        accessToken: token,
                                     });
                                     zaktualizowanoRywala = true;
                                 } catch (eRpcDirect) {
@@ -2433,6 +2500,28 @@
                                         });
                                         if (!rpcErr) zaktualizowanoRywala = true;
                                     } catch (eRpc) {}
+                                }
+
+                                if (!zaktualizowanoRywala) {
+                                    try {
+                                        const resDirect = await fetch(`${SUPA_URL}/rest/v1/rpc/zaktualizuj_statystyki_po_meczu`, {
+                                            method: "POST",
+                                            headers: {
+                                                apikey: SUPA_KEY,
+                                                Authorization: `Bearer ${token || SUPA_KEY}`,
+                                                "Content-Type": "application/json",
+                                            },
+                                            body: JSON.stringify({
+                                                p_gracz_id: idProfiluRywala,
+                                                p_nowe_mecze: noweMeczeR,
+                                                p_nowe_wygrane: noweWygraneR,
+                                                p_nowa_srednia: parseFloat(nowaSredniaOgolnaR),
+                                                p_nowa_srednia9: parseFloat(nowaSrednia9OgolnaR),
+                                                p_nowe_180: nowe180R,
+                                            }),
+                                        });
+                                        if (resDirect.ok) zaktualizowanoRywala = true;
+                                    } catch (_) {}
                                 }
 
                                 if (klientBazy) {
@@ -2479,12 +2568,20 @@
                     // ================================================================
                     // KROK 3: ZAPISANIE POJEDYNKU DO TABELI MATCHES (ZE ŚWIEŻYM TOKENEM)
                     // ================================================================
+                    const wynikHostZapisu = czyOnline
+                        ? (mojIndeksOnline === 0 ? (mojGracz?.wygraneLegi || 0) : (rywalGracz?.wygraneLegi || 0))
+                        : (mojGracz ? mojGracz.wygraneLegi || 0 : (gracze[0]?.wygraneLegi || 0));
+
+                    const wynikGoscZapisu = czyOnline
+                        ? (mojIndeksOnline === 0 ? (rywalGracz?.wygraneLegi || 0) : (mojGracz?.wygraneLegi || 0))
+                        : (rywalGracz ? rywalGracz.wygraneLegi || 0 : (gracze[1]?.wygraneLegi || 0));
+
                     const payloadMeczu = {
-                        host_id: userId,
+                        host_id: czyOnline ? (host_id_db || userId) : userId,
                         gosc_id: gosc_id_db,
                         zwyciezca_id: idZwyciezcy,
-                        wynik_host: mojGracz.wygraneLegi || 0,
-                        wynik_gosc: rywalGracz ? rywalGracz.wygraneLegi || 0 : 0,
+                        wynik_host: wynikHostZapisu,
+                        wynik_gosc: wynikGoscZapisu,
                         format_gry: `${punktyStartowe} ${trybWyjscia.toUpperCase()}`,
                         pelny_przebieg_meczu: historiaRundDoZapisu,
                         statystyki_graczy: podsumowanieMeczu.gracze,

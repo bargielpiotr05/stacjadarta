@@ -1,0 +1,705 @@
+/* ==============================================================================
+   KALENDARZ & SLIDER WYDARZEŃ PDC - STACJA DARTA
+   Stylistyka ciemnego motywu z neonowo-zielonymi akcentami (--secondary-color)
+   ============================================================================== */
+
+main {
+    background-color: var(--primary-color-lighter-darker);
+    min-height: calc(100vh - 120px);
+    color: white;
+    padding-bottom: 60px;
+    box-sizing: border-box;
+}
+
+/* =========================================
+   KONTENER GŁÓWNY
+   ========================================= */
+.main-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 30px 20px 10px 20px;
+    box-sizing: border-box;
+}
+
+/* =========================================
+   SEKCJA SLIDERA WYDARZEŃ (NA GŁÓWNĄ / PODGLĄD)
+   ========================================= */
+.sekcja-slidera-wydarzen {
+    position: relative;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.slider-tytul-box h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: white;
+    margin: 0 0 16px 0;
+    letter-spacing: -0.3px;
+}
+
+.slider-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.kontener-slider-najblizsze {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 10px 4px 18px 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
+}
+
+.kontener-slider-najblizsze::-webkit-scrollbar {
+    display: none;
+}
+
+.kontener-slider-najblizsze.is-dragging {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+    cursor: grabbing;
+}
+
+/* Pływające strzałki slidera */
+.slider-floating-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.25s ease;
+}
+
+.slider-floating-arrow.prev {
+    left: -20px;
+}
+
+.slider-floating-arrow.next {
+    right: -20px;
+}
+
+.slider-floating-arrow:disabled {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Karta w sliderze */
+.blok-eventu {
+    flex: 0 0 350px;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.event-banner {
+    position: relative;
+    width: 100%;
+    height: 185px;
+    overflow: hidden;
+}
+
+.event-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.blok-eventu:hover .event-banner img {
+    transform: scale(1.05);
+}
+
+.banner-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(9, 7, 35, 0.1) 0%, rgba(9, 7, 35, 0.75) 100%);
+    pointer-events: none;
+}
+
+.event-badges-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+}
+
+.badge-odliczanie {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(9, 7, 35, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 5px 10px;
+    border-radius: 8px;
+}
+
+.info-event {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.event-tytul {
+    color: white;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin: 0;
+    min-height: 50px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.event-szczegoly-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    padding: 12px 14px;
+    border-radius: 10px;
+}
+
+.szczegol-wiersz {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.szczegol-ikona {
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.szczegol-tekst strong {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.event-footer-action {
+    margin-top: auto;
+}
+
+.btn-zobacz-wiecej {
+    width: 100%;
+    background-color: var(--secondary-color);
+    color: #090723;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.btn-zobacz-wiecej:hover {
+    background-color: var(--secondary-color-hover);
+}
+
+/* =========================================
+   NAGŁÓWEK KALENDARZA I NAWIGACJA MIESIĘCY
+   ========================================= */
+.header-kalendarz {
+    border-bottom: 1px solid var(--primary-color-border);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+}
+
+.header-kalendarz h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.btn-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-container span {
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #ffffff;
+    font-size: 14px;
+    min-width: 140px;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.przycisk-miesiac {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color-border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.przycisk-miesiac:hover {
+    background-color: var(--primary-color-lighter-darker);
+    border-color: var(--primary-color-border-hover);
+}
+
+/* =========================================
+   SIATKA KALENDARZA (MIESIĄC)
+   ========================================= */
+.miesiac-container {
+    margin-top: 20px;
+    width: 100%;
+    background-color: var(--primary-color);
+    padding: 10px;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.kalendarz-siatka {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.naglowek-dnia-tyg {
+    text-align: center;
+    padding: 10px 4px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--secondary-color);
+    letter-spacing: 0.5px;
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 8px;
+}
+
+.dzien-komorka {
+    min-height: 95px;
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.dzien-komorka:hover {
+    border-color: var(--secondary-color);
+}
+
+.dzien-komorka.inny-miesiac {
+    opacity: 0.35;
+}
+
+.dzien-komorka.dzis {
+    border-color: var(--secondary-color);
+}
+
+.dzien-numer {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+}
+
+.dzien-komorka.dzis .dzien-numer {
+    color: var(--secondary-color);
+    font-weight: 800;
+}
+
+.event-mini-badge {
+    border: 1px solid var(--secondary-color);
+    background-color: var(--primary-color-lighter);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: 0.3s all ease;
+}
+
+.event-mini-badge:hover {
+    border: 1px solid var(--secondary-color-hover);
+}
+
+/* =========================================
+   SEKCJA OFICJALNYCH TURNIEJÓW (POD KALENDARZEM)
+   ========================================= */
+.oficjalne-wydarzenia-sekcja {
+    margin-top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.oficjalne-wydarzenia-naglowek {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--primary-color-border);
+    padding-bottom: 12px;
+}
+
+.oficjalne-wydarzenia-naglowek h2,
+#naglowek-oficjalne-wydarzenia {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+
+.lista-oficjalnych-kart {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.oficjalna-karta-turnieju {
+    display: flex;
+    flex-direction: row;
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    max-height: 300px;
+}
+
+.oficjalna-karta-img-wrapper {
+    flex: 0 0 40%;
+    width: 40%;
+    min-height: 210px;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--primary-color);
+}
+
+.oficjalna-karta-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.oficjalna-karta-turnieju:hover .oficjalna-karta-img-wrapper img {
+    transform: scale(1.04);
+}
+
+.oficjalna-karta-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(9, 7, 35, 0.05) 50%, rgba(9, 7, 35, 0.7) 100%),
+                linear-gradient(180deg, rgba(9, 7, 35, 0.1) 60%, rgba(9, 7, 35, 0.75) 100%);
+    pointer-events: none;
+}
+
+.oficjalna-karta-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color-border);
+    padding: 5px 11px;
+    border-radius: 8px;
+    z-index: 2;
+}
+
+.oficjalna-karta-info {
+    flex: 0 0 60%;
+    width: 60%;
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.oficjalna-karta-top {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.oficjalna-karta-tytul {
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.oficjalna-karta-szczegoly {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    background-color: var(--primary-color-lighter-darker);
+    border: 1px solid var(--primary-color-border);
+    padding: 12px 16px;
+    border-radius: 10px;
+}
+
+.oficjalna-karta-wiersz {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.oficjalna-karta-wiersz .ikona {
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.oficjalna-karta-wiersz strong {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.oficjalna-karta-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.oficjalna-karta-btn {
+    background-color: var(--secondary-color);
+    color: black;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.oficjalna-karta-btn:hover {
+    background-color: var(--secondary-color-hover);
+}
+
+.kontener-wiecej-turnieje {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-wiecej-turniejow {
+    background-color: var(--secondary-color);
+    color: black;
+    border: none;
+    padding: 13px 28px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+}
+
+.btn-wiecej-turniejow:hover {
+    background-color: var(--secondary-color-hover);
+}
+
+.brak-wydarzen-komunikat {
+    text-align: center;
+    padding: 48px 20px;
+    color: #94a3b8;
+    font-size: 15px;
+    background: var(--primary-color);
+    border: 1px dashed var(--primary-color-border);
+    border-radius: 12px;
+}
+
+/* =========================================
+   RESPONSYWNOŚĆ (MEDIA QUERIES)
+   ========================================= */
+@media (max-width: 1280px) {
+    .slider-floating-arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        padding: 20px 14px;
+    }
+
+    .slider-tytul-box h2 {
+        font-size: 20px;
+    }
+
+    .blok-eventu {
+        flex: 0 0 84vw;
+        max-width: 340px;
+    }
+
+    .event-banner {
+        height: 160px;
+    }
+
+    .info-event {
+        padding: 16px;
+    }
+
+    .event-tytul {
+        font-size: 17px;
+        min-height: auto;
+    }
+
+    .header-kalendarz {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .kalendarz-siatka {
+        gap: 4px;
+    }
+
+    .naglowek-dnia-tyg {
+        font-size: 10px;
+        padding: 6px 2px;
+    }
+
+    .dzien-komorka {
+        min-height: 60px;
+        padding: 4px;
+    }
+
+    .dzien-numer {
+        font-size: 11px;
+    }
+
+    .event-mini-badge {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+
+    .oficjalna-karta-turnieju {
+        flex-direction: column;
+        max-height: none;
+    }
+
+    .oficjalna-karta-img-wrapper {
+        flex: none;
+        width: 100%;
+        height: 170px;
+        min-height: 170px;
+    }
+
+    .oficjalna-karta-info {
+        flex: none;
+        width: 100%;
+        padding: 16px;
+    }
+
+    .oficjalna-karta-tytul {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .blok-eventu {
+        flex: 0 0 86vw;
+    }
+
+    .header-kalendarz {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .btn-container {
+        justify-content: space-between;
+        width: 100%;
+    }
+}

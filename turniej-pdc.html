@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+            gtag("config", "G-6Q270446R2");
+        </script>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Turniej PDC & Mecze Live | Stacja Dart</title>
+        <meta name="description" content="Oficjalny turniej PDC na żywo - wyniki meczów, stan legów, statystyki i terminarz." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./turniej-pdc.css?v=1.2" />
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+
+        <main>
+            <div class="main-container">
+                <!-- Powrót do kalendarza -->
+                <div class="powrot-pasek">
+                    <a href="./kalendarz.html" class="btn-powrot">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        <span>Powrót do kalendarza</span>
+                    </a>
+                </div>
+
+                <!-- Nagłówek wybranego turnieju (uzupełniany dynamicznie na podstawie sluga ?pc31) -->
+                <section class="turniej-info-karta" id="karta-informacji-turnieju">
+                    <div class="turniej-info-top">
+                        <div class="turniej-naglowek-dane">
+                            <h1 id="turniej-tytul">Players Championship 31</h1>
+                            <div class="turniej-tagi">
+                                <span class="turniej-tag akcent" id="turniej-odliczanie">Za 5 dni</span>
+                                <span class="turniej-tag" id="turniej-ranga-tag">PDC ProTour</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="turniej-szczegoly-grid">
+                        <div class="turniej-szczegol-pozycja">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span><strong>Termin:</strong> <span id="turniej-termin">28.10.2026 (Środa)</span></span>
+                        </div>
+
+                        <div class="turniej-szczegol-pozycja">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span><strong>Miejsce:</strong> <span id="turniej-miejsce">Maaspoort, Den Bosch (Holandia)</span></span>
+                        </div>
+
+                        <div class="turniej-szczegol-pozycja">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="7"></circle>
+                                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                            </svg>
+                            <span><strong>Pula nagród:</strong> <span id="turniej-pula">£125,000</span></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sekcja meczów na żywo -->
+                <section class="mecze-live-sekcja">
+                    <div class="mecze-live-naglowek-row">
+                        <h2>
+                            Mecze na żywo
+                        </h2>
+                    </div>
+
+                    <div class="lista-meczow-live" id="lista-meczow-live">
+                        <!-- KARTA MECZU LIVE: Stephen Bunting vs Luke Littler -->
+                        <article class="mecz-live-karta" id="mecz-bunting-littler">
+                            <div class="mecz-top-bar">
+                                <div class="mecz-turniej-info">
+                                    <span>Finał</span>
+                                </div>
+                                <div class="mecz-format-badge">Best of 15 legs (do 8 wygranych)</div>
+                            </div>
+
+                            <div class="mecz-arena">
+                                <!-- GRACZ 1 (LEWY) - Stephen Bunting -->
+                                <div class="zawodnik-panel lewy przy-tarczy">
+                                    <div class="zawodnik-avatar-wrapper">
+                                        <img src="./ikony/zdjecie_reprezentatywne.jpeg" alt="Stephen Bunting" />
+                                    </div>
+                                    <div class="zawodnik-dane">
+                                        <h3 class="zawodnik-nazwisko">Stephen Bunting</h3>
+                                        <div class="zawodnik-meta">
+                                            <span class="zawodnik-srednia">(106.45)</span>
+                                        </div>
+                                    </div>
+                                    <div class="aktualnie-rzuca" title="Rzuca">
+                                        <img src="./gra-info/lotki-na-runde.png" alt="Aktualnie rzuca lotki">
+
+                                    </div>
+                                </div>
+
+                                <!-- ŚRODEK - WYNIK SPOTKANIA -->
+                                <div class="mecz-centrum-wynik">
+                                    <div class="wynik-glowne-cyfry">
+                                        <span class="wynik-cyfra lider">5</span>
+                                        <span class="wynik-dwukropek">:</span>
+                                        <span class="wynik-cyfra">3</span>
+                                    </div>
+                                    <span class="mecz-stan-tekst">Leg 9</span>
+                                </div>
+
+                                <!-- GRACZ 2 (PRAWY) - Luke Littler -->
+                                <div class="zawodnik-panel prawy">
+                                    <div class="zawodnik-avatar-wrapper">
+                                        <img src="./ikony/zdjecie_reprezentatywne.jpeg" alt="Luke Littler" />
+                                    </div>
+                                    <div class="zawodnik-dane">
+                                        <h3 class="zawodnik-nazwisko">Luke Littler</h3>
+                                        <div class="zawodnik-meta">
+                                            <span class="zawodnik-srednia">(98.79)</span>
+                                        </div>
+                                    </div>
+                                    <div class="aktualnie-rzuca" title="Rzuca">
+                                        <img src="./gra-info/lotki-na-runde.png" alt="Aktualnie rzuca lotki">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sekcja-dolna">
+                                <button type="button" id="btn-ogladaj-mecz">Oglądaj</button>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer id="wspolny-footer"></footer>
+
+        <!-- SKRYPTY SYSTEMOWE -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+        <script src="./turniej-pdc.js?v=1.0" defer></script>
+    </body>
+</html>
+

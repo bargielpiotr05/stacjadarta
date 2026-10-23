@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6Q270446R2"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+            gtag("config", "G-6Q270446R2");
+        </script>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kalendarz PDC i Mecze Live | Stacja Dart</title>
+        <meta name="description" content="Światowy dart na żywo - kalendarz turniejów PDC, wyniki meczów na żywo i terminarz rozgrywek darta." />
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta property="og:title" content="Kalendarz PDC i Mecze Live | Stacja Dart" />
+        <meta property="og:description" content="Wyniki meczów darta na żywo oraz oficjalny terminarz PDC." />
+        <meta property="og:image" content="./loga/logo.png" />
+        <meta property="og:type" content="website" />
+        <link rel="stylesheet" href="./global.css" />
+        <link rel="stylesheet" href="./kalendarz-style.css?v=1.2" />
+    </head>
+    <body>
+        <header id="wspolny-header"></header>
+
+        <main>
+            <div class="main-container">
+                <!-- Sekcja Slidera Najbliższych Wydarzeń (Podgląd / Na stronę główną) -->
+                <section class="sekcja-slidera-wydarzen">
+                    <div class="slider-naglowek-row">
+                        <div class="slider-tytul-box">
+                            <h2>Najbliższe wydarzenia</h2>
+                        </div>
+                    </div>
+
+                    <!-- Główny kontener slidera -->
+                    <div class="slider-wrapper">
+                        <!-- Pływające strzałki po bokach -->
+                        <button type="button" class="slider-floating-arrow prev" id="slider-float-prev" aria-label="Przewiń w lewo">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button type="button" class="slider-floating-arrow next" id="slider-float-next" aria-label="Przewiń w prawo">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+
+                        <!-- Pasek przewijania z kartami -->
+                        <div class="kontener-slider-najblizsze" id="slider-track">
+                            <!-- KARTA 1 -->
+                            <article class="blok-eventu" data-event-id="pc31">
+                                <div class="event-banner">
+                                    <img src="./events/playerschampionship.webp" alt="Players Championship 31" loading="lazy" />
+                                    <div class="event-badges-overlay">
+                                        <span class="badge-odliczanie">Za 5 dni</span>
+                                    </div>
+                                    <div class="banner-gradient"></div>
+                                </div>
+                                <div class="info-event">
+                                    <h3 class="event-tytul">Players Championship 31</h3>
+
+                                    <div class="event-szczegoly-lista">
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Data:</strong> 28.10.2026 (Środa)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                    <circle cx="12" cy="10" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Miejsce:</strong> Maaspoort, Den Bosch (Holandia)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="8" r="7"></circle>
+                                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Pula nagród:</strong> £125,000</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-footer-action">
+                                        <button type="button" class="btn-zobacz-wiecej" data-event="pc31">
+                                            <span>Zobacz szczegóły</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- KARTA 2 -->
+                            <article class="blok-eventu" data-event-id="pc32">
+                                <div class="event-banner">
+                                    <img src="./events/playerschampionship.webp" alt="Players Championship 32" loading="lazy" />
+                                    <div class="event-badges-overlay">
+                                        <span class="badge-odliczanie">Za 6 dni</span>
+                                    </div>
+                                    <div class="banner-gradient"></div>
+                                </div>
+                                <div class="info-event">
+                                    <h3 class="event-tytul">Players Championship 32</h3>
+
+                                    <div class="event-szczegoly-lista">
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Data:</strong> 29.10.2026 (Czwartek)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                    <circle cx="12" cy="10" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Miejsce:</strong> Maaspoort, Den Bosch (Holandia)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="8" r="7"></circle>
+                                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Pula nagród:</strong> £125,000</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-footer-action">
+                                        <button type="button" class="btn-zobacz-wiecej" data-event="pc32">
+                                            <span>Zobacz szczegóły</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- KARTA 3 -->
+                            <article class="blok-eventu" data-event-id="gsod">
+                                <div class="event-banner">
+                                    <img src="./events/playerschampionship.webp" alt="Grand Slam of Darts 2026" loading="lazy" />
+                                    <div class="event-badges-overlay">
+                                        <span class="badge-odliczanie">Za 15 dni</span>
+                                    </div>
+                                    <div class="banner-gradient"></div>
+                                </div>
+                                <div class="info-event">
+                                    <h3 class="event-tytul">Grand Slam of Darts 2026</h3>
+
+                                    <div class="event-szczegoly-lista">
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Data:</strong> 07.11 - 15.11.2026</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                    <circle cx="12" cy="10" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Miejsce:</strong> WV Active, Wolverhampton (Anglia)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="8" r="7"></circle>
+                                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Pula nagród:</strong> £650,000</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-footer-action">
+                                        <button type="button" class="btn-zobacz-wiecej" data-event="gsod">
+                                            <span>Zobacz szczegóły</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- KARTA 4 -->
+                            <article class="blok-eventu" data-event-id="pcf">
+                                <div class="event-banner">
+                                    <img src="./events/playerschampionship.webp" alt="Players Championship Finals" loading="lazy" />
+                                    <div class="event-badges-overlay">
+                                        <span class="badge-odliczanie">Za 28 dni</span>
+                                    </div>
+                                    <div class="banner-gradient"></div>
+                                </div>
+                                <div class="info-event">
+                                    <h3 class="event-tytul">Players Championship Finals</h3>
+
+                                    <div class="event-szczegoly-lista">
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Data:</strong> 20.11 - 22.11.2026</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                    <circle cx="12" cy="10" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Miejsce:</strong> Butlin's Resort, Minehead (Anglia)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="8" r="7"></circle>
+                                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Pula nagród:</strong> £600,000</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-footer-action">
+                                        <button type="button" class="btn-zobacz-wiecej" data-event="pcf">
+                                            <span>Zobacz szczegóły</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- KARTA 5 -->
+                            <article class="blok-eventu" data-event-id="wch">
+                                <div class="event-banner">
+                                    <img src="./events/playerschampionship.webp" alt="PDC World Darts Championship" loading="lazy" />
+                                    <div class="event-badges-overlay">
+                                        <span class="badge-odliczanie">Grudzień 2026</span>
+                                    </div>
+                                    <div class="banner-gradient"></div>
+                                </div>
+                                <div class="info-event">
+                                    <h3 class="event-tytul">PDC World Championship</h3>
+
+                                    <div class="event-szczegoly-lista">
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Data:</strong> 15.12.2026 - 03.01.2027</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                    <circle cx="12" cy="10" r="3"></circle>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Miejsce:</strong> Alexandra Palace, Londyn (UK)</span>
+                                        </div>
+
+                                        <div class="szczegol-wiersz">
+                                            <span class="szczegol-ikona">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="8" r="7"></circle>
+                                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                                </svg>
+                                            </span>
+                                            <span class="szczegol-tekst"><strong>Pula nagród:</strong> £2,500,000</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="event-footer-action">
+                                        <button type="button" class="btn-zobacz-wiecej" data-event="wch">
+                                            <span>Zobacz szczegóły</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="kalendarz-wydarzen">
+                    <div class="header-kalendarz">
+                        <h2>Kalendarz wydarzeń</h2>
+                        <div class="btn-container">
+                            <button type="button" class="przycisk-miesiac" id="poprzedni-miesiac" aria-label="Poprzedni miesiąc">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <span id="aktualny-miesiac-etykieta">Październik 2026</span>
+                            <button type="button" class="przycisk-miesiac" id="nastepny-miesiac" aria-label="Następny miesiąc">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="miesiac-container" id="miesiac-container">
+                        <!-- Generowane automatycznie przez kalendarz.js -->
+                    </div>
+
+                    <!-- Lista oficjalnych turniejów pod kalendarzem -->
+                    <div class="oficjalne-wydarzenia-sekcja">
+                        <div class="oficjalne-wydarzenia-naglowek">
+                            <h2 id="naglowek-oficjalne-wydarzenia">Oficjalne turnieje PDC</h2>
+                        </div>
+                        <div class="lista-oficjalnych-kart" id="lista-oficjalnych-turniejow">
+                            <!-- Karty generowane przez kalendarz.js -->
+                        </div>
+                        <div class="kontener-wiecej-turnieje" id="kontener-wiecej-turniejow" style="display: none;">
+                            <button type="button" class="btn-wiecej-turniejow" id="btn-zobacz-wiecej-turniejow">
+                                <span id="tekst-btn-wiecej-turniejow">Zobacz więcej wydarzeń</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="ikona-btn-wiecej-turniejow">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer id="wspolny-footer"></footer>
+
+        <!-- SKRYPTY SYSTEMOWE -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./menu.js" defer></script>
+        <script src="./kalendarz.js?v=1.6" defer></script>
+    </body>
+</html>

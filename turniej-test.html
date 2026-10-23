@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Wszystkie możliwości API Darta | Stacja Darta</title>
+        <link rel="icon" type="image/x-icon" href="./loga/logo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="./global.css" />
+        <style>
+            main {
+                background-color: var(--primary-color-lighter-darker);
+                min-height: 100vh;
+                padding: 40px 20px 80px 20px;
+                color: #ffffff;
+            }
+            .tester-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+            .tester-header {
+                border-bottom: 1px solid var(--primary-color-border);
+                padding-bottom: 18px;
+            }
+            .tester-header h1 {
+                margin: 0 0 8px 0;
+                font-size: 28px;
+                font-weight: 800;
+            }
+            .tester-header p {
+                margin: 0;
+                color: #94a3b8;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            .api-przelaczniki {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .btn-api-tab {
+                background-color: var(--primary-color);
+                border: 1px solid var(--primary-color-border);
+                color: #ffffff;
+                padding: 10px 16px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .btn-api-tab:hover {
+                border-color: var(--secondary-color);
+                transform: translateY(-1px);
+            }
+            .btn-api-tab.aktywny {
+                background-color: var(--secondary-color);
+                color: #090723;
+                border-color: var(--secondary-color);
+            }
+            .info-box {
+                background-color: var(--primary-color);
+                border: 1px solid var(--primary-color-border);
+                border-radius: 12px;
+                padding: 16px 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .info-box-url {
+                font-family: "Fira Code", monospace;
+                font-size: 12px;
+                color: var(--secondary-color);
+                word-break: break-all;
+                background: rgba(0, 0, 0, 0.4);
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid var(--primary-color-border);
+            }
+            .info-box-wyjasnienie {
+                font-size: 13px;
+                color: #cbd5e1;
+                line-height: 1.5;
+            }
+            .info-box-wyjasnienie strong {
+                color: var(--secondary-color);
+            }
+            .turniej-sekcja-grupa {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+            .turniej-naglowek-pasek {
+                background: var(--primary-color);
+                border: 1px solid var(--primary-color-border);
+                padding: 12px 18px;
+                border-radius: 10px;
+                font-weight: 800;
+                font-size: 15px;
+                color: var(--secondary-color);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .grid-podgladu {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                gap: 16px;
+            }
+            .karta-elementu {
+                background: var(--primary-color);
+                border: 1px solid var(--primary-color-border);
+                border-radius: 12px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                transition: all 0.2s ease;
+            }
+            .karta-elementu:hover {
+                border-color: var(--secondary-color);
+            }
+            .mecz-zawodnicy-row {
+                background: var(--primary-color-lighter-darker);
+                border: 1px solid var(--primary-color-border);
+                padding: 12px 14px;
+                border-radius: 8px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+            }
+            .gracz-box {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 13px;
+                font-weight: 700;
+                flex: 1;
+            }
+            .gracz-box img {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid var(--primary-color-border);
+                background: #090723;
+            }
+            .wynik-cyfry {
+                font-size: 22px;
+                font-weight: 800;
+                color: #ffffff;
+                min-width: 60px;
+                text-align: center;
+            }
+            .karta-szczegol {
+                font-size: 12px;
+                color: #94a3b8;
+                line-height: 1.5;
+            }
+            .karta-szczegol strong {
+                color: #ffffff;
+            }
+            .badge-status {
+                font-size: 11px;
+                font-weight: 800;
+                padding: 3px 8px;
+                border-radius: 6px;
+                text-transform: uppercase;
+            }
+            .badge-status.live {
+                background-color: rgba(239, 68, 68, 0.2);
+                border: 1px solid #ef4444;
+                color: #ef4444;
+                animation: live-pulse 1.8s infinite ease-in-out;
+            }
+            @keyframes live-pulse {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.7; transform: scale(0.98); }
+            }
+            .aktualnie-rzuca-live {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 26px;
+                height: 26px;
+                background-color: rgba(64, 218, 64, 0.2);
+                border: 1.5px solid var(--secondary-color);
+                border-radius: 50%;
+                margin: 0 4px;
+                box-shadow: 0 0 8px rgba(64, 218, 64, 0.4);
+                animation: rzut-puls 1.2s infinite ease-in-out;
+            }
+            @keyframes rzut-puls {
+                0%, 100% { box-shadow: 0 0 6px rgba(64, 218, 64, 0.4); }
+                50% { box-shadow: 0 0 14px rgba(64, 218, 64, 0.9); }
+            }
+            .lotka-ikonka-live {
+                width: 15px;
+                height: 15px;
+                object-fit: contain;
+                filter: brightness(0) invert(1);
+                transform: rotate(-45deg);
+            }
+            .btn-odswiez-live {
+                background: rgba(64, 218, 64, 0.15);
+                border: 1px solid var(--secondary-color);
+                color: var(--secondary-color);
+                padding: 6px 14px;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .btn-odswiez-live:hover {
+                background: var(--secondary-color);
+                color: #090723;
+            }
+            .badge-status.finished {
+                background-color: var(--primary-color-lighter-darker);
+                border: 1px solid var(--primary-color-border);
+                color: #94a3b8;
+            }
+            .badge-status.scheduled {
+                background-color: rgba(64, 218, 64, 0.15);
+                border: 1px solid var(--secondary-color);
+                color: var(--secondary-color);
+            }
+            /* Tabela Rankingu i Turniejów */
+            .tabela-danych {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: var(--primary-color);
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid var(--primary-color-border);
+            }
+            .tabela-danych th {
+                background-color: var(--primary-color-lighter-darker);
+                padding: 12px 16px;
+                font-size: 12px;
+                text-transform: uppercase;
+                color: var(--secondary-color);
+                text-align: left;
+                border-bottom: 1px solid var(--primary-color-border);
+            }
+            .tabela-danych td {
+                padding: 12px 16px;
+                font-size: 13px;
+                border-bottom: 1px solid var(--primary-color-border);
+            }
+            .tabela-danych tr:hover td {
+                background-color: rgba(64, 218, 64, 0.05);
+            }
+            .ranking-pozycja {
+                font-weight: 800;
+                color: var(--secondary-color);
+                width: 60px;
+            }
+            .ranking-gracz {
+                font-weight: 700;
+                color: #ffffff;
+            }
+            .ranking-zarobki {
+                font-weight: 800;
+                color: #ffffff;
+                text-align: right;
+            }
+            .kod-json-wrapper {
+                background: #060419;
+                border: 1px solid var(--primary-color-border);
+                border-radius: 12px;
+                padding: 16px;
+                max-height: 520px;
+                overflow-y: auto;
+            }
+            pre {
+                margin: 0;
+                font-family: "Fira Code", monospace;
+                font-size: 12px;
+                color: #cbd5e1;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+            .status-ladowania {
+                padding: 30px;
+                text-align: center;
+                color: #94a3b8;
+                font-size: 14px;
+            }
+            .odds-badge {
+                display: inline-block;
+                background: var(--primary-color-lighter-darker);
+                border: 1px solid var(--primary-color-border);
+                padding: 4px 8px;
+                border-radius: 6px;
+                font-family: "Fira Code", monospace;
+                font-weight: 700;
+                color: var(--secondary-color);
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <div class="tester-container">
+                <div class="tester-header">
+                    <h1>Wszystkie możliwości Twojego API Darta (FlashLive Sports)</h1>
+                    <p>
+                        Poniżej znajduje się <strong>8 modułów i funkcji</strong>, które możesz wyciągnąć z tego API do swojego projektu Stacja Darta.<br />
+                        Klikaj w przyciski, aby zobaczyć przetworzone dane oraz surowy JSON. Wyniki są zapisywane w pamięci, więc klikanie nie zużywa limitów API.
+                    </p>
+                </div>
+
+                <!-- 8 PRZEŁĄCZNIKÓW -->
+                <div class="api-przelaczniki">
+                    <button type="button" class="btn-api-tab aktywny" data-tryb="dzisiejsze-mecze">
+                        📅 1. Dzisiejsze mecze & Wyniki
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="live-inplay">
+                        🔴 2. Mecze Live In-Play (Kto rzuca)
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="statystyki-501">
+                        🎯 3. Dokładne statystyki 501 (Średnie, 180s, Checkouts)
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="szczegoly-meczu">
+                        ⚔️ 4. Szczegóły meczu, Ranga & Zdjęcia
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="ranking-pdc">
+                        👑 4. Oficjalny Ranking PDC (Order of Merit)
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="historia-h2h">
+                        📊 5. Historia H2H i Forma graczy
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="kursy-odds">
+                        📈 6. Kursy bukmacherskie (Odds)
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="baza-turniejow">
+                        🏆 7. Baza 111 Turniejów Świata
+                    </button>
+                    <button type="button" class="btn-api-tab" data-tryb="gracze-cutout">
+                        👤 8. Zdjęcia Cutout PNG bez tła
+                    </button>
+                </div>
+
+                <!-- Pasek informacyjny o endpoincie -->
+                <div class="info-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <strong id="endpoint-opis" style="font-size: 15px;">Pobieranie danych...</strong>
+                        <span id="endpoint-status" style="font-size: 12px; color: var(--secondary-color); font-weight: 700;">Status: 200 OK</span>
+                    </div>
+                    <div class="info-box-url" id="endpoint-url">https://flashlive-sports.p.rapidapi.com/v1/events/list?sport_id=14&locale=en_INT&timezone=2&indent_days=0</div>
+                    <div class="info-box-wyjasnienie" id="endpoint-wyjasnienie">
+                        Wyjaśnienie parametrów i zastosowania...
+                    </div>
+                </div>
+
+                <!-- Wizualne kafelki / Tabela -->
+                <div>
+                    <h2 style="font-size: 18px; margin: 0 0 14px 0;" id="naglowek-sekcji-kart">Pobrane dane</h2>
+                    <div id="kontener-danych">
+                        <div class="status-ladowania">Pobieranie danych z API...</div>
+                    </div>
+                </div>
+
+                <!-- Surowy JSON -->
+                <div>
+                    <h2 style="font-size: 18px; margin: 0 0 14px 0;">Pełna surowa odpowiedź JSON z API</h2>
+                    <div class="kod-json-wrapper">
+                        <pre id="json-wynik">// Ładowanie JSON-a...</pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            (function () {
+                "use strict";
+
+                const KLUCZ_RAPID = "96490ecd0cmshaa329049d93ff2ap102952jsn516e43e1c2e8";
+                const HOST_RAPID = "flashlive-sports.p.rapidapi.com";
+
+                // Pamięć podręczna na czas sesji (nie marnuje zapytań do RapidAPI)
+                const cache = {};
+
+                const btnTabs = document.querySelectorAll(".btn-api-tab");
+                const endpointOpis = document.getElementById("endpoint-opis");
+                const endpointUrl = document.getElementById("endpoint-url");
+                const endpointStatus = document.getElementById("endpoint-status");
+                const endpointWyjasnienie = document.getElementById("endpoint-wyjasnienie");
+                const kontenerDanych = document.getElementById("kontener-danych");
+                const jsonWynik = document.getElementById("json-wynik");
+                const naglowekSekcji = document.getElementById("naglowek-sekcji-kart");
+
+                async function fetchWithCache(url, headers) {
+                    if (cache[url]) {
+                        return cache[url];
+                    }
+                    const res = await fetch(url, { headers });
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    }
+                    const data = await res.json();
+                    cache[url] = data;
+                    return data;
+                }
+
+                // 1. DZISIEJSZE MECZE PDC & WYNIKI
+                async function pobierzDzisiejszeMecze() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/events/list?sport_id=14&locale=en_INT&timezone=2&indent_days=0";
+                    endpointOpis.textContent = "1. Wszystkie dzisiejsze mecze (PDC European Championship, MODUS Super Series itp.)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Harmonogram na dziś, nazwy turniejów, rundy (np. 1/16 finału), nazwiska darterów, kraje, dokładne godziny rozpoczęcia oraz aktualne lub końcowe wyniki legów.<br />
+                        <strong>Zastosowanie:</strong> Główna strona, kafelki meczowe w <code>kalendarz.html</code> i <code>turniej-pdc.html</code>.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie dzisiejszych meczów...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        if (data.DATA && data.DATA.length > 0) {
+                            renderujTurnieje(data.DATA);
+                        } else {
+                            kontenerDanych.innerHTML = `<div class="status-ladowania">Brak meczów darta w dniu dzisiejszym.</div>`;
+                        }
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 2. MECZE NA ŻYWO (LIVE IN-PLAY & KTO RZUCA)
+                async function pobierzMeczeLive(wymusOdswiezenie = false) {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/events/live-list?locale=en_INT&sport_id=14&timezone=2";
+                    if (wymusOdswiezenie) {
+                        delete cache[url];
+                    }
+                    endpointOpis.textContent = "2. Mecze trwające dokładnie w tej chwili (Live In-Play)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Wyniki na żywo w czasie rzeczywistym oraz kluczowy parametr <strong><code>SERVICE: 1</code> lub <code>SERVICE: 2</code></strong>, który mówi, który z zawodników wykonuje teraz rzut przy tarczy!<br />
+                        <strong>Zastosowanie:</strong> Twoja biała ikonka lotki w <code>turniej-pdc.html</code> przy graczu, który aktualnie rzuca.
+                        <div style="margin-top: 8px;">
+                            <button type="button" class="btn-odswiez-live" id="btn-odswiez-live-akcja">🔄 Odśwież stan na żywo (Kolejny leg / kolejny rzut)</button>
+                        </div>
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie meczów na żywo...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        // Podpięcie przycisku natychmiastowego odświeżenia
+                        const btnOdswiez = document.getElementById("btn-odswiez-live-akcja");
+                        if (btnOdswiez) {
+                            btnOdswiez.onclick = () => pobierzMeczeLive(true);
+                        }
+
+                        if (data.DATA && data.DATA.length > 0) {
+                            renderujTurnieje(data.DATA);
+                        } else {
+                            kontenerDanych.innerHTML = `
+                                <div class="status-ladowania" style="background: var(--primary-color); border: 1px dashed var(--primary-color-border); border-radius: 12px;">
+                                    🎯 W tej konkretnej minucie żadna sesja turniejowa PDC nie jest na tarczy (kolejne mecze wieczorem o 19:00).<br />
+                                    <small style="color: #94a3b8; display: block; margin-top: 6px;">Gdy mecz startuje, ten endpoint zwraca stan każdego lega co sekundę oraz znacznik rzucającego <code>SERVICE: 1</code>.</small>
+                                </div>
+                            `;
+                            naglowekSekcji.textContent = "Mecze na żywo (0 w tej minucie)";
+                        }
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 3. STATYSTYKI I TABLICA 501 (ULRICH NA ŻYWO + PDC)
+                async function pobierzStatystyki501(wybranyId = "MPE6IZx0", wymus = false) {
+                    const url = `https://flashlive-sports.p.rapidapi.com/v1/events/data?event_id=${wybranyId}&locale=en_INT`;
+                    const urlStats = `https://flashlive-sports.p.rapidapi.com/v1/events/statistics-alt?event_id=${wybranyId}&locale=en_INT`;
+
+                    if (wymus) {
+                        delete cache[url];
+                        delete cache[urlStats];
+                    }
+
+                    endpointOpis.textContent = "3. Dokładny wynik i tablica meczowa 501 (Ulrich na żywo / Statystyki)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Dokładną tablicę meczu 501, stan w legach w czasie rzeczywistym, wskaźnik rzucającego zawodnika (<code>SERVICE</code>), transmisję na żywo oraz statystyki zjazdowe (średnia z 3 lotek, maksy 180, checkouts).<br />
+                        <strong>Zastosowanie:</strong> Ekran meczu na żywo i tablica wyników 501 w <code>turniej-pdc.html</code>!
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie danych meczu i tablicy 501...</div>`;
+
+                    try {
+                        const eventData = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        let statsData = { DATA: [] };
+                        try {
+                            statsData = await fetchWithCache(urlStats, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        } catch (e) {}
+
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify({ EVENT: eventData.DATA, STATS: statsData.DATA }, null, 2);
+
+                        const ev = eventData.DATA?.EVENT || {};
+                        const isLive = ev.STAGE_TYPE === "LIVE" || ev.MERGE_STAGE_TYPE === "LIVE" || ev.LIVE_MARK === "y";
+                        const homeScore = ev.HOME_SCORE_CURRENT || "0";
+                        const awayScore = ev.AWAY_SCORE_CURRENT || "0";
+                        const homeRzuca = isLive && (ev.SERVICE === 1 || ev.SERVICE === "1");
+                        const awayRzuca = isLive && (ev.SERVICE === 2 || ev.SERVICE === "2");
+                        const legNumer = (parseInt(homeScore, 10) || 0) + (parseInt(awayScore, 10) || 0) + 1;
+
+                        const homeImg = ev.HOME_IMAGES?.[0] || "./ikony/zdjecie_reprezentatywne.jpeg";
+                        const awayImg = ev.AWAY_IMAGES?.[0] || "./ikony/zdjecie_reprezentatywne.jpeg";
+
+                        naglowekSekcji.textContent = `Tablica 501 & Wynik meczu: ${ev.HOME_NAME || 'Ulrich R.'} vs ${ev.AWAY_NAME || 'Martin R.'}`;
+
+                        let html = `
+                            <!-- Przełącznik meczów -->
+                            <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                                <button type="button" class="btn-api-tab ${wybranyId === 'MPE6IZx0' ? 'aktywny' : ''}" id="btn-wybierz-ulrich">
+                                    🔴 Mecz LIVE: Ulrich R. vs Martin R. (${homeScore}:${awayScore} w legach)
+                                </button>
+                                <button type="button" class="btn-api-tab ${wybranyId === '8fScg4xq' ? 'aktywny' : ''}" id="btn-wybierz-pdc">
+                                    🏆 PDC European Championship: Ross Smith vs Karel Sedlacek
+                                </button>
+                            </div>
+
+                            <!-- KARTA TABLICY 501 -->
+                            <div class="karta-elementu" style="padding: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--primary-color-border); padding-bottom: 14px;">
+                                    <div>
+                                        <span class="badge-status ${isLive ? 'live' : 'finished'}">${isLive ? '🔴 MECZ NA ŻYWO (IN-PLAY)' : 'Zakończony'}</span>
+                                        <span style="margin-left: 10px; font-weight: 800; color: var(--secondary-color); font-size: 14px;">
+                                            ${isLive ? `Trwa Leg ${legNumer} (Gra od 501 punktów)` : 'Wynik końcowy'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn-odswiez-live" id="btn-odswiez-501-akcja">🔄 Odśwież rzut i wynik na żywo</button>
+                                    </div>
+                                </div>
+
+                                <!-- GŁÓWNA TABLICA MECZOWA 501 -->
+                                <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin: 24px 0;">
+                                    <!-- GRACZ 1 (ULRICH) -->
+                                    <div style="background: var(--primary-color-lighter-darker); border: 2px solid ${homeRzuca ? 'var(--secondary-color)' : 'var(--primary-color-border)'}; border-radius: 14px; padding: 18px; position: relative;">
+                                        ${homeRzuca ? `
+                                            <div style="position: absolute; top: -12px; left: 16px; background: var(--secondary-color); color: #090723; font-size: 11px; font-weight: 900; padding: 2px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px;">
+                                                <img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" style="filter: brightness(0); width: 12px; height: 12px;" />
+                                                RZUCA TERAZ DO TARCZY
+                                            </div>
+                                        ` : ''}
+                                        <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px;">
+                                            <img src="${homeImg}" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid ${homeRzuca ? 'var(--secondary-color)' : 'var(--primary-color-border)'}; background: #090723;" />
+                                            <div>
+                                                <h3 style="margin: 0; font-size: 18px;">${ev.HOME_NAME || 'Zawodnik 1'}</h3>
+                                                <span style="font-size: 12px; color: #94a3b8;">${ev.COUNTRY_NAME || 'Holandia'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--primary-color-border); padding-top: 12px;">
+                                            <div>
+                                                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase;">Wygrane legi</div>
+                                                <div style="font-size: 32px; font-weight: 900; color: #ffffff;">${homeScore}</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div style="font-size: 11px; color: var(--secondary-color); text-transform: uppercase;">Stan lega</div>
+                                                <div style="font-size: 26px; font-weight: 900; color: var(--secondary-color); font-family: 'Fira Code', monospace;">501 ➔ 0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ŚRODEK (WYNIK I LEG) -->
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">WYNIK W LEGACH</div>
+                                        <div style="font-size: 40px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">
+                                            ${homeScore} : ${awayScore}
+                                        </div>
+                                        <div style="font-size: 11px; color: var(--secondary-color); font-weight: 700; margin-top: 4px;">
+                                            Format: Best of 7 legs
+                                        </div>
+                                    </div>
+
+                                    <!-- GRACZ 2 (MARTIN) -->
+                                    <div style="background: var(--primary-color-lighter-darker); border: 2px solid ${awayRzuca ? 'var(--secondary-color)' : 'var(--primary-color-border)'}; border-radius: 14px; padding: 18px; position: relative; text-align: right;">
+                                        ${awayRzuca ? `
+                                            <div style="position: absolute; top: -12px; right: 16px; background: var(--secondary-color); color: #090723; font-size: 11px; font-weight: 900; padding: 2px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px;">
+                                                <img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" style="filter: brightness(0); width: 12px; height: 12px;" />
+                                                RZUCA TERAZ DO TARCZY
+                                            </div>
+                                        ` : ''}
+                                        <div style="display: flex; align-items: center; gap: 14px; justify-content: flex-end; margin-top: 6px;">
+                                            <div>
+                                                <h3 style="margin: 0; font-size: 18px;">${ev.AWAY_NAME || 'Zawodnik 2'}</h3>
+                                                <span style="font-size: 12px; color: #94a3b8;">${ev.AWAY_PARTICIPANT_COUNTRY_NAME_ONE || 'Anglia'}</span>
+                                            </div>
+                                            <img src="${awayImg}" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid ${awayRzuca ? 'var(--secondary-color)' : 'var(--primary-color-border)'}; background: #090723;" />
+                                        </div>
+
+                                        <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--primary-color-border); padding-top: 12px;">
+                                            <div style="text-align: left;">
+                                                <div style="font-size: 11px; color: var(--secondary-color); text-transform: uppercase;">Stan lega</div>
+                                                <div style="font-size: 26px; font-weight: 900; color: var(--secondary-color); font-family: 'Fira Code', monospace;">501 ➔ 0</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase;">Wygrane legi</div>
+                                                <div style="font-size: 32px; font-weight: 900; color: #ffffff;">${awayScore}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- OFICJALNE STATYSTYKI Z GRY 501 -->
+                                <div style="margin-top: 24px;">
+                                    <h4 style="font-size: 14px; color: var(--secondary-color); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        📊 Szczegółowe statystyki zjazdowe 501:
+                                    </h4>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        `;
+
+                        if (statsData.DATA && statsData.DATA.length > 0) {
+                            statsData.DATA.forEach((s) => {
+                                const isAvg = s.CATEGORY.includes("Average");
+                                html += `
+                                    <div style="background: var(--primary-color-lighter-darker); border: 1px solid var(--primary-color-border); padding: 10px 16px; border-radius: 8px; display: grid; grid-template-columns: 120px 1fr 120px; align-items: center; gap: 14px;">
+                                        <div style="font-weight: 800; font-size: ${isAvg ? '16px' : '14px'}; color: ${isAvg ? 'var(--secondary-color)' : '#ffffff'};">
+                                            ${s.VALUE_HOME || '-'}
+                                        </div>
+                                        <div style="text-align: center; font-size: 12px; color: #cbd5e1; font-weight: 600;">
+                                            ${s.CATEGORY}
+                                        </div>
+                                        <div style="text-align: right; font-weight: 800; font-size: ${isAvg ? '16px' : '14px'}; color: ${isAvg ? 'var(--secondary-color)' : '#ffffff'};">
+                                            ${s.VALUE_AWAY || '-'}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            html += `
+                                <div style="background: var(--primary-color-lighter-darker); padding: 12px; border-radius: 8px; color: #94a3b8; font-size: 13px; text-align: center;">
+                                    🎯 W trakcie trwania meczu na żywo średnie i checkouts 501 są sumowane i zatwierdzane na koniec każdego seta/meczu.
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        kontenerDanych.innerHTML = html;
+
+                        // Obsługa przełączników meczów
+                        const btnUlrich = document.getElementById("btn-wybierz-ulrich");
+                        const btnPdc = document.getElementById("btn-wybierz-pdc");
+                        const btnOdswiez501 = document.getElementById("btn-odswiez-501-akcja");
+
+                        if (btnUlrich) btnUlrich.onclick = () => pobierzStatystyki501("MPE6IZx0", true);
+                        if (btnPdc) btnPdc.onclick = () => pobierzStatystyki501("8fScg4xq", false);
+                        if (btnOdswiez501) btnOdswiez501.onclick = () => pobierzStatystyki501(wybranyId, true);
+
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 4. SZCZEGÓŁY MECZU, RANGA & ZDJĘCIA FLASHSCORE
+                async function pobierzSzczegolyMeczu() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/events/details?event_id=8fScg4xq&locale=en_INT";
+                    endpointOpis.textContent = "3. Szczegółowe dane meczu (Prawdziwe zdjęcia darterów Flashscore, Ranga światowa, Arena)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Dokładne oficjalne zdjęcia zawodników z Flashscore CDN, oficjalną pozycję każdego gracza w rankingu PDC (np. <code>World Ranking: 13.</code>), oficjalną 3-literową tablicę skrótów (np. SMI vs SED), fazę turnieju (1/16 finału) oraz logo turnieju.<br />
+                        <strong>Zastosowanie:</strong> Pasek meczu i baner w <code>turniej-pdc.html</code>.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie szczegółów meczu...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const ev = data.DATA || {};
+                        const parts = ev.EVENT_PARTICIPANTS || [];
+                        const p1 = parts[0]?.PARTICIPANTS?.[0] || {};
+                        const p2 = parts[1]?.PARTICIPANTS?.[0] || {};
+
+                        const p1Name = p1.PARTICIPANT?.NAME || parts[0]?.NAME || "Zawodnik 1";
+                        const p2Name = p2.PARTICIPANT?.NAME || parts[1]?.NAME || "Zawodnik 2";
+                        const p1Rank = p1.RANK?.VALUE || "Brak rankingu";
+                        const p2Rank = p2.RANK?.VALUE || "Brak rankingu";
+
+                        const p1ImgPath = p1.PARTICIPANT?.IMAGES?.[0]?.PATH;
+                        const p2ImgPath = p2.PARTICIPANT?.IMAGES?.[0]?.PATH;
+                        const p1Photo = p1ImgPath ? `https://static.flashscore.com/res/image/data/${p1ImgPath}` : "./ikony/zdjecie_reprezentatywne.jpeg";
+                        const p2Photo = p2ImgPath ? `https://static.flashscore.com/res/image/data/${p2ImgPath}` : "./ikony/zdjecie_reprezentatywne.jpeg";
+
+                        naglowekSekcji.textContent = `Szczegóły meczu: ${p1Name} vs ${p2Name}`;
+
+                        kontenerDanych.innerHTML = `
+                            <div class="karta-elementu" style="padding: 24px;">
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--primary-color-border); padding-bottom: 14px;">
+                                    <div>
+                                        <span style="font-size: 13px; color: var(--secondary-color); font-weight: 800;">${ev.LEAGUE_NAMES?.NAME_C || "Turniej"}</span>
+                                        <h3 style="margin: 4px 0 0 0; font-size: 18px;">Runda: ${ev.EVENT_ROUND?.VALUE || "-"}</h3>
+                                    </div>
+                                    <span class="badge-status finished">Zakończony</span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin: 18px 0;">
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <img src="${p1Photo}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--secondary-color); background: #090723;" />
+                                        <div>
+                                            <div style="font-size: 18px; font-weight: 800;">${p1Name}</div>
+                                            <div style="color: var(--secondary-color); font-size: 13px; font-weight: 700;">${p1Rank}</div>
+                                            <div style="color: #94a3b8; font-size: 12px;">Skrót: ${p1.PARTICIPANT?.THREE_CHAR_NAME || "-"}</div>
+                                        </div>
+                                    </div>
+
+                                    <div style="font-size: 26px; font-weight: 900; color: #94a3b8;">VS</div>
+
+                                    <div style="display: flex; align-items: center; gap: 16px; flex-direction: row-reverse; text-align: right;">
+                                        <img src="${p2Photo}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color-border); background: #090723;" />
+                                        <div>
+                                            <div style="font-size: 18px; font-weight: 800;">${p2Name}</div>
+                                            <div style="color: var(--secondary-color); font-size: 13px; font-weight: 700;">${p2Rank}</div>
+                                            <div style="color: #94a3b8; font-size: 12px;">Skrót: ${p2.PARTICIPANT?.THREE_CHAR_NAME || "-"}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="karta-szczegol" style="background: var(--primary-color-lighter-darker); padding: 12px; border-radius: 8px;">
+                                    <strong>ID Wydarzenia:</strong> ${ev.ID}<br />
+                                    <strong>Dostępne moduły w API dla tego meczu:</strong> ${ev.SETTINGS?.ENABLED?.join(", ") || "-"}
+                                </div>
+                            </div>
+                        `;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 4. OFICJALNY RANKING ŚWIATOWY PDC (ORDER OF MERIT)
+                async function pobierzRankingPDC() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/rankings/data?ranking_id=YR1V844c&locale=en_INT";
+                    endpointOpis.textContent = "4. Oficjalny światowy ranking PDC Order of Merit (Zarobki, Miejsca, Gracze)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Kompletny, oficjalny ranking PDC: 220+ zawodników, oficjalne pozycje, wygrane nagrody finansowe (np. £1,500,000 dla Humphriesa/Littlera), punkty rankingowe oraz awanse/spadki.<br />
+                        <strong>Zastosowanie:</strong> Zakładka "Ranking PDC" na stronie lub wyświetlanie pozycji przy nazwisku dartera.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie oficjalnego rankingu PDC...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const gracze = (data.DATA || []).slice(0, 30);
+                        naglowekSekcji.textContent = `Ranking PDC Order of Merit (Top 30 z ${data.DATA.length} zawodników)`;
+
+                        let html = `
+                            <table class="tabela-danych">
+                                <thead>
+                                    <tr>
+                                        <th>Poz.</th>
+                                        <th>Zawodnik</th>
+                                        <th style="text-align: right;">Nagrody finansowe / Punkty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        gracze.forEach((g) => {
+                            const zarobki = g.RESULT ? g.RESULT.replace("L", "£") : "-";
+                            html += `
+                                <tr>
+                                    <td class="ranking-pozycja">#${g.RANK}</td>
+                                    <td class="ranking-gracz">${g.PARTICIPANT_NAME}</td>
+                                    <td class="ranking-zarobki">${zarobki}</td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `</tbody></table>`;
+                        kontenerDanych.innerHTML = html;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 5. HISTORIA POJEDYNKÓW H2H I FORMA GRACZY
+                async function pobierzH2H() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/events/h2h?event_id=8fScg4xq&locale=en_INT";
+                    endpointOpis.textContent = "5. Historia bezpośrednich pojedynków (Head-to-Head) i ostatnie mecze obu graczy";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Wszystkie dotychczasowe pojedynki tych dwóch darterów (kto wygrał, jaki był wynik w legach) oraz ostatnie 5 meczów gracza A i ostatnie 5 meczów gracza B (ich aktualna forma).<br />
+                        <strong>Zastosowanie:</strong> Sekcja "Statystyki przedmeczowe / H2H" w <code>turniej-pdc.html</code>.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie historii pojedynków...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const groups = data.DATA?.[0]?.GROUPS || [];
+                        naglowekSekcji.textContent = `Historia pojedynków i ostatnia forma obu darterów (${groups.length} grup)`;
+
+                        let html = "";
+                        groups.forEach((g) => {
+                            html += `
+                                <div class="turniej-sekcja-grupa">
+                                    <div class="turniej-naglowek-pasek">
+                                        <span>⚔️ ${g.GROUP_LABEL}</span>
+                                        <span style="font-size: 12px; color: #94a3b8;">${g.ITEMS?.length || 0} meczów</span>
+                                    </div>
+                                    <div class="grid-podgladu">
+                            `;
+
+                            (g.ITEMS || []).forEach((m) => {
+                                const dataStr = m.START_TIME ? new Date(m.START_TIME * 1000).toLocaleDateString() : "-";
+                                const winClass = m.H_RESULT === "WIN" ? "color: var(--secondary-color);" : "";
+                                html += `
+                                    <div class="karta-elementu">
+                                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
+                                            <span>${m.EVENT_NAME || "Turniej"}</span>
+                                            <span>${dataStr}</span>
+                                        </div>
+                                        <div class="mecz-zawodnicy-row">
+                                            <span style="font-weight: 700; ${winClass}">${m.HOME_PARTICIPANT_NAME_ONE}</span>
+                                            <span class="wynik-cyfry">${m.HOME_SCORE_FULL} : ${m.AWAY_SCORE_FULL}</span>
+                                            <span style="font-weight: 700;">${m.AWAY_PARTICIPANT_NAME_ONE}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            html += `</div></div>`;
+                        });
+
+                        kontenerDanych.innerHTML = html;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 6. KURSY BUKMACHERSKIE (ODDS)
+                async function pobierzKursy() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/events/odds?event_id=8fScg4xq&locale=en_INT";
+                    endpointOpis.textContent = "6. Kursy bukmacherskie na żywo i przedmeczowe (bet365, Unibet, William Hill)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Aktualne kursy na wygraną zawodnika 1 lub zawodnika 2 od największych bukmacherów (bet365, Unibet, William Hill) wraz z kierunkiem zmian kursu (wzrost/spadek).<br />
+                        <strong>Zastosowanie:</strong> Kursy meczowe, faworyt spotkania, szanse procentowe w <code>turniej-pdc.html</code>.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie kursów bukmacherskich...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const markets = data.DATA?.[0]?.PERIODS?.[0]?.GROUPS?.[0]?.MARKETS || [];
+                        naglowekSekcji.textContent = `Kursy bukmacherskie na zwycięzcę meczu (${markets.length} bukmacherów)`;
+
+                        let html = `
+                            <table class="tabela-danych">
+                                <thead>
+                                    <tr>
+                                        <th>Bukmacher</th>
+                                        <th style="text-align: center;">Kurs na Gracza 1</th>
+                                        <th style="text-align: center;">Kurs na Gracza 2</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        markets.forEach((m) => {
+                            const k1 = m.ODD_CELL_SECOND?.VALUE || "-";
+                            const k2 = m.ODD_CELL_THIRD?.VALUE || "-";
+                            html += `
+                                <tr>
+                                    <td style="font-weight: 700;">${m.BOOKMAKER_NAME}</td>
+                                    <td style="text-align: center;"><span class="odds-badge">${k1}</span></td>
+                                    <td style="text-align: center;"><span class="odds-badge">${k2}</span></td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `</tbody></table>`;
+                        kontenerDanych.innerHTML = html;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 7. BAZA 111 TURNIEJÓW DARTA NA ŚWIECIE
+                async function pobierzBazeTurniejow() {
+                    const url = "https://flashlive-sports.p.rapidapi.com/v1/tournaments/list?sport_id=14&locale=en_INT";
+                    endpointOpis.textContent = "7. Pełna baza 111 światowych turniejów darta (PDC, WDF, MODUS, World Championship)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Kompletny katalog 111 oficjalnych turniejów darta ze wszystkich kontynentów, identyfikatory etapów (<code>STAGE_ID</code>) do pobierania ich drabinek i terminarzy.<br />
+                        <strong>Zastosowanie:</strong> Możliwość automatycznego zasilenia bazy turniejów w <code>kalendarz.html</code>!
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie listy turniejów...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, { "x-rapidapi-host": HOST_RAPID, "x-rapidapi-key": KLUCZ_RAPID });
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const list = (data.DATA || []).slice(0, 35);
+                        naglowekSekcji.textContent = `Katalog turniejów darta (Pokazano 35 z ${data.DATA.length} dostępnych)`;
+
+                        let html = `
+                            <table class="tabela-danych">
+                                <thead>
+                                    <tr>
+                                        <th>Nazwa turnieju</th>
+                                        <th>Kraj / Organizacja</th>
+                                        <th>ID Sezonu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        list.forEach((t) => {
+                            html += `
+                                <tr>
+                                    <td style="font-weight: 700; color: #ffffff;">🏆 ${t.LEAGUE_NAME}</td>
+                                    <td style="color: #94a3b8;">${t.COUNTRY_NAME}</td>
+                                    <td><code style="color: var(--secondary-color);">${t.ACTUAL_TOURNAMENT_SEASON_ID || "-"}</code></td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `</tbody></table>`;
+                        kontenerDanych.innerHTML = html;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                // 8. ZDJĘCIA WYCIĘTE PNG (BEZ TŁA)
+                async function pobierzZdjeciaGraczy() {
+                    const url = "https://www.thesportsdb.com/api/v1/json/123/searchplayers.php?p=Luke_Littler";
+                    endpointOpis.textContent = "8. Gotowe wycięte zdjęcia darterów PNG bez tła (strCutout)";
+                    endpointUrl.textContent = url;
+                    endpointWyjasnienie.innerHTML = `
+                        <strong>Co z tego wyciągasz:</strong> Przezroczyste pliki PNG (cutout) z samą sylwetką gracza, idealne na wielkie banery, avatary lub tło meczu.<br />
+                        <strong>Zastosowanie:</strong> Wyświetlanie twarzy zawodników bez kwadratowych ramek w <code>turniej-pdc.html</code>.
+                    `;
+                    endpointStatus.textContent = "Ładowanie...";
+                    kontenerDanych.innerHTML = `<div class="status-ladowania">Pobieranie zdjęć...</div>`;
+
+                    try {
+                        const data = await fetchWithCache(url, {});
+                        endpointStatus.textContent = "Status: 200 OK";
+                        jsonWynik.textContent = JSON.stringify(data, null, 2);
+
+                        const p = (data.player && data.player[0]) || {};
+                        naglowekSekcji.textContent = `Zdjęcie zawodnika wycięte w PNG (Do kafelków meczowych)`;
+                        kontenerDanych.innerHTML = `
+                            <div class="karta-elementu" style="grid-column: 1 / -1; display: flex; flex-direction: row; align-items: center; gap: 24px;">
+                                <img src="${p.strCutout || p.strThumb}" style="width: 140px; height: 140px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 6px;" />
+                                <div>
+                                    <h3 style="font-size: 22px; margin: 0 0 8px 0;">${p.strPlayer}</h3>
+                                    <p class="karta-szczegol" style="font-size: 13px;">
+                                        <strong>Kraj:</strong> ${p.strNationality}<br />
+                                        <strong>Data urodzenia:</strong> ${p.dateBorn}<br />
+                                        <strong>Bezpośredni URL do pliku PNG:</strong> <a href="${p.strCutout}" target="_blank" style="color: var(--secondary-color);">${p.strCutout}</a>
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    } catch (err) {
+                        endpointStatus.textContent = "Błąd";
+                        jsonWynik.textContent = "Błąd: " + err.message;
+                    }
+                }
+
+                function renderujTurnieje(turnieje) {
+                    kontenerDanych.innerHTML = "";
+                    let lacznieMeczow = 0;
+
+                    turnieje.forEach((t) => {
+                        const mecze = t.EVENTS || [];
+                        if (mecze.length === 0) return;
+                        lacznieMeczow += mecze.length;
+
+                        const sekcjaGrupa = document.createElement("div");
+                        sekcjaGrupa.className = "turniej-sekcja-grupa";
+
+                        sekcjaGrupa.innerHTML = `
+                            <div class="turniej-naglowek-pasek">
+                                <span>🏆 ${t.NAME}</span>
+                                <span style="font-size: 12px; color: #94a3b8;">${mecze.length} meczów</span>
+                            </div>
+                            <div class="grid-podgladu"></div>
+                        `;
+
+                        const grid = sekcjaGrupa.querySelector(".grid-podgladu");
+
+                        mecze.forEach((m) => {
+                            const karta = document.createElement("div");
+                            karta.className = "karta-elementu";
+
+                            // Poprawne rozpoznanie meczu na żywo
+                            const isLive = m.STAGE_TYPE === "LIVE" || m.MERGE_STAGE_TYPE === "LIVE" || m.LIVE_MARK === "y";
+                            const isFinished = m.STAGE === "FINISHED" || m.STAGE_TYPE === "FINISHED";
+
+                            const statusKlasa = isLive ? "live" : (isFinished ? "finished" : "scheduled");
+                            const statusTekst = isLive ? "🔴 MECZ TRWA (LIVE)" : (isFinished ? "Zakończony" : "Zaplanowany");
+
+                            // Sprawdzenie, który gracz rzuca w tej chwili do tarczy
+                            const homeRzuca = isLive && (m.SERVICE === 1 || m.SERVICE === "1");
+                            const awayRzuca = isLive && (m.SERVICE === 2 || m.SERVICE === "2");
+
+                            const homeImg = (m.HOME_IMAGES && m.HOME_IMAGES[0]) ? m.HOME_IMAGES[0] : "./ikony/zdjecie_reprezentatywne.jpeg";
+                            const awayImg = (m.AWAY_IMAGES && m.AWAY_IMAGES[0]) ? m.AWAY_IMAGES[0] : "./ikony/zdjecie_reprezentatywne.jpeg";
+
+                            const homeWynik = m.HOME_SCORE_CURRENT !== undefined ? m.HOME_SCORE_CURRENT : "-";
+                            const awayWynik = m.AWAY_SCORE_CURRENT !== undefined ? m.AWAY_SCORE_CURRENT : "-";
+
+                            // Transmisja video / stream
+                            const streams = [];
+                            if (m.TV_LIVE_STREAMING?.HP) {
+                                m.TV_LIVE_STREAMING.HP.forEach(s => streams.push(s.HPN));
+                            }
+                            if (m.TV_LIVE_STREAMING?.['2']) {
+                                m.TV_LIVE_STREAMING['2'].forEach(b => streams.push(b.BN.replace('*', '')));
+                            }
+                            const streamTekst = streams.length > 0 ? streams.join(", ") : null;
+
+                            karta.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="badge-status ${statusKlasa}">${statusTekst}</span>
+                                    <span style="font-size: 11px; color: ${isLive ? 'var(--secondary-color)' : '#94a3b8'}; font-weight: 700;">
+                                        ${isLive ? '🎯 ' + (m.STAGE || 'Trwa rozgrywka') : (m.ROUND || "")}
+                                    </span>
+                                </div>
+
+                                <div class="mecz-zawodnicy-row">
+                                    <div class="gracz-box">
+                                        <img src="${homeImg}" alt="${m.HOME_NAME || 'Gracz 1'}" />
+                                        <span>${m.HOME_NAME || 'Gracz 1'}</span>
+                                        ${homeRzuca ? `<span class="aktualnie-rzuca-live" title="Ten zawodnik rzuca teraz do tarczy!"><img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" alt="Rzuca" /></span>` : ""}
+                                    </div>
+                                    <div class="wynik-cyfry" style="${isLive ? 'color: var(--secondary-color); text-shadow: 0 0 10px rgba(64,218,64,0.4);' : ''}">
+                                        ${homeWynik} : ${awayWynik}
+                                    </div>
+                                    <div class="gracz-box" style="flex-direction: row-reverse; text-align: right;">
+                                        <img src="${awayImg}" alt="${m.AWAY_NAME || 'Gracz 2'}" />
+                                        <span>${m.AWAY_NAME || 'Gracz 2'}</span>
+                                        ${awayRzuca ? `<span class="aktualnie-rzuca-live" title="Ten zawodnik rzuca teraz do tarczy!"><img src="./gra-info/lotki-na-runde.png" class="lotka-ikonka-live" alt="Rzuca" /></span>` : ""}
+                                    </div>
+                                </div>
+
+                                <div class="karta-szczegol">
+                                    ${isLive ? `<strong style="color: var(--secondary-color);">Aktualnie rzuca:</strong> ${homeRzuca ? m.HOME_NAME : (awayRzuca ? m.AWAY_NAME : 'W trakcie')}<br />` : ''}
+                                    ${streamTekst ? `<strong style="color: #60a5fa;">Transmisja live:</strong> ${streamTekst}<br />` : ''}
+                                    <strong>ID Meczu:</strong> ${m.EVENT_ID}<br />
+                                    <strong>Godzina rozpoczęcia:</strong> ${m.START_TIME ? new Date(m.START_TIME * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"}
+                                </div>
+
+                                <div style="margin-top: 10px;">
+                                    <button type="button" class="btn-odswiez-live" onclick="window.otworzTablice501('${m.EVENT_ID}')" style="width: 100%; text-align: center; padding: 8px;">
+                                        🎯 Zobacz tablicę 501 tego meczu (${m.HOME_NAME} vs ${m.AWAY_NAME})
+                                    </button>
+                                </div>
+                            `;
+
+                            grid.appendChild(karta);
+                        });
+
+                        kontenerDanych.appendChild(sekcjaGrupa);
+                    });
+
+                    naglowekSekcji.textContent = `Pobrane mecze (${lacznieMeczow})`;
+                }
+
+                window.otworzTablice501 = function (meczId) {
+                    btnTabs.forEach(b => b.classList.remove("aktywny"));
+                    const tab501 = document.querySelector('[data-tryb="statystyki-501"]');
+                    if (tab501) tab501.classList.add("aktywny");
+                    pobierzStatystyki501(meczId, true);
+                    window.scrollTo({ top: 180, behavior: "smooth" });
+                };
+
+                btnTabs.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        btnTabs.forEach(b => b.classList.remove("aktywny"));
+                        btn.classList.add("aktywny");
+
+                        const tryb = btn.getAttribute("data-tryb");
+                        if (tryb === "dzisiejsze-mecze") pobierzDzisiejszeMecze();
+                        if (tryb === "live-inplay") pobierzMeczeLive();
+                        if (tryb === "statystyki-501") pobierzStatystyki501();
+                        if (tryb === "szczegoly-meczu") pobierzSzczegolyMeczu();
+                        if (tryb === "ranking-pdc") pobierzRankingPDC();
+                        if (tryb === "historia-h2h") pobierzH2H();
+                        if (tryb === "kursy-odds") pobierzKursy();
+                        if (tryb === "baza-turniejow") pobierzBazeTurniejow();
+                        if (tryb === "gracze-cutout") pobierzZdjeciaGraczy();
+                    });
+                });
+
+                // Start od 1. zakładki
+                pobierzDzisiejszeMecze();
+            })();
+        </script>
+    </body>
+</html>
