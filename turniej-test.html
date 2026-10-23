@@ -1557,30 +1557,57 @@
                     }
 
                     try {
-                        // Pobieranie na żywo z CDN Flashscore (CORS: *)
+                        // Pobieranie na żywo z oficjalnego CDN Flashscore (Proxy lokalne 5050 -> Cloudflare -> Bezpośredni)
                         let rawMhn = "";
                         let rawDc = "";
-                        let uzytoRapid = false;
 
+                        // 1. Próba przez lokalny serwer proxy na porcie 5050 (błyskawiczny czas reakcji 10ms)
                         try {
-                            const [resMhn, resDc] = await Promise.all([
-                                fetch(`https://46.flashscore.ninja/46/x/feed/df_mhn_1_${aktualnyMeczId501}`, {
-                                    headers: { "x-fsign": "SW9D1eZo" },
-                                    cache: "no-store"
-                                }),
-                                fetch(`https://46.flashscore.ninja/46/x/feed/dc_14_${aktualnyMeczId501}`, {
-                                    headers: { "x-fsign": "SW9D1eZo" },
-                                    cache: "no-store"
-                                })
-                            ]);
+                            const locRes = await fetch(`http://127.0.0.1:5050/live?id=${aktualnyMeczId501}`, { cache: "no-store" });
+                            if (locRes.ok) {
+                                const locJson = await locRes.json();
+                                if (locJson.ok && locJson.mhn) {
+                                    rawMhn = locJson.mhn;
+                                    rawDc = locJson.dc || "";
+                                }
+                            }
+                        } catch (e) {}
 
-                            if (resMhn.ok) rawMhn = await resMhn.text();
-                            if (resDc.ok) rawDc = await resDc.text();
-                        } catch (ninjaErr) {
-                            console.warn("Flashscore ninja direct fetch error, fallback to proxy/api:", ninjaErr);
+                        // 2. Próba przez Cloudflare Worker na stacjadarta.pl
+                        if (!rawMhn) {
+                            try {
+                                const cfRes = await fetch(`https://stacjadarta.pl/api/dart-live?matchId=${aktualnyMeczId501}`, { cache: "no-store" });
+                                if (cfRes.ok) {
+                                    const cfJson = await cfRes.json();
+                                    if (cfJson.ok && cfJson.mhn) {
+                                        rawMhn = cfJson.mhn;
+                                        rawDc = cfJson.dc || "";
+                                    }
+                                }
+                            } catch (e) {}
                         }
 
-                        // Jeśli bezpośredni feed nie odpowiedział, próba przez Cloudflare Worker lub RapidAPI
+                        // 3. Próba bezpośrednia do CDN Flashscore
+                        if (!rawMhn) {
+                            try {
+                                const [resMhn, resDc] = await Promise.all([
+                                    fetch(`https://46.flashscore.ninja/46/x/feed/df_mhn_1_${aktualnyMeczId501}`, {
+                                        headers: { "x-fsign": "SW9D1eZo" },
+                                        cache: "no-store"
+                                    }),
+                                    fetch(`https://46.flashscore.ninja/46/x/feed/dc_14_${aktualnyMeczId501}`, {
+                                        headers: { "x-fsign": "SW9D1eZo" },
+                                        cache: "no-store"
+                                    })
+                                ]);
+                                if (resMhn.ok) rawMhn = await resMhn.text();
+                                if (resDc.ok) rawDc = await resDc.text();
+                            } catch (ninjaErr) {
+                                console.warn("Flashscore ninja direct fetch error:", ninjaErr);
+                            }
+                        }
+
+                        // 4. Fallback względny /api/dart-live
                         if (!rawMhn) {
                             try {
                                 const proxyRes = await fetch(`/api/dart-live?action=match&matchId=${aktualnyMeczId501}`);
@@ -1753,7 +1780,7 @@
                                     <!-- GRACZ 1 (Gospodarz) -->
                                     <div class="fs-player-col left">
                                         <div class="fs-avatar-box ${homeServing ? 'is-serving' : ''}" id="fs-val-home-avatar">
-                                            <img src="${meta.homeImg}" alt="${meta.homeName}" />
+                                            <img src="${meta.homeImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='./ikony/zdjecie_reprezentatywne.jpeg';" alt="${meta.homeName}" />
                                             <div class="fs-service-badge" id="fs-val-home-service" style="display: ${homeServing ? 'flex' : 'none'};">
                                                 SERWIS
                                             </div>
@@ -1786,7 +1813,7 @@
                                     <!-- GRACZ 2 (Gość) -->
                                     <div class="fs-player-col right">
                                         <div class="fs-avatar-box ${awayServing ? 'is-serving' : ''}" id="fs-val-away-avatar">
-                                            <img src="${meta.awayImg}" alt="${meta.awayName}" />
+                                            <img src="${meta.awayImg}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='./ikony/zdjecie_reprezentatywne.jpeg';" alt="${meta.awayName}" />
                                             <div class="fs-service-badge" id="fs-val-away-service" style="display: ${awayServing ? 'flex' : 'none'};">
                                                 SERWIS
                                             </div>

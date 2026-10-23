@@ -4,6 +4,35 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/dart-live") {
+      const matchId = url.searchParams.get("matchId") || url.searchParams.get("id") || "I78ccYfE";
+      const corsHeaders = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      };
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: corsHeaders });
+      }
+      try {
+        const [resMhn, resDc] = await Promise.all([
+          fetch(`https://46.flashscore.ninja/46/x/feed/df_mhn_1_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://46.flashscore.ninja/46/x/feed/dc_14_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          })
+        ]);
+        const mhnText = resMhn.ok ? await resMhn.text() : "";
+        const dcText = resDc.ok ? await resDc.text() : "";
+        return Response.json({ ok: true, matchId, mhn: mhnText, dc: dcText }, { headers: corsHeaders });
+      } catch (err) {
+        return Response.json({ ok: false, error: err.message }, { status: 500, headers: corsHeaders });
+      }
+    }
+
     if (url.pathname === "/api/health" && request.method === "GET") {
       return Response.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     }
