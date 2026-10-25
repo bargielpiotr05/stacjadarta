@@ -27,12 +27,12 @@ while ($listener.IsListening) {
         $wc = New-Object System.Net.WebClient
         $wc.Encoding = [System.Text.Encoding]::UTF8
         $wc.Headers.Add("x-fsign", "SW9D1eZo")
-        $wc.Headers.Add("User-Agent", "Mozilla/5.0")
+        $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
 
         if ($feed) {
             $feedData = ""
             try {
-                $feedData = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/$feed")
+                $feedData = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/$feed")
             } catch {}
             $obj = @{
                 ok = $true
@@ -41,23 +41,62 @@ while ($listener.IsListening) {
             }
         } else {
             $mhn = ""
+            $mhsn = ""
+            $stn = ""
             $dc = ""
+            $sui = ""
+            $hh = ""
+            $statsJson = $null
+            $statsMetaJson = $null
             try {
-                $mhn = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/df_mhn_1_$id")
+                $mhn = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/df_mhn_1_$id")
             } catch {}
             try {
-                $dc = $wc.DownloadString("https://46.flashscore.ninja/46/x/feed/dc_14_$id")
+                $mhsn = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/df_mhsn_1_$id")
+            } catch {}
+            try {
+                $stn = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/df_stn_1_$id")
+            } catch {}
+            try {
+                $dc = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/dc_14_$id")
+            } catch {}
+            try {
+                $sui = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/df_sui_1_$id")
+            } catch {}
+            try {
+                $hh = $wc.DownloadString("https://2.flashscore.ninja/2/x/feed/df_hh_14_$id")
+            } catch {}
+
+            $wcGql = New-Object System.Net.WebClient
+            $wcGql.Encoding = [System.Text.Encoding]::UTF8
+            $wcGql.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            $wcGql.Headers.Add("Origin", "https://www.flashscore.pl")
+            $wcGql.Headers.Add("Referer", "https://www.flashscore.pl/")
+
+            try {
+                $statsRaw = $wcGql.DownloadString("https://3.ds.lsapp.eu/pq_graphql?_hash=dts&eventId=$id&providerId=7")
+                $statsJson = $statsRaw | ConvertFrom-Json
+            } catch {}
+            try {
+                $metaRaw = $wcGql.DownloadString("https://3.ds.lsapp.eu/pq_graphql?_hash=dtsse&eventId=$id&projectId=3")
+                $statsMetaJson = $metaRaw | ConvertFrom-Json
             } catch {}
 
             $obj = @{
                 ok = $true
                 matchId = $id
                 mhn = $mhn
+                mhsn = $mhsn
+                stn = $stn
                 dc = $dc
+                sui = $sui
+                hh = $hh
+                stats = $statsJson
+                statsMeta = $statsMetaJson
             }
         }
 
-        $json = $obj | ConvertTo-Json -Compress
+        $json = $obj | ConvertTo-Json -Compress -Depth 10
         $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
         $response.ContentType = "application/json; charset=utf-8"
         $response.ContentLength64 = $buffer.Length

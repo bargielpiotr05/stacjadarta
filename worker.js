@@ -19,23 +19,49 @@ export default {
       }
       try {
         if (feedParam) {
-          const res = await fetch(`https://46.flashscore.ninja/46/x/feed/${feedParam}`, {
+          const res = await fetch(`https://2.flashscore.ninja/2/x/feed/${feedParam}`, {
             headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
           });
           const text = res.ok ? await res.text() : "";
           return Response.json({ ok: true, feed: feedParam, data: text }, { headers: corsHeaders });
         }
-        const [resMhn, resDc] = await Promise.all([
-          fetch(`https://46.flashscore.ninja/46/x/feed/df_mhn_1_${matchId}`, {
+        const [resMhn, resMhsn, resStn, resDc, resSui, resHh, resStats, resStatsMeta] = await Promise.all([
+          fetch(`https://2.flashscore.ninja/2/x/feed/df_mhn_1_${matchId}`, {
             headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
           }),
-          fetch(`https://46.flashscore.ninja/46/x/feed/dc_14_${matchId}`, {
+          fetch(`https://2.flashscore.ninja/2/x/feed/df_mhsn_1_${matchId}`, {
             headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://2.flashscore.ninja/2/x/feed/df_stn_1_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://2.flashscore.ninja/2/x/feed/dc_14_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://2.flashscore.ninja/2/x/feed/df_sui_1_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://2.flashscore.ninja/2/x/feed/df_hh_14_${matchId}`, {
+            headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+          }),
+          fetch(`https://3.ds.lsapp.eu/pq_graphql?_hash=dts&eventId=${matchId}&providerId=7`, {
+            headers: { "User-Agent": "Mozilla/5.0", "Origin": "https://www.flashscore.pl", "Referer": "https://www.flashscore.pl/" }
+          }),
+          fetch(`https://3.ds.lsapp.eu/pq_graphql?_hash=dtsse&eventId=${matchId}&projectId=3`, {
+            headers: { "User-Agent": "Mozilla/5.0", "Origin": "https://www.flashscore.pl", "Referer": "https://www.flashscore.pl/" }
           })
         ]);
         const mhnText = resMhn.ok ? await resMhn.text() : "";
+        const mhsnText = resMhsn.ok ? await resMhsn.text() : "";
+        const stnText = resStn.ok ? await resStn.text() : "";
         const dcText = resDc.ok ? await resDc.text() : "";
-        return Response.json({ ok: true, matchId, mhn: mhnText, dc: dcText }, { headers: corsHeaders });
+        const suiText = resSui.ok ? await resSui.text() : "";
+        const hhText = resHh.ok ? await resHh.text() : "";
+        let statsJson = null;
+        let statsMetaJson = null;
+        try { if (resStats.ok) statsJson = await resStats.json(); } catch (e) {}
+        try { if (resStatsMeta.ok) statsMetaJson = await resStatsMeta.json(); } catch (e) {}
+        return Response.json({ ok: true, matchId, mhn: mhnText, mhsn: mhsnText, stn: stnText, dc: dcText, sui: suiText, hh: hhText, stats: statsJson, statsMeta: statsMetaJson }, { headers: corsHeaders });
       } catch (err) {
         return Response.json({ ok: false, error: err.message }, { status: 500, headers: corsHeaders });
       }
@@ -154,8 +180,17 @@ export default {
       if ((table === "znajomi" || table === "game_invites") && (typeof accessToken !== "string" || !accessToken)) {
         return Response.json({ message: "Brak tokenu sesji." }, { status: 401 });
       }
-      if (table === "rooms" && params.select !== "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc") {
-        return Response.json({ message: "Niedozwolony zakres odczytu pokoju." }, { status: 400 });
+      if (table === "rooms") {
+        const allowedRoomsColumns = new Set([
+          "id", "kod_pokoju", "host_id", "gosc_id", "host_token", "gosc_token", "host_nazwa", "gosc_nazwa",
+          "format_gry", "punkty_startowe", "docelowe_legi", "dystans", "zasady_wejscia", "zasady_wyjscia",
+          "limit_lotek", "status", "aktualny_gracz_id", "stan_meczu", "stan_gry", "wynik_host", "wynik_gosc",
+          "utworzono", "czy_prywatny", "host_ip"
+        ]);
+        const requestedCols = (params.select || "").split(",").map((c) => c.trim()).filter(Boolean);
+        if (!requestedCols.length || requestedCols.some((col) => !allowedRoomsColumns.has(col))) {
+          return Response.json({ message: "Niedozwolony zakres odczytu pokoju." }, { status: 400 });
+        }
       }
       if (table === "game_invites" && !["status,kod_pokoju", "id,status,kod_pokoju", "status,kod_pokoju,od_kogo_id"].includes(params.select)) {
         return Response.json({ message: "Niedozwolony zakres odczytu zaproszenia." }, { status: 400 });
@@ -235,7 +270,7 @@ export default {
         const records = Array.isArray(values) ? values : [values];
         const allowedFieldsByTable = {
           znajomi: new Set(["zapraszajacy_id", "zapraszany_id"]),
-          rooms: new Set(["kod_pokoju", "host_id", "host_nazwa", "punkty_startowe", "docelowe_legi", "dystans", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
+          rooms: new Set(["kod_pokoju", "host_id", "host_ip", "host_nazwa", "host_token", "gosc_id", "gosc_nazwa", "gosc_token", "punkty_startowe", "docelowe_legi", "dystans", "zasady_wejscia", "zasady_wyjscia", "format_gry", "status", "czy_prywatny"]),
           game_invites: new Set(["od_kogo_id", "od_kogo_nick", "do_kogo_id", "kod_pokoju"]),
           matches: new Set(["host_id", "gosc_id", "zwyciezca_id", "wynik_host", "wynik_gosc", "format_gry", "pelny_przebieg_meczu", "statystyki_graczy"]),
         };
@@ -265,7 +300,7 @@ export default {
           method = "PATCH";
           body = JSON.stringify(values);
         } else if (table === "rooms") {
-          const allowedFields = new Set(["gosc_id", "gosc_nazwa", "status", "aktualny_gracz_id", "stan_meczu"]);
+          const allowedFields = new Set(["gosc_id", "gosc_nazwa", "gosc_token", "status", "aktualny_gracz_id", "stan_meczu"]);
           if (
             !filters.kod_pokoju ||
             filters.status !== "waiting" ||

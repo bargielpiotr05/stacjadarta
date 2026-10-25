@@ -320,11 +320,24 @@ async function inicjalizujPoczekalnieOnline(kod) {
     }
 
   ustawStatusStartu("Pobieranie danych stołu...");
-  const pokoje = await pobierzWierszeOnline("rooms", {
-    select: "id,kod_pokoju,host_id,gosc_id,host_token,gosc_token,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
-    kod_pokoju: `eq.${kod}`,
-    limit: "1",
-  }, session?.access_token || null, "pobieranie danych stołu");
+  let pokoje;
+  try {
+    pokoje = await pobierzWierszeOnline("rooms", {
+      select: "id,kod_pokoju,host_id,gosc_id,host_token,gosc_token,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
+      kod_pokoju: `eq.${kod}`,
+      limit: "1",
+    }, session?.access_token || null, "pobieranie danych stołu");
+  } catch (errPokoj) {
+    if (errPokoj.message && errPokoj.message.includes("Niedozwolony zakres odczytu pokoju")) {
+      pokoje = await pobierzWierszeOnline("rooms", {
+        select: "id,kod_pokoju,host_id,gosc_id,host_nazwa,gosc_nazwa,format_gry,punkty_startowe,docelowe_legi,dystans,zasady_wejscia,zasady_wyjscia,limit_lotek,status,aktualny_gracz_id,stan_meczu,stan_gry,wynik_host,wynik_gosc",
+        kod_pokoju: `eq.${kod}`,
+        limit: "1",
+      }, session?.access_token || null, "pobieranie danych stołu (fallback)");
+    } else {
+      throw errPokoj;
+    }
+  }
   const pokoj = pokoje[0] || null;
 
     if (!pokoj) {

@@ -25,11 +25,70 @@ export async function onRequest(context) {
         "Access-Control-Allow-Methods": "GET, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=5, s-maxage=10"
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
     };
 
     if (request.method === "OPTIONS") {
         return new Response(null, { headers: corsHeaders });
+    }
+
+    // Bezpośrednie proxy feedów Flashscore CDN (2.flashscore.ninja - czysty angielski/globalny feed)
+    const feedParam = url.searchParams.get("feed");
+    if (feedParam) {
+        try {
+            const fRes = await fetch(`https://2.flashscore.ninja/2/x/feed/${feedParam}`, {
+                headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+            });
+            const text = fRes.ok ? await fRes.text() : "";
+            return new Response(JSON.stringify({ ok: true, feed: feedParam, data: text }), { headers: corsHeaders });
+        } catch (e) {
+            return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: corsHeaders });
+        }
+    }
+
+    if (url.searchParams.has("matchId") && !url.searchParams.has("action")) {
+        try {
+            const mId = url.searchParams.get("matchId");
+            const [resMhn, resMhsn, resStn, resDc, resSui, resHh, resStats, resStatsMeta] = await Promise.all([
+                fetch(`https://2.flashscore.ninja/2/x/feed/df_mhn_1_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://2.flashscore.ninja/2/x/feed/df_mhsn_1_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://2.flashscore.ninja/2/x/feed/df_stn_1_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://2.flashscore.ninja/2/x/feed/dc_14_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://2.flashscore.ninja/2/x/feed/df_sui_1_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://2.flashscore.ninja/2/x/feed/df_hh_14_${mId}`, {
+                    headers: { "x-fsign": "SW9D1eZo", "User-Agent": "Mozilla/5.0" }
+                }),
+                fetch(`https://3.ds.lsapp.eu/pq_graphql?_hash=dts&eventId=${mId}&providerId=7`, {
+                    headers: { "User-Agent": "Mozilla/5.0", "Origin": "https://www.flashscore.pl", "Referer": "https://www.flashscore.pl/" }
+                }),
+                fetch(`https://3.ds.lsapp.eu/pq_graphql?_hash=dtsse&eventId=${mId}&projectId=3`, {
+                    headers: { "User-Agent": "Mozilla/5.0", "Origin": "https://www.flashscore.pl", "Referer": "https://www.flashscore.pl/" }
+                })
+            ]);
+            const mhn = resMhn.ok ? await resMhn.text() : "";
+            const mhsn = resMhsn.ok ? await resMhsn.text() : "";
+            const stn = resStn.ok ? await resStn.text() : "";
+            const dc = resDc.ok ? await resDc.text() : "";
+            const sui = resSui.ok ? await resSui.text() : "";
+            const hh = resHh.ok ? await resHh.text() : "";
+            let statsJson = null;
+            let statsMetaJson = null;
+            try { if (resStats.ok) statsJson = await resStats.json(); } catch (e) {}
+            try { if (resStatsMeta.ok) statsMetaJson = await resStatsMeta.json(); } catch (e) {}
+            return new Response(JSON.stringify({ ok: true, matchId: mId, mhn, mhsn, stn, dc, sui, hh, stats: statsJson, statsMeta: statsMetaJson }), { headers: corsHeaders });
+        } catch (e) {
+            return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: corsHeaders });
+        }
     }
 
     // 1. Sprawdzenie Edge Cache
