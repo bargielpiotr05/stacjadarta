@@ -1,0 +1,819 @@
+{
+    "metadata":  {
+                     "tytul":  "Kompletna mapa selektorów ID i klas CSS z turniej-test.html",
+                     "przeznaczenie":  "Bezpośredni przewodnik wdrożeniowy do integracji z turniej-pdc.html/turniej-pdc.js oraz kalendarz.html/kalendarz.js",
+                     "plik_zrodlowy":  "turniej-test.html",
+                     "pliki_docelowe":  {
+                                            "turniej_pdc":  [
+                                                                "turniej-pdc.html",
+                                                                "turniej-pdc.css",
+                                                                "turniej-pdc.js"
+                                                            ],
+                                            "kalendarz":  [
+                                                              "kalendarz.html",
+                                                              "kalendarz-style.css",
+                                                              "kalendarz.js"
+                                                          ]
+                                        }
+                 },
+    "moduly":  {
+                   "turniej_pdc":  {
+                                       "nazwa_modulu":  "Mecz na Żywo Flashscore & Live Scoreboard 501",
+                                       "pliki_docelowe":  [
+                                                              "turniej-pdc.html",
+                                                              "turniej-pdc.css",
+                                                              "turniej-pdc.js"
+                                                          ],
+                                       "opis":  "Kompletny zestaw elementów do renderowania meczu na żywo, tablicy wyników 1v1, statystyk pojedynku, rzutów kolejka po kolejce oraz H2H/streamów.",
+                                       "sekcje":  {
+                                                      "belka_gorna_i_kontrola_live":  {
+                                                                                          "opis":  "Górna belka statusu meczu, liczniki auto-odświeżania, streamy i informacje o turnieju",
+                                                                                          "elementy":  [
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-val-live-pill",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Badge statusu meczu na żywo z czerwoną pulsującą kropką (np. MECZ NA ŻYWO (-1) lub ZAKOŃCZONY)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-auto-badge",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Plakietka informująca o interwale auto-odświeżania (np. Auto-odświeżanie: 2s)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-auto-pulse",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Animacja pulsowania zielonej kropki przy włączonym auto-odświeżaniu w tle"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-licznik-sekund",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Licznik sekund pozostałych do kolejnego odpytania API Flashscore"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-ostatnia-akt",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Godzina ostatniej pomyślnej aktualizacji danych (np. 19:26:16)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-btn-pauza",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Przycisk pauzowania i wznawiania timera auto-odświeżania"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".btn-odswiez-live",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Przycisk ręcznego, natychmiastowego odświeżenia danych z API"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-timer-controls",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Kontener flex grupujący przycisk pauzy oraz przycisk wymuszenia odświeżenia"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-top-bar",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Górny pasek karty meczowej spajający informacje o turnieju i kontrolki"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-tournament-info",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Informacja o nazwie turnieju i aktualnej fazie (np. 🏆 European Championship • Faza pucharowa)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-stream-badge",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Czerwony neonowy badge z linkiem do oficjalnego live streamu meczu"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-stream-badge-item",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Pojedyncza etykieta streamu wideo z ikoną błyskawicy"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-input-custom-id",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Opcjonalne pole input pozwalające wpisać własne ID meczu z Flashscore"
+                                                                                                           }
+                                                                                                       ]
+                                                                                      },
+                                                      "glowny_scoreboard_1v1":  {
+                                                                                    "opis":  "Główna tablica pojedynku: profile obu graczy, awatary, wskaźniki serwisu i rzutu, wynik meczu w legach i punkty bieżącego lega",
+                                                                                    "elementy":  [
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-karta-meczu",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Główny kontener karty meczowej pojedynku 1v1"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".flashscore-match-card",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Styl wizualny karty z ciemnogranatowym gradientem, neonowym obramowaniem i zaokrągleniami"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-scoreboard-main",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Siatka flex rozstawiająca gracza lewego, centralny wynik i gracza prawego"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-player-col",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Kolumna pojedynczego zawodnika (zdjęcie, flaga, nazwisko, narodowość)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".left",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wyrównanie danych zawodnika gospodarza do lewej strony"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".right",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wyrównanie danych zawodnika gościa do prawej strony"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-home-avatar",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener awatara gracza gospodarza"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-away-avatar",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener awatara gracza gościa"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-avatar-box",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Okrągły pojemnik na zdjęcie zawodnika z podświetleniem obramowania"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-home-img",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Element <img> ze zdjęciem cutout PNG gracza gospodarza"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-away-img",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Element <img> ze zdjęciem cutout PNG gracza gościa"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-avatar-initials",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Zastępczy awatar tekstowy z inicjałami, gdy gracz nie ma jeszcze zdjęcia w bazie"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-avatar-flag",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Miniaturowa flaga lub kod kraju (np. PL, EN, NL) nałożona w rogu awatara"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-player-title",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Główny nagłówek z nazwiskiem zawodnika (np. Ratajski K., Doets K.)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-player-meta",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Pasek metadanych gracza pod nazwiskiem (flaga + nazwa państwa)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-player-country",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Tekstowa nazwa kraju pochodzenia darta (np. Polska, Holandia, Anglia)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-home-service",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener zielonej plakietki SERWIS dla gospodarza (gdy to on zaczynał lega)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-away-service",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener zielonej plakietki SERWIS dla gościa (gdy to on zaczynał lega)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-service-badge",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Neonowa zielona plakietka SERWIS pod zdjęciem gracza"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".is-serving",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Klasa dodająca intensywną zieloną poświatę (glow) wokół awatara serwującego"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-home-dart-icon",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Ikonka tarczy/lotki przy nazwisku gospodarza, gdy to on aktualnie rzuca"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-away-dart-icon",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Ikonka tarczy/lotki przy nazwisku gościa, gdy to on aktualnie rzuca"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".lotka-ikonka-live",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Ikonka tarczy wskazująca na zawodnika będącego aktualnie przy linii rzutu (oche)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-dart-icon-pulse",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Subtelna animacja pulsowania lotki aktywnego gracza"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-center-score",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Centralna kolumna tablicy: data, cyfry wyniku meczu, numer lega i stan punktowy"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-datetime",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Data i planowana godzina meczu (np. 24.10.2026 19:10)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-match-datetime",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Stylizacja szarej daty meczu nad wynikiem"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-score-numbers",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wielkie cyfry stanu meczu w legach (np. 0 - 4 lub 2 - 3)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-home-score",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Cyfra wygranych legów gospodarza w głównym wyniku"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-away-score",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Cyfra wygranych legów gościa w głównym wyniku"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-score-dash",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Separator cyfr wyniku (-)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-current-leg-badge",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Etykieta numeru bieżącego lega (np. LEG 5, LEG 11)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-score-label",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Styl czerwonej etykiety numeru seta/lega"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-val-leg-points-center",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Czerwone neonowe punkty pozostałe w bieżącym legu obu graczy (np. 321 : 344)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-match-leg-points-live",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wielki czerwony licznik punktów 501 na żywo"
+                                                                                                     }
+                                                                                                 ]
+                                                                                },
+                                                      "paski_wskaznikow_i_sugestii":  {
+                                                                                          "opis":  "Dynamiczne wskazówki checkoutu dla rzucającego oraz pasek informacyjny ostatniej kolejki",
+                                                                                          "elementy":  [
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-val-checkout-bar",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Kontener sugerowanego wykończenia (np. Woodhouse L.: T20 • D28)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-checkout-hint-box",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Złocisto-pomarańczowy pasek z wyliczoną kombinacją checkoutu kończącego lega"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-val-last-throw-ticker",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Dolny pasek informacyjny z ostatnim zarejestrowanym rzutem i stanem przy tarczy"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  "#fs-val-last-throw-text",
+                                                                                                               "typ":  "id",
+                                                                                                               "rola":  "Tekst komunikatu (np. Doets K. rzucił 60 pkt. Przy tarczy Ratajski K. (321 : 344))"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".fs-last-throw-ticker",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Styl ciemnego paska tickera na dole karty meczowej"
+                                                                                                           }
+                                                                                                       ]
+                                                                                      },
+                                                      "tabela_punktacji_live":  {
+                                                                                    "opis":  "Tabela wzorowana na Flashscore: zawodnik, sety, wygrane legi, punkty w bieżącym legu oraz historia rzutów w legu",
+                                                                                    "elementy":  [
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-table-card",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Karta grupująca kompaktową tabelę meczową"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-flashscore-table",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Układ tabeli odwzorowujący oficjalny widok live meczu Flashscore"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-table-header",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Nagłówek tabeli z kolumnami: WYNIK, SETY, LEGI, PUNKTY"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-th-left",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Lewa komórka nagłówka (WYNIK / ZAWODNICY)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-th-cols",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Grupa kolumn statystycznych po prawej stronie nagłówka"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-th-col",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Pojedyncza kolumna nagłówkowa (SETY, LEGI, PUNKTY)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-table-row",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wiersz tabeli z danymi jednego zawodnika"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-tr-player",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wiersz zawodnika z jego flagą, nazwiskiem i cyframi meczu"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-td-col",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Pojedyncza komórka tabeli z wynikiem (sety lub legi)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".points",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wyróżniona na czerwono komórka z punktami w bieżącym legu (np. 321)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-tab-home-score",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Liczba wygranych legów gospodarza w wierszu tabeli"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-tab-away-score",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Liczba wygranych legów gościa w wierszu tabeli"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-tab-home-pts",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Punkty pozostałe gospodarzowi w tabeli"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-tab-away-pts",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Punkty pozostałe gościowi w tabeli"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-table-current-leg-row",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Dolny wiersz tabeli: BIEŻĄCY LEG i zrzut ostatnich rzutów w partii"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-tab-leg-history",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Tekst zrzutu punktacji bieżącego lega (np. 501:361 [140+], 421:303...)"
+                                                                                                     }
+                                                                                                 ]
+                                                                                },
+                                                      "zakladki_detali_meczu":  {
+                                                                                    "opis":  "Nawigacja zakładkowa dolnej części karty pojedynku",
+                                                                                    "elementy":  [
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-details-section",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Sekcja dolna z zakładkami szczegółów"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-details-tabs",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Pasek nawigacyjny zakładek (SZCZEGÓŁY / STATYSTYKI / PRZEBIEG MECZU)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".fs-detail-tab-btn",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Przycisk pojedynczej zakładki"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".is-active",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Stan podświetlenia aktualnie wybranej zakładki (czerwone tło i neonowy cień)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-detale-szczegoly",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener zakładki SZCZEGÓŁY (historia pojedynków H2H, streamy TV)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-detale-statystyki",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener zakładki STATYSTYKI (paski średnich, 180s, 140+, 100+, checkouty)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  "#fs-detale-przebieg",
+                                                                                                         "typ":  "id",
+                                                                                                         "rola":  "Kontener zakładki PRZEBIEG MECZU (kolejki rzutów, runda po rundzie)"
+                                                                                                     }
+                                                                                                 ]
+                                                                                },
+                                                      "statystyki_porownawcze_1v1":  {
+                                                                                         "opis":  "Paski porównawcze statystyk meczowych (średnia na 3 lotki, rzuty 180, 140+, 100+, skuteczność na doublach, najwyższe wyzerowanie)",
+                                                                                         "elementy":  [
+                                                                                                          {
+                                                                                                              "selektor":  "#fs-flashscore-stats-container",
+                                                                                                              "typ":  "id",
+                                                                                                              "rola":  "Główny pojemnik na listę pasków statystycznych"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stats-container",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Kontener siatki statystyk meczowych"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-flashscore-stat-row",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Pojedynczy wiersz statystyki z wartościami graczy i paskami postępu"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-title",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Nazwa danej statystyki (np. Średnia (3 lotki), Rzuty za 180, Wyzerowania)"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-labels",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Pasek z wartością gospodarza (lewa), nazwą statystyki (środek) i wartością gościa (prawa)"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-val-left",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Wartość liczbowa gospodarza (np. 92.17 lub 1x 180)"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-val-right",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Wartość liczbowa gościa (np. 95.66 lub 6x 180)"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-dual-bars",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Podwójny poziomy pasek porównawczy"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-bar-track",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Ciemne tło paska postępu"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-stat-bar-fill",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Kolorowe wypełnienie paska proporcjonalne do osiągnięcia gracza"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-bar-home",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Biały pasek postępu gospodarza"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-bar-away",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Czerwono-różowy pasek postępu gościa"
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "selektor":  ".fs-compare-box",
+                                                                                                              "typ":  "klasa",
+                                                                                                              "rola":  "Karta porównania średniej w bieżącym legu na żywo (Live Leg Average)"
+                                                                                                          }
+                                                                                                      ]
+                                                                                     },
+                                                      "przebieg_meczu_i_kolejki":  {
+                                                                                       "opis":  "Widok kolejka po kolejce dla bieżącego lega oraz akordeon rozegranych partii",
+                                                                                       "elementy":  [
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-turns-table",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Tabela kolejek rzutów bieżącego lega (Gracz 1 | Kolejka | Gracz 2)"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  "#fs-turns-table-body",
+                                                                                                            "typ":  "id",
+                                                                                                            "rola":  "Element <tbody>, do którego JS generuje wiersze rzutów na żywo"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-tr-cols",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Wiersz pojedynczej rundy (np. runda #1, runda #2)"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-turn-number",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Środkowa kolumna z numerem kolejki (#1, #2...)"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-turn-throw-box",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Komórka rzutu zawierająca zdobyte punkty oraz pozostały wynik"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-throw-val",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Punkty rzucone w 3 lotkach (np. 140, 180, 60)"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-throw-leftover",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Stan licznika po rzucie w nawiasie (np. (281 pkt))"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".badge-180",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Czerwona neonowa odznaka 180 MAX przy rzucie maksymalnym"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".tag-180",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Odznaka 180 w historii legów"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".tag-140",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Czerwona odznaka dla wysokiego rzutu 140+"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".tag-100",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Niebiesko-fioletowa odznaka dla rzutu 100+ lub 134+"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-leg-history-accordion",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Akordeon z rozwijanymi partiami zakończonych legów"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".fs-history-leg-item",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Pojedynczy leg w historii z podsumowaniem (zwycięzca, lotki, checkout)"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "selektor":  ".tag-won",
+                                                                                                            "typ":  "klasa",
+                                                                                                            "rola":  "Zielona odznaka zwycięzcy zakończonego lega"
+                                                                                                        }
+                                                                                                    ]
+                                                                                   },
+                                                      "h2h_i_transmisje_tv":  {
+                                                                                  "opis":  "Historia pojedynków bezpośrednich obu zawodników oraz dostępne kanały transmisyjne",
+                                                                                  "elementy":  [
+                                                                                                   {
+                                                                                                       "selektor":  ".fs-h2h-list",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Lista ostatnich pojedynków H2H pomiędzy oboma graczami"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".fs-h2h-row",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Wiersz pojedynczego meczu H2H z datą, turniejem i wynikiem"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".fs-badge-result",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Plakietka wyniku meczu H2H"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".win",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Zielone oznaczenie zwycięstwa gracza w H2H"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".loss",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Czerwone oznaczenie porażki gracza w H2H"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".fs-tv-grid",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Siatka kanałów TV i platform streamingowych pokazujących mecz"
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "selektor":  ".fs-tv-badge",
+                                                                                                       "typ":  "klasa",
+                                                                                                       "rola":  "Plakietka kanału transmisyjnego (np. Viaplay, PDC TV, Sky Sports)"
+                                                                                                   }
+                                                                                               ]
+                                                                              }
+                                                  }
+                                   },
+                   "kalendarz":  {
+                                     "nazwa_modulu":  "Oficjalny Kalendarz & Terminarz Turniejów PDC",
+                                     "pliki_docelowe":  [
+                                                            "kalendarz.html",
+                                                            "kalendarz-style.css",
+                                                            "kalendarz.js"
+                                                        ],
+                                     "opis":  "Elementy harmonogramu turniejów PDC z TheSportsDB API, filtry miesięcy i sezonów, karty wydarzeń oraz statusy.",
+                                     "sekcje":  {
+                                                    "filtry_i_nawigacja_kalendarza":  {
+                                                                                          "opis":  "Przyciski filtrowania turniejów po statusie, miesiącach i sezonach",
+                                                                                          "elementy":  [
+                                                                                                           {
+                                                                                                               "selektor":  ".sdb-filtr-btn",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Przyciski filtrów statusu turnieju (Wszystkie, Nadchodzące, W trakcie, Zakończone)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".sdb-sezon-btn",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Przyciski wyboru sezonu rozgrywek PDC (np. 2026, 2025, 2024)"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".aktywny",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Wyróżnienie aktywnego przycisku filtra"
+                                                                                                           },
+                                                                                                           {
+                                                                                                               "selektor":  ".sdb-toggle-json-btn",
+                                                                                                               "typ":  "klasa",
+                                                                                                               "rola":  "Przycisk zwijania i rozwijania surowego podglądu odpowiedzi z API"
+                                                                                                           }
+                                                                                                       ]
+                                                                                      },
+                                                    "grupy_i_karty_turniejow":  {
+                                                                                    "opis":  "Struktura prezentacji turniejów pogrupowanych według miesięcy",
+                                                                                    "elementy":  [
+                                                                                                     {
+                                                                                                         "selektor":  ".turniej-sekcja-grupa",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Kontener grupujący turnieje z danego miesiąca (np. Październik 2026)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".turniej-naglowek-pasek",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Pasek nagłówkowy miesiąca z ikoną kalendarza i licznikiem turniejów"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".karta-elementu",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Karta pojedynczego turnieju PDC z nazwą, datą, miejscem i rangą"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".karta-szczegol",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Wiersz szczegółu wewnątrz karty (lokalizacja, pula nagród, data)"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".grid-podgladu",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Responsywna siatka kart wydarzeń"
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "selektor":  ".tabela-danych",
+                                                                                                         "typ":  "klasa",
+                                                                                                         "rola":  "Tabelaryczny widok harmonogramu turniejów"
+                                                                                                     }
+                                                                                                 ]
+                                                                                },
+                                                    "odznaki_statusu_turnieju":  {
+                                                                                     "opis":  "Etykiety oznaczające aktualny stan turnieju w terminarzu",
+                                                                                     "elementy":  [
+                                                                                                      {
+                                                                                                          "selektor":  ".scheduled",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Niebieska/szara plakietka turnieju zaplanowanego (nadchodzącego)"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".live",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Czerwona pulsująca plakietka turnieju trwającego na żywo"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".finished",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Zielona/ciemna plakietka turnieju zakończonego"
+                                                                                                      }
+                                                                                                  ]
+                                                                                 },
+                                                    "baza_zdjec_graczy_cutout":  {
+                                                                                     "opis":  "Moduł zdjęć zawodników bez tła (Cutout PNG) z TheSportsDB API",
+                                                                                     "elementy":  [
+                                                                                                      {
+                                                                                                          "selektor":  "#input-custom-player",
+                                                                                                          "typ":  "id",
+                                                                                                          "rola":  "Pole tekstowe do wyszukiwania gracza i jego zdjęcia cutout"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".gracz-box",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Karta profilowa zawodnika ze zdjęciem PNG bez tła"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".ranking-gracz",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Imię i nazwisko zawodnika na karcie profilowej"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".ranking-pozycja",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Pozycja zawodnika w rankingu Order of Merit"
+                                                                                                      },
+                                                                                                      {
+                                                                                                          "selektor":  ".ranking-zarobki",
+                                                                                                          "typ":  "klasa",
+                                                                                                          "rola":  "Suma zarobków z oficjalnego rankingu PDC"
+                                                                                                      }
+                                                                                                  ]
+                                                                                 }
+                                                }
+                                 },
+                   "wspolne_kontrolki_i_layout":  {
+                                                      "nazwa_modulu":  "Wspólny kontener testowy & Diagnostyka API",
+                                                      "opis":  "Główny kontener strony turniej-test.html, nagłówek, przełączniki zakładek testowych i podgląd surowego JSON",
+                                                      "elementy":  [
+                                                                       {
+                                                                           "selektor":  ".tester-container",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Główny wrapper strony o maksymalnej szerokości 1200px"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".tester-header",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Nagłówek strony z tytułem 'Centrum API Darta & Kalendarza PDC' i opisem"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".api-przelaczniki",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Pasek głównych zakładek testowych (Flashscore Live / Kalendarz PDC / Zdjęcia Cutout)"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".btn-api-tab",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Przycisk głównej zakładki modułowej"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".info-box",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Pojemnik informacyjny prezentujący bieżący endpoint API"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#endpoint-opis",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Tytuł i opis aktualnie odpytywanego endpointu API"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#endpoint-status",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Kod odpowiedzi HTTP (np. Status: 200 OK)"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#endpoint-url",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Pełny adres URL żądania (kod w ramce)"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#endpoint-wyjasnienie",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Szczegółowy opis parametrów i przeznaczenia danego endpointu"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#naglowek-sekcji-kart",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Nagłówek sekcji prezentującej przetworzone wizualne dane"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#kontener-danych",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Główny kontener DOM, do którego dynamicznie wstrzykiwane są kafelki, scoreboardy i tabele"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".status-ladowania",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Komunikat / animacja ładowania danych w trakcie zapytania do API"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  ".kod-json-wrapper",
+                                                                           "typ":  "klasa",
+                                                                           "rola":  "Stylowany ciemny kontener na surową odpowiedź JSON"
+                                                                       },
+                                                                       {
+                                                                           "selektor":  "#json-wynik",
+                                                                           "typ":  "id",
+                                                                           "rola":  "Element <pre>, w którym wyświetla się sformatowany JSON z API"
+                                                                       }
+                                                                   ]
+                                                  }
+               }
+}
