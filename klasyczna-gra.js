@@ -2093,11 +2093,14 @@
                 // ================================================================
                 const pokojKod = window.onlineKodPokoju || (typeof onlineKodPokoju !== "undefined" ? onlineKodPokoju : new URLSearchParams(window.location.search).get("pokoj"));
                 const czyOnline = (typeof czyTrybOnline !== "undefined" && czyTrybOnline) || !!pokojKod;
+                const mojIndeksAktualny = (typeof window.mojIndeksOnline === "number" && window.mojIndeksOnline >= 0)
+                    ? window.mojIndeksOnline
+                    : (typeof mojIndeksOnline !== "undefined" ? mojIndeksOnline : -1);
 
-                if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline !== 0) {
+                if (czyOnline && mojIndeksAktualny !== 0) {
                     console.log("Oczekiwanie gościa na zapis meczu przez Hosta...");
                     let hostZapisal = false;
-                    for (let i = 0; i < 25; i++) {
+                    for (let i = 0; i < 70; i++) {
                         if (window.meczJuzZapisanyPrzezHosta) {
                             hostZapisal = true;
                             break;
@@ -2105,10 +2108,10 @@
                         await new Promise((r) => setTimeout(r, 100));
                     }
                     if (hostZapisal) {
-                        console.log("Mecz został pomyślnie zapisany w chmurze przez Hosta.");
+                        console.log("Mecz został pomyślnie zapisany w chmurze przez Hosta - Gość pomija duplikat.");
                         return;
                     }
-                    console.log("Brak potwierdzenia od Hosta po 2.5s - Gość wykonuje zapasowy zapis meczu i statystyk.");
+                    console.log("Brak potwierdzenia od Hosta po 7s - Gość wykonuje zapasowy zapis meczu i statystyk.");
                 }
 
                 try {
@@ -2226,9 +2229,9 @@
                     let mojGracz = null;
                     let rywalGracz = null;
 
-                    if (czyOnline && typeof mojIndeksOnline !== "undefined" && mojIndeksOnline >= 0) {
-                        mojGracz = gracze[mojIndeksOnline];
-                        rywalGracz = gracze[mojIndeksOnline === 0 ? 1 : 0];
+                    if (czyOnline && mojIndeksAktualny >= 0) {
+                        mojGracz = gracze[mojIndeksAktualny];
+                        rywalGracz = gracze[mojIndeksAktualny === 0 ? 1 : 0];
                     } else {
                         // 1. Dopasowanie po profilId (jeśli przypisane)
                         if (userId) {
@@ -2258,13 +2261,13 @@
 
                     if (czyOnline) {
                         if (rywalGracz && !rywalGracz.profilId) {
-                            rywalGracz.profilId = mojIndeksOnline === 0 ? gosc_id_db : host_id_db;
+                            rywalGracz.profilId = mojIndeksAktualny === 0 ? gosc_id_db : host_id_db;
                         }
                         if (!gosc_id_db && rywalGracz?.profilId && /^[0-9a-f-]{36}$/i.test(rywalGracz.profilId)) {
-                            gosc_id_db = mojIndeksOnline === 0 ? rywalGracz.profilId : userId;
+                            gosc_id_db = mojIndeksAktualny === 0 ? rywalGracz.profilId : userId;
                         }
                         if (!host_id_db) {
-                            host_id_db = mojIndeksOnline === 0 ? userId : (rywalGracz?.profilId || null);
+                            host_id_db = mojIndeksAktualny === 0 ? userId : (rywalGracz?.profilId || null);
                         }
                     } else {
                         // Gra lokalna / klasyczna ze wstawionym rywalem (znajomy z listy lub gość)
@@ -2569,11 +2572,11 @@
                     // KROK 3: ZAPISANIE POJEDYNKU DO TABELI MATCHES (ZE ŚWIEŻYM TOKENEM)
                     // ================================================================
                     const wynikHostZapisu = czyOnline
-                        ? (mojIndeksOnline === 0 ? (mojGracz?.wygraneLegi || 0) : (rywalGracz?.wygraneLegi || 0))
+                        ? (mojIndeksAktualny === 0 ? (mojGracz?.wygraneLegi || 0) : (rywalGracz?.wygraneLegi || 0))
                         : (mojGracz ? mojGracz.wygraneLegi || 0 : (gracze[0]?.wygraneLegi || 0));
 
                     const wynikGoscZapisu = czyOnline
-                        ? (mojIndeksOnline === 0 ? (rywalGracz?.wygraneLegi || 0) : (mojGracz?.wygraneLegi || 0))
+                        ? (mojIndeksAktualny === 0 ? (rywalGracz?.wygraneLegi || 0) : (mojGracz?.wygraneLegi || 0))
                         : (rywalGracz ? rywalGracz.wygraneLegi || 0 : (gracze[1]?.wygraneLegi || 0));
 
                     const payloadMeczu = {
@@ -2588,7 +2591,28 @@
                     };
 
                     let zapisanoMecz = false;
-                    try {
+
+                    // Zabezpieczenie przed podwójnym zapisem w trybie online: sprawdź czy mecz już powstał przed chwilą
+                    if (czyOnline && payloadMeczu.host_id && payloadMeczu.gosc_id) {
+                        try {
+                            const checkUrl = `/rest/v1/matches?host_id=eq.${encodeURIComponent(payloadMeczu.host_id)}&gosc_id=eq.${encodeURIComponent(payloadMeczu.gosc_id)}&order=utworzono.desc&limit=1&select=id,utworzono,wynik_host,wynik_gosc`;
+                            const sprawdzenieMeczu = await wyslijDoSupabase(checkUrl);
+                            if (Array.isArray(sprawdzenieMeczu) && sprawdzenieMeczu.length > 0 && sprawdzenieMeczu[0]) {
+                                const ostMecz = sprawdzenieMeczu[0];
+                                const czasOst = ostMecz.utworzono ? new Date(ostMecz.utworzono).getTime() : 0;
+                                const roznicaSekund = Math.abs(Date.now() - czasOst) / 1000;
+                                if (roznicaSekund < 300 && ostMecz.wynik_host === wynikHostZapisu && ostMecz.wynik_gosc === wynikGoscZapisu) {
+                                    console.log("Mecz został już wcześniej zarejestrowany w tabeli matches (przed chwilą). Pomijam duplikat.");
+                                    zapisanoMecz = true;
+                                }
+                            }
+                        } catch (eCheck) {
+                            console.warn("Błąd sprawdzania czy mecz już istnieje w bazie:", eCheck);
+                        }
+                    }
+
+                    if (!zapisanoMecz) {
+                        try {
                         const token = await uzyskajSwiezyTokenAuth(klientBazy);
 
                         // 1. Zapis przez wyslijDoSupabase (same-origin proxy na produkcji, działa 100% na iOS)
@@ -2654,12 +2678,27 @@
                     } catch (eMatchInsertBlock) {
                         console.warn("Błąd bloku zapisu meczu:", eMatchInsertBlock);
                     }
+                }
 
-                    if (zapisanoMecz) {
-                        console.log("Mecz pomyślnie zapisany w bazie danych matches!");
-                    } else {
-                        console.warn("Mecz nie został dodany do tabeli 'matches', ale statystyki obu graczy zostały pomyślnie zaktualizowane.");
+                if (zapisanoMecz) {
+                    console.log("Mecz pomyślnie zapisany w bazie danych matches!");
+                    if (czyOnline) {
+                        window.meczJuzZapisanyPrzezHosta = true;
+                        if (typeof window.powiadomOZapisaniuMeczuOnline === "function") {
+                            window.powiadomOZapisaniuMeczuOnline();
+                        } else if (window.kanalMeczuRealtime) {
+                            try {
+                                window.kanalMeczuRealtime.send({
+                                    type: "broadcast",
+                                    event: "mecz-zapisany-w-chmurze",
+                                    payload: { matchSaved: true }
+                                });
+                            } catch (_) {}
+                        }
                     }
+                } else {
+                    console.warn("Mecz nie został dodany do tabeli 'matches', ale statystyki obu graczy zostały pomyślnie zaktualizowane.");
+                }
                 } catch (error) {
                     console.error("Błąd zapisu meczu do Supabase:", error);
                     alert(`Błąd zapisu meczu lub statystyk: ${error.message || "nieznany błąd"}`);

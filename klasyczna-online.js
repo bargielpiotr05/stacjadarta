@@ -5,6 +5,7 @@
 let czyTrybOnline = false;
 let czyWidz = false;
 let mojIndeksOnline = -1; // 0 = Host, 1 = Gość, -1 = Widz
+window.mojIndeksOnline = -1;
 let kanalMeczuRealtime = null;
 let kanalCzekaniaPoczekalni = null;
 let czyMeczJuzWystartowal = false;
@@ -358,10 +359,12 @@ async function inicjalizujPoczekalnieOnline(kod) {
   if (onlineTryb === "widz" || rolaURL === "widz") {
     czyWidz = true;
     mojIndeksOnline = -1;
+    window.mojIndeksOnline = -1;
   } else {
     // 1. Sprawdzamy czy jestem Hostem (zalogowany po user.id, token z sesji lub rola)
     if ((user && pokoj.host_id === user.id) || (lokalnyToken && pokoj.host_token === lokalnyToken) || (zapisanyIndeks === "0") || (rolaURL === "host")) {
       mojIndeksOnline = 0;
+      window.mojIndeksOnline = 0;
       czyWidz = false;
       sessionStorage.setItem(`sd_gracz_index_${kod}`, "0");
       if (pokoj.host_nazwa && pokoj.host_nazwa !== "Gracz" && (!user || mojNickOnline === "Gracz")) {
@@ -371,6 +374,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
     // 2. Sprawdzamy czy byłem już przypisany jako gość (zalogowany, token, rola=gosc)
     else if ((user && pokoj.gosc_id === user.id) || (lokalnyToken && pokoj.gosc_token === lokalnyToken) || (zapisanyIndeks === "1") || (rolaURL === "gosc" && pokoj.gosc_nazwa && (!pokoj.gosc_token || pokoj.gosc_token === lokalnyToken))) {
       mojIndeksOnline = 1;
+      window.mojIndeksOnline = 1;
       czyWidz = false;
       sessionStorage.setItem(`sd_gracz_index_${kod}`, "1");
       if (pokoj.gosc_nazwa && pokoj.gosc_nazwa !== "Gracz" && (!user || mojNickOnline === "Gracz")) {
@@ -382,6 +386,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
     // 3. JESTEM GOŚCIEM Z ZAPROSZENIA - Wchodzę i ZAJMUJĘ WOLNY STÓŁ!
     else if (pokoj.gosc_id === null && pokoj.status === 'waiting') {
       mojIndeksOnline = 1;
+      window.mojIndeksOnline = 1;
       czyWidz = false;
       sessionStorage.setItem(`sd_gracz_index_${kod}`, "1");
       
@@ -424,6 +429,7 @@ async function inicjalizujPoczekalnieOnline(kod) {
     // 4. Stół pełny - mogę być tylko widzem (i wtedy widz nie ma dostępu do czatu!)
     else {
       mojIndeksOnline = -1;
+      window.mojIndeksOnline = -1;
       czyWidz = true;
     }
   }
@@ -908,7 +914,8 @@ function zainicjalizujKanalMeczu(kod) {
         }, 250);
       }
     })
-    .on("broadcast", { event: "mecz-zapisany-w-chmurze" }, () => {
+    .on("broadcast", { event: "mecz-zapisany-w-chmurze" }, (payload) => {
+      console.log("Otrzymano sygnał broadcast: mecz został zapisany w chmurze przez Hosta.", payload);
       window.meczJuzZapisanyPrzezHosta = true;
     })
     .on("broadcast", { event: "prosba-o-stan" }, () => {
@@ -1018,6 +1025,22 @@ function wyslijAktualnyStanGry(dodatkowePola = {}) {
     .eq("kod_pokoju", onlineKodPokoju)
     .then();
 }
+
+window.powiadomOZapisaniuMeczuOnline = function () {
+  window.meczJuzZapisanyPrzezHosta = true;
+  if (kanalMeczuRealtime) {
+    try {
+      kanalMeczuRealtime.send({
+        type: "broadcast",
+        event: "mecz-zapisany-w-chmurze",
+        payload: { matchSaved: true, timestamp: Date.now() }
+      });
+      console.log("Wysłano broadcast mecz-zapisany-w-chmurze do drugiego gracza.");
+    } catch (e) {
+      console.warn("Błąd wysyłania broadcastu mecz-zapisany-w-chmurze:", e);
+    }
+  }
+};
 
 function zastosujStanGry(dane) {
   if (!dane || !dane.gracze) return;

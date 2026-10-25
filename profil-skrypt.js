@@ -1989,9 +1989,37 @@
             const znormalizowaneZdalne = meczeZdalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
             const znormalizowaneLokalne = meczeLokalne.map((m) => normalizujMecz(m, profilId, nazwaGracza));
 
-            const zdalneSygnatury = new Set(znormalizowaneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`));
+            // Deduplikacja meczów zdalnych (np. gdy w meczu online obaj gracze wysłali ten sam pojedynek do bazy)
+            const unikalneZdalne = [];
+            for (const zm of znormalizowaneZdalne) {
+                const czyDuplikat = unikalneZdalne.some((istniejacy) => {
+                    const tenSamRywal = (istniejacy._przeciwnikNazwa || "").trim().toLowerCase() === (zm._przeciwnikNazwa || "").trim().toLowerCase();
+                    const tenSamWynik = istniejacy._wynik === zm._wynik;
+                    if (!tenSamRywal || !tenSamWynik) return false;
+
+                    const taSamaData = istniejacy._dataMeczu === zm._dataMeczu;
+                    if (!taSamaData) return false;
+
+                    const roznicaCzasu = Math.abs((istniejacy._timestamp || 0) - (zm._timestamp || 0));
+                    // Jeśli mecze powstały w odstępie poniżej 10 minut
+                    if (roznicaCzasu > 0 && roznicaCzasu < 600000) return true;
+
+                    // Lub jeśli średnie graczy są identyczne (duplikat tego samego meczu)
+                    const taSamaSredniaJa = istniejacy._jaSrednia && istniejacy._jaSrednia === zm._jaSrednia;
+                    const taSamaSredniaRywal = istniejacy._rywalSrednia && istniejacy._rywalSrednia === zm._rywalSrednia;
+                    if (taSamaSredniaJa && taSamaSredniaRywal) return true;
+
+                    return false;
+                });
+
+                if (!czyDuplikat) {
+                    unikalneZdalne.push(zm);
+                }
+            }
+
+            const zdalneSygnatury = new Set(unikalneZdalne.map((zm) => `${zm._dataMeczu}_${zm._wynik}_${zm._przeciwnikNazwa}`));
             const brakujaceLokalne = znormalizowaneLokalne.filter((lm) => !zdalneSygnatury.has(`${lm._dataMeczu}_${lm._wynik}_${lm._przeciwnikNazwa}`));
-            const scalone = [...znormalizowaneZdalne, ...brakujaceLokalne];
+            const scalone = [...unikalneZdalne, ...brakujaceLokalne];
             scalone.sort((a, b) => (b._timestamp || 0) - (a._timestamp || 0));
 
             return limit ? scalone.slice(0, limit) : scalone;
