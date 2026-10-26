@@ -21,7 +21,7 @@
             miejsce: "Maaspoort, Den Bosch (Holandia)",
             pula: "£125,000",
             odliczanie: "Za 5 dni",
-            obrazek: "./events/playerschampionship.webp",
+            obrazek: "./playerschampionship.webp",
         },
         {
             id: "pc32",
@@ -34,7 +34,7 @@
             miejsce: "Maaspoort, Den Bosch (Holandia)",
             pula: "£125,000",
             odliczanie: "Za 6 dni",
-            obrazek: "./events/playerschampionship.webp",
+            obrazek: "./playerschampionship.webp",
         },
         {
             id: "gsod2026",
@@ -47,7 +47,7 @@
             miejsce: "WV Active Aldersley, Wolverhampton (Anglia)",
             pula: "£650,000",
             odliczanie: "W listopadzie",
-            obrazek: "./events/grand_slam.webp",
+            obrazek: "./grand_slam.webp",
         },
         {
             id: "pcf2026",
@@ -60,7 +60,7 @@
             miejsce: "Butlin's Minehead Resort (Anglia)",
             pula: "£600,000",
             odliczanie: "W listopadzie",
-            obrazek: "./events/playerschampionship_final.webp",
+            obrazek: "./playerschampionship_final.webp",
         },
         {
             id: "wch2027",
@@ -73,7 +73,7 @@
             miejsce: "Alexandra Palace, Londyn (UK)",
             pula: "£2,500,000",
             odliczanie: "W grudniu",
-            obrazek: "./events/worldchampionship.webp",
+            obrazek: "./worldchampionship.webp",
         },
         {
             id: "masters2027",
@@ -86,7 +86,7 @@
             miejsce: "Marshall Arena, Milton Keynes (Anglia)",
             pula: "£275,000",
             odliczanie: "W styczniu",
-            obrazek: "./events/playerschampionship.webp",
+            obrazek: "./playerschampionship.webp",
         },
         {
             id: "pl2027",
@@ -99,7 +99,7 @@
             miejsce: "SSE Arena, Belfast (Irlandia Płn.)",
             pula: "£1,000,000",
             odliczanie: "W lutym",
-            obrazek: "./events/playerschampionship.webp",
+            obrazek: "./playerschampionship.webp",
         },
         {
             id: "ukopen2027",
@@ -112,7 +112,7 @@
             miejsce: "Butlin's Minehead Resort (Anglia)",
             pula: "£600,000",
             odliczanie: "W marcu",
-            obrazek: "./events/playerschampionship.webp",
+            obrazek: "./playerschampionship.webp",
         },
     ];
 
