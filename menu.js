@@ -220,11 +220,27 @@ async function wczytajWspolneElementy() {
 }
 
 function ustawAktywneLinkiMenu() {
-    const linkiDesktop = document.querySelectorAll(".wersja-komputer a");
+    // Pobieramy wyłącznie główne zakładki (GRY, TURNIEJE, ONLINE, SPOŁECZNOŚĆ)
+    // Celowo wykluczamy menu konta (Zaloguj się, Zarejestruj się) oraz profil gracza
+    const linkiDesktop = document.querySelectorAll(".wersja-komputer > a");
     const aktualnaSciezka = (window.location.pathname || "").toLowerCase();
 
     linkiDesktop.forEach((link) => {
         const href = (link.getAttribute("href") || "").toLowerCase().replace("./", "");
+
+        // Pomiń linki rejestracji, logowania oraz profilu użytkownika
+        if (
+            link.closest(".dropdown-konto") ||
+            link.closest(".dropdown-menu") ||
+            link.closest(".user-profile-badge") ||
+            link.classList.contains("user-profile-link") ||
+            href.includes("logowanie") ||
+            href.includes("rejestracja") ||
+            href.includes("profil")
+        ) {
+            link.style.borderBottom = "none";
+            return;
+        }
 
         // Automatyczne podświetlenie aktywnej zakładki na podstawie aktualnego adresu strony
         if (
@@ -235,11 +251,13 @@ function ustawAktywneLinkiMenu() {
              (href === "gry.html" && aktualnaSciezka.includes("gra-")))
         ) {
             link.style.borderBottom = "1px solid var(--secondary-color)";
+        } else {
+            link.style.borderBottom = "none";
         }
 
-        // Obsługa kliknięcia z dynamicznym podświetleniem
+        // Obsługa kliknięcia z dynamicznym podświetleniem tylko głównych zakładek
         link.addEventListener("click", () => {
-            linkiDesktop.forEach((l) => (l.style.borderBottom = ""));
+            linkiDesktop.forEach((l) => (l.style.borderBottom = "none"));
             link.style.borderBottom = "1px solid var(--secondary-color)";
         });
     });

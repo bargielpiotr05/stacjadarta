@@ -101,6 +101,7 @@ header a {
     background-color: var(--secondary-color-hover);
     color: var(--primary-color) !important;
     text-decoration: none !important;
+    border-bottom: none !important;
 }
 .header-right-section a:hover {
   border-bottom: 1px solid var(--secondary-color);
@@ -162,6 +163,7 @@ header a {
   text-decoration: none;
   font-weight: 600;
   transition: background 0.2s;
+  border-bottom: none !important;
 }
 
 .dropdown-menu a:hover {
@@ -496,10 +498,12 @@ header a {
     margin: 0 !important;
     gap: 8px;
     color: white !important;
+    border-bottom: none !important;
 }
 
 .user-profile-link:hover {
     text-decoration: none !important;
+    border-bottom: none !important;
 }
 
 .user-avatar-wrap {
