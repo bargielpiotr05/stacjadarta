@@ -213,9 +213,36 @@ async function wczytajWspolneElementy() {
         return;
     }
 
+    ustawAktywneLinkiMenu();
     uruchomMenuMobilne();
     await sprawdzStanLogowania();
     podepnijNasluchLogowania();
+}
+
+function ustawAktywneLinkiMenu() {
+    const linkiDesktop = document.querySelectorAll(".wersja-komputer a");
+    const aktualnaSciezka = (window.location.pathname || "").toLowerCase();
+
+    linkiDesktop.forEach((link) => {
+        const href = (link.getAttribute("href") || "").toLowerCase().replace("./", "");
+
+        // Automatyczne podświetlenie aktywnej zakładki na podstawie aktualnego adresu strony
+        if (
+            href &&
+            (aktualnaSciezka.endsWith("/" + href) ||
+             aktualnaSciezka.endsWith(href) ||
+             (href === "turnieje.html" && (aktualnaSciezka.includes("turniej") || aktualnaSciezka.includes("kalendarz"))) ||
+             (href === "gry.html" && aktualnaSciezka.includes("gra-")))
+        ) {
+            link.style.borderBottom = "1px solid var(--secondary-color)";
+        }
+
+        // Obsługa kliknięcia z dynamicznym podświetleniem
+        link.addEventListener("click", () => {
+            linkiDesktop.forEach((l) => (l.style.borderBottom = ""));
+            link.style.borderBottom = "1px solid var(--secondary-color)";
+        });
+    });
 }
 
 function zaktualizujWidokZalogowanego(user, daneZProfilu = null) {
@@ -422,6 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.SUPABASE_CLIENT_ONLY) return;
     wczytajWspolneElementy();
 });
+
 // ==========================================
 // GLOBALNY SYSTEM ZAPROSZEŃ DO GRY (REALTIME)
 // ==========================================

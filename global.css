@@ -86,9 +86,7 @@ header a {
     margin-left: 10px;
     font-size: 18px;
     padding: 5px 10px;
-    transition:
-        background-color 0.3s,
-        color 0.3s;
+    transition:0.3s all ease;
     font-weight: bolder;
 }
 .join-us {
@@ -105,8 +103,7 @@ header a {
     text-decoration: none !important;
 }
 .header-right-section a:hover {
-    text-decoration: underline;
-    padding: 5px 10px;
+  border-bottom: 1px solid var(--secondary-color);
 }
 /* Kontener dropdownu */
 .dropdown-konto {
